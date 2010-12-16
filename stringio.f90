@@ -35,7 +35,7 @@
 
 Module stringIO
     !---- Use Modules ----!
-
+	use shadow_kind
     !---- Variables ----!
     implicit none
 
@@ -49,16 +49,17 @@ Module stringIO
     ! private :: blablaF1
     !---- List of public overloaded functions ----!
     !---- List of public functions ----!
-    public ::  iyes, rnumber, rstring, iblank, fname
+    public ::  iyes, rnumber, rstring, iblank, fname, u_case
     !---- List of public subroutines ----!
-    public ::  mssg,leave, irint, despace, clscreen
+    public ::  mssg,leave, irint, despace, clscreen, datapath
+    public ::  fstrlocase, fstrupcase
 
 
     !---- List of private functions ----!
     ! private :: blablaF2
     !---- List of private subroutines ----!
     private :: fstrtrim, fstrtrim_l, fstrtrim_r, fstrchr
-    private :: fstrupcase, fstrlocase, fstrfill
+    private :: fstrfill
 
     !---- Definitions ----!
 
@@ -83,8 +84,8 @@ Module stringIO
     
      	SUBROUTINE	MSSG (T1, T2, IFLAG)
      	CHARACTER *(*)	T1, T2
-!     	integer(kind=4) iblank,iflag
-     	integer(kind=4) iflag
+!     	integer(kind=ski) iblank,iflag
+     	integer(kind=ski) iflag
      	WRITE(6,*)'SHADOW-E-Error: '
      	WRITE(6,*)'Module     : ', T1
      	WRITE(6,*)'Message    : ', T2
@@ -110,8 +111,8 @@ Module stringIO
 
 	SUBROUTINE	LEAVE	(TEXT1,TEXT2,IFLAG)
 	CHARACTER*(*)	TEXT1,TEXT2
-	integer(kind=4)		SS_ABORT
-	integer(kind=4)		iflag
+	integer(kind=ski)		SS_ABORT
+	integer(kind=ski)		iflag
 	PARAMETER	(SS_ABORT = 44)
 	CALL	MSSG	(TEXT1,TEXT2,IFLAG)
     ! C	STOP		SS_ABORT
@@ -141,13 +142,13 @@ Module stringIO
     ! C			If IN = Y or y or 1, then IYES = 1
     ! C			else		 	  IYES = 0
     ! C---
-     	integer(kind=4) FUNCTION IYES (PROMPT)
+     	integer(kind=ski) FUNCTION IYES (PROMPT)
      	CHARACTER *(*)	PROMPT
      	CHARACTER *1	IN
      	LOGICAL		TEST
      	IYES	= 1
-    10     	WRITE (6,1000)	PROMPT
-    1000	FORMAT	(1X,A,2x,$)
+    10     	WRITE (6,1000,ADVANCE='NO')	PROMPT
+    1000	FORMAT	(1X,A,2x)
     ! #ifdef MICROSOFT
     !      	READ	(5,*,ERR=20) IN
     ! #else
@@ -176,16 +177,16 @@ Module stringIO
     ! C
     ! C---
      	!DOUBLE PRECISION FUNCTION	RNUMBER	( PROMPT )
-     	REAL(KIND=KIND(1.0D0)) FUNCTION	RNUMBER	( PROMPT )
-        IMPLICIT INTEGER(KIND=4) (I-N)
+     	REAL(KIND=skr) FUNCTION	RNUMBER	( PROMPT )
+        IMPLICIT INTEGER(kind=ski) (I-N)
      	CHARACTER*(*)	PROMPT
      	! REAL*8		VALUE
-     	REAL(KIND=KIND(1.0D0))  VALUE
+     	REAL(KIND=skr)  VALUE
     ! C
     ! C The error iteration limit is 10 right now.
     ! C
 	ICOUNT	= 0
-    10	WRITE 	(6, '(1X,A,2X,$)')	PROMPT
+    10	WRITE 	(6, '(1X,A,2X)',ADVANCE='NO')	PROMPT
     ! #ifdef MICROSOFT
     !      	READ	(5, *, IOSTAT=IRET)	VALUE
     ! #else
@@ -214,15 +215,15 @@ Module stringIO
     ! C
     ! C
     ! C---
-     	integer(kind=4)  FUNCTION IRINT	(PROMPT)
-	IMPLICIT INTEGER(KIND=4) (i-n)
+     	integer(kind=ski)  FUNCTION IRINT	(PROMPT)
+	IMPLICIT INTEGER(kind=ski) (i-n)
      	CHARACTER*(*)	PROMPT
 	
     ! C
     ! C The error iteration limit is 10 right now.
     ! C
 	ICOUNT	= 0
-    10	WRITE 	(6, '(1X,A,2X,$)')	PROMPT
+    10	WRITE 	(6, '(1X,A,2X)',ADVANCE='NO')	PROMPT
     ! #ifdef MICROSOFT
     !      	READ	(5, *, IOSTAT=IRET)	IVAL
     ! #else
@@ -252,17 +253,17 @@ Module stringIO
     ! C
     ! C---
      	FUNCTION	RSTRING ( ARG )
-        implicit integer(kind=4) (i-n)
-     	CHARACTER *80	RSTRING
+        implicit integer(kind=ski) (i-n)
+     	CHARACTER*80	RSTRING
          	CHARACTER *(*)	ARG
     ! C
     ! C The error iteration limit is 10 right now.
     ! C
 	ICOUNT = 0
-    1     	WRITE (6,1000)  ARG
+    1     	WRITE (6,1000,ADVANCE='NO')  ARG
      	READ  (5, 1010, END=20, ERR=10)	RSTRING
      	RETURN
-    10	WRITE (6,1000)  'I/O-%-ERR: What ?? Please try again.'
+    10	WRITE (6,1000,ADVANCE='NO')  'I/O-%-ERR: What ?? Please try again.'
 	ICOUNT	= ICOUNT + 1
 	IF (ICOUNT.GT.10) THEN
           ITMP=0
@@ -272,7 +273,7 @@ Module stringIO
 	END IF
     20	RSTRING (1:2) = '^Z'
      	RETURN
-    1000	FORMAT (1X,A,$)
+    1000	FORMAT (1X,A)
     1010	FORMAT (A)
     END FUNCTION RSTRING
 
@@ -283,7 +284,7 @@ Module stringIO
 
 
     ! C +++
-    ! C 	integer(kind=4) 	function 	iblank
+    ! C 	integer(kind=ski) 	function 	iblank
     ! C
     ! C	purpose		Returns the last non-white spot in the string.
     ! C
@@ -293,11 +294,11 @@ Module stringIO
     ! C	hacked by	Mumit Khan
     ! C ---
     !!	integer function iblank (str)
-	integer(kind=4) function iblank (str)
+	integer(kind=ski) function iblank (str)
 	implicit 	none
 	character*(*) 	str
-	integer(kind=4) 	ilen, i
-	integer(kind=4)		ASCII_TAB
+	integer(kind=ski) 	ilen, i
+	integer(kind=ski)		ASCII_TAB
 	parameter	(ASCII_TAB = 9)
 	character*1	tabchar
     ! C
@@ -321,6 +322,40 @@ Module stringIO
     !
     !
 
+    !! copied from crysFML lib (J. R. Carvajal et al.)
+
+    !!----
+    !!---- Character Function U_Case(Text) Result (Mtext)
+    !!----    character (len=*), intent(in) :: text   !  In -> String:"Input Line"
+    !!----    character (len=len(text))     :: mtext  ! Out -> String:"INPUT LINE"
+    !!----
+    !!----    Conversion to upper case, text is not modified
+    !!----
+    !!---- Update: February - 2005
+    !!
+    Function U_Case(Text) Result (Mtext)
+       !---- Argument ----!
+       character (len=*), intent(in) :: text
+       character (len=len(text))     :: mtext
+
+       !---- Local variables ----!
+       integer(KIND=ski), parameter :: inc = ICHAR("A") - ICHAR("a")
+       integer(KIND=ski)            :: leng, pos
+
+       mtext=text
+       leng=len_trim(mtext)
+       do pos=1,leng
+          if (mtext(pos:pos) >= "a" .and. mtext(pos:pos) <= "z")           &
+              mtext(pos:pos) = CHAR ( ICHAR(mtext(pos:pos)) + inc )
+       end do
+
+       return
+    End Function U_Case
+
+    !
+    !
+    !
+
     ! C+++
     ! C	SUBROUTINE	FNAME
     ! C
@@ -337,8 +372,8 @@ Module stringIO
      	SUBROUTINE	FNAME	(NAME, ALPHA, INDEX, LENGTH)
      	! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
      	! IMPLICIT	INTEGER*4	(F,I-N)
-     	IMPLICIT REAL(KIND=KIND(1.0D0)) (A-E,G-H,O-Z)
-     	IMPLICIT INTEGER(KIND=4)        (F,I-N)
+     	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+     	IMPLICIT INTEGER(kind=ski)        (F,I-N)
      	CHARACTER *(*)  NAME, ALPHA
      	CHARACTER*80	TEMP
      	DO  10 I=1,LEN(NAME)
@@ -390,7 +425,7 @@ Module stringIO
 	implicit none
      	!character *(*)	inp, out
      	character(len=*)  ::  inp, out
-        integer(kind=4)   ::  klen, istart, iend
+        integer(kind=ski)   ::  klen, istart, iend
     ! C
     ! C find the leading and trailing indices first. istart and iend are both 0
     ! C for blank input string.
@@ -465,7 +500,7 @@ Module stringIO
     ! C  
 
 	subroutine fstrtrim (string, index1, index2)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C	subroutine fstrtrim (string, index1, index2)
     ! C
@@ -492,7 +527,7 @@ Module stringIO
     ! C
     ! C
 	subroutine fstrtrim_l (string, index)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C	subroutine fstrtrim_l (string, index)
     ! C
@@ -542,7 +577,7 @@ Module stringIO
 
 
 	subroutine fstrtrim_r (string, index)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C	subroutine fstrtrim_r (string, index)
     ! C
@@ -590,7 +625,7 @@ Module stringIO
     !
 
 	subroutine fstrupcase (string)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C	subroutine fstrupcase (string)
     ! C
@@ -619,7 +654,7 @@ Module stringIO
 
 
 	subroutine fstrlocase (string)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C	subroutine fstrlocase (string)
     ! C
@@ -646,7 +681,7 @@ Module stringIO
     !
     !
 	subroutine fstrfill (string, what, iflag)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C fstrfill -- fill a string with the given character
     ! C
@@ -685,7 +720,7 @@ Module stringIO
     ! C
     ! C
 	subroutine fstrchr (string, what, iflag)
-	implicit integer(kind=4) (a-z)
+	implicit integer(kind=ski) (a-z)
     ! C++
     ! C
     ! C
@@ -729,6 +764,88 @@ Module stringIO
     !
     !
 
-    
+!C +++
+!C
+!C datapath.F: get pathname of a SHADOW data file
+!C
+!C Author: Mumit Khan <khan@xraylith.wisc.edu>
+!C Copyright(c) 1996 Mumit Khan
+!c             completely rewritten by srio@esrf.eu   2010
+!c             file must exists, otherwise exits
+!C
+!C
+!C 
+!C ---
+!
+subroutine datapath (file, path, iflag)
+
+!c++
+!c
+!c datapath -- gets a full pathname for a SHADOW data file
+!c
+!c input:
+!c    file:   the file name to find
+!c    iflag:  0 don't check for existence
+!c	     1 do check for existence
+!c 
+!c returns: 
+!c    path:   the returned full path
+!c    iflag:  0 if ok
+!c            1 does not exist
+!c
+!c--
+
+        implicit none
+
+	character(len=*),intent(in)       ::  file
+	integer(kind=ski),   intent(in out) ::  iFlag
+	character(len=512),intent(out)    ::  path
+	character(len=512)                ::  path1
+	character(len=512)                ::  dataDir
+	! ATTENTION: this is the DEFAULT integer, thus
+	!            platform dependent!!!!
+	!integer(kind=ski)                   ::  nStr
+	integer                              ::  nStr
+
+        !srio danger todo : OS-dependent
+        !character(len=1)                  :: path_sep='/'
+        logical                           :: lExists
+
+        iFlag=0  !OK
+        !
+        ! if file exists in the current directry, use it
+	INQUIRE (file = file, exist = lExists)
+	IF (lExists) THEN
+           path = file
+           RETURN
+        END IF
+
+        ! checks if file is in $SHADOW_DATA_DIR
+	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_DATA_DIR', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//TRIM(file)
+	  INQUIRE (file = path, exist = lExists)
+	  IF (lExists) RETURN
+          path1 = path
+        END IF
+        
+
+        ! checks if file is in $SHADOW_ROOT/data
+	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_ROOT', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//'data'//OS_DS//TRIM(file)
+	  INQUIRE (file = path, exist = lExists)
+	  IF (lExists) RETURN
+        END IF
+
+        ! file not found
+        iFlag=1
+!        print *,"Searched in: . $SHADOW_DATA_DIR and $SHADOW_ROOT/data"
+!        CALL Leave("DATAPATH","File not found: "//TRIM(file),iflag)
+
+End Subroutine datapath
+
+
+
 End Module stringio
 
