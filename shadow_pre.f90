@@ -329,7 +329,7 @@ END SUBROUTINE IBCDCU
 SUBROUTINE PRESURFACE
 	implicit none
 
-	character(len=1024) :: inFile,outFile
+	character(len=sklen) :: inFile,outFile
 
 
 !C The dimensions of WK should be 2*NX*NY + 2*MAX(NX,NY).  If so, the
@@ -767,7 +767,7 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
         integer(kind=ski),dimension(92)   ::  LOOKUP
         integer(kind=ski)                 ::  POS, R
         integer(kind=ski)                 ::  iFlag,i,fUnit,iErr
-	character(len=1024) :: F12LIB, INDEXF
+	character(len=sklen) :: F12LIB, INDEXF
 
 	!DIMENSION REALBUF(844)
         !CHARACTER*2     ELE
@@ -820,9 +820,11 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 !C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS
         fUnit=11
 	!open (unit=fUnit, file=INDEXF) !, status = 'OLD') !, ACTION='READ')
-	open (unit=fUnit, file='F12FULL.INDEX', status = 'OLD', iostat=iErr )
+	!open (unit=fUnit, file='F12FULL.INDEX', status = 'OLD', iostat=iErr )
+	open (unit=fUnit, file=INDEXF, status = 'OLD', iostat=iErr )
         IF (iErr /= 0) THEN 
-          STOP 'File not found: F12FULL.INDEX'
+          print *,'File not found: '//trim(INDEXF), iErr
+          STOP 
         ENDIF
 
 5	format (A2, I15)
@@ -837,13 +839,15 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 !C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS
 !	open (unit=11, file=INDEXF, status = 'OLD')
 !#else
-	OPEN(UNIT=71,FILE="F12LIB.FULL", ioStat=iErr, &
+	!OPEN(UNIT=71,FILE="F12LIB.FULL", ioStat=iErr, &
+	OPEN(UNIT=71,FILE=F12LIB, ioStat=iErr, &
            ACCESS='DIRECT',RECL=3376, STATUS = 'OLD', ACTION='READ')
 !	OPEN(UNIT=71,FILE=F12LIB, &
 !           !ACCESS='DIRECT',RECL=3376, STATUS = 'OLD', 'readonly')
 
         IF (iErr /= 0) THEN 
-          STOP 'File not found: F12FULL.FULL'
+          print *,"File not found: "//trim(F12LIB)
+          STOP 
         ENDIF
 
 
@@ -962,7 +966,7 @@ SUBROUTINE PREREFL
 	real(kind=skr),dimension(420,2) :: OUTFIL
 	real(kind=skr) :: DENSITY
 	!CHARACTER*80	OUT_FILE,RSTRING
-	character(len=1024) :: OUT_FILE
+	character(len=sklen) :: OUT_FILE
 	!DIMENSION	AF1(N_DIM),AF2(N_DIM)
 	integer(kind=ski),parameter     :: N_DIM=10000
 	real(kind=skr),dimension(N_DIM) :: AF1,AF2
@@ -1195,7 +1199,7 @@ END SUBROUTINE OptPropComp
 SUBROUTINE Pre_Mlayer
 	implicit none
 
-     	character(len=1024) :: FILEOUT,FGRADE
+     	character(len=sklen) :: FILEOUT,FGRADE
 	real(kind=skr),dimension(1001)  :: THICK,GAMMA
         real(kind=skr) :: ESTART, EFINAL 
 	real(kind=skr)    :: ElFactor
@@ -1320,7 +1324,7 @@ SUBROUTINE Grade_Mlayer
         implicit integer(kind=ski)        (i-n)
 
      	!CHARACTER*80	INFILE,OUTFILE,RSTRING
-     	character(len=1024) :: INFILE,OUTFILE
+     	character(len=sklen) :: INFILE,OUTFILE
      	!DIMENSION	CSPL (2,101,2,101), WK (20602)
      	!DIMENSION	X(101),Y(101),F(101,101)
      	real(kind=skr),dimension(2,101,2,101) :: CSPL 
@@ -1492,7 +1496,7 @@ SUBROUTINE BRAGG
 	real(kind=skr),parameter ::AVOG=6.022098D+23
 
      	!CHARACTER *80	OUTFIL,RSTRING
-     	character(len=1024) :: OUTFIL
+     	character(len=sklen) :: OUTFIL
 	COMPLEX*16	CI,FA,FB,STRUCT,F_0,REFRAC
 	COMPLEX*16	RCS1_O,RCP1_O,RCS2_O,RCP2_O,RCS_O,RCP_O
 	COMPLEX*16	RCS1_H,RCP1_H,RCS2_H,RCP2_H,RCS_H,RCP_H

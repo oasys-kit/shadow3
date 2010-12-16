@@ -25,7 +25,7 @@ PROGRAM  Shadow3
   implicit none
 
   
-  character(len=1024)     ::  inCommand,inCommandLow,arg,mode
+  character(len=sklen)     ::  inCommand,inCommandLow,arg,mode
   integer(kind=ski)      :: numArg,indx,iErr,i_Device
 
  
@@ -139,6 +139,18 @@ SELECT CASE (inCommandLow)
   CASE ("source")
      CALL shadow3source
      inCommand=""
+  CASE ("focnew")
+     CALL focnew
+     inCommand=""
+  CASE ("intens")
+     CALL intens
+     inCommand=""
+  CASE ("recolor")
+     CALL recolor
+     inCommand=""
+  CASE ("ffresnel")
+     CALL ffresnel
+     inCommand=""
   CASE ("plotxy")
      CALL plotxy
      inCommand=""
@@ -172,9 +184,9 @@ SELECT CASE (inCommandLow)
   CASE ("presurface")
      CALL presurface
      inCommand=""
-  CASE ("cdf_z")
-     CALL cdf_z
-     inCommand=""
+!  CASE ("cdf_z")
+!     CALL cdf_z
+!     inCommand=""
   CASE ("epath")
      i_device = 0
      CALL epath(i_Device)
@@ -254,13 +266,14 @@ SELECT CASE (inCommandLow)
      print *,'                    : make_id epath nphoton undul_set undul_phot undul_cdf' 
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
+     print *,'                    : focnew intens recolor ffresnel'
      print *,'  [OTHER]           : exit help ? license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
      print *,''
      inCommand=""
   CASE DEFAULT
-     IF (inCommand(1:1) == "$") CALL SYSTEM( inCommand(2:1024) )
+     IF (inCommand(1:1) == "$") CALL SYSTEM( inCommand(2:sklen) )
      inCommand  =  RString ('shadow3> ')
 END SELECT 
 

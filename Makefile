@@ -3,6 +3,7 @@
 # srio@esrf.eu    05-02-2010  first version
 #
 FC = g95
+#FC = gfortran
 #FC = /scisoft/ESRF_sw/opteron2/bin/gfortran
 FFLAGS = 
 
@@ -26,7 +27,8 @@ FMAINS=                       \
        gen_source.f90         \
        trace.f90              \
        trace3.f90             \
-       shadow3.f90
+       shadow3.f90            \
+       fig3.f90
 #       input_source.f90       \
 #       translate.f90          \
 #       srcdf.f90              \
@@ -56,6 +58,7 @@ all: $(OBJMODULES) $(OBJMAINS)
 	$(FC) $(FFLAGS) -o trace3 trace3.o $(OBJMODULES) wranc.o
 #	$(FC) $(FFLAGS) -o shadow3 shadow3.o $(OBJMODULES) wranc.o cdf_z.o
 	$(FC) $(FFLAGS) -o shadow3 shadow3.o $(OBJMODULES) wranc.o 
+	$(FC) $(FFLAGS) -o fig3 fig3.o $(OBJMODULES) wranc.o 
 #	$(FC) $(FFLAGS) -o translate translate.o stringio.o beamio.o
 #	$(FC) $(FFLAGS) -o srcdf srcdf.o $(OBJMODULES) wranc.o 
 #	$(FC) $(FFLAGS) -o test_sync test_sync.o  $(OBJMODULES)
@@ -83,5 +86,6 @@ clean:
 	/bin/rm -f input_source gen_source trace trace3 translate shadow3
 
 install:
+	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
 
 

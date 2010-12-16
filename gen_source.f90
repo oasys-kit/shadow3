@@ -22,7 +22,7 @@ PROGRAM  Gen_Source
 
   implicit none
   
-  character(len=512)     ::  infile,outfile,bgnfile,arg
+  character(len=sklen)     ::  infile,outfile,bgnfile,arg
   integer(kind=ski)      ::  indx, numArg, iErr
   integer (kind=ski)     ::  iSynchrotron=0, ioform=0
 

@@ -1,3 +1,4 @@
+!!!!512512
 !----
 !---- MODULE:  shadow_kernel
 !----
@@ -87,14 +88,14 @@ Module shadow_kernel
   !---- Definitions ----!
   ! this is an example of a type 
   !Type, public :: GfType
-  !   character(len=512) :: fileName
+  !   character(len=sklen) :: fileName
   !   ! logical for allocation
   !   logical            :: alloc1
   !   integer(kind=ski)            :: nLines
   !   integer(kind=ski)            :: nVariables
-  !   character(len=512), dimension(:), allocatable :: fileLines
-  !   character(len=512), dimension(:), allocatable :: variableNames
-  !   character(len=512), dimension(:), allocatable :: variableValues
+  !   character(len=sklen), dimension(:), allocatable :: fileLines
+  !   character(len=sklen), dimension(:), allocatable :: variableNames
+  !   character(len=sklen), dimension(:), allocatable :: variableValues
   !End Type GfType
   
   
@@ -3036,7 +3037,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	implicit integer(kind=ski)        (f,i-n)
 
      	!CHARACTER*80	INFILE
-     	character(len=512) :: INFILE
+     	character(len=*) :: INFILE
 	DO 11 I = 0,4
 	  DO 21 J = 0,4
 	    DO 31 K = 0,4
@@ -3971,7 +3972,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
 !#else
 !        logical*1 	ele(5),elo(5),els(5)
 !#endif
-	character(len=512)    ::  file_grade
+	character(len=sklen)    ::  file_grade
 	!character*80	file_grade
 
         real(kind=skr),dimension(2,101,2,101) :: tspl,gspl
@@ -4841,7 +4842,7 @@ SUBROUTINE RESTART (RAY,PHASE,AP)
         real(kind=skr),dimension(:,:), intent(in out) :: RAY, PHASE, AP
         real(kind=skr),dimension(9)  :: temp_1,temp_2,temp_1p
         real(kind=skr),dimension(3)  :: temp_2p
-        character(len=512)                   :: STMP
+        character(len=sklen)                   :: STMP
         integer(kind=ski)                      :: ITMP
 
 	!DIMENSION 	RAY(12,N_DIM), AP(3,N_DIM), PHASE(3,N_DIM), &
@@ -5389,7 +5390,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 
         real(kind=skr),dimension(:,:),intent(in out):: ray,ap_in,ph_in
 
-        character(len=512)        :: locfile,file_tmp
+        character(len=sklen)        :: locfile,file_tmp
      	!CHARACTER*12	LOCFILE
 	!CHARACTER*80	FILE_TMP
 
@@ -5686,7 +5687,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
         real(kind=skr),dimension(MAX_NPOINTS)  :: xvec,zvec
         integer(kind=ski),dimension(MAX_NPOLY)           :: ivec1,ivec2
 	logical                                        :: ray_lost, hit_found
-        character(len=512)                             :: filename
+        character(len=sklen)                             :: filename
 	!DIMENSION	XVEC(MAX_NPOINTS), ZVEC(MAX_NPOINTS)
 	!DIMENSION	IVEC1(MAX_NPOLY), IVEC2(MAX_NPOLY)
 	!LOGICAL		RAY_LOST, HIT_FOUND
@@ -5819,7 +5820,7 @@ SUBROUTINE  SCREEN_LOAD_EXTERNAL (FILENAME, MAX_NPOLYS, &
 ! C
 	IMPLICIT NONE
 	!CHARACTER*(*)	FILENAME
-	character(len=512)  :: 	FILENAME
+	character(len=*)  :: 	FILENAME
 	integer(kind=ski) :: max_npolys,max_npoints,npoly,npoint,iflag
 	!INTEGER		MAX_NPOLYS,MAX_NPOINTS,NPOLY,NPOINT,IFLAG
 	!INTEGER		IVEC1, IVEC2
@@ -8185,7 +8186,12 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 
      	!CHARACTER*80	ARG,RSTRING, INFILE
 	!CHARACTER*80	FILESOURCE
-	character(len=512) :: FILESOURCE,OUTP,arg,infile
+	character(len=*),intent(inout)  :: OUTP
+	!!!character(len=512) :: FILESOURCE,arg,infile
+	character(len=sklen)  :: FILESOURCE
+!!!srio
+	character(len=sklen)  :: infile
+	character(len=sklen) :: arg
 	LOGICAL		IRET
 	!INTEGER		IPASS
 	!DATA 	IPASS	/ 0 /
@@ -8291,7 +8297,7 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 
 
      	IF (IDUMM.NE.0) THEN
-     	     WRITE(6,*)'Error reading from file ',INFILE
+     	     WRITE(6,*)'Error reading from file '//trim(INFILE)
      	     CALL LEAVE ('SWITCH_INP', 'Check contents of SYSTEMFILE',IDUMM)
      	END IF
 	GO TO 2000
@@ -8343,7 +8349,8 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C
 ! C If ^Z detected, assumes end of system
 ! C
-     	 IF (INFILE(1:5).EQ.'EXIT'.OR.INFILE(1:5).EQ.'exit') THEN 
+!csrio     	 IF (INFILE(1:5).EQ.'EXIT'.OR.INFILE(1:5).EQ.'exit') THEN 
+     	 IF (INFILE.EQ.'EXIT'.OR.INFILE.EQ.'exit') THEN 
            !STOP
            iTerminate=1
 	   RETURN
@@ -8601,7 +8608,7 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
         integer(kind=ski), intent(in) :: I_OENUM
         integer(kind=ski), intent(out):: iTerminate
         integer(kind=ski)             :: I_MIR,IVERB,F_PLANES,I,IDUMM
-        character(len=512) ::  TEXT
+        character(len=sklen) ::  TEXT
         character(len=80)  ::  MSSG,MSSG2
 !!     	CHARACTER*80	MSSG,MSSG2,TEXT,RSTRING
 !!	CHARACTER*132 	VERSION
@@ -10294,7 +10301,7 @@ SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
     !!srio
     INTEGER(kind=ski)		C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
     !<> CHARACTER*(*)	infile, FNAME
-    character(len=512)       :: infile, FNAME
+    character(len=sklen)       :: infile, FNAME
     ! C
     CHARACTER*80	ERRMSG
     
@@ -14098,7 +14105,7 @@ SUBROUTINE Shadow3Trace
 
 	implicit none
 
-        character(len=512)      :: mode !, arg
+        character(len=sklen)      :: mode !, arg
 	integer(kind=ski)       :: icount,ipass,nsave,iTerminate
 	integer(kind=ski)       :: numarg
 	integer(kind=ski)       :: ncol1,np,iflag,ierr

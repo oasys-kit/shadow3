@@ -19,7 +19,7 @@
 
 Module math
 
-	use shadow_kind, only : ski, skr, skc
+	use shadow_kind, only : ski, skr, skc, sklen
     implicit none
 
     public :: wran
@@ -54,33 +54,49 @@ Contains
 	REAL(KIND=SKR)  FUNCTION WRAN (ISEED)
      	! IMPLICIT	REAL*8		(A-H,O-Z)
 
-		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
-		IMPLICIT INTEGER(KIND=SKI) 	(I-N)
+                implicit none
+		!IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+		!IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
-		INTEGER(KIND=SKI)	ISEED
-		INTEGER(KIND=SKI)	first
+		INTEGER(KIND=SKI)	:: ISEED
+		INTEGER(KIND=SKI)	:: first=1,wran_counter=0
+                real(kind=skr)          :: XX
 
-		first=1
-!!
+		!first=1
+
+!!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment this part is for the built-in f95 random generator
 !!
+
+     !write(*,*) " "
+     !write(*,*) "WRAN: first: ",first
+     !write(*,*) "WRAN: wran_counter: ",wran_counter
+!todo this initializes ONLY if first=1!!!!!!!!!!!!!!!
+
          if (first.eq.1) then
  	   		XX = dble(ISEED)
        		XX = XX/(10**int(1+log10(XX)))
-    ! write(*,*) "WRAN: Initializing generator with: ",XX
+     !write(*,*) " "
+     !write(*,*) "WRAN: Initializing generator with ISEED: ", ISEED
+     !write(*,*) "                                     XX: ",XX
        		CALL RANDOM_NUMBER(HARVEST=XX)
        		first = 0
          end if
          CALL RANDOM_NUMBER(WRAN)
 
+!!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment for Penelope random number generator
+!!
+
 !!           wran = RAND_PENELOPE(1.0D0)
 
+!!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !!
 !! This part is for calling the C generator using the wranc.c wrapper
 !! This part produces the same results than Shadow 2.x
 !!
-!! TODO: COMMENTED IN WINDOWS
+
+!! TODO: MUST BE COMMENTED IN WINDOWS
 !!      WRAN = WRANC(ISEED)
 !!
 
@@ -155,6 +171,7 @@ END FUNCTION WRAN
       	GMIN = MIN(G(1,1),G(1,N))
       	IF ((X .LT. GMIN) .OR. (X .GT. GMAX)) THEN
         	WRITE(6,*) 'SPL_INT: x is outside the interpolation range.'
+        	WRITE(6,*) 'X, GMIN, GMAX: ',X,GMIN,GMAX
         	IER = 1
         	RETURN
       	ELSE IF (X .EQ. G(1,N)) THEN
@@ -236,7 +253,7 @@ END FUNCTION WRAN
 		IMPLICIT INTEGER(KIND=SKI)	(I-N)
 
         integer(KIND=SKI)     	m_flag
-        character(len=512)   	m_warning
+        character(len=sklen)   	m_warning
 !     	COMMON	/ERRFLAG	/IFLAG
 		DIMENSION 				V1(3),V2(3),VRES (3)
      	M_FLAG	= 0

@@ -12,6 +12,9 @@ module shadow_kind
     integer, parameter, public :: ski = C_INT
     integer, parameter, public :: skr = C_DOUBLE
     integer, parameter, public :: skc = C_CHAR
+    integer, parameter, public :: skx = C_DOUBLE_COMPLEX
+    integer, parameter, public :: sklen = 1024
+!
 
 
 !

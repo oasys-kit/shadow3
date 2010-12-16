@@ -36,7 +36,7 @@ contains
     subroutine rbeamanalyze (fname, ncol, npoint, iFlag, iErr) !bind(C,NAME="rbeamanalyze")
 
 
-       	character(len=512), intent(in)      :: fname  	!< Input file name.
+       	character(len=*), intent(in)      :: fname  	!< Input file name.
        	integer(kind=ski), intent(out)      :: ncol  	!< Number of colomn of the matrix, each rays can have 12, 13, 18 colomns.
 		integer(kind=ski), intent(out)      :: npoint	!< Number of rays.
 		integer(kind=ski), intent(out)      :: iFlag	!< don't know please srio@esrf help !!!
@@ -105,7 +105,7 @@ contains
 !!	Three integers giving the information about the shape of the matrix.
 !!	the rays'matrix itself.
 	subroutine rbeam (fname, ray, phase, ap, iErr)
-     	character(len=512),            intent(in) 		:: fname 	!< Input file name
+     	character(len=*),            intent(in) 		:: fname 	!< Input file name
         real(kind=skr),dimension(:,:), intent(in out)	:: ray		!< Array containing the basic 12 columns which define each ray
         real(kind=skr),dimension(:,:), intent(in out)	:: phase	!< Array containing the OPD and the 2 phase angles of the A vector
         real(kind=skr),dimension(:,:), intent(in out)	:: ap		!< Array which contains the Ap vector for each ray
@@ -239,7 +239,7 @@ contains
 	subroutine rbeam18 (ray,iErr,ncol1,npoint,FNAME) !bind(C,NAME="rbeam18")
 
      	integer(kind=ski),intent(in)    :: npoint   !< number of rays
-     	character(len=512),intent(in)	:: fname    !< Input file name.
+     	character(len=*),intent(in)	:: fname    !< Input file name.
 
         real(kind=skr), dimension(18,npoint), intent(inout)   :: ray !< Array containing all ray datas.
 
@@ -338,7 +338,7 @@ contains
     !!
     !!---
 	subroutine write_off (fname, ray, phase, ap, ncol, npoint, iFlag, iForm, iErr)
-     	character(len=512),          	intent(in)   	:: fname
+     	character(len=*),          	intent(in)   	:: fname
      	real(kind=skr), dimension(:,:),	intent(in)   	:: ray
      	real(kind=skr), dimension(:,:),	intent(in)   	:: phase
      	real(kind=skr), dimension(:,:),	intent(in)   	:: ap

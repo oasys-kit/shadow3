@@ -1420,11 +1420,12 @@ Contains
 ! C                                                                       
 	SUBROUTINE DBCEVL (X,NX,Y,NY,C,IC,XL,YL,PDS,IER)
 ! C                                  SPECIFICATIONS FOR ARGUMENTS         
-    	INTEGER(kind=ski)     	NX,NY,IC,IER
-      	REAL(kind=skr)   		X(1),Y(1),C(2,IC,1),XL,YL,PDS(6)
+    	INTEGER(kind=ski)  :: NX,NY,IC,IER
+      	REAL(kind=skr)     :: X(1),Y(1),C(2,IC,1),XL,YL,PDS(6)
 ! C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
-      	INTEGER(kind=ski)    	I,J,K,KM1,KP1,KP2,LXPL,LX,LY,L,LXP1
-      	REAL(kind=skr)   		HX,HY,SUX(2),SUY(2),SU(2),SVX(2),SV(2),SXY(2),  &
+      	INTEGER(kind=ski)  :: I,J,K,KM1,KP1,KP2,LXPL,LX,LY,L,LXP1
+      	INTEGER(kind=ski)  :: WARNINGDISPLAY=0
+      	REAL(kind=skr)     :: HX,HY,SUX(2),SUY(2),SU(2),SVX(2),SV(2),SXY(2),  &
                         		U,V,SPLN0,SPLN1,SPLN2,S0,SH,SP0,SPH,H,D
       	SPLN0(S0,SH,SP0,SPH,H,D) = S0+D*(H*SP0+D*(3.D0*(SH-S0)-            &
       		(SPH+2.D0*SP0)*H+D*(2.D0*(S0-SH)+(SPH+SP0)*H)))
@@ -1473,7 +1474,7 @@ Contains
       	PDS(5) = SPLN2(SV(1),SV(2),SVX(1),SVX(2),HX,U)
       	PDS(6) = SPLN2(SU(1),SU(2),SUY(1),SUY(2),HY,V)
       !srio IF (IER.GT.0) CALL UERTST(IER,6HDBCEVL)                           
-      	IF (IER.GT.0) THEN 
+      	IF ((IER.GT.0).AND.(WARNINGDISPLAY.NE.0)) THEN 
            print *,"              "
            print *,"Warning: Out of range in math routine dbcevl. "
 	   SELECT CASE (iEr)

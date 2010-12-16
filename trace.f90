@@ -19,7 +19,7 @@ Program	Trace
 
 	implicit none
 
-        character(len=512)      :: mode, arg
+        character(len=sklen)      :: mode, arg
 	integer(kind=ski)       :: icount,ipass,nsave
 	integer(kind=ski)       :: numarg
 	integer(kind=ski)       :: ncol1,np,iflag,ierr,iTerminate

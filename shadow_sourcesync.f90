@@ -1521,7 +1521,7 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
 !     $				IMAX_2,IMIN_2,IINT_2,IST
 
 	!CHARACTER*132	SRSPEC, SRDISTR
-	character(len=512)      :: SRSPEC, SRDISTR
+	character(len=1024)      :: SRSPEC, SRDISTR
 !c
 !c Get the data file path using either SHADOW$DATA or Unix SHADOW_DATA_DIR
 !c environment variable. Also, check for existence in the routine itself.
@@ -1533,6 +1533,7 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
           CALL SrCdf
           SRSPEC='SRSPEC'
 	ENDIF
+print *,'>>>> SRSPEC is: '//trim(SRSPEC)
 !	IFLAG = 1
 	CALL DATAPATH ('SRDISTR', SRDISTR, IFLAG) 
 	IF (IFLAG.NE.0) THEN
@@ -1540,6 +1541,7 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
           CALL SrCdf
           SRDISTR='SRDISTR'
 	ENDIF
+print *,'>>>> SRDISTR is: '//trim(SRDISTR)
 !c
 !c Define the useful parameters. Note that we now set the maximum energy
 !c to 100*lam_c, instead of 10*Lam_C (EX_UPP = 1.0D) as it used to be.
@@ -1693,8 +1695,13 @@ print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
 !     	OPEN	(30, FILE=SRSPEC, STATUS='OLD', 
 !     $		 READONLY,FORM='UNFORMATTED')
 !#else
+print *,'>>>>>> opening file: '//trim(SRSPEC)
      	OPEN	(30, FILE=SRSPEC(1:IBLANK(SRSPEC)), STATUS='OLD', &
-      		FORM='UNFORMATTED')
+      		FORM='UNFORMATTED',IOSTAT=iErr)
+        IF (iErr .ne. 0) THEN
+           call leave ('WHTRCDF','Could not open file: '//trim(SRSPEC),&
+                iErr)
+        ENDIF
 !#endif
      	READ	(30)	NPHOT,ICOL,IST
 	ITRY	= ((NP - IMIN_1)/IST) + 2
@@ -1897,6 +1904,7 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 	IER	= 0
 	i4 = 4
 	CALL CUBSPL  (WORKX,WORKP,i4,IER)
+        !print *,'WHTICDF calls 11 SPL_INT i4,PE,WARKX...',i4,PE,WORKX
 	CALL SPL_INT (WORKX,i4,PE,PSI,IER)
 	IF (ASEED.GT.0.5)	PSI = -PSI		!Radians
 !C Now the polarization

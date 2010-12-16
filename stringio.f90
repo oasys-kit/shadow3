@@ -799,9 +799,9 @@ subroutine datapath (file, path, iflag)
 
 	character(len=*),intent(in)       ::  file
 	integer(kind=ski),   intent(in out) ::  iFlag
-	character(len=512),intent(out)    ::  path
-	character(len=512)                ::  path1
-	character(len=512)                ::  dataDir
+	character(len=1024),intent(out)    ::  path
+	character(len=1024)                ::  path1
+	character(len=1024)                ::  dataDir
 	! ATTENTION: this is the DEFAULT integer, thus
 	!            platform dependent!!!!
 	!integer(kind=ski)                   ::  nStr

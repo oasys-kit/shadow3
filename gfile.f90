@@ -19,7 +19,7 @@
 
 module GFile
     use stringio, only : u_case
-	use shadow_kind, only : ski, skr, skc
+	use shadow_kind, only : ski, skr, skc, sklen
     implicit none
 
     public :: GfFileLoad, GfFileWrite, GfTypePrint, GfIsDefined
@@ -31,14 +31,14 @@ module GFile
     private :: GfForceSetValueString, GfForceSetValueInteger, GfForceSetValueReal
 
     type, public :: GfType
-       character(len=512) :: fileName
+       character(len=sklen) :: fileName
        ! logical for allocation
        logical            :: alloc1
        integer(kind=ski)            :: nLines
        integer(kind=ski)            :: nVariables
-       character(len=512), dimension(:), allocatable :: fileLines
-       character(len=512), dimension(:), allocatable :: variableNames
-       character(len=512), dimension(:), allocatable :: variableValues
+       character(len=sklen), dimension(:), allocatable :: fileLines
+       character(len=sklen), dimension(:), allocatable :: variableNames
+       character(len=sklen), dimension(:), allocatable :: variableValues
     end type GfType
 
     interface  GfGetValue
@@ -106,7 +106,7 @@ contains
        logical            							:: iOut
 
        integer(kind=ski)          	:: j
-       character(len=512)        	:: var
+       character(len=sklen)        	:: var
 
        iOut = GfIsDefined(g1,variableName,j)
 
@@ -318,7 +318,7 @@ contains
 
     function GfFileLoad (g1, fileName) result(iOut)
     	type(GfType), 				intent (inout)	:: g1
-       	character(len=512),optional,intent(in)     	:: fileName
+       	character(len=*),optional,intent(in)     	:: fileName
        	logical 									:: iOut
 
        	integer(kind=ski) 			:: lun
@@ -327,7 +327,7 @@ contains
        	integer(kind=ski) 			:: nLines
        	integer(kind=ski) 			:: nVariables
        	integer(kind=ski) 			:: iTmp
-       	character (len=512)      	:: line
+       	character (len=sklen)      	:: line
 
 
        	iOut = .false.
@@ -393,7 +393,7 @@ contains
        	integer(kind=ski) 			:: lun
        	integer(kind=ski) 			:: iErr
        	integer(kind=ski) 			:: i
-       	character(len=512)			:: line
+       	character(len=sklen)			:: line
 
 
        	iOut = .false.
@@ -431,7 +431,7 @@ contains
        	integer(kind=ski) 			:: i
        	integer(kind=ski) 			:: nLines
       	integer(kind=ski) 			:: iTmp
-!  	  	character (len=512)        	:: line, line1, line2
+!  	  	character (len=sklen)        	:: line, line1, line2
 
 
        	iOut = .false.

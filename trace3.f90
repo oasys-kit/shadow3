@@ -24,7 +24,7 @@ Program	Trace3
 	integer(kind=ski)                         :: eof,noe, lun
 	integer(kind=ski)                         :: itwo=2, izero=0
 	integer(kind=ski)                         :: ncol1,npoint1,iflag,ierr
-	character(len=512),dimension(100)         :: infile
+	character(len=sklen),dimension(100)         :: infile
         real(kind=skr),dimension(:,:),allocatable :: ray18
 
 
