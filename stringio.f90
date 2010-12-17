@@ -35,7 +35,7 @@
 
 Module stringIO
     !---- Use Modules ----!
-	use shadow_kind
+	use shadow_globaldefinitions
     !---- Variables ----!
     implicit none
 

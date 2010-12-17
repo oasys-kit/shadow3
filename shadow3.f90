@@ -11,15 +11,15 @@
 ! C
 ! C---
 PROGRAM  Shadow3
-  use shadow_kind
+  use shadow_globaldefinitions
   use stringio
-  use beamio
+  use shadow_beamio
   use shadow_variables
   use shadow_kernel
-  use shadow_sourcesync
-  use shadow_pre_id    ! undulator preprocessors
-  use shadow_pre       ! general preprocessors
-  use shadow_post      ! general postprocessors
+  use shadow_synchrotron
+  use shadow_pre_sync    ! undulator preprocessors
+  use shadow_preprocessors       ! general preprocessors
+  use shadow_postprocessors      ! general postprocessors
 !  use urgent_cdf       ! undulator preprocessor by Urgent
 
   implicit none

@@ -11,9 +11,9 @@
 ! C---
 Program	Trace
 
-        use shadow_kind
+        use shadow_globaldefinitions
         use stringio
-        use beamio
+        use shadow_beamio
         use shadow_variables
         use shadow_kernel 
 

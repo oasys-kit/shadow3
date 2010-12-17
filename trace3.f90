@@ -10,11 +10,11 @@
 ! C---
 Program	Trace3
 
-        use shadow_kind
+        use shadow_globaldefinitions
         use stringio,        only: fname
-        use beamio,          only: RBeamAnalyze, RBeam18
+        use shadow_beamio,          only: RBeamAnalyze, RBeam18
         use shadow_variables
-        use shadow_kernel,   only: PoolOELoad, TraceOE, PoolOEWrite
+        use shadow_kernel
 
 
 	implicit none
@@ -22,9 +22,8 @@ Program	Trace3
         type (poolOE)                             :: pool0i
 	integer(kind=ski)                         :: icount 
 	integer(kind=ski)                         :: eof,noe, lun
-	integer(kind=ski)                         :: itwo=2, izero=0
 	integer(kind=ski)                         :: ncol1,npoint1,iflag,ierr
-	character(len=sklen),dimension(100)         :: infile
+	character(len=sklen),dimension(100)       :: infile
         real(kind=skr),dimension(:,:),allocatable :: ray18
 
 

@@ -1,5 +1,5 @@
 !----
-!---- MODULE:  shadow_Pre_Id
+!---- MODULE:  shadow_Pre_Sync
 !----
 !---- Preprocessors for synchrotron insertion devices
 !---- Contains: 
@@ -10,16 +10,15 @@
 !----
 !----
 
-Module shadow_Pre_Id
+Module shadow_Pre_Sync
     !---- Use Modules ----!
 
     use stringio
-    use math
-    use math_imsl
-    use shadow_kind
+    use shadow_math
+    use shadow_globaldefinitions
 !use shadow_variables
 !use shadow_kernel
-    use shadow_sourcesync, only : srcdf ! needed by nphoton only
+    use shadow_synchrotron, only : srcdf ! needed by nphoton only
 
     !---- Variables ----!
     implicit none
@@ -3120,4 +3119,4 @@ SUBROUTINE Undul_Cdf
 
 END SUBROUTINE Undul_Cdf
 
-End Module shadow_Pre_Id
+End Module shadow_Pre_Sync

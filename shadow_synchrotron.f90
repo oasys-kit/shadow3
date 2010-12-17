@@ -11,16 +11,14 @@
 !----
 !----
 
-Module shadow_sourcesync
+Module shadow_synchrotron
     !---- Use Modules ----!
 
+    use shadow_globaldefinitions
     use stringio
-
     use gfile
-    use beamio
-    use math
-    use math_imsl
-    use shadow_kind
+    use shadow_beamio
+    use shadow_math
     use shadow_variables
     use shadow_kernel
 
@@ -4061,4 +4059,4 @@ RETURN
 
 END SUBROUTINE Shadow3Source
 
-End Module shadow_sourcesync
+End Module shadow_synchrotron

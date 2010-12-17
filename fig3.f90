@@ -1,11 +1,11 @@
 PROGRAM  Fig3
 
-use shadow_kind    
+use shadow_globaldefinitions    
 !use stringio
-use beamio
+use shadow_beamio
 use shadow_variables
 use shadow_kernel
-use shadow_sourcesync
+use shadow_synchrotron
 
 implicit none
   

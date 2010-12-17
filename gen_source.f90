@@ -13,12 +13,12 @@
 ! C---
 PROGRAM  Gen_Source
 
-  use shadow_kind    ! Global definitions
+  use shadow_globaldefinitions    ! Global definitions
   use stringio, only : RString
-  use beamio,   only : Write_off18
+  use shadow_beamio,   only : Write_off18
   use shadow_variables
   use shadow_kernel
-  use shadow_sourcesync
+  use shadow_synchrotron
 
   implicit none
   

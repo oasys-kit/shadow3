@@ -19,7 +19,7 @@
 
 module GFile
     use stringio, only : u_case
-	use shadow_kind, only : ski, skr, skc, sklen
+    use shadow_globaldefinitions, only : ski, skr, skc, sklen
     implicit none
 
     public :: GfFileLoad, GfFileWrite, GfTypePrint, GfIsDefined

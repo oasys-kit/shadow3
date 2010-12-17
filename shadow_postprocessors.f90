@@ -10,19 +10,18 @@
 !----
 !----
 
-Module Shadow_Post
+Module Shadow_PostProcessors
     !---- Use Modules ----!
 
     use stringio
-    use beamio
-    use math, only : wran
-!    use math_imsl
-    use shadow_kind
-! todo: resdistribute variables in shadow_variables. Here only the
+    use shadow_beamio
+    use shadow_math, only : wran
+    use shadow_globaldefinitions
+    use shadow_variables
+! DONE: resdistribute variables in shadow_variables. Here only the
 !       pool variables should be accessed and not Global variables. 
 !       Also, the PoolSourceLoad routine should not be on shadow_kernel
-    use shadow_variables
-    use shadow_kernel
+!    use shadow_kernel
 !    use shadow_sourcesync
 
     !---- Variables ----!
@@ -404,8 +403,8 @@ BREAK	='    ----------------'
      	   IF (pool00%F_PHOT.EQ.0) WAVE(1) = TOANGS/photonArray(1)
      	   IF (pool00%F_PHOT.EQ.1) photonArray(1) = TOANGS/WAVE(1)
      	    WRITE (30,3100) photonArray(1),WAVE(1)
-     	   IF (F_PHOT.EQ.0) WAVE(2) = TOANGS/photonArray(2)
-     	   IF (F_PHOT.EQ.1) photonArray(2) = TOANGS/WAVE(2)
+     	   IF (pool00%F_PHOT.EQ.0) WAVE(2) = TOANGS/photonArray(2)
+     	   IF (pool00%F_PHOT.EQ.1) photonArray(2) = TOANGS/WAVE(2)
      	    WRITE (30,3110) photonArray(2),WAVE(2)
 3100	FORMAT (1X,'From Photon Energy: ',G17.9,' or ',G17.9,' Angs.')
 3110	FORMAT (1X,' to  Photon Energy: ',G17.9,' or ',G17.9,' Angs.')
@@ -589,7 +588,7 @@ type1(12)	='            '
 
 
      	WRITE (20,*)	TOPLIN
-     	WRITE (20,2001) type1(FMIRR)
+     	WRITE (20,2001) type1(p1%FMIRR)
 2001	FORMAT (/,1X,'Surface figure was defined as:',T40,A)
 !C      123456789 123456789 123456789 123456789 
 
@@ -631,10 +630,10 @@ type1(12)	='            '
           ELSE IF (p1%F_KOMA.EQ.1) THEN
 	  WRITE (20,*) 'Element type                Multi-bounce Tube Array'
 	    IF (p1%F_KOMA_CA.EQ.1) THEN
-	  WRITE (20,*) 'Paramters from                              ',FILE_KOMA_CA
+	  WRITE (20,*) 'Paramters from ',p1%FILE_KOMA_CA
 	  WRITE (20,*) 'Tube radii specified as (r(Z))**2'
 	    ELSE
-	  WRITE (20,*) 'Paramters from                              ',FILE_KOMA
+	  WRITE (20,*) 'Paramters from ',p1%FILE_KOMA
 	  WRITE (20,*) 'Tube radii specified as r(Z)'
 	    ENDIF
 	  ENDIF
@@ -729,7 +728,7 @@ type1(12)	='            '
      	  WRITE (20,*) 'Reflectivity                            OFF'
      	ELSE
 	 IF (p1%F_REFL.EQ.0) THEN
-     	  WRITE (20,*) 'Reflectivity      ON     coefficients from: ',FILE_REFL
+     	  WRITE (20,*) 'Reflectivity      ON     coefficients from: ',p1%FILE_REFL
 	 ELSE IF (p1%F_REFL.EQ.1) THEN
 	  WRITE (20,*) 'Reflectivity      ON     coefficients from TT:'
 	 ELSE IF (p1%F_REFL.EQ.2) THEN
@@ -807,7 +806,7 @@ type1(12)	='            '
      	WRITE (20,*)'   Codling Slit'
      	ELSE IF (p1%FMIRR.EQ.7) THEN
      	WRITE (20,*)'   Semi-major axis  ', p1%AXMAJ
-     	WRITE (20,*)'   Semi-minor axis  ', AXMIN
+     	WRITE (20,*)'   Semi-minor axis  ', p1%AXMIN
 	AFOCI = SQRT(p1%AXMIN**2+p1%AXMAJ**2)
 	ECCENT = AFOCI/ABS(p1%AXMAJ)
      	WRITE (20,*)'   Semi-focal-length',AFOCI
@@ -1073,7 +1072,7 @@ BREAK	='    ----------------'
 14      CONTINUE
      	IF (p2%F_CRYSTAL.EQ.1) THEN
      		TEXT(1:5) = 'BRAGG'
-     	ELSE IF (F_GRATING.EQ.1) THEN
+     	ELSE IF (p2%F_GRATING.EQ.1) THEN
      		TEXT(1:7) = 'GRATING'
      	ELSE
      		TEXT(1:6) = 'MIRROR'
@@ -1301,10 +1300,10 @@ SUBROUTINE Histo1
 
 	character(len=sklen)  :: fileIn,fileIn2
 	integer(kind=ski)  :: n_Col,iEner,iFlag,iErr,i,iAnsw
-	integer(kind=ski)  :: nCol1,nPoint1,nCol2,nPoint2
+	integer(kind=ski)  :: nCol1,nPoint1,nCol2,nPoint2,iNorm
 	
 	integer(kind=ski)  :: iLost,iRefl,iUnits,iFile,iScale,jBin,nBin
-	real(kind=skr)     :: xmin,xmax,center,width,norm,xArg,xLow
+	real(kind=skr)     :: xmin,xmax,center,width,xArg,xLow
 	real(kind=skr)     :: step,xStart,arg,val,val0,counts,ymax,y1upp
 	real(kind=skr)     :: rNorm
 
@@ -1412,7 +1411,7 @@ SUBROUTINE Histo1
      	WRITE(6,*)'0	for no normalization'
      	WRITE(6,*)'1	to normalize to 1'
      	WRITE(6,*)'2	area normalized to 1'
-     	NORM = IRINT ('<?> ')
+     	INORM = IRINT ('<?> ')
 	IREFL = IRINT ('Include reflectivity (|A|**2 as weighing factor)? ')
      	IF (IREFL.EQ.1) THEN
 !     	  WRITE(6,*)'Options. Enter: '
@@ -1506,7 +1505,8 @@ SUBROUTINE Histo1
       	 IF (JBIN.LT.1.OR.JBIN.GT.NBIN) GO TO 999
 	   IF (IREFL.EQ.1) THEN
 	     VAL  =   RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2
-	     IF (NCOL.EQ.18)  &
+!!	     IF (NCOL.EQ.18)  &
+	     IF (ncol1.EQ.18)  &
                 VAL = VAL + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
 !	     IF (IUNITS.EQ.0) THEN
 		VAL =   SQRT(VAL)
@@ -1563,19 +1563,19 @@ SUBROUTINE Histo1
      	  COUNTS=   COUNTS + YARRAY(I)
 14     	CONTINUE
 !C
-     	 IF (NORM.NE.0) THEN
-     	  IF (NORM.EQ.1) THEN
+     	 IF (INORM.NE.0) THEN
+     	  IF (INORM.EQ.1) THEN
 	    RNORM  =   YMAX
 	    Y1UPP  = 1.2
 	  END IF
-     	  IF (NORM.EQ.2) THEN
+     	  IF (INORM.EQ.2) THEN
 	    RNORM  =   COUNTS
 	    Y1UPP  = 1.2*YMAX/COUNTS
 	  END IF
      	   DO 16 I=1,NBIN
      	   YARRAY(I) =   YARRAY(I)/RNORM
 16     	  CONTINUE
-	ELSE IF (NORM.EQ.0) THEN
+	ELSE IF (INORM.EQ.0) THEN
 	  Y1UPP = 1.2*YMAX
      	END IF
 !C
@@ -2196,7 +2196,7 @@ IF (iGrid > 0) iGridFile=1
 
 
 !!	 IF (K_REFL.EQ.1) THEN
-!!	   NORMAL 	= 0
+!!	   INORMAL 	= 0
 !!	   WRITE(6,*) 'PLOT> Options : '
 !!	   WRITE(6,*) '  0   Power density [J/area] reflected/' // &
 !!      		'transmitted'
@@ -2307,8 +2307,9 @@ IF (iGrid > 0) iGridFile=1
 !!	   WRITE(6,*) '        0   For no normalization'
 !!	   WRITE(6,*) '        1   For normalized to 1'
 !!	   WRITE(6,*) '        2   For normalized to total counts'
-!!	   NORMAL = IRINT ('PLOT> Then ? ')
+!!	   INORMAL = IRINT ('PLOT> Then ? ')
 !!	 END IF
+         INORMAL = 0
 
 
 
@@ -3051,7 +3052,7 @@ iMirr=0
 	      ZMIN	= MIN(ZMIN,PIXEL(I,J))
 36	    CONTINUE
 35	  CONTINUE
-	  IF (NORMAL.EQ.1) THEN
+	  IF (INORMAL.EQ.1) THEN
 	    DO 37 I = 1,NGX
 	      DO 38 J = 1,NGY
 	        PIXEL(I,J)	= PIXEL(I,J)/ZMAX
@@ -3059,7 +3060,7 @@ iMirr=0
 37	    CONTINUE
 	    ZMIN	= ZMIN/ZMAX
 	    ZMAX	= 1.0D0
-	  ELSE IF (NORMAL.EQ.2) THEN
+	  ELSE IF (INORMAL.EQ.2) THEN
 	    DO 39 I = 1,NGX
 	      DO 41 J = 1,NGY
 	        PIXEL(I,J)	= PIXEL(I,J)/KPLOT
@@ -3155,7 +3156,7 @@ iMirr=0
 xplot=0
 yplot=0
      	IF (IANSW.EQ.-1) GO TO 5001
-     	NORM = 0
+     	INORM = 0
      	IREFL	=   0
      	DO 47 KKK=1,2
      	 IF (KKK.EQ.1) THEN
@@ -3930,7 +3931,7 @@ SUBROUTINE FFresnel
         integer(kind=ski)   :: f_inc,kount,i,j,k
 	real(kind=skr)      :: rMin,rMax,step,dist,wave,qNew,factor,qvec
 	real(kind=skr)      :: rr_x,rr_z,vec1,vec2,rr,r,factor_inc,factor_nor
-	real(kind=skr)      :: rImag
+	real(kind=skr)      :: rImag,alpha
      	!DIMENSION	RAY(18,N_DIM)
      	!DIMENSION	RDIS(1001)
 !     	COMPLEX*16	ARG_S,ARG_P,JEI,
@@ -5012,4 +5013,4 @@ END SUBROUTINE FocNew
 
 
 
-End Module Shadow_Post
+End Module Shadow_PostProcessors

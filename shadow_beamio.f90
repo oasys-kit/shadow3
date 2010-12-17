@@ -1,5 +1,5 @@
 !----
-!---- MODULE:  BEAMIO
+!---- MODULE:  SHADOW_BEAMIO
 !----
 !---- i/o a file with a shadow beam (begin.dat, star.xx, mirr.xx, screen.xx)
 !----
@@ -14,12 +14,15 @@
 !----
 !----
 
-module beamio
+module shadow_beamio
 
     use, intrinsic :: ISO_C_BINDING
-    use shadow_kind, only : ski, skr, skc
+    use shadow_globaldefinitions, only : ski, skr, skc
 
     implicit none
+
+!---- Everything is private unless explicitly made public ----!
+    private
 
     public :: rbeamanalyze, rbeam, rbeam18, write_off, write_off18 
 
@@ -534,5 +537,5 @@ contains
     !
     !
 
-end module beamio
+end module shadow_beamio
 

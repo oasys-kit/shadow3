@@ -10,13 +10,12 @@
 !----
 !----
 
-Module shadow_Pre
+Module shadow_PreProcessors
     !---- Use Modules ----!
 
     use stringio
-    use math
-!    use math_imsl
-    use shadow_kind
+    use shadow_math
+    use shadow_globaldefinitions
 !use shadow_variables
 !use shadow_kernel
 !    use shadow_sourcesync, only : srcdf ! needed by nphoton only
@@ -2486,4 +2485,4 @@ END SUBROUTINE Bragg
 !
 
 
-End Module shadow_Pre
+End Module shadow_PreProcessors

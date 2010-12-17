@@ -1,4 +1,4 @@
-module shadow_kind
+module shadow_globaldefinitions
 
 !
 ! global assignments for shadow3
@@ -41,4 +41,4 @@ module shadow_kind
    !character(len=1), parameter :: OS_DS="/"
    !character(len=1), parameter :: OS_DS="/" 
 
-end module shadow_kind
+end module shadow_globaldefinitions
