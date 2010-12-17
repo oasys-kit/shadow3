@@ -248,7 +248,7 @@ BREAK	='    ----------------'
 !1501	FORMAT (1X,'Creation Date           :',A)
 	call date_and_time(TIME=time,DATE=date,ZONE=zone)
      	WRITE (30,*) 'Creation date: '//date(1:4)//' '//date(5:6)//' '//& 
-            date(7:8)//' '//time(1:2)//'h '//time(2:3)//'min '//time(4:8)//' s'
+            date(7:8)//', '//time(1:2)//'h '//time(3:4)//'min '//time(5:6)//' s'
 
      	  WRITE (30,*)	TOPLIN
 !C
@@ -584,7 +584,7 @@ type1(12)	='            '
         WRITE (20,*) 'Full file specification: '//trim(CD)//OS_DS//trim(mirFil)
         call date_and_time(TIME=time,DATE=date,ZONE=zone)
         WRITE (20,*) 'Creation date: '//date(1:4)//' '//date(5:6)//' '//&
-            date(7:8)//' '//time(1:2)//'h '//time(2:3)//'min '//time(4:8)//' s'
+            date(7:8)//' '//time(1:2)//'h '//time(3:4)//'min '//time(5:6)//' s'
 
 
      	WRITE (20,*)	TOPLIN

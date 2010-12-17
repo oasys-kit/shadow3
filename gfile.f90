@@ -113,6 +113,8 @@ contains
        if (iOut) read(g1%variableValues(j),fmt="(a)") var
        variable = trim(var)
 
+       if (.not. iOut) print *,"Warning GfGetValueString: "//trim(variableName)
+
     end function GfGetValueString
 
 
@@ -130,6 +132,8 @@ contains
 
        if (iOut) read (g1%variableValues(j),fmt=*) var
        variable=var
+
+       if (.not. iOut) print *,"Warning GfGetValueInteger: "//trim(variableName)
 
     end function GfGetValueInteger
 
@@ -149,6 +153,10 @@ contains
        if (iOut) read (g1%variableValues(j),fmt=*) var
        variable=var
 
+
+       if (.not. iOut) print *,"Warning GfGetValueReal: "//trim(variableName)
+
+
     end function GfGetValueReal
 
 
@@ -167,6 +175,9 @@ contains
          g1%variableValues(j) = variable
        endif
 
+       if (.not. iOut) print *,"Warning GfSetValueString: "//trim(variableName)
+
+
     end function GfSetValueString
 
 
@@ -184,6 +195,10 @@ contains
        if (iOut) then
          write(g1%variableValues(j),fmt=*) variable
        endif
+
+   
+       if (.not. iOut) print *,"Warning GfSetValueInteger: "//trim(variableName)
+
 
     end function GfSetValueInteger
 
@@ -204,6 +219,10 @@ contains
          ! write(g1%variableValues(j),fmt="(f20.5)") variable
          write(g1%variableValues(j),fmt="(g20.5)") variable
        endif
+
+
+       if (.not. iOut) print *,"Warning GfSetValueReal: "//trim(variableName)
+
 
     end function GfSetValueReal
 
@@ -239,6 +258,10 @@ contains
          	g1%variableValues(g1%nVariables) = "  "
       	end if
       	iOut = gfSetValue(g1, variableName, variable)
+
+
+       if (.not. iOut) print *,"Warning GfForceSetValueString: "//trim(variableName)
+
 
     end function GfForceSetValueString
 
@@ -276,6 +299,8 @@ contains
       	end if
       	iOut = gfSetValue(g1, variableName, variable)
 
+       if (.not. iOut) print *,"Warning GfForceSetValueReal: "//trim(variableName)
+
     end function GfForceSetValueReal
 
 
@@ -311,6 +336,8 @@ contains
          	g1%variableValues(g1%nVariables)="  "
       	end if
       	iOut = gfSetValue(g1, variablename, variable)
+
+       if (.not. iOut) print *,"Warning GfForceSetValueInteger: "//trim(variableName)
 
     end function GfForceSetValueInteger
 

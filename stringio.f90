@@ -50,6 +50,7 @@ Module stringIO
     !---- List of public overloaded functions ----!
     !---- List of public functions ----!
     public ::  iyes, rnumber, rstring, iblank, fname, u_case
+    public ::  myConcat
     !---- List of public subroutines ----!
     public ::  mssg,leave, irint, despace, clscreen, datapath
     public ::  fstrlocase, fstrupcase
@@ -845,6 +846,17 @@ subroutine datapath (file, path, iflag)
 
 End Subroutine datapath
 
+!
+!
+!
+
+  character(kind=skc, len=1024) function myConcat(str1, str2)
+    character(kind=skc,len=*), intent(in) :: str1
+    character(kind=skc,len=*), intent(in) :: str2
+
+    myConcat = str1//"("//trim(adjustl(str2))//")"
+
+  end function myConcat
 
 
 End Module stringio
