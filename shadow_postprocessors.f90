@@ -48,7 +48,7 @@ Module Shadow_PostProcessors
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public :: SourcInfo,MirInfo,SysInfo,Translate,Histo1,PlotXY
-    public :: FFresnel,ReColor,Intens,FocNew
+    public :: FFresnel,FFresnel2D,ReColor,Intens,FocNew
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -4100,6 +4100,86 @@ SUBROUTINE FFresnel
         IF (allocated(ray)) deallocate(ray)
 
 END SUBROUTINE FFresnel
+
+
+
+
+
+
+
+subroutine FFresnel2D(ray,npt,dist,image,nxpixel,xmax,xmin,nzpixel,zmax,zmin)
+
+  implicit none
+
+  real(kind=skr), dimension(18,npt), intent(in)                  :: ray
+  integer(kind=ski), intent(in)                                  :: npt
+  real(kind=skr), intent(in)                                     :: dist
+  complex(kind=skx), dimension(3,nxpixel,nzpixel), intent(inout) :: image
+  integer(kind=ski), intent(in)                                  :: nxpixel, nzpixel
+  real(kind=skr), intent(in)                                     :: xmax, zmax
+  real(kind=skr), intent(in)                                     :: xmin, zmin
+
+  ! counters
+  integer(kind=ski)                               :: i, j, k
+  real(kind=skr)                                  :: qvec
+  real(kind=skr)                                  :: rr_x, rr_z, vec1, vec2, xpixelsize, zpixelsize
+  real(kind=skr)                                  :: rr, r, factor_inc, factor_nor, dist1
+  complex(kind=skx)                               :: arg_s, arg_p
+  real(kind=skr), dimension(nxpixel)              :: xmesh
+  real(kind=skr), dimension(nzpixel)              :: zmesh
+
+  real(kind=skr), parameter                       :: TWOPI = 6.283185307179586467925287D0
+
+  real(kind=skr), parameter                       :: TORAD = 0.017453292519943295769237D0
+  real(kind=skr), parameter                       :: ZERO = 0.0d0
+  complex(kind=skx), parameter                    :: CZERO = (0.0d0,0.0d0)
+  complex(kind=skx), parameter                    :: JEI = (0.0D0,1.0D0)
+
+  xpixelsize = (xmax - xmin) / nxpixel
+  zpixelsize = (zmax - zmin) / nzpixel
+  if(xpixelsize.ne.zpixelsize) print *, "attention pixel are not squared \xpixelsize ", xpixelsize, "\zpixelsize ", zpixelsize
+
+  do j=1, nxpixel
+     xmesh(j) = xmin + (j-1)*xpixelsize
+  end do
+
+  do j=1, nzpixel
+     zmesh(j) = zmin + (j-1)*zpixelsize
+  end do
+
+  do 7 i=1, npt
+     if ( ray(10,i).le.ZERO ) goto 8
+     qvec = ray(11,i)
+     dist1= dist - ray(2,i)
+     do j=1, nxpixel
+        rr_x = xmesh(j)
+        vec1 = rr_x - ray(1,i)
+        do k=1, nzpixel
+           rr_z = zmesh(k)
+           vec2 = rr_z - ray(3,i)
+           rr   = sqrt( vec1*vec1 + vec2*vec2 + dist1*dist1 )
+           r    = ray(13,i)
+           factor_inc = ray(5,i) + dist/rr
+           factor_nor = factor_inc*qvec/twopi/r/rr
+
+           arg_s = ( (rr+r)*qvec + ray(14,i) ) * jei
+           arg_p = ( (rr+r)*qvec + ray(15,i) ) * jei
+           arg_s = exp(arg_s)
+           arg_s = factor_nor * arg_s
+           arg_p = exp(arg_p)
+           arg_p = factor_nor * arg_p
+
+           image(1,j,k) = image(1,j,k) + ( arg_s*ray(7,i) + arg_p*ray(16,i) )
+           image(2,j,k) = image(2,j,k) + ( arg_s*ray(8,i) + arg_p*ray(17,i) )
+           image(3,j,k) = image(3,j,k) + ( arg_s*ray(9,i) + arg_p*ray(18,i) )
+        end do
+     end do
+ 8   continue
+ 7 end do
+
+end subroutine FFresnel2D
+
+
 
 
 !
