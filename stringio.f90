@@ -255,8 +255,8 @@ Module stringIO
     ! C---
      	FUNCTION	RSTRING ( ARG )
         implicit integer(kind=ski) (i-n)
-     	CHARACTER*80	RSTRING
-         	CHARACTER *(*)	ARG
+     	CHARACTER(len=sklen) :: RSTRING
+        CHARACTER *(*)	ARG
     ! C
     ! C The error iteration limit is 10 right now.
     ! C

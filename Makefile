@@ -4,9 +4,9 @@
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
 #
-FC = g95
+#FC = g95
 #in coral, source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
-#FC = gfortran
+FC = gfortran
 CC = gcc
 CCP = g++
 FFLAGS = -fPIC

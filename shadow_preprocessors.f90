@@ -618,7 +618,8 @@ implicit none
 
 integer(kind=ski) :: iErr
 
-OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='UNFORMATTED', IOSTAT=iErr)
+!OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='UNFORMATTED', IOSTAT=iErr)
+OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='FORMATTED', IOSTAT=iErr)
 
 IF (iErr /= 0) THEN 
      CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', 1)
@@ -718,6 +719,7 @@ write(20,'(A)')  "ZN 30"
 write(20,'(A)')  "ZR 40"
 
 
+close(20)
 WRITE(6,*)'File written to disk: F12LIB.INDEX'
 RETURN
 END SUBROUTINE WriteF12LibIndex
@@ -814,6 +816,7 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
             print *,'or download it from the SHADOW distribution website. '
             print *,' '
 	    CALL LEAVE ('READLIB', 'F12LIB.FULL not found', 1)
+            !return
 	ENDIF
 
 !C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS

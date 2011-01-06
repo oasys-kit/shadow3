@@ -1531,7 +1531,6 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
           CALL SrCdf
           SRSPEC='SRSPEC'
 	ENDIF
-print *,'>>>> SRSPEC is: '//trim(SRSPEC)
 !	IFLAG = 1
 	CALL DATAPATH ('SRDISTR', SRDISTR, IFLAG) 
 	IF (IFLAG.NE.0) THEN
@@ -1539,7 +1538,6 @@ print *,'>>>> SRSPEC is: '//trim(SRSPEC)
           CALL SrCdf
           SRDISTR='SRDISTR'
 	ENDIF
-print *,'>>>> SRDISTR is: '//trim(SRDISTR)
 !c
 !c Define the useful parameters. Note that we now set the maximum energy
 !c to 100*lam_c, instead of 10*Lam_C (EX_UPP = 1.0D) as it used to be.
@@ -4014,6 +4012,7 @@ END SELECT
 ! allocate ray 
 !
 !print *,'Allocating array with pool00%npoint: ',pool00%npoint
+  IF (allocated(ray)) deallocate(ray)
   ALLOCATE( ray(18,pool00%npoint) )
   ray=0.0d0
 !

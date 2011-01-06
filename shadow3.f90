@@ -273,7 +273,9 @@ SELECT CASE (inCommandLow)
      print *,''
      inCommand=""
   CASE DEFAULT
-     IF (inCommand(1:1) == "$") CALL SYSTEM( inCommand(2:sklen) )
+     IF (inCommand(1:1) == "$") THEN 
+        CALL SYSTEM( inCommand(2:sklen) )
+     ENDIF
      inCommand  =  RString ('shadow3> ')
 END SELECT 
 

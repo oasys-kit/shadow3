@@ -1934,7 +1934,15 @@ if (trim(file_in) == "") file_in="begin.dat"
      	R_UPP(13) = - 1.0D+20
 
      	R_LOW(20) =   1.0D+20
-     	R_UPP(20) = - 1.0D+20
+	R_UPP(20) = - 1.0D+20
+     	! new columns
+	DO I=21,30
+     	  R_LOW(I) =   1.0D+20
+	  R_UPP(I) = - 1.0D+20
+	END DO
+
+!initialize test
+	TEST = 0.0D0
 
      	DO 300 I=1,NPOINT
 	 IF (ILOST.EQ.0) THEN
@@ -1953,6 +1961,21 @@ if (trim(file_in) == "") file_in="begin.dat"
      	TEST(13) =   RAY(13,I)
      	TEST(20) =   RAY(4,I)**2 + RAY(6,I)**2
      	TEST(20) =   ABS( SQRT(TEST(20))/RAY(5,I) )
+!new columns
+     	TEST(21) =   SQRT(RAY(1,I)**2 + RAY(2,I)**2 + RAY(3,I)**2)
+     	TEST(22) =   ACOS(RAY(5,I))
+     	TEST(23) =   RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2
+	IF (NCOL.EQ.18) THEN
+     	 TEST(24) =   RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
+        END IF
+     	TEST(25) =   TEST(23) + TEST(24)
+!intensities
+     	TEST(23) =   SQRT(TEST(23))
+     	TEST(24) =   SQRT(TEST(24))
+     	TEST(25) =   SQRT(TEST(25))
+
+
+
      	R_LOW(1)= MIN(R_LOW(1),TEST(1))
      	R_UPP(1)= MAX(R_UPP(1),TEST(1))
      	R_LOW(2)= MIN(R_LOW(2),TEST(2))
@@ -1975,6 +1998,11 @@ if (trim(file_in) == "") file_in="begin.dat"
 
      	R_LOW(20)= MIN(R_LOW(20),TEST(20))
 	R_UPP(20)= MAX(R_UPP(20),TEST(20))
+
+	DO II=21,30 
+     	  R_LOW(II)= MIN(R_LOW(II),TEST(II))
+	  R_UPP(II)= MAX(R_UPP(II),TEST(II))
+        END DO
 300	CONTINUE
 !
 ! computes intensity
@@ -2046,6 +2074,12 @@ if (trim(file_in) == "") file_in="begin.dat"
         WRITE (6,2020) 11,'Photon Energy  (eV)',TOCM*R_LOW(11)/TWOPI &
       ,R_UPP(11)*TOCM/TWOPI
      	WRITE (6,2020) 20,'Numerical Aperture',R_LOW(20),R_UPP(20)
+! new columns srio@esrf.eu 2011-01-05
+     	WRITE (6,2020) 21,'R=SQRT(X**2+Y**2+Z**2)',  R_LOW(21),R_UPP(21)
+     	WRITE (6,2020) 22,'angle [rad] from Y-axis', R_LOW(22),R_UPP(22)
+     	WRITE (6,2020) 23,'Intensity-s',             R_LOW(23),R_UPP(23)
+     	WRITE (6,2020) 24,'Intensity-p',             R_LOW(24),R_UPP(24)
+     	WRITE (6,2020) 25,'Intensity  ',             R_LOW(25),R_UPP(25)
 !#if defined (vms)
 !2000	FORMAT (//,T2,'Column',T5,' Par',T10,'Minimum:',T25,'Maximum:',
 !     $		T40,'Center:',T55,'St. Dev.:')
@@ -2657,8 +2691,10 @@ iMirr=0
 	KLOSS = 0
      	IPASS = IPASS + 1
      	DO 8989 I=1,NPOINT
-     	  IF (IX.NE.20) XWRI	=  RAY(IX,I)
-     	  IF (IY.NE.20) YWRI  	=  RAY(IY,I)
+     	  !IF (IX.NE.20) XWRI	=  RAY(IX,I)
+     	  !IF (IY.NE.20) YWRI  	=  RAY(IY,I)
+     	  IF (IX.LT.19) XWRI	=  RAY(IX,I)
+     	  IF (IY.LT.19) YWRI  	=  RAY(IY,I)
      	  IF (IX.EQ.11) THEN
              IF (XWRI.LT.1D-8) GO TO 8989
      	     IF (IUNIT.EQ.1) THEN
@@ -2685,6 +2721,40 @@ iMirr=0
      	  ELSE IF (IY.EQ.13) THEN
      	      YWRI = YWRI - P_CENT
      	  END IF
+
+!new columns
+     	  IF (IX.EQ.23) THEN
+     	      XWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2)
+     	  ELSE IF (IY.EQ.23) THEN
+     	      YWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2)
+     	  END IF
+
+	  IF (NCOL.EQ.18) THEN
+     	    IF (IX.EQ.24) THEN
+     	        XWRI =  sqrt(RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2)
+     	    ELSE IF (IY.EQ.24) THEN
+     	        YWRI =  sqrt(RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2)
+     	    END IF
+     	    IF (IX.EQ.25) THEN
+     	        XWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2 + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2)
+     	    ELSE IF (IY.EQ.25) THEN
+     	        YWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2 + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2)
+     	    END IF
+          ELSE
+     	    IF (IX.EQ.24) THEN
+     	        XWRI =  0.0D0
+     	    ELSE IF (IY.EQ.24) THEN
+     	        YWRI =  0.0D0
+     	    END IF
+     	    IF (IX.EQ.25) THEN
+     	        XWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2 )
+     	    ELSE IF (IY.EQ.25) THEN
+     	        YWRI =  sqrt(RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2 )
+     	    END IF
+
+          END IF
+
+
 !C
 !C Scattered plot :
 !C
@@ -2694,26 +2764,26 @@ iMirr=0
 		KPLOT		= KPLOT + 1
 		XPLOT (KPLOT)	= XWRI
 		YPLOT (KPLOT)	= YWRI
-		weightPlot (KPLOT)	= A_SQUARE(I)
+		weightPlot (KPLOT)	= sqrt(A_SQUARE(I))
 	   END IF
      	  ELSE IF (ILOST.EQ.1) THEN
     	   IF (RAY(10,I).LT.0.0D0) THEN
 		KPLOT		= KPLOT + 1
 		XPLOT (KPLOT)	= XWRI
 		YPLOT (KPLOT)	= YWRI
-		weightPlot (KPLOT)	= A_SQUARE(I)
+		weightPlot (KPLOT)	= sqrt(A_SQUARE(I))
 	   END IF
      	  ELSE IF (ILOST.EQ.2) THEN
     	   IF (RAY(10,I).GE.0.0D0) THEN
 		KPLOT		= KPLOT + 1
 		XPLOT (KPLOT)	= XWRI
 		YPLOT (KPLOT)	= YWRI
-		weightPlot (KPLOT)	= A_SQUARE(I)
+		weightPlot (KPLOT)	= sqrt(A_SQUARE(I))
 	   ELSE
 		KLOSS		= KLOSS + 1
 		XLOSS (KLOSS)	= XWRI
 		YLOSS (KLOSS)	= YWRI
-		weightPlot (KPLOT)	= A_SQUARE(I)
+		weightPlot (KPLOT)	= sqrt(A_SQUARE(I))
 	   END IF
      	  END IF
 !C
@@ -3247,7 +3317,7 @@ yplot=0
 !	  WRITE(35,*) 'set noxtics'
 !	  WRITE(35,*) 'set bmargin 0'
 
-print *,'<><> opening : plotxy_histtop.dat'
+!print *,'<><> opening : plotxy_histtop.dat'
 	  OPEN(37,FILE='plotxy_histtop.dat',STATUS='UNKNOWN')
 !#endif
 	X1UPP = -1.0D20
@@ -3313,7 +3383,7 @@ print *,'<><> opening : plotxy_histtop.dat'
 !	WRITE(35,*) 'plot "plotxy_histside.dat" u 1:2 with lines lt -1 notitle'
 !	WRITE(35,*) '#1 plotl("histside.dat")'
 !	WRITE(35,*) '#1 box("bcnst",0,0,"bcst",0,0)'
-print *,'<><> opening : plotxy_histside.dat'
+!print *,'<><> opening : plotxy_histside.dat'
 	OPEN(38,FILE='plotxy_histside.dat',STATUS='UNKNOWN')
 !#endif
 !	IF (I_TD.EQ.1)	THEN
@@ -3767,9 +3837,9 @@ END IF
     WRITE(35,'(A)')  'set rmargin screen 0.70                       '
     WRITE(35,'(A)')  'set bmargin screen 0.10                       '
     WRITE(35,'(A)')  'set tmargin screen 0.75                       '
-    WRITE(35,'(A)')  'unset xtics                                   '
+    IF (IANSW.NE.-1) WRITE(35,'(A)')  'unset xtics                                   '
     WRITE(35,'(A)')  'unset x2tics                                  '
-    WRITE(35,'(A)')  'unset ytics                                   '
+    IF (IANSW.NE.-1) WRITE(35,'(A)')  'unset ytics                                   '
     WRITE(35,'(A)')  'unset y2tics                                  '
     WRITE(35,'(A)')  'unset key                                     '
     WRITE(35,'(A)')  'unset xlabel                                  '
