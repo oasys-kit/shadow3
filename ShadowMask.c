@@ -1,18 +1,24 @@
-#include <ShadowMask.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "ShadowMask.h"
 
-//pippo
 const int NCOL=18;
 
 /*
  *  CShadowAllocateRay(poolSource*,double*) purpose is to allocate correctly Ray.
  *  This piece of memory will be used by fortran routines, and shared with C.
  */
-double* CShadowAllocateRay(poolSource* Src, double* Ray)
+double* CShadowAllocateRay ( poolSource* Src, double* Ray )
 {
-  Ray = (double*) realloc( Ray, 18*Src->NPOINT*sizeof(double) );
+  Ray = ( double* ) realloc ( Ray, 18*Src->NPOINT*sizeof ( double ) );
+  return Ray;
+}
+
+double* CShadowAllocateRayInt ( int nPoint, double* Ray )
+{
+  Ray = ( double* ) realloc ( Ray, 18*nPoint*sizeof ( double ) );
   return Ray;
 }
 
@@ -20,36 +26,36 @@ double* CShadowAllocateRay(poolSource* Src, double* Ray)
  *  CShadowPoolSourceLoad(poolSource*,char*) purpose is to read poolSource from a file.
  *  The fortran subroutine called takes advantages of gfile type.
  */
-void CShadowPoolSourceLoad(poolSource* Src, char* FileIn)
-{ 
-  BindShadowPoolSourceLoad(Src,FileIn,strlen(FileIn));
+void CShadowPoolSourceLoad ( poolSource* Src, char* FileIn )
+{
+  BindShadowPoolSourceLoad ( Src, FileIn, strlen ( FileIn ) );
 }
 
 /*
  *  CShadowPoolSourceWrite(poolSource*,char*) purpose is write poolSource from a file.
  *  The fortran subroutine called takes advantages of gfile type.
  */
-void CShadowPoolSourceWrite(poolSource* Src, char* FileOut)
-{ 
-  BindShadowPoolSourceWrite(Src,FileOut,strlen(FileOut));
+void CShadowPoolSourceWrite ( poolSource* Src, char* FileOut )
+{
+  BindShadowPoolSourceWrite ( Src, FileOut, strlen ( FileOut ) );
 }
 
 /*
  *  CShadowPoolOELoad(poolOE*,char*) purpose is read poolOE from a file.
  *  The fortran subroutine called takes advantages of gfile type.
  */
-void CShadowPoolOELoad(poolOE* Oe, char* FileIn)
+void CShadowPoolOELoad ( poolOE* Oe, char* FileIn )
 {
-  BindShadowPoolOELoad(Oe,FileIn,strlen(FileIn));
+  BindShadowPoolOELoad ( Oe, FileIn, strlen ( FileIn ) );
 }
 
 /*
  *  CShadowPoolOEWrite(poolOE*,char*) purpose is read poolOE from a file.
  *  The fortran subroutine called takes advantages of gfile type.
  */
-void CShadowPoolOEWrite(poolOE* Oe, char* FileOut)
+void CShadowPoolOEWrite ( poolOE* Oe, char* FileOut )
 {
-  BindShadowPoolOEWrite(Oe,FileOut,strlen(FileOut));
+  BindShadowPoolOEWrite ( Oe, FileOut, strlen ( FileOut ) );
 }
 
 /*
@@ -57,38 +63,38 @@ void CShadowPoolOEWrite(poolOE* Oe, char* FileOut)
  *  of Source in shadow, bypassing reading/writing force steps.
  *  in the future version PoolSourceToGlobal(poolSource*) will be commented out.
  */
-void CShadowSourceGeom(poolSource* Src, double* Ray)
+void CShadowSourceGeom ( poolSource* Src, double* Ray )
 {
-  BindShadowSourceGeom(Src, Ray, &(Src->NPOINT));
+  BindShadowSourceGeom ( Src, Ray, & ( Src->NPOINT ) );
 }
 
-void CShadowSourceSync(poolSource* Src, double* Ray)
+void CShadowSourceSync ( poolSource* Src, double* Ray )
 {
-  BindShadowSourceSync(Src, Ray, &(Src->NPOINT));
+  BindShadowSourceSync ( Src, Ray, & ( Src->NPOINT ) );
 }
 
-void CShadowTrace(poolOE* OE, double* Ray, int nPoint, int iCount)
+void CShadowTrace ( poolOE* OE, double* Ray, int nPoint, int iCount )
 {
-  BindShadowTraceOE(OE,Ray,&nPoint,&iCount);
+  BindShadowTraceOE ( OE, Ray, &nPoint, &iCount );
 }
 
-void CShadowGetDimRay(int* nCol, int* nPoint, char* FileDat)
+void CShadowGetDimRay ( int* nCol, int* nPoint, char* FileDat )
 {
-  BindShadowGetDimRay(FileDat, strlen(FileDat), nPoint, nCol);
+  BindShadowGetDimRay ( FileDat, strlen ( FileDat ), nPoint, nCol );
 }
 
-void CShadowReadRay(double* Ray, int nCol, int nPoint, char* FileDat)
+void CShadowReadRay ( double* Ray, int nCol, int nPoint, char* FileDat )
 {
-  BindShadowReadRay(Ray, &nPoint, &nCol, FileDat, strlen(FileDat));
+  BindShadowReadRay ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
 }
 
 
 /*
  *  CShadowWriteRay(int,int,double*,char*) purpose is to write Ray in a binary file
  */
-void CShadowWriteRay(int nCol, int nPoint, double* Ray, char* FileDat)
+void CShadowWriteRay ( double* Ray, int nCol, int nPoint, char* FileDat )
 {
-  BindShadowWriteRay(Ray, &nPoint, &nCol, FileDat, strlen(FileDat));
+  BindShadowWriteRay ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
 }
 
 /*
@@ -96,9 +102,9 @@ void CShadowWriteRay(int nCol, int nPoint, double* Ray, char* FileDat)
  *  purpose is to perform a 2D Fresnel image
  */
 
-void CShadowFFresnel2D(double *ray, int nPoint, double dist, dComplex *image, pixel *x, pixel*z)
+void CShadowFFresnel2D ( double *ray, int nPoint, double dist, dComplex *image, pixel *x, pixel*z )
 {
-  BindShadowFFresnel2D(ray,&nPoint,&dist,image,x,z);
+  BindShadowFFresnel2D ( ray, &nPoint, &dist, image, x, z );
 }
 
 
@@ -107,14 +113,14 @@ void CShadowFFresnel2D(double *ray, int nPoint, double dist, dComplex *image, pi
  *   Initialize in a clever way;
  */
 
-void CShadowSetupDefaultSource(poolSource* Src)
+void CShadowSetupDefaultSource ( poolSource* Src )
 {
-  memset(Src,'\0',sizeof(poolSource));
+  memset ( Src, '\0', sizeof ( poolSource ) );
 }
 
-void CShadowSetupDefaultOE(poolOE* OE)
+void CShadowSetupDefaultOE ( poolOE* OE )
 {
-  memset(OE,'\0',sizeof(poolOE));
+  memset ( OE, '\0', sizeof ( poolOE ) );
 }
 
 

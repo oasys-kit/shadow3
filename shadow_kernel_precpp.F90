@@ -1078,7 +1078,7 @@ Contains
         if (iErr /= 0 ) then
           print *,"MIRROR: File not found: "//trim(file_refl)
           stop 'File not found. Aborted.'
-        endif
+        end if
        READ (25,*) I_LATT,RN,D_SPACING
        READ (25,*) ATNUM_A,ATNUM_B,TEMPER
        READ (25,*) GA
@@ -1157,7 +1157,7 @@ Contains
           sin_q   = sin_brg
        else 
           SIN_Q   = SIN_Q_ANG*COS_ALFA - COS_Q_ANG*SIN_ALFA
-       endif
+       end if
        ! C
        ! C MSR 92/10/24 for the inclined monochromator the above definition of
        ! C sin_q does not work. Set as in Mosaic Laue. To be confirmed
@@ -1225,7 +1225,7 @@ Contains
           THETA_B = GRAZE + A_BRAGG + THETA_INC_O   
        else
           theta_b = graze
-       endif
+       end if
        ! C
        IF (F_MOSAIC.EQ.1) THEN
           ! C
@@ -1261,7 +1261,7 @@ Contains
                      DTANH(A_MOSAIC*SQRT(1+2*AAP_MOSAIC))
              RS_MOSAIC = AAS_MOSAIC / RS_MOSAIC
              RP_MOSAIC = AAP_MOSAIC / RP_MOSAIC
-          endif
+          end if
           R_S     = SQRT(RS_MOSAIC)
           R_P     = SQRT(RP_MOSAIC)
           ! *
@@ -1354,7 +1354,7 @@ Contains
              if (dreal(br_c1).gt.100.or.dreal(br_c2).gt.100) then 
                 if (dreal(br_c1).gt.100) br_c1 = 100.0d0+ci*dimag(br_c1)
                 if (dreal(br_c2).gt.100) br_c2 = 100.0d0+ci*dimag(br_c2)
-             endif
+             end if
              
              br_c1 = cdexp(br_c1)
              br_c2 = cdexp(br_c2)
@@ -1363,7 +1363,7 @@ Contains
              rcs = br_x1*br_x2*(br_c1-br_c2)/(br_x2-br_x1)             ! laue
              ! Cc	else if (f_refrac.eq.0) then
              ! Cc	  rcs = br_x1*br_x2*(br_c1-br_c2)/(br_c2*br_x2-br_c1*br_x1) ! bragg
-             ! Cc	endif
+             ! Cc	end if
              ! C
              ! C	r_s = (1.0d0/abs(cry_b))*rcs*dconjg(rcs)
              r_s1 = sqrt((1.0d0/abs(cry_b))*rcs*dconjg(rcs))
@@ -1391,7 +1391,7 @@ Contains
              if (dreal(br_c1).gt.100.or.dreal(br_c2).gt.100) then 
                 if (dreal(br_c1).gt.100) br_c1 = 100.0d0+ci*dimag(br_c1)
                 if (dreal(br_c2).gt.100) br_c2 = 100.0d0+ci*dimag(br_c2)
-             endif
+             end if
              
              br_c1 = cdexp(br_c1)
              br_c2 = cdexp(br_c2)
@@ -1400,7 +1400,7 @@ Contains
              rcp = br_x1*br_x2*(br_c1-br_c2)/(br_x2-br_x1)             ! laue
              ! Cc	else if (f_refrac.eq.0) then
              ! Cc	  rcp = br_x1*br_x2*(br_c1-br_c2)/(br_c2*br_x2-br_c1*br_x1) ! bragg
-             ! Cc	endif
+             ! Cc	end if
              ! C
              ! C	r_p = (1.0d0/abs(cry_b))*rcp*dconjg(rcp)
              r_p1 = sqrt( (1.0d0/abs(cry_b))*rcp*dconjg(rcp) )
@@ -1430,7 +1430,7 @@ Contains
                 RCP	= RCP2
              END IF
              RCP	= RCP*SQRT(FH/FH_BAR)
-          ENDIF
+          END IF
           
           IF (GRAZE.GT.45*TORAD) 	RCP = -RCP
           
@@ -2432,7 +2432,7 @@ Contains
              TPAR=TPAR1
           ELSE
              TPAR=TPAR2
-          ENDIF
+          END IF
        END IF
     END IF
     ! C
@@ -2585,7 +2585,7 @@ Contains
                 IF (TEMP.GE.0.0D0) THEN
                    N_TEST = N_TEST + 1
                    TEST2(N_TEST)        = TEMP
-                ENDIF
+                END IF
              ELSE
                 N_TEST = N_TEST + 1
                 TEST2(N_TEST)	= TEMP
@@ -3044,9 +3044,9 @@ Contains
                  IF (TEMP.GE.1.0D-10) THEN
                     N_TEST		= N_TEST + 1
                     TEST2(N_TEST)	= TEMP
-                 ENDIF
+                 END IF
               END IF
-           ENDIF
+           END IF
 299     CONTINUE
            ! C
            ! C Sort the real intercept in ascending order.
@@ -3726,7 +3726,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	  CALL	READPOLY(FILE_FAC,IERR)
 	  IF (IERR.NE.0) CALL LEAVE &
      		('MSETUP','Error from READPOLY in Facet',IERR)
-	ENDIF
+	END IF
 
 ! C
 ! C Defines ratio of refraction indeces for refractor case
@@ -3754,7 +3754,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	    R_JOHANSSON = RMIRR
 	    RMIRR = RMIRR/2.0D0
 	  ELSE
-	  ENDIF
+	  END IF
      	ELSE
      	END IF
 
@@ -4141,7 +4141,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
      		      'Error opening file "' //  &
      		      FILE_RIP(1:IBLANK(FILE_RIP)) // '".', &
      		      IOSTAT)
-	ENDIF
+	END IF
      	READ (20,*)	N_RIP
 	READ (20,*)	F_R_RAN
 	READ (20,*)	IG_SEED
@@ -4195,7 +4195,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	  CALL LEAVE ('MSETUP', &
      		      'Error opening output file "SURFACE_ERRORS".', &
      		      IOSTAT)
-	ENDIF
+	END IF
 	WRITE (22,*) 	X_GR
 	WRITE (22,*)    Y_GR
 	WRITE (22,*)	AMPLI
@@ -4686,7 +4686,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
         if (iErr /= 0 ) then
           print *,"MIRROR: File not found: "//trim(file_refl)
           stop 'File not found. Aborted.'
-	endif
+	end if
 ! #endif
 	READ(iunit,*)	NIN
         IF (NIN > dimMLenergy) THEN 
@@ -4694,7 +4694,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
           print *,'               Maximum number of energy points is',dimMLenergy
           print *,'               Using number of energy points',NIN
           stop 'Error reaing file. Aborted.'
-        ENDIF 
+        END IF 
 	READ(iunit,*)	(ENER(I), I = 1, NIN)
 	DO 13 I=1,NIN
 	  READ(iunit,*)	DELTA_S(I),BETA_S(I)
@@ -4722,7 +4722,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
           if (iErr /= 0 ) then
             print *,"MIRROR: File not found: "//trim(file_grade)
             stop 'File not found. Aborted.'
-	  endif
+	  end if
 
           READ  (45) NTX, NTY
 	  READ  (45) TX,TY
@@ -5054,8 +5054,8 @@ SUBROUTINE NORMAL (PIN,VOUT)
 	  TEST=VOUT(1)**2+VOUT(2)**2+VOUT(3)**2
 	    IF(TEST.EQ.0.0D0) THEN
 	     VOUT(3)=1.0D0
-	    ENDIF
-	 ENDIF
+	    END IF
+	 END IF
 
        	ELSE IF (FMIRR.EQ.9) THEN
        	  CALL  POLY_GRAD (PIN,VOUT)
@@ -6177,7 +6177,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 	    END IF
 	    IF (I_STOP(I_WHAT).EQ.0) THEN
 	      TEST = - TEST
-	    ENDIF
+	    END IF
 
      	    IF (TEST.LT.0.0D0) THEN
      		RAY (10,ICHECK)	  = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
@@ -6321,7 +6321,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 	  CALL MSSG ('SCREEN_EXTERNAL', &
      			'Error in External polygon description', i_one)
 	  STOP 1
-	ENDIF
+	END IF
 
 ! C
 ! C Algorithm: For each ray, see if it hits any of the polygons; if it does,
@@ -6355,7 +6355,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 	      RAY_LOST = .TRUE.
 	  ELSE IF (I_STOP(I_SCR) .EQ. 1 .AND. HIT_FOUND) THEN
 	      RAY_LOST = .TRUE.
-	  ENDIF
+	  END IF
 
 	  IF (RAY_LOST) THEN
 	    RAY     (10,IRAY) = - 1.0D2*I_ELEMENT - 1.0D0*I_SCR
@@ -6446,7 +6446,7 @@ SUBROUTINE  SCREEN_LOAD_EXTERNAL (FILENAME, MAX_NPOLYS, &
 	IF (NPOLY .GT. MAX_NPOLYS) THEN
 	  CALL MSSG ('SCREEN_EXTERNAL','Too many polygons',i_one)
 	  GOTO 299
-	ENDIF
+	END IF
 ! C
 ! C read all the polygons as a compound one (ie., in the same vectors).
 ! C
@@ -6458,7 +6458,7 @@ SUBROUTINE  SCREEN_LOAD_EXTERNAL (FILENAME, MAX_NPOLYS, &
 	    IF (NPOINT .GT. MAX_NPOINTS) THEN
 	      CALL MSSG ('SCREEN_EXTERNAL','Too many total points',i_one)
 	      GOTO 299
-	    ENDIF
+	    END IF
 	    READ(IO_UNIT,*,ERR=299,END=299) XVEC(NPOINT),ZVEC(NPOINT)
  20	  CONTINUE
 ! C
@@ -6471,7 +6471,7 @@ SUBROUTINE  SCREEN_LOAD_EXTERNAL (FILENAME, MAX_NPOLYS, &
 	    NP1 = NP1 + 1
 	    XVEC(NPOINT) = XVEC(START_INDEX)
 	    ZVEC(NPOINT) = ZVEC(START_INDEX)
-	  ENDIF
+	  END IF
 	  IVEC1(POLY_INDEX) = START_INDEX
 	  IVEC2(POLY_INDEX) = NP1
 ! C
@@ -6561,7 +6561,7 @@ SUBROUTINE SETSOUR
 	   if (f_refrac.ne.1) then
      	   IF ((A_BRAGG.Le.0.0).or.(a_bragg.ge.pihalf)) ORDER = -1
      	   IF ((A_BRAGG.Gt.0.0).and.(a_bragg.lt.pihalf)) ORDER = +1
-	   endif
+	   end if
      	   F_RULING = 1
 	  ELSE IF (F_BRAGG_A.NE.1) THEN
 	       A_BRAGG	=   0.0D0
@@ -6578,9 +6578,9 @@ SUBROUTINE SETSOUR
 			f_bragg_a = 1
 			a_bragg = pihalf  
 			f_ruling = 1
-	          endif
-	        endif
-	  endif
+	          end if
+	        end if
+	  end if
 ! C
 ! C Define diffraction order for Johansson geometry 
 ! C
@@ -6619,8 +6619,8 @@ SUBROUTINE SETSOUR
 	   else ! rays below bragg planes
 	      if (a_bragg.ge.0) theta_b = a_bragg - graze
 	      if (a_bragg.lt.0) theta_b = pi + a_bragg + graze
-	   endif
-	  endif
+	   end if
+	  end if
 ! C
      	  T_INCIDENCE = 90.0D0 - THETA_B*TODEG
 ! C
@@ -6635,7 +6635,7 @@ SUBROUTINE SETSOUR
 ! C
      	 IF (F_RULING.EQ.2) THEN
 	     CALL	HOLO_SET
-	 ENDIF
+	 END IF
 ! C
 ! C Changes to SETSOUR for surface roughness calculations
 ! C
@@ -6648,7 +6648,7 @@ SUBROUTINE SETSOUR
 	   if (ierr.ne.0) call leave &
               ('Error on return from PSPECT','SETSOUR',izero)
 	   if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
-	endif
+	END IF
 ! C
 ! C The following sequence is necessary now, as some of the angles
 ! C may be changed.
@@ -6725,8 +6725,8 @@ SUBROUTINE SETSOUR
                        t_reflection=(pihalf+a_bragg+graze)*todeg
                       if (a_bragg.lt.0) &
                        t_reflection=(3.0d0*pihalf+a_bragg-graze)*todeg
-                  endif
-	      endif
+                  end if
+	      end if
      	  ELSE IF (F_MONO.EQ.3) THEN
 ! C
 ! C constant diffraction angle
@@ -6944,7 +6944,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
      			'Error opening file "' //  &
      			FILE_RIP(1:IBLANK(FILE_RIP)) // '".', &
      			IOSTAT)
-          ENDIF
+          END IF
      	  READ  (20) NX, NY
 
 	  allocate( Y(NY) )
@@ -7314,12 +7314,12 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
 	IF (F_KOMA.NE.1) THEN
      	  WRITE(6,*) 'Call to MIRROR'
-	ENDIF
+	END IF
 
 ! C
 	IF (F_KOMA.EQ.1.AND.F_DOT.EQ.1) THEN
 	  GOTO 5009
-	ENDIF
+	END IF
 ! C
 	XFIRST 	=   RWIDX2
 	XSECON 	=   RWIDX1
@@ -7412,7 +7412,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! C
 	IF (F_KOMA.EQ.1) THEN
 	   RETURN
-	ENDIF
+	END IF
 5009    CONTINUE
 ! C
 ! C Start the loop through the beam
@@ -7450,11 +7450,11 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
            ierr = isega
            IF    (ierr.NE.1) CALL LEAVE ('Mirror','Error ',IERR)
-         endif
+         end if
  
          ipro = 5 
          goto 717
-        endif
+        end if
 
 ! C
 ! C solve for intercepts
@@ -7500,7 +7500,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	   IF (SURFERR.EQ.-9) THEN
 ! C	   	WRITE(6,*)'SURFERR = ',SURFERR
 		RAY(10,ITIK) = -9
-	   ENDIF
+	   END IF
 ! C
 ! C Evaluate now the intersection of the incoming beam with a plane 
 ! C tangent to the TRUE surface in P_TRUE.
@@ -7561,8 +7561,8 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	  CALL DOT(VVIN,VNOR,TEMP)
 	  IF (TEMP.GT.0.0D0) THEN
 	    CALL SCALAR(VNOR,-1.0D0,VNOR)
-	  ENDIF
-	ENDIF
+	  END IF
+	END IF
 
 	IF (F_FACET.NE.1.AND.F_KOMA.NE.1.AND.F_SEGMENT.NE.1) THEN
      	PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
@@ -7582,8 +7582,8 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	       GOTO 10000
 	    ELSE
 	       PHASE(1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
-	    ENDIF
-	  ENDIF
+	    END IF
+	  END IF
 ! C	ELSE
 
 	END IF
@@ -7630,7 +7630,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
 	  ROUGH_RMS = SQRT((K_PAR(1)*ROUGH_X)**2 &
                     +(K_PAR(2)*ROUGH_Y)**2)
-	 ENDIF
+	 END IF
 ! C
 ! C  Calculate SCAT_FRAC, which gives the fraction of light that is
 ! C  scattered. 
@@ -7667,8 +7667,8 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	  F_SCATTER_ROUGH = 0                ! SPECULAR REFLECTION
 	 ELSE 
 	  F_SCATTER_ROUGH = 1                ! SCATTERED LIGHT
-	 ENDIF
-	ENDIF
+	 END IF
+	END IF
 ! C
      	IF (F_REFRAC.EQ.0) THEN
 ! C
@@ -7707,7 +7707,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
      	  RAY(5,ITIK)	=   VTEMP(2)
      	  RAY(6,ITIK)	=   VTEMP(3)
      	END IF
-	  endif
+	  end if
 ! C
 ! C Check if the intercept is within the mirror limits. If not, the
 ! C ray will be assumed to be lost forever and not used again in any
@@ -7744,7 +7744,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 		 else if (f_refrac.eq.1) then                !laue
 		   call rotvector (vnor,x_vrs,pihalf,vtemp)
 		   call mosaic (vvin,vtemp,waven,vnorg)
-		 endif
+		 end if
          CALL PROJ (VVIN,VNORG,VTEMP)
 	 DO 399 I=1,3
  399	  VVOUT(I) = VVIN(I) - 2*VTEMP(I)
@@ -7802,7 +7802,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
  295       RAY (I_DEL,ITIK) = 0.0D0
          RAY (10, ITIK) = -1.1D6*I_WHICH
          goto 10000
-         ENDIF
+         END IF
 
 	 ELSE
 	      CALL LEAVE ('FACET','This part has not been considered yet',izero)
@@ -7825,9 +7825,9 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
  297       RAY (I_DEL,ITIK) = 0.0D0
          RAY (10, ITIK) = -1.1D6*I_WHICH
          goto 10000
-         ENDIF
+         END IF
 
-        ENDIF
+        END IF
 	    PF_CENT(3) = TPAR
 
 
@@ -7848,7 +7848,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	    ELSE
 	       PF_BNOR(1)=1.0D0
 	       PF_BNOR(3)=0.0D0
-	    ENDIF
+	    END IF
 	    CALL NORM(PF_BNOR,PF_BNOR)
 	       CALL CROSS (PF_NOR,PF_BNOR,PF_TAU)
 	       CALL NORM (PF_TAU,PF_TAU)
@@ -7883,7 +7883,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
  293          RAY (I_DEL,ITIK) = 0.0D0
               RAY (10, ITIK) = -1.1D6*I_WHICH
               goto 10000
-	      ENDIF
+	      END IF
 
 	PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 
@@ -7926,7 +7926,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 
 	FMIRR = I_BASELINE
 
-	ENDIF    ! END OF FACET IF
+	END IF    ! END OF FACET IF
 
 ! C
 ! C End of the facet calculation
@@ -7953,7 +7953,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 296       RAY (I_DEL,ITIK) = 0.0D0
          RAY (10, ITIK) = -1.1D6*I_WHICH
         goto 10000
-        endif
+        end if
  
           IF (F_ANGLE.EQ.1) THEN
  
@@ -7973,7 +7973,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
         RAY(5,ITIK) = VVIN(2) - 2.0D0*VTEMP(2)
         RAY(6,ITIK) = VVIN(3) - 2.0D0*VTEMP(3)
 
-        endif
+        end if
 ! C
 ! C end of segment calculation
 ! C
@@ -8226,9 +8226,9 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 	 gscatter(1) = stemp(1)
 	  gscatter(2) = stemp(2)
 	   gscatter(3) = stemp(3)
-	endif
+	end if
 ! C
-	endif
+	end if
 ! ** 2. Projects the incoming vector on the scattering plane
 		IF (RAY(11,ITIK).NE.0.0D0) THEN
      		  Q_IN_MOD	=   RAY(11,ITIK)
@@ -8255,10 +8255,10 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 	            q_out(3) 	= VVIN(3) - 2*vtemp(3)
 !srio				goto 8989
 		  iskiplaue=1
-	          endif
+	          end if
 ! C			call sum	(vtemp,gscatter,q_out) 
 ! C     		else if (f_refrac.ne.1) then
-	        endif
+	        end if
 
 !srio
 		IF (iskiplaue.ne.1) THEN
@@ -8272,7 +8272,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 			ELSE
 			    RAY(10,ITIK)	= - 1.010101D6
 			    GO TO 10000
-			ENDIF
+			END IF
      		  ELSE
      		VALUE  =   SQRT( VALUE )
      		CALL SCALAR	(VNOR,VALUE,VTEMP)
@@ -8280,7 +8280,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
      		CALL NORM	(Q_OUT,Q_OUT)
                 krough_count2 = krough_count2 + 1
 
-		ENDIF
+		END IF
 ! C
 ! C If it is Kumakhov case the value would not make sense
 ! C
@@ -8426,7 +8426,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 	    IF (F_FACET.EQ.1) THEN
 	      CALL LEAVE ('MIRROR', &
      		'CONFLICT BETWEEN MOSAIC AND FACET',izero)
-	    ENDIF
+	    END IF
 	   CALL  DOT (AS_VEC,AS_VEC,AS_MOD)
 	   CALL  DOT (AP_VEC,AP_VEC,AP_MOD)
 	   A_DEG = AS_MOD/(AS_MOD+AP_MOD)
@@ -8583,15 +8583,15 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 
   	  ANGLE_IN = TODEG*ACOS (SIN_IN)
 	  ANGLE_OUT = TODEG*ACOS (SIN_OUT)
-	ENDIF
+	END IF
 
 	  ANGLE(1,ITIK) = ITIK
 	  ANGLE(2,ITIK) = 180 - ANGLE_IN
 	  ANGLE(3,ITIK) = ANGLE_OUT
 	  ANGLE(4,ITIK) = RAY(10,ITIK)
 
-	ENDIF
-	ENDIF
+	END IF
+	END IF
 
 ! C
 ! C Counts lost rays in this OE
@@ -8744,7 +8744,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! 	MPURGE(2)	= %LOC(CODLING(12,N_DIM))
 ! 	CALL	SYS$PURGWS	(MPURGE)
 ! #endif
-	ENDIF
+	END IF
 
 End Subroutine mirror1
 
@@ -9101,7 +9101,7 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
      		'Error reading source image "' // &
      		FILE_SOURCE(1:IBLANK(FILE_SOURCE)) // '".', &
      		IERR)
-     	  ENDIF
+     	  END IF
 
           ! srio: get NCOL from source file. Up to here it is undefined
           CALL RBEAMANALYZE (FILE_SOURCE,NCOL,NP,IFLAG,IERR)
@@ -9145,7 +9145,7 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
 
 	ELSE
 		CALL MIRROR1 (RAY,AP,PHASE,ICOUNT)
-	ENDIF
+	END IF
 ! C
 ! C Computes other screens and stops.
 ! C
@@ -9238,7 +9238,7 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
 !	CALL DATAPATH ('VERSION', VERSION, IFLAG) 
 !	IF (IFLAG.NE.0) THEN
 !	    CALL LEAVE ('INPUT_OE', 'VERSION file not found', IFLAG)
-!	ENDIF
+!	END IF
 !#ifndef vms
 !    	OPEN (11, FILE=VERSION, STATUS='OLD')
 !#elif defined(vms)
@@ -9364,7 +9364,7 @@ print *,'diffraction elements.                                                  
 !c        IF (IVERB.EQ.1) THEN
 !c        WRITE(6,*)'You can store the angle between the ray and ',
 !c     $   'mirror normal vector '
-!c        ENDIF
+!c        END IF
 !c 
 !c        F_INC_MNOR_ANG =  IYES('Store incident angle information?')
 !c 
@@ -9375,7 +9375,7 @@ print *,'diffraction elements.                                                  
 !c
         IF (IVERB.EQ.1) THEN
         WRITE(6,*)'A segmented mirror is formed by M by N independent  mirrors'
-        endif
+        END IF
  
         F_SEGMENT = IYES('Is this a segmented mirror system?')
  
@@ -9406,7 +9406,7 @@ print *,'diffraction elements.                                                  
 	WRITE(6,*)'Kumakhov lens are formed from tube arrays '
     WRITE(6,*)'their packing pattern are Wigner-Seitz type cell.'
 	WRITE(6,*)'A capillary would be the central tube of a kumakhov lens.'
-        ENDIF
+        END IF
 
 	F_KOMA = IYES('Is this a Kumakhov system?')
 
@@ -9416,13 +9416,13 @@ print *,'diffraction elements.                                                  
 	   IF (IVERB.EQ.1) THEN
 	   WRITE(6,*) 'For multiple reflection calculations, you may'
        WRITE(6,*) 'want to store the intercepts of each bounce.'
-	   ENDIF
+	   END IF
 	   F_KOMA_BOUNCE = IYES('Store (X,Y,Z) for each bounce? ')
 
 	   IF (IVERB.EQ.1) THEN
 	   WRITE(6,*) 'Normally, the tube radii are specified as r(z).'
 	   WRITE(6,*) 'You may also specify r(z)^2.'
-	   ENDIF
+	   END IF
 	   F_KOMA_CA = IYES ('Specify as r(z)^2 ? (Y/N) ')
 
 	   IF (F_KOMA_CA.NE.1) THEN
@@ -9430,7 +9430,7 @@ print *,'diffraction elements.                                                  
           IF (IVERB.EQ.1) THEN
              WRITE(6,*)'Modified means that you could change each ', &
                'tube length as a function of position.'
-          ENDIF
+          END IF
           F_EXIT_SHAPE = IYES('B: Is  this a modified exit plane?')
 
 !c	      F_EXIT_SHAPE = 0
@@ -9438,7 +9438,7 @@ print *,'diffraction elements.                                                  
 	   ELSE
 	      FILE_KOMA_CA = RSTRING('File with the parameters? ')
 	      F_EXIT_SHAPE = 0
-	   ENDIF
+	   END IF
 
 	   FMIRR = 5
 
@@ -9470,14 +9470,14 @@ print *,'diffraction elements.                                                  
 	WRITE(6,*)'Size of the Facet?'
 	RFAC_LENX =RNUMBER(' x-length ?')
 	RFAC_LENY =RNUMBER(' y-length ?')
-	ENDIF
+	END IF
 !c#endif
 
      	IF (IVERB.EQ.1) THEN
 !c#ifdef FACET
 	 IF(F_FACET.EQ.1) THEN
 	  WRITE(6,*)'Choose the baseline for facet'
-         ENDIF
+         END IF
 !c#endif
 !     	WRITE(6,*) &
 !      'Lets define the mirror. I may compute its parameters, like the' &
@@ -9543,12 +9543,12 @@ print *,'parameters yourself.                                                   
 !c end of the Komakofu IF block
 !c
 !c#ifdef FACET
-	ENDIF
+	END IF
 !c#endif
 !c
 !c end of the segmented mirror IF block
 !c
-        ENDIF
+        END IF
  
 
      	FZP = IYES('Is this optical element a Fresnel Zone Plate ? ')
@@ -9765,8 +9765,8 @@ print *,'parameters yourself.                                                   
                order = -1
               else
                order = +1
-              endif
-            endif
+              end if
+            end if
 
      	     END IF
 	     F_JOHANSSON = &
@@ -10109,7 +10109,7 @@ print *,'parameters yourself.                                                   
       ('Roughness RMS in Y direction (along the mirror) [Angstroms] ? ')
 	 rough_x = rnumber &
       ('Roughness RMS in X direction (transversal) [Angstroms]? ')
-	endif
+	end if
 !c
 !**-----------------------------------------------------------------------
 !c#if unix
@@ -10152,7 +10152,7 @@ print *,'parameters yourself.                                                   
      	  RZ_SLIT(I)= RNUMBER ('                Z ? ')
      	  CX_SLIT(I)= RNUMBER ('Center along X [0.0] ? ')
      	  CZ_SLIT(I)= RNUMBER ('             Z [0.0] ? ')
-	ENDIF
+	END IF
      	 ELSE
      	 END IF
      	I_ABS(I)= IYES ('Include absorption [ Y/N ] ? ')
@@ -10405,7 +10405,7 @@ SUBROUTINE INPUT_SOURCE1
     ! 	CALL DATAPATH ('VERSION', VERSION, IFLAG)
     !   IF (IFLAG .NE. 0) THEN
     ! 	    CALL LEAVE ('INPUT_SOURCE', 'VERSION file not found', 1)
-    !   ENDIF
+    !   END IF
     !     	OPEN (11, FILE=VERSION, STATUS='OLD')
     !     	READ (11,*) I1,I1,I1
     !     	READ (11,'(1X,A)') MSSG2
@@ -10684,7 +10684,7 @@ SUBROUTINE INPUT_SOURCE1
                  
     	  END IF
          	  FDISTR = IRINT ('Source Angle Distribution [ 1-6 ] ? ')
-    	ENDIF
+    	END IF
          	IF ((FGRID.EQ.1.OR.FGRID.EQ.3).AND.FDISTR.NE.5) THEN
          	  IDO_VZ = IRINT ('How many points in the vertical ? ')
          	  IDO_VX = IRINT ('          and in the horizontal ? ')
@@ -10989,7 +10989,7 @@ SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
     IF ((FDISTR.EQ.4).OR.(FSOURCE_DEPTH.EQ.4).OR.(F_WIGGLER.GT.0)) THEN
        ITMP=1
        CALL LEAVE ('SOURCE1','Only geometrical source. No synchrotron source allowed here',ITMP)
-    ENDIF
+    END IF
     !!        CALL  SOURCE1 (BGNFILE, IOFORM)
     
 !<>    !!
@@ -11880,7 +11880,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           !!srio 		YYY	=	 (DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
           !!srio 	ELSE
           !!srio 		YYY	=	-(DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
-          !!srio 	ENDIF
+          !!srio 	END IF
           !!srio 
           !!srio 	IF (YYY.GT.0.0) THEN
           !!srio 		RMAX	=  PLASMA_ANGLE*(WYSOU/2.D0-YYY)
@@ -12337,7 +12337,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
     !<> IF (IERR.NE.0) THEN
     !<>    ERRMSG = 'Error Writing File '// FNAME
     !<>    CALL LEAVE ('SOURCE', ERRMSG, IERR)
-    !<> ENDIF
+    !<> END IF
     !<> NPOINT = NTOTAL
     IF (FSOUR.EQ.3) THEN
        ! C
@@ -12345,7 +12345,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        ! C
        EPSI_X = EPSI_XOLD
        EPSI_Z = EPSI_ZOLD
-    ENDIF
+    END IF
     
     !! deallocate everything...
     
@@ -13595,7 +13595,7 @@ SUBROUTINE DeAlloc
 	yin = 0.0D0
 	zout = 0.0D0
 	CALL	SUR_SPLINE	(XIN,YIN,ZOUT,VIN,IFLAG,SERR)
-    ENDIF
+    END IF
     
     WRITE(6,*)'Exit from DEALLOC'
 
@@ -13688,7 +13688,7 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
                 !IFLAG	= 0
                 !CALL WRITE_OFF18(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
                 !IF (IERR.NE.0) CALL LEAVE ('TRACE3','Error writing MIRR',IERR)
-        ENDIF
+        END IF
 	! C
 	! C Computes other screens and stops.
 	! C
@@ -13852,7 +13852,7 @@ SUBROUTINE Shadow3Trace
             ! put dimensions in variable pool
             npoint=np
             ncol=ncol1
-         ENDIF
+         END IF
        END IF
  
 

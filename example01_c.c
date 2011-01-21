@@ -1,12 +1,13 @@
+
 #include <stdio.h>
 #include <string.h>
-#include <ShadowMask.h>
+#include "ShadowMask.h"
 
 int main()
 {
   poolSource src;
   poolOE     oe1;
-  double    *ray;
+  double    *ray=NULL;
 
   // load variables from start.00
   CShadowPoolSourceLoad(&src, "start.00");
@@ -20,14 +21,14 @@ int main()
 
   // calculate source
   CShadowSourceSync(&src, ray);
-  CShadowWriteRay(18,src.NPOINT,ray,"begin.dat");
+  CShadowWriteRay(ray,18,src.NPOINT,"begin.dat");
   // reads start.01 into oe1
   CShadowPoolOELoad(&oe1,"start.01");
   // traces OE1
   CShadowTrace(&oe1,ray,src.NPOINT,1);
 
   // write file star.01
-  CShadowWriteRay(18,src.NPOINT,ray,"star.01");
+  CShadowWriteRay(ray,18,src.NPOINT,"star.01");
 
   free(ray);
   return EXIT_SUCCESS;

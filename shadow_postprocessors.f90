@@ -1368,10 +1368,15 @@ SUBROUTINE Histo1
             stop
         END IF
 
+        IF (allocated(ray)) deallocate(ray)
+        IF (allocated(xArray)) deallocate(xArray)
+        IF (allocated(yArray)) deallocate(yArray)
   	ALLOCATE( RAY(18,NPOINT1) )
   	ALLOCATE( xArray(NPOINT1) )
   	ALLOCATE( yArray(NPOINT1) )
   	ray=0.0d0
+        xArray=0.0d0
+        yArray=0.0d0
 
 	CALL RBeam18(ray,ierr,ncol1,npoint1,fileIn)
 

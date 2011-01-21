@@ -1,13 +1,15 @@
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <complex>
+#include <string.h>
+//#include <complex>
 
 #ifndef __SHADOWMASK_HPP__
 #define __SHADOWMASK_HPP__
 
 
 extern "C" {
-#include <ShadowMask.h>
+#include "ShadowMask.h"
 }
 
 /*
@@ -54,7 +56,6 @@ public:
   double *rays;
   Ray();
   ~Ray();
-  Ray(Source*);
   Ray(const Ray&);
   void init(int, int);
   void write(char*);

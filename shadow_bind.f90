@@ -140,17 +140,22 @@ contains
 	end subroutine BindShadowGetDimRay
 
 
-	subroutine BindShadowReadRay(ray, nPoint, nCol, file, length) bind (C,name="BindShadowReadRay")
+	subroutine BindShadowReadRay(ray, nPoint1, nCol1, file, length) bind (C,name="BindShadowReadRay")
         character(kind=C_CHAR), intent(in)                     :: file(*)
-        integer(kind=C_INT), intent(inout)                    :: nPoint, nCol
-        real(kind=C_DOUBLE), dimension(18,nPoint), intent(out)   :: ray
+        integer(kind=C_INT), intent(inout)                    :: nPoint1, nCol1
+!	type(C_PTR), intent(in)                                :: ray
+        real(kind=C_DOUBLE), dimension(18,nPoint1), intent(inout)   :: ray
         integer(kind=C_INT), value, intent(in)                :: length
+
+	!real(kind=8), pointer ::  f_ray(:,:)
 
         character(kind=C_CHAR, len=length)                     :: fname
         integer(kind=C_INT)                                   :: i, iErr
 
+	!call c_f_pointer(ray,f_ray,[18,npoint1])
+
         call CstringToFstring(file,fname, length)
-        call rbeam18(ray, iErr, nCol, nPoint, fname)
+        call rbeam18(ray, iErr, nCol1, nPoint1, fname)
 	end subroutine BindShadowReadRay
 
 

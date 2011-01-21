@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -23,7 +24,7 @@ typedef struct {
 
 typedef union {
   poolSource Src;
-  char poolSourceBit[sizeof(poolSource)];
+  char poolSourceBit[ sizeof ( poolSource ) ];
 } poolSourceUnion;
 
 
@@ -37,38 +38,39 @@ typedef struct {
 
 typedef union {
   poolOE OE;
-  char poolOEBit[sizeof(poolOE)];
+  char poolOEBit[ sizeof ( poolOE ) ];
 } poolOEUnion;
 
 //INTERFACE libshadow
-extern void BindShadowPoolSourceLoad(poolSource*, char*, int);
-extern void BindShadowPoolSourceWrite(poolSource*, char*, int);
-extern void BindShadowPoolOELoad(poolOE*, char*, int);
-extern void BindShadowPoolOEWrite(poolOE*, char*, int);
-extern void BindShadowSourceGeom(poolSource*, double*, int*);
-extern void BindShadowSourceSync(poolSource*, double*, int*);
-extern void BindShadowTraceOE(poolOE*, double*, int*, int*);
-extern void BindShadowWriteRay(double*, int*, int*, char*, int);
-extern void BindShadowGetDimRay(char*, int, int*, int*);
-extern void BindShadowReadRay(double*, int*, int*, char*, int);
-extern void BindShadowFFresnel2D(double*, int*, double*, dComplex*, pixel*, pixel*);
+extern void BindShadowPoolSourceLoad ( poolSource*, char*, int );
+extern void BindShadowPoolSourceWrite ( poolSource*, char*, int );
+extern void BindShadowPoolOELoad ( poolOE*, char*, int );
+extern void BindShadowPoolOEWrite ( poolOE*, char*, int );
+extern void BindShadowSourceGeom ( poolSource*, double*, int* );
+extern void BindShadowSourceSync ( poolSource*, double*, int* );
+extern void BindShadowTraceOE ( poolOE*, double*, int*, int* );
+extern void BindShadowWriteRay ( double*, int*, int*, char*, int );
+extern void BindShadowGetDimRay ( char*, int, int*, int* );
+extern void BindShadowReadRay ( double*, int*, int*, char*, int );
+extern void BindShadowFFresnel2D ( double*, int*, double*, dComplex*, pixel*, pixel* );
 //END INTERFACE libshadow
 
 
-double* CShadowAllocateRay(poolSource*, double*);
-void CShadowPoolSourceLoad(poolSource*, char*);
-void CShadowPoolSourceWrite(poolSource*, char*);
-void CShadowPoolOELoad(poolOE*, char*);
-void CShadowPoolOEWrite(poolOE*, char*);
-void CShadowGetDimRay(int*, int*, char*);
-void CShadowReadRay(double*, int, int, char*);
-void CShadowWriteRay(int, int, double*, char*);
-void CShadowSourceGeom(poolSource*, double*);
-void CShadowSourceSync(poolSource*, double*);
-void CShadowTrace(poolOE*, double*, int, int);
-void CShadowFFresnel2D(double*, int, double, dComplex*, pixel*, pixel*);
-void CShadowSetupDefaultSource(poolSource*);
-void CShadowSetupDefaultOE(poolOE*);
+double* CShadowAllocateRay ( poolSource*, double* );
+double* CShadowAllocateRayInt ( int, double* );
+void CShadowPoolSourceLoad ( poolSource*, char* );
+void CShadowPoolSourceWrite ( poolSource*, char* );
+void CShadowPoolOELoad ( poolOE*, char* );
+void CShadowPoolOEWrite ( poolOE*, char* );
+void CShadowGetDimRay ( int*, int*, char* );
+void CShadowReadRay ( double*, int, int, char* );
+void CShadowWriteRay ( double*, int, int, char* );
+void CShadowSourceGeom ( poolSource*, double* );
+void CShadowSourceSync ( poolSource*, double* );
+void CShadowTrace ( poolOE*, double*, int, int );
+void CShadowFFresnel2D ( double*, int, double, dComplex*, pixel*, pixel* );
+void CShadowSetupDefaultSource ( poolSource* );
+void CShadowSetupDefaultOE ( poolOE* );
 
 #endif
 
