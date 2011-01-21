@@ -4,9 +4,9 @@
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
 #
-#FC = g95
+FC = g95
 #in coral, source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
-FC = gfortran
+#FC = gfortran
 CC = gcc
 CCP = g++
 FFLAGS = -fPIC
@@ -85,19 +85,6 @@ python: setup.py
 
 all: shadow3 lib examples python
 
-#all: $(OBJFMODULES) $(OBJMAINS) ShadowMask_c.o ShadowMask_cpp.o
-#	gcc -c wranc.c
-#	g95 -c cdf_z.f
-#	$(FC) $(FFLAGS) -o gen_source gen_source.o $(OBJFMODULES) wranc.o 
-#	$(FC) $(FFLAGS) -o trace trace.o $(OBJFMODULES) wranc.o
-#	$(FC) $(FFLAGS) -o trace3 trace3.o $(OBJFMODULES) wranc.o
-#	$(FC) $(FFLAGS) -o fig3 fig3.o $(OBJFMODULES) wranc.o 
-#	$(FC) $(FFLAGS) -o shadow3 shadow3.o $(OBJFMODULES) wranc.o cdf_z.o
-#	$(FC) $(FFLAGS) -o shadow3 shadow3.o $(OBJFMODULES) 
-#	$(FC) $(LIBFLAGS) -o libshadow.so $(OBJFMODULES)
-#	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow ShadowMask_c.o
-#	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc ShadowMask_cpp.o
-
 shadow_variables.f90: shadow_variables_precpp.F90
 	cpp -w -C -I. shadow_variables_precpp.F90 -o tmp1.f90  
 	sed 's/newline/\n/g' <tmp1.f90 > tmp2.f90
@@ -107,7 +94,6 @@ shadow_kernel.f90: shadow_kernel_precpp.F90
 	cpp -w -C -I. shadow_kernel_precpp.F90 -o tmp3.f90  
 	sed 's/newline/\n/g' <tmp3.f90 > tmp4.f90
 	sed 's/^#/!#/' < tmp4.f90 > shadow_kernel.f90
-
 
 ShadowMask_c.o: ShadowMask.c
 	$(CC) -I. $(CFLAGS) -c ShadowMask.c -o ShadowMask_c.o
@@ -139,7 +125,11 @@ clean:
 	/bin/rm -rf build
 
 install:
-	#/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	/bin/cp  shadow3 ../DISTR/
+	/bin/cp  trace3 ../DISTR/
+	/bin/cp  trace ../DISTR/
+	/bin/cp  gen_source ../DISTR/
 	#mv *.o ../obj
 	#/bin/cp  shadow3 ../bin/
 	#/bin/cp  gen_source ../bin/
@@ -147,6 +137,6 @@ install:
 	#/bin/cp  trace ../bin/
 	#/bin/cp libshado*.so ../lib/
 	#/bin/cp build/lib.linux-x86_64-2.6/Shadow.so ../lib
-	/bin/cp  shadow3 ../bin/
+	#/bin/cp  shadow3 ../bin/
 
 

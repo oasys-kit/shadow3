@@ -1073,7 +1073,12 @@ Contains
     ! C If flag is < 0, reads in the reflectivity data
     ! C
     IF (KWHAT.LT.0) THEN
-       OPEN (25,FILE=FILE_REFL,STATUS='OLD', FORM='FORMATTED')
+       OPEN (25,FILE=FILE_REFL,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+        ! srio added test
+        if (iErr /= 0 ) then
+          print *,"MIRROR: File not found: "//trim(file_refl)
+          stop 'File not found. Aborted.'
+        endif
        READ (25,*) I_LATT,RN,D_SPACING
        READ (25,*) ATNUM_A,ATNUM_B,TEMPER
        READ (25,*) GA
@@ -2433,20 +2438,20 @@ Contains
     ! C
     ! C Success
     ! C
-    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-    write(13,*) aa,bb,cc
+!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
+!    write(13,*) aa,bb,cc
 100 IFLAG =  0
-    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-    write(13,*) aa,bb,cc
-    write(13,*) ">>>XIN: ",XIN
-    write(13,*) ">>>VIN: ",VIN
+!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
+!    write(13,*) aa,bb,cc
+!    write(13,*) ">>>XIN: ",XIN
+!    write(13,*) ">>>VIN: ",VIN
     RETURN
     ! C
     ! C failure
     ! C
 200 IFLAG = -1
-    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-    write(13,*) aa,bb,cc
+!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
+!    write(13,*) aa,bb,cc
     RETURN
   End Subroutine intercept
 
@@ -4225,9 +4230,9 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! Csrio
 ! Csrio Store the mirror paramerters (for test)
 ! Csrio
-	OPEN(UNIT=20, FILE="ccc.out", STATUS='UNKNOWN')
-	WRITE (20,1115) (CCC(I), I=1,10)
-        CLOSE(20)
+!	OPEN(UNIT=20, FILE="ccc.out", STATUS='UNKNOWN')
+!	WRITE (20,1115) (CCC(I), I=1,10)
+!        CLOSE(20)
 
 ! Csrio
 ! C
@@ -4479,7 +4484,7 @@ SUBROUTINE GNORMAL (ARG,ISEED,IFLAG)
 	 !  IF (IERR.NE.0) CALL MSSG &
          !  ('Error from GNORMAL','Value outside the interval',IERR) 
 	 IF (IERR.NE.0) THEN
-           print *,'Error from GNORMAL','Value outside the interval',IERR
+ 	  CALL	MSSG ('CRYSTAL ','Incoming photon energy is out of range.',IERR)
          END IF
 	END IF
 	RETURN
@@ -4630,7 +4635,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
      	        	FORM='UNFORMATTED', IOSTAT=iErr)
 	   ! srio added test
            IF (ierr /= 0 ) then
-             PRINT *,"MIRROR: File not found: "//TRIM(file_refl)
+             PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
              STOP ' Fatal error: aborted'
            END IF
 
@@ -7591,7 +7596,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! Csriosrio     	IF (FMIRR.EQ.7)  CALL SCALAR (VNOR,-1.0D0,VNOR)
 ! CSrio For hyperbolic Laue crystals
 ! Csrio	write(13,*) ">>>VNOR: ",VNOR
-	write(13,*) ">>>PPOUT: ",PPOUT
+!	write(13,*) ">>>PPOUT: ",PPOUT
 ! Csrio	CALL PROJ (VVIN,VNOR,VTEMP)
 
 
