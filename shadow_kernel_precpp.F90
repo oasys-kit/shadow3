@@ -8229,6 +8229,8 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 	end if
 ! C
 	end if
+!sriodebug
+!write(33,*),'shadow3: ',ITIK, gscatter(1),gscatter(2) ,gscatter(3)
 ! ** 2. Projects the incoming vector on the scattering plane
 		IF (RAY(11,ITIK).NE.0.0D0) THEN
      		  Q_IN_MOD	=   RAY(11,ITIK)
@@ -8245,23 +8247,29 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
      		CALL PROJ	(Q_IN,VNOR,VTEMP)
      		CALL VECTOR 	(VTEMP,Q_IN,K_PAR)
 
-		iskiplaue=0
+!		iskiplaue=0
 	        if (f_refrac.eq.1) then                           !laue xtals
-	        if (abs(a_bragg-pihalf).lt.1d-15) then            !laue symm
-			call rotvector (vnor,x_vrs,-a_bragg,stemp)
+	          if (abs(a_bragg-pihalf).lt.1d-15) then            !laue symm
+                    call rotvector (vnor,x_vrs,-a_bragg,stemp)
 	            call proj (vvin,stemp,vtemp)
 	            q_out(1) 	= VVIN(1) - 2*vtemp(1)
 	            q_out(2) 	= VVIN(2) - 2*vtemp(2)
 	            q_out(3) 	= VVIN(3) - 2*vtemp(3)
-!srio				goto 8989
-		  iskiplaue=1
+!				goto 8989
+! srio@esrf.eu 2011-411 debugging Laue crystals
+                    RAY(4,ITIK) =   Q_OUT(1)
+                    RAY(5,ITIK) =   Q_OUT(2)
+                    RAY(6,ITIK) =   Q_OUT(3)
+                    GOTO 450
+!		  iskiplaue=1
+! end debugging
 	          end if
 ! C			call sum	(vtemp,gscatter,q_out) 
 ! C     		else if (f_refrac.ne.1) then
 	        end if
 
 !srio
-		IF (iskiplaue.ne.1) THEN
+!-------------		IF (iskiplaue.ne.1) THEN
 
 		CALL SUM	(K_PAR,GSCATTER,Q_OUT)
      		CALL DOT	(Q_OUT,Q_OUT,Q_OUT_MOD)
@@ -8280,7 +8288,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
      		CALL NORM	(Q_OUT,Q_OUT)
                 krough_count2 = krough_count2 + 1
 
-		END IF
+!---------------		END IF
 ! C
 ! C If it is Kumakhov case the value would not make sense
 ! C
@@ -8294,7 +8302,8 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! C     	IF (F_CONVEX.EQ.0)	CALL SCALAR (VNOR,-1.0D0,VNOR)
      	  ELSE
      	  END IF
-450    	IF (FMIRR.EQ.6)	THEN		! Codling slit case
+450    	CONTINUE
+    	IF (FMIRR.EQ.6)	THEN		! Codling slit case
 
      		T_SLIT	= - P_START(2)/VVIN(2)
      		X_SLIT	=   P_START(1) + VVIN(1)*T_SLIT

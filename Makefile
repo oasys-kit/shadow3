@@ -140,11 +140,11 @@ purge: clean
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	#/bin/cp  shadow3 ../DISTR/
+	#/bin/cp  gen_source ../DISTR/
+	#/bin/cp  trace3 ../DISTR/
+	#/bin/cp  trace ../DISTR/
 	#mv *.o ../obj
-	/bin/cp  shadow3 ../DISTR/
-	/bin/cp  gen_source ../DISTR/
-	/bin/cp  trace3 ../DISTR/
-	/bin/cp  trace ../DISTR/
 	#/bin/cp libshado*.so ../lib/
 	#/bin/cp build/lib.linux-x86_64-2.6/Shadow.so ../lib
 	#/bin/cp  shadow3 ../bin/
