@@ -2287,10 +2287,14 @@ Contains
     ! #ifdef vms vms
     !     	OPEN (UNIT=23,FILE= FFILE,STATUS='NEW',DISPOSE='SAVE')
     ! #else
+
+    ! srio@esrf.eu 20110412 avoid writing optax.xx if FWRITE=3
+    IF (FWRITE.NE.3) THEN 
     OPEN (UNIT=23,FILE= FFILE,STATUS='UNKNOWN')
     REWIND (23)
     ! #endif
-    DO 100 I_WRITE=1,I_MIRROR
+!    DO 100 I_WRITE=1,I_MIRROR
+    DO I_WRITE=1,I_MIRROR
        WRITE (23,*) I_WRITE
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  1,3)
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  4,6)
@@ -2300,8 +2304,10 @@ Contains
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =16,18)
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =19,21)
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =22,24)
-100 CONTINUE
+!100 CONTINUE
+    END DO
     CLOSE (23)
+    END IF
     WRITE(6,*)'Exit from OPTAXIS'
   End Subroutine optaxis
   
@@ -8293,7 +8299,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! C If it is Kumakhov case the value would not make sense
 ! C
 
-8989	    continue
+!8989	    continue
      		RAY(4,ITIK) =   Q_OUT(1)
      		RAY(5,ITIK) =   Q_OUT(2)
      		RAY(6,ITIK) =   Q_OUT(3)
@@ -8678,6 +8684,8 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 !      	CALL	FNAME	(FFILE, 'EFFIC', I_WHICH, 2)
 ! 	OPEN (UNIT=20,FILE=FFILE,STATUS='NEW',CARRIAGECONTROL='LIST')
 ! #elif unix
+        ! srio@esrf.eu 20110412 avoid writing effic.xx if FWRITE=3
+        IF (FWRITE.NE.3) THEN
      	CALL	FNAME	(FFILE, 'effic', I_WHICH, itwo)
 	OPEN (UNIT=20,FILE=FFILE,STATUS='UNKNOWN')
 	REWIND (20)
@@ -8697,6 +8705,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! 	CLOSE (20,DISP='SAVE')
 ! #elif unix
 	CLOSE (20)
+        END IF
 ! #endif
 
 3000	FORMAT (1X,'WATCH OUT !! NO GOOD RAYS IN INPUT !!')

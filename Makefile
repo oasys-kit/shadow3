@@ -69,6 +69,9 @@ examples:
 	$(FC) $(FFLAGS) -c example01_f95.f90 -o example01_f95.o
 	$(FC) $(FFLAGS) -o example01_f95 example01_f95.o -L. -lshadow
 
+	$(FC) $(FFLAGS) -c example02_f95.f90 -o example02_f95.o
+	$(FC) $(FFLAGS) -o example02_f95 example02_f95.o -L. -lshadow
+
 	$(CC) -I. $(CFLAGS) -c example01_c.c -o example01_c.o
 	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadowc
 
@@ -123,7 +126,7 @@ clean:
 
 # binaries
 	/bin/rm -f gen_source trace trace3 trace3_c trace3_cpp shadow3 fig3
-	/bin/rm -f example01_f95 example01_c example01_cpp
+	/bin/rm -f example01_f95 example02_f95 example01_c example01_cpp
 	/bin/rm -f ../bin/*
 
 # files created by the preprocessor
@@ -137,6 +140,7 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
+	/bin/rm -f SRSPEC SRANG SRDIST F12LIB.INDEX
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3

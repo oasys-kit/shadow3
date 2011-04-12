@@ -1691,7 +1691,7 @@ print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
 !     	OPEN	(30, FILE=SRSPEC, STATUS='OLD', 
 !     $		 READONLY,FORM='UNFORMATTED')
 !#else
-print *,'>>>>>> opening file: '//trim(SRSPEC)
+!print *,'>>>>>> opening file: '//trim(SRSPEC)
      	OPEN	(30, FILE=SRSPEC(1:IBLANK(SRSPEC)), STATUS='OLD', &
       		FORM='UNFORMATTED',IOSTAT=iErr)
         IF (iErr .ne. 0) THEN

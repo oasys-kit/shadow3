@@ -47,7 +47,8 @@ Module Shadow_PostProcessors
 !    public :: 
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
-    public :: SourcInfo,MirInfo,SysInfo,Translate,Histo1,PlotXY
+    public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
+    public :: histo1,histo1_calc, histo1_calc_easy
     public :: FFresnel,FFresnel2D,ReColor,Intens,FocNew
 
     !---- List of private functions ----!
@@ -1272,78 +1273,37 @@ END SUBROUTINE TRANSLATE
 
 !C+++
 !C
-!C	program		histo1
+!C	subroutine	histo1
 !C
 !C	purpose		this program will generate an histogram of the
 !C			distribution of the rays in a given column.
 !C
-!C	input		a RAY file from SHADOW
+!C	input (prompt)	a RAY file from SHADOW
 !C
-!C	output		a plottable file
+!C	output		a plottable file with gnuplot
 !C
-!C	Link using GRA:GRALIB.LNK or GRA:TDSHARE.LNK
 !C---
 
 SUBROUTINE Histo1
 
-!	IMPLICIT        REAL*8          (A-E,G-H,O-Z)
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!        INCLUDE	        'SHADOW$INC:DIM.PAR/LIST'
-!C
-!C CHECK/FIXME:
-!C The X and Y vectors need to "REAL" for VMS for the Topdrawer calls,
-!C but REAL*8 for Unix and the rest of the civilized world.
-!C
 	implicit none 
 
 	character(len=sklen)  :: fileIn,fileIn2
 	integer(kind=ski)  :: n_Col,iEner,iFlag,iErr,i,iAnsw
 	integer(kind=ski)  :: nCol1,nPoint1,nCol2,nPoint2,iNorm
 	
-	integer(kind=ski)  :: iLost,iRefl,iUnits,iFile,iScale,jBin,nBin
-	real(kind=skr)     :: xmin,xmax,center,width,xArg,xLow
-	real(kind=skr)     :: step,xStart,arg,val,val0,counts,ymax,y1upp
-	real(kind=skr)     :: rNorm
+	integer(kind=ski)  :: iLost,iRefl,iFile,jBin,nBin
+	real(kind=skr)     :: center,width
+	real(kind=skr)     :: xmin,xmax,xArg,xLow
 
         real(kind=skr),dimension(:,:),allocatable :: ray,ray2
         real(kind=skr),dimension(:),allocatable   :: xArray,yArray
 
-!     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-!     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-!     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-!     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-!	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
-!	REAL		XARRAY, YARRAY
-!#endif
-!	CHARACTER*80	FILEIN,FILEIN2,RSTRING
-!
-!     	REAL*8		RAY(18,N_DIM),VAL,TCONV
-!     	REAL*8		RAY2(18,N_DIM)
-!        REAL*8          RNUMBER
-!     	DIMENSION	XARRAY(500),YARRAY(500),XTEMP(101)
 
-!#ifndef vms
-!	CHARACTER*1024	PRIMVS
-!	CHARACTER*1024	PRIMVSPATH
-!#endif
-     	
-!     	DATA	PI     	/  3.1415 92653 58979 32384 62643 D0 /
-!     	DATA	PIHALF 	/  1.5707 96326 79489 66192 31322 D0 /
-!     	DATA	TWOPI 	/  6.2831 85307 17958 64769 25287 D0 /
-!     	DATA	TODEG 	/ 57.2957 79513 08232 08767 98155 D0 /
-!!     	DATA	TORAD	/  0.0174 53292 51994 32957 69237 D0 /
-!	DATA	TOCM	/  1.239 852	D-4		     /
-!	DATA	TOANGS 	/  1.239 852    D+4		     /
-!
-!1	WRITE(6,*)'File for analysis ?'
-1	WRITE(6,*)'File for analysis ?'
-	READ(5,3333) FILEIN
-
-3333	FORMAT (A)
+	WRITE(6,*)'File for analysis ?'
+	READ(5,'(A)') FILEIN
 
      	N_COL = IRINT ('Column to analyze ? ')
 	IF (N_COL.EQ.11) THEN
@@ -1352,19 +1312,16 @@ SUBROUTINE Histo1
 	  WRITE(6,*)'        : [2] cm-1'
 	  IENER	= IRINT ('<?> ')
 	END IF
-!C
+!
 !
 ! reads input binary file
 !
-!     	CALL	RBEAM18	(FILEIN,RAY,NCOL,NPOINT,IFLAG,IERR)
-!	IF (IERR.NE.0)	STOP	'Error in reading ray file.'
-
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
         CALL    RBeamAnalyze (fileIn,ncol1,npoint1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'TRACE3: RBeamAnalyze: Error in file: '//trim(fileIn)
+            print *,'HISTO1: RBeamAnalyze: Error in file: '//trim(fileIn)
             stop
         END IF
 
@@ -1372,26 +1329,20 @@ SUBROUTINE Histo1
         IF (allocated(xArray)) deallocate(xArray)
         IF (allocated(yArray)) deallocate(yArray)
   	ALLOCATE( RAY(18,NPOINT1) )
-  	ALLOCATE( xArray(NPOINT1) )
-  	ALLOCATE( yArray(NPOINT1) )
   	ray=0.0d0
-        xArray=0.0d0
-        yArray=0.0d0
 
 	CALL RBeam18(ray,ierr,ncol1,npoint1,fileIn)
 
-
-
 !C
-!C Find the min and max.
+!C Find the min and max (for the user)
 !C
  	XMIN	=  1.0E+20
 	XMAX	= -1.0E+20
-	DO 11 I = 1, NPOINT1
+	DO I = 1, NPOINT1
 	  XARG	= RAY(N_COL,I)
 	  XMIN	= MIN (XMIN,XARG)
 	  XMAX	= MAX (XMAX,XARG)
-11      CONTINUE
+        END DO
 	IF (N_COL.EQ.11) THEN
 	   IF (IENER.EQ.0) THEN
 	     XMIN	= TWOPI/XMIN*1.0E+8
@@ -1404,9 +1355,19 @@ SUBROUTINE Histo1
 	WRITE(6,*)'Read    : ',NPOINT1,' rays'
 	WRITE(6,*)'Maximum : ',XMAX
 	WRITE(6,*)'Minimum : ',XMIN
-     	CENTER= RNUMBER ('Distribution center ? ')
-     	WIDTH = RNUMBER ('             width ? ')
+     	CENTER= RNUMBER ('Distribution center (set zero for default) ? ')
+     	WIDTH = RNUMBER ('             width  (set zero for default) ? ')
+
+
      	NBIN = IRINT ('Number of bins (odd, please) ? ')
+
+        ! allocate results array
+  	ALLOCATE( xArray(NBIN) )
+  	ALLOCATE( yArray(NBIN) )
+        xArray=0.0d0
+        yArray=0.0d0
+
+
      	WRITE(6,*)'Flag checks. Enter :'
      	WRITE(6,*)'0	to exclude lost rays'
      	WRITE(6,*)'1	to include lost rays too'
@@ -1418,82 +1379,129 @@ SUBROUTINE Histo1
      	WRITE(6,*)'2	area normalized to 1'
      	INORM = IRINT ('<?> ')
 	IREFL = IRINT ('Include reflectivity (|A|**2 as weighing factor)? ')
-     	IF (IREFL.EQ.1) THEN
-!     	  WRITE(6,*)'Options. Enter: '
-!     	  WRITE(6,*)'0     to use |A| as weighing factor'
-!     	  WRITE(6,*)'1     to use |A|**2 as weighing factor (transmitted)'
-!     	  WRITE(6,*)'2     to use 1-|A|**2 as weighing factor (absorbed )'
-!     	  IUNITS = IRINT ('<?> ')
-          iUnits=1
-!	  IF (IUNITS.EQ.2) THEN
-!     	    IFILE  = IYES ('Use another file for incoming power [ Y/N ] ? ')
-!     	    IF (IFILE.EQ.1) THEN
-!     	      FILEIN2 = RSTRING ('File-name ? ')
-!     	      !CALL RBEAM18 (FILEIN2,RAY2,NCOL2,NPOINT,IFLAG,IERR)
-!	      !IF (IERR.NE.0)	STOP	'Error in reading ray file.'
-!              CALL    RBeamAnalyze (fileIn2,ncol2,npoint2,iflag,ierr)
-!  	      ALLOCATE( RAY(18,NPOINT2) )
-!  	      ray=0.0d0
-!	      CALL RBeam18(ray2,ierr,ncol2,npoint2,fileIn2)
-!     	    END IF
-!	  END IF
-!	  WRITE(6,*)'Scale to :'
-!	  WRITE(6,*)'  0      no scaling (cm-1)'
-!	  WRITE(6,*)'  1      Watt'
-!	  WRITE(6,*)'  2      eV/sec.'
-!	  ISCALE 	= IRINT ('<?> ')
-          iScale=0
-     	END IF
-!#if defined (vms)
-!	WRITE(6,*)'Output options :'
-!	WRITE(6,*)'  [ 0 ] store histogram in a file'
-!	WRITE(6,*)'  [ 1 ] plot histogram on screen ' 
-!	WRITE(6,*)'  [ 2 ] both' 
-!	IOUT	= IRINT ('Then ? ')
-!	IF (IOUT.EQ.1.OR.IOUT.EQ.2) THEN
-!	  CALL	SET_SCREEN	(' ',0,ITERM)
-!	END IF
-!#else 
-!	  WRITE(6,*) 'Display type:'
-!#if HAVE_XWINDOWS
-!	  WRITE(6,*) '  [ 0 ] Xwindow'
-!#endif
-!	  WRITE(6,*) '  [ 1 ] Tektronix'
-!	  WRITE(6,*) '  [ 2 ] Postscript file'
-!	  ITERM = IRINT ('Terminal type:  ')
-!#if !HAVE_XWINDOWS
-!	IF (ITERM.EQ.0) THEN
-!	    WRITE (*,*) 'No X Windows support. Using Postscript file'
-!	    ITERM=2
-!	ENDIF
-!#endif
-!	IF (ITERM.LT.0 .OR. ITERM.GT.2) THEN
-!	    WRITE (*,*) 'Invalid device Id. Using Postscript file'
-!	    ITERM=2
-!	ENDIF
-!#endif
 
-!C
-!C Clear the arrays
-!C
-!     	DO 12 I=1,100
-!     	  XARRAY(I)  =   0.0
-!     	  YARRAY(I)  =   0.0
-!	  XTEMP(I)   =   0.0
-!12     	CONTINUE
 !C
 !C Fill in the bins
 !C
+	call histo1_calc(ray,NPOINT1,NCOL1, &
+                         XARRAY,YARRAY,NBIN,&
+                         N_COL,IENER,CENTER,WIDTH,ILOST,INORM,IREFL)
+
+!C
+!C Ready for output.
+!C
+     	  OPEN (20,FILE='histo1.dat',STATUS='UNKNOWN') !,INITIALSIZE=5)
+     	    DO I=1,NBIN
+     	      WRITE (20,*)	XARRAY(I),YARRAY(I)
+            END DO
+     	  CLOSE (20)
+	  print *,'File (data) written to disk: histo1.dat'
+     	  OPEN (21,FILE='histo1.gpl',STATUS='UNKNOWN') !,INITIALSIZE=5)
+            WRITE (21,*)  "#"
+            WRITE (21,*)  "# Gnuplot script for shadow3"
+            WRITE (21,*)  "# Created by histo1"
+            WRITE (21,*)  "#"
+            IF (trim(OS_NAME) == "Windows") THEN
+                WRITE(21,'(A)')  'set terminal win '
+            ELSE
+                WRITE(21,'(A)')  'set terminal x11 '
+            END IF
+            WRITE (21,*)  "plot 'histo1.dat' using 1:2 with boxes linetype -1"
+            WRITE (21,*)  "pause -1 'Press <Enter> to end graphic '"
+     	  CLOSE (21)
+	  print *,'File (gnuplot script) written to disk: histo1.gpl'
+	  
+        IF (allocated(ray)) deallocate(ray)
+        IF (allocated(ray2)) deallocate(ray2)
+        IF (allocated(xArray)) deallocate(xArray)
+        IF (allocated(yArray)) deallocate(yArray)
+
+	RETURN
+END SUBROUTINE Histo1
+
+
+!C+++
+!C
+!C	subroutine	histo1_calc
+!C
+!C	purpose		to compute the histogram needed by histo1
+!C
+!C	input 		a RAY array
+!C
+!C	output		two arrays xArray and yArray with histogram
+!C
+!C      warning         Arrays must be allocated at caller lever. 
+!C                      Counts are added to yArray (for loops). 
+!C
+!C---
+SUBROUTINE histo1_calc(ray,     & ! in: ray 
+                       NPOINT1, & ! in: number of rays
+                       NCOL1,   & ! in: number of cols used
+                       XARRAY,  & ! inout: x array of the histogram
+                       YARRAY,  & ! inout: y array of the histigram
+                       NBIN,    & ! in: number of bins (odd)
+                       N_COL,   & ! in: col to analyze
+                       IENER,   & ! in: if col=11, units: 0=A, 1=eV, 2=cm-1
+                       CENTER,  & ! inout: the distribution center 
+                       WIDTH,   & ! inout: the distribution width 
+                                  !        (zero=recalculate width and center)
+                       ILOST,   & ! in: lost ray flag 0=Good, 1=All, 2=LostOnly
+                       INORM,   & ! in: normalize to: 0=None, 1=MaxHisto, 2=Area
+                       IREFL    & ! in: if 1, weith rays with reflectivity A**2
+                      )
+
+	implicit none 
+	integer(kind=ski), intent(in)  :: npoint1,ncol1
+        real(kind=skr), dimension(18,npoint1), intent(in)   :: ray
+	integer(kind=ski), intent(in)  :: n_col,iener,nbin
+	integer(kind=ski), intent(in)  :: ilost,inorm,irefl
+	real(kind=skr), intent(inout)     :: center,width
+
+	real(kind=skr), dimension(nbin), intent(inout)     :: xarray,yarray
+
+     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
+	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
+
+	integer(kind=ski)  ::  i,jbin
+	real(kind=skr)     ::  xarg,xmin,xmax,xlow,step,xstart
+	real(kind=skr)     ::  arg, val, counts, ymax, rnorm, y1upp
+
+
+         if (width.eq.0) then   ! default values
+            XMIN	=  1.0E+20
+            XMAX	= -1.0E+20
+            DO I = 1, NPOINT1
+              XARG	= RAY(N_COL,I)
+              XMIN	= MIN (XMIN,XARG)
+              XMAX	= MAX (XMAX,XARG)
+            END DO
+            IF (N_COL.EQ.11) THEN
+              IF (IENER.EQ.0) THEN
+                XMIN	= TWOPI/XMIN*1.0E+8
+                XMAX	= TWOPI/XMAX*1.0E+8
+              ELSE IF (IENER.EQ.1) THEN
+                XMIN	= XMIN/TWOPI*TOCM
+                XMAX	= XMAX/TWOPI*TOCM
+              END IF
+            END IF
+            WIDTH = XMAX-XMIN
+            CENTER = 0.5*(XMAX+XMIN)
+         end if
+
+
      	  XLOW	=   CENTER - WIDTH/2
      	  STEP	=   WIDTH/(NBIN - 1)
      	  XSTART	=   XLOW - STEP/2
-     	DO 999 I=1,NPOINT1
+
+
+     	DO I=1,NPOINT1
 	 XARG	= RAY(N_COL,I)
 !C
 !C Use the appropriate units for column 11, if it is selected.
 !C
 	 IF (N_COL.EQ.11) THEN
-	   IF (XARG.EQ.0.0D0) GO TO 999
+	   !IF (XARG.EQ.0.0D0) GO TO 999
+	   IF (XARG.EQ.0.0D0) CYCLE
 	   IF (IENER.EQ.0) THEN
 	     XARG	= TWOPI/XARG*1.0E+8
 	   ELSE IF (IENER.EQ.1) THEN
@@ -1501,74 +1509,46 @@ SUBROUTINE Histo1
 	   END IF
 	 END IF
      	 IF (ILOST.EQ.0) THEN
-     	  IF (RAY(10,I).LT.0.0D0) GO TO 999
+     	  !IF (RAY(10,I).LT.0.0D0) GO TO 999
+     	  IF (RAY(10,I).LT.0.0D0) CYCLE
      	 ELSE	IF (ILOST.EQ.2) THEN
-     	  IF (RAY(10,I).GT.0.0D0) GO TO 999
+     	  !IF (RAY(10,I).GT.0.0D0) GO TO 999
+     	  IF (RAY(10,I).GT.0.0D0) CYCLE
       	 END IF
+
       	 ARG	=   (XARG - XSTART)/STEP
      	 JBIN	=   INT (ARG) + 1
-      	 IF (JBIN.LT.1.OR.JBIN.GT.NBIN) GO TO 999
+      	 !IF (JBIN.LT.1.OR.JBIN.GT.NBIN) GO TO 999
+      	 IF (JBIN.LT.1.OR.JBIN.GT.NBIN) CYCLE
 	   IF (IREFL.EQ.1) THEN
 	     VAL  =   RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2
-!!	     IF (NCOL.EQ.18)  &
 	     IF (ncol1.EQ.18)  &
                 VAL = VAL + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
-!	     IF (IUNITS.EQ.0) THEN
 		VAL =   SQRT(VAL)
-!     	     ELSE IF (IUNITS.EQ.1) THEN
-!     		VAL  =   VAL
-!     	     ELSE IF (IUNITS.EQ.2) THEN
-!     		IF (IFILE.EQ.0) THEN
-!     		  VAL  =  (1.0D0-VAL)
-!     		ELSE
-!	          VAL0 =   RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2
-!	          IF (NCOL2.EQ.18) THEN
-!     		  	VAL0 = VAL0 + RAY2(16,I)**2 + RAY2(17,I)**2 +  &
-!      							RAY2(18,I)**2
-!		  ENDIF
-!     		  VAL  =  (VAL0-VAL)
-!     		END IF
-!     	     END IF
-!	     IF (ISCALE.EQ.1) THEN
-!     	  	VAL	=  VAL*RAY(11,I)*TOCM*1.6021892D-19/TWOPI
-!	     ELSE IF (ISCALE.EQ.2) THEN
-!		VAL	=  VAL*RAY(11,I)*TOCM/TWOPI
-!	     END IF
 	   ELSE
 		VAL = 1.0D0
 	   END IF
     	YARRAY(JBIN) = YARRAY(JBIN) + VAL
-999	CONTINUE
+!999    CONTINUE
+        END DO
 !C
 !C Prepare the arrays for writing
 !C
-     	DO 13 I=1,NBIN
+     	DO I=1,NBIN
      	  XARRAY(I) =   (I-1)*STEP + XLOW
-13     	CONTINUE
-!C
-!C Write the xtemp array for primvs purposes.
-!C
-!#if !defined(vms)
-!	  X1LOW = CENTER - 0.6125*WIDTH
-!	  X1UPP = CENTER + 0.6125*WIDTH
-!	  Y1LOW = 0.0
-!	  XTEMP(1) = XSTART
-!	  DO 51 I = 2,NBIN+1
-!	    XTEMP(I) = XTEMP(I-1) + STEP
-!51	  CONTINUE
-!#endif
+        END DO
 
 !C
 !C Normalize the arrays
 !C
-     	  COUNTS	=   0.0
-     	  YMAX		= - 1.0
-     	DO 14 I=1,NBIN
+     	COUNTS	=   0.0
+     	YMAX		= - 1.0
+     	DO I=1,NBIN
      	  YMAX	=   MAX(YMAX,YARRAY(I))
      	  COUNTS=   COUNTS + YARRAY(I)
-14     	CONTINUE
+        END DO
 !C
-     	 IF (INORM.NE.0) THEN
+     	IF (INORM.NE.0) THEN
      	  IF (INORM.EQ.1) THEN
 	    RNORM  =   YMAX
 	    Y1UPP  = 1.2
@@ -1577,113 +1557,97 @@ SUBROUTINE Histo1
 	    RNORM  =   COUNTS
 	    Y1UPP  = 1.2*YMAX/COUNTS
 	  END IF
-     	   DO 16 I=1,NBIN
-     	   YARRAY(I) =   YARRAY(I)/RNORM
-16     	  CONTINUE
+     	  DO I=1,NBIN
+     	     YARRAY(I) =   YARRAY(I)/RNORM
+          END DO
 	ELSE IF (INORM.EQ.0) THEN
 	  Y1UPP = 1.2*YMAX
      	END IF
-!C
-!C Ready for output.
-!C
-!#ifdef vms
-!	IF (IOUT.EQ.0.OR.IOUT.EQ.2) THEN
-     	  OPEN (20,FILE='histo1.dat',STATUS='UNKNOWN') !,INITIALSIZE=5)
-     	    DO 17 I=1,NBIN
-     	      WRITE (20,*)	XARRAY(I),YARRAY(I)
-17     	    CONTINUE
-     	  CLOSE (20)
-	  print *,'File (data) written to disk: histo1.dat'
-     	  OPEN (21,FILE='histo1.gpl',STATUS='UNKNOWN') !,INITIALSIZE=5)
-            WRITE (21,*)  "#"
-            WRITE (21,*)  "# Gnuplot script for shadow3"
-            WRITE (21,*)  "# Created by histo1"
-            WRITE (21,*)  "#"
-IF (trim(OS_NAME) == "Windows") THEN
-    WRITE(21,'(A)')  'set terminal win '
-ELSE
-    WRITE(21,'(A)')  'set terminal x11 '
-END IF
-            WRITE (21,*)  "plot 'histo1.dat' using 1:2 with boxes linetype -1"
-            WRITE (21,*)  "pause -1 'Press <Enter> to end graphic '"
-     	  CLOSE (21)
-	  print *,'File (gnuplot script) written to disk: histo1.gpl'
-	  
-!     	  IANSW = IYES ( 'Execute gnoplot script [Y/N ] ?')
-!	  IF (IANSW == 1) THEN
-!            CALL SYSTEM("gnuplot histo1.gnu")
-!	  END IF 
-!	END IF
-!	IF (IOUT.EQ.1.OR.IOUT.EQ.2) THEN
-!	  CALL TDNEWP
-!	  CALL TDHIST (NBIN,XARRAY,YARRAY)
-!	  CALL SET_SCREEN	(' ',1,ITERM)
-!	END IF
-!#else
-!	  OPEN (22,FILE='histo1.dat',STATUS='UNKNOWN')
-!	  WRITE(22,*) XTEMP(1), 0.0
-!	  DO 53 I = 1,NBIN+1
-!	    WRITE(22,*) XTEMP(I), YARRAY(I)
-!	    WRITE(22,*) XTEMP(I+1), YARRAY(I)
-!53	  CONTINUE
-!	  WRITE(22,*) XTEMP(NBIN+1), 0.0
-!	  CLOSE(22)
-!
-!	  OPEN (23,FILE='histo1.prm',STATUS='UNKNOWN')
-!	  WRITE(23,*) '# Primvs command file to plot output of HISTO1'
-!	  IF (ITERM.EQ.0) THEN
-!	    WRITE(23,*) '# Initialize Xwindow display'
-!	    WRITE(23,*) ' '
-!	    WRITE(23,*) 'initpage(xwin)'
-!	  ELSE IF (ITERM.EQ.1) THEN
-!	    WRITE(23,*) '# Initialize Tektronix display'
-!	    WRITE(23,*) ' '
-!	    WRITE(23,*) 'initpage(tekt)'
-!	  ELSE IF (ITERM.EQ.2) THEN
-!	    WRITE(23,*) '# Initialize postscript file '
-!	    WRITE(23,*) ' '
-!	    WRITE(23,*) 'setcolor(0)'
-!	    WRITE(23,*) 'initpage(ps,"histo1.ps")'
-!	  ENDIF
-!	  WRITE(23,*) '# Set limits on viewing window, plot, and '
-!	  WRITE(23,*) '# character size.'
-!	  WRITE(23,*) 'regionr(0.1,0.1,0.9,0.9,1.0)'
-!	  WRITE(23,3030) X1LOW,X1UPP,Y1LOW,Y1UPP
-!	  WRITE(23,*) 'color(green)'
-!	  WRITE(23,*) 'scalechr(0.8)'
-!	  WRITE(23,*) ' '
-!	  WRITE(23,*) '# Plot histogram from histo1.dat and draw axes'
-!	  WRITE(23,*) 'plotl("histo1.dat")'
-!	  WRITE(23,*) 'box("bcnst",0,0,"bcnstv",0,0)'
-!	  WRITE(23,*) 'closepage'
-!	  WRITE(23,*) 'exit'
-!
-!3030    FORMAT ('xyrange(',E15.8,',',E15.8,',',E15.8,',',E15.8,')')
-!
-!	IFLAG = 0
-!	CALL PROGPATH ('primvs', PRIMVS, IFLAG)
-!	PRIMVSPATH = PRIMVS(1:IBLANK(PRIMVS)) // ' -i histo1.prm'
-!	WRITE(*,*) 'Executing program: ' // 
-!     $		PRIMVSPATH(1:IBLANK(PRIMVSPATH))
-!#if !defined(_WIN32)
-!	CALL SYSTEM (PRIMVSPATH)
-!#else
-!	IFLAG = 0
-!	CALL RUNPRIMVS (PRIMVS(1:IBLANK(PRIMVS)),'histo1.prm', iflag)
-!#endif
-!#endif
 
-!     	IANSW = IYES ( 'Another run  [ Y/N ] ?')
-!     	IF (IANSW.EQ.1) GO TO 1
-!     	WRITE(6,*)'Return to operating system'
-!     	STOP
-        IF (allocated(ray)) deallocate(ray)
-        IF (allocated(ray2)) deallocate(ray2)
-        IF (allocated(xArray)) deallocate(xArray)
-        IF (allocated(yArray)) deallocate(yArray)
-	RETURN
-END SUBROUTINE Histo1
+	!do i=0,nbin
+        !   print *,xarray(i),yarray(i)
+	!end do
 
+END SUBROUTINE histo1_calc
+
+
+
+!C+++
+!C
+!C	subroutine	histo1_calc_easy
+!C
+!C	purpose		to compute the histogram needed by histo1
+!C                      It uses keywords for optional arguments to 
+!C                      make life easier for the programmer user.
+!C
+!C	input 		a RAY array
+!C
+!C	output		two arrays xArray and yArray with histogram
+!C
+!C      warning         Arrays must be allocated at caller lever. 
+!C                      Counts are added to yArray (for loops). 
+!C
+!C---
+SUBROUTINE histo1_calc_easy (ray,     & ! in: ray 
+                       N_COL,   & ! in: col to analyze
+                       NBIN,    & ! in: number of bins (odd)
+                       XARRAY,  & ! inout: x array of the histogram
+                       YARRAY,  & ! inout: y array of the histigram
+
+                       CENTER,  & ! opt inout: the distribution center [0]
+                       WIDTH,   & ! opt inout: the distribution width [0]
+                                  !   (set to zero=recalculate width and center)
+
+                       NPOINT1, & ! opt in: number of rays [size(ray,1)]
+                       NCOL1,   & ! opt in: number of cols used [size(ray,2)]
+                       IENER,   & ! opt in: if col=11, units:[0]=A, 1=eV, 2=cm-1
+                       ILOST,   & ! opt in: lost ray flag [0]=Good, 1=All, 2=LostOnly
+                       INORM,   & ! opt in: normalize to: [0]=None, 1=MaxHisto, 2=Area
+                       IREFL    & ! opt in: [0]=NoWeight, 1=weigth rays with reflectivity A**2
+                      )
+
+	implicit none 
+	integer(kind=ski), intent(in)  :: n_col,nBin
+        real(kind=skr), dimension(:,:), intent(in)     :: ray
+	real(kind=skr), dimension(nbin), intent(inout) :: xarray,yarray
+
+	real(kind=skr),    optional, intent(inout)     :: center,width
+	integer(kind=ski), optional, intent(inout)  :: npoint1,ncol1
+	integer(kind=ski), optional, intent(inout)  :: iener,ilost,inorm,irefl
+
+! auxiliar variables
+	integer(kind=ski) :: npoint2, ncol2
+	real(kind=skr)    :: center2=0.0,width2=0.0
+	integer(kind=ski) :: iener2=0,ilost2=0,inorm2=0,irefl2=0
+
+        !compute histogram
+        !
+        ! note that center and width are set to zero for i=1, so they 
+        ! are computed and stored for i>1
+        ! Also, yarray is zero for i=1, but for i>1 it accumulates the counts. 
+        ncol2=size(ray,1)
+        npoint2=size(ray,2)
+
+IF (present(center)) center2 = center
+IF (present(width))  width2 = width
+IF (present(iener))  iener2 = iener
+IF (present(ilost))  ilost2 = ilost
+IF (present(inorm))  inorm2 = inorm
+IF (present(irefl))  irefl2 = irefl
+IF (present(ncol1))  ncol2 = ncol1
+IF (present(npoint1)) npoint2 = npoint1
+
+call histo1_calc(ray,npoint2,ncol2, &
+                   xarray,yarray,nBin,&
+                   n_col,iener2,center2,width2,&
+                   ilost2,inorm2,irefl2)
+
+IF (present(center)) center=center2
+IF (present(width))  width = width2
+
+END SUBROUTINE histo1_calc_easy
+
+! 
 !
 ! now plotxy...
 !
@@ -5165,7 +5129,6 @@ SUBROUTINE FocNew
         IF (allocated(ray)) deallocate(ray)
 	RETURN
 END SUBROUTINE FocNew
-
 
 
 End Module Shadow_PostProcessors
