@@ -48,7 +48,7 @@ Module Shadow_PostProcessors
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
-    public :: histo1,histo1_calc, histo1_calc_easy
+    public :: histo1,histo1_calc, histo1_calc_easy, intens_calc
     public :: FFresnel,FFresnel2D,ReColor,Intens,FocNew
 
     !---- List of private functions ----!
@@ -1294,10 +1294,10 @@ SUBROUTINE Histo1
 	
 	integer(kind=ski)  :: iLost,iRefl,iFile,jBin,nBin
 	real(kind=skr)     :: center,width
-	real(kind=skr)     :: xmin,xmax,xArg,xLow
+	real(kind=skr)     :: xmin,xmax,xArg,xLow,sigma
 
         real(kind=skr),dimension(:,:),allocatable :: ray,ray2
-        real(kind=skr),dimension(:),allocatable   :: xArray,yArray
+        real(kind=skr),dimension(:),allocatable   :: xArray,yArray,y2Array
 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
@@ -1328,6 +1328,7 @@ SUBROUTINE Histo1
         IF (allocated(ray)) deallocate(ray)
         IF (allocated(xArray)) deallocate(xArray)
         IF (allocated(yArray)) deallocate(yArray)
+        IF (allocated(y2Array)) deallocate(y2Array)
   	ALLOCATE( RAY(18,NPOINT1) )
   	ray=0.0d0
 
@@ -1359,13 +1360,16 @@ SUBROUTINE Histo1
      	WIDTH = RNUMBER ('             width  (set zero for default) ? ')
 
 
-     	NBIN = IRINT ('Number of bins (odd, please) ? ')
+     	NBIN = IRINT ('Number of bins (odd, please. Default=31) ? ')
+        IF (NBIN.EQ.0) NBIN=31
 
         ! allocate results array
   	ALLOCATE( xArray(NBIN) )
   	ALLOCATE( yArray(NBIN) )
+  	ALLOCATE( y2Array(NBIN) )
         xArray=0.0d0
         yArray=0.0d0
+        y2Array=0.0d0
 
 
      	WRITE(6,*)'Flag checks. Enter :'
@@ -1384,16 +1388,22 @@ SUBROUTINE Histo1
 !C Fill in the bins
 !C
 	call histo1_calc(ray,NPOINT1,NCOL1, &
-                         XARRAY,YARRAY,NBIN,&
+                         XARRAY,YARRAY,Y2ARRAY,NBIN,&
                          N_COL,IENER,CENTER,WIDTH,ILOST,INORM,IREFL)
 
 !C
 !C Ready for output.
 !C
      	  OPEN (20,FILE='histo1.dat',STATUS='UNKNOWN') !,INITIALSIZE=5)
+ 
+            ! write a first empty bin, for helping gnuplot to make the plot
+     	    WRITE (20,*)	XARRAY(1)-(XARRAY(2)-XARRAY(1)),0.0D0,0.0D0
      	    DO I=1,NBIN
-     	      WRITE (20,*)	XARRAY(I),YARRAY(I)
+	      SIGMA = sqrt(max(Y2ARRAY(I)-(YARRAY(I)**2)/NPOINT1,0))
+     	      WRITE (20,*)	XARRAY(I),YARRAY(I),SIGMA
             END DO
+            ! write a last empty bin, for helping gnuplot to make the plot
+     	    WRITE (20,*)	XARRAY(NBIN)+(XARRAY(2)-XARRAY(1)),0.0D0,0.0D0
      	  CLOSE (20)
 	  print *,'File (data) written to disk: histo1.dat'
      	  OPEN (21,FILE='histo1.gpl',STATUS='UNKNOWN') !,INITIALSIZE=5)
@@ -1406,7 +1416,25 @@ SUBROUTINE Histo1
             ELSE
                 WRITE(21,'(A)')  'set terminal x11 '
             END IF
+            WRITE (21,*)  "#Note that the abscissas in histo1.dat correspond to the CENTER of the bin"
+            WRITE (21,*)  " "
+            WRITE (21,*)  "# by default, do not display error bars"
             WRITE (21,*)  "plot 'histo1.dat' using 1:2 with boxes linetype -1"
+            WRITE (21,*)  " "
+            WRITE (21,*)  "# for a plot with error bars comment the previous line"
+            WRITE (21,*)  "#     and uncomment the next two lines"
+            WRITE (21,*)  "# plot 'histo1.dat' using 1:2:3 with yerrorbars linestyle 3, \"
+            WRITE (21,*)  "# 'histo1.dat' using 1:2 with boxes linetype -1" 
+            WRITE (21,*)  " "
+            WRITE (21,*)  "# for a plot with a Gaussian fit, uncomment the following lines"
+            WRITE (21,*)  "# a=0.0 "
+            WRITE (21,*)  "# b=0.1 "
+            WRITE (21,*)  "# c=0.9 "
+            WRITE (21,*)  "# f(x) = a*exp(-(x-b)*(x-b)/2/c/c) "
+            WRITE (21,*)  "# fit f(x) 'histo1.dat' via a, b, c "
+            WRITE (21,*)  "# plot f(x),'histo1.dat' using 1:2 with boxes linetype -1 "
+            WRITE (21,*)  "# print 'Fit FWHM=',c*2.35 "
+            WRITE (21,*)  " "
             WRITE (21,*)  "pause -1 'Press <Enter> to end graphic '"
      	  CLOSE (21)
 	  print *,'File (gnuplot script) written to disk: histo1.gpl'
@@ -1415,6 +1443,7 @@ SUBROUTINE Histo1
         IF (allocated(ray2)) deallocate(ray2)
         IF (allocated(xArray)) deallocate(xArray)
         IF (allocated(yArray)) deallocate(yArray)
+        IF (allocated(y2Array)) deallocate(y2Array)
 
 	RETURN
 END SUBROUTINE Histo1
@@ -1428,10 +1457,11 @@ END SUBROUTINE Histo1
 !C
 !C	input 		a RAY array
 !C
-!C	output		two arrays xArray and yArray with histogram
+!C	output		three arrays: xArray and yArray with histogram
+!C                      and y2Array with square of counts for error calculations
 !C
 !C      warning         Arrays must be allocated at caller lever. 
-!C                      Counts are added to yArray (for loops). 
+!C                      Counts are added to yArray and y2Array (for loops). 
 !C
 !C---
 SUBROUTINE histo1_calc(ray,     & ! in: ray 
@@ -1439,6 +1469,7 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
                        NCOL1,   & ! in: number of cols used
                        XARRAY,  & ! inout: x array of the histogram
                        YARRAY,  & ! inout: y array of the histigram
+                       Y2ARRAY, & ! inout: array with the square of counts (for errors)
                        NBIN,    & ! in: number of bins (odd)
                        N_COL,   & ! in: col to analyze
                        IENER,   & ! in: if col=11, units: 0=A, 1=eV, 2=cm-1
@@ -1457,7 +1488,7 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
 	integer(kind=ski), intent(in)  :: ilost,inorm,irefl
 	real(kind=skr), intent(inout)     :: center,width
 
-	real(kind=skr), dimension(nbin), intent(inout)     :: xarray,yarray
+	real(kind=skr), dimension(nbin), intent(inout)     :: xarray,yarray,y2array
 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
@@ -1484,15 +1515,16 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
                 XMAX	= XMAX/TWOPI*TOCM
               END IF
             END IF
-            WIDTH = XMAX-XMIN
             CENTER = 0.5*(XMAX+XMIN)
+            WIDTH = 1.001*(XMAX-XMIN)
          end if
 
-
      	  XLOW	=   CENTER - WIDTH/2
-     	  STEP	=   WIDTH/(NBIN - 1)
-     	  XSTART	=   XLOW - STEP/2
-
+     	  !srio@esrf.eu 20110415 changed. Why 1 bin should not work? 
+     	  !STEP	=   WIDTH/(NBIN - 1)
+     	  STEP	=   WIDTH/NBIN
+     	  !XSTART	=   XLOW - STEP/2
+     	  XSTART	=   XLOW 
 
      	DO I=1,NPOINT1
 	 XARG	= RAY(N_COL,I)
@@ -1500,7 +1532,6 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
 !C Use the appropriate units for column 11, if it is selected.
 !C
 	 IF (N_COL.EQ.11) THEN
-	   !IF (XARG.EQ.0.0D0) GO TO 999
 	   IF (XARG.EQ.0.0D0) CYCLE
 	   IF (IENER.EQ.0) THEN
 	     XARG	= TWOPI/XARG*1.0E+8
@@ -1509,33 +1540,31 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
 	   END IF
 	 END IF
      	 IF (ILOST.EQ.0) THEN
-     	  !IF (RAY(10,I).LT.0.0D0) GO TO 999
      	  IF (RAY(10,I).LT.0.0D0) CYCLE
      	 ELSE	IF (ILOST.EQ.2) THEN
-     	  !IF (RAY(10,I).GT.0.0D0) GO TO 999
      	  IF (RAY(10,I).GT.0.0D0) CYCLE
       	 END IF
 
       	 ARG	=   (XARG - XSTART)/STEP
      	 JBIN	=   INT (ARG) + 1
-      	 !IF (JBIN.LT.1.OR.JBIN.GT.NBIN) GO TO 999
       	 IF (JBIN.LT.1.OR.JBIN.GT.NBIN) CYCLE
 	   IF (IREFL.EQ.1) THEN
 	     VAL  =   RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2
-	     IF (ncol1.EQ.18)  &
-                VAL = VAL + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
-		VAL =   SQRT(VAL)
+	     IF (ncol1.EQ.18)  VAL = VAL + RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
+             !VAL =   SQRT(VAL)
 	   ELSE
-		VAL = 1.0D0
+             VAL = 1.0D0
 	   END IF
     	YARRAY(JBIN) = YARRAY(JBIN) + VAL
-!999    CONTINUE
+    	Y2ARRAY(JBIN) = Y2ARRAY(JBIN) + VAL**2
         END DO
 !C
 !C Prepare the arrays for writing
 !C
      	DO I=1,NBIN
-     	  XARRAY(I) =   (I-1)*STEP + XLOW
+     	  !XARRAY(I) =   (I-1)*STEP + XLOW
+          ! put abscissa value at the center of the bin
+     	  XARRAY(I) =   (I-0.5)*STEP + XLOW
         END DO
 
 !C
@@ -1564,8 +1593,9 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
 	  Y1UPP = 1.2*YMAX
      	END IF
 
-	!do i=0,nbin
-        !   print *,xarray(i),yarray(i)
+        !   print *,'>>>>>>>>histo: '
+	!do i=1,nbin
+        !   print *,i,xarray(i),yarray(i)
 	!end do
 
 END SUBROUTINE histo1_calc
@@ -1593,6 +1623,7 @@ SUBROUTINE histo1_calc_easy (ray,     & ! in: ray
                        NBIN,    & ! in: number of bins (odd)
                        XARRAY,  & ! inout: x array of the histogram
                        YARRAY,  & ! inout: y array of the histigram
+                       Y2ARRAY, & ! inout: array with the square of counts (for errors)
 
                        CENTER,  & ! opt inout: the distribution center [0]
                        WIDTH,   & ! opt inout: the distribution width [0]
@@ -1609,7 +1640,7 @@ SUBROUTINE histo1_calc_easy (ray,     & ! in: ray
 	implicit none 
 	integer(kind=ski), intent(in)  :: n_col,nBin
         real(kind=skr), dimension(:,:), intent(in)     :: ray
-	real(kind=skr), dimension(nbin), intent(inout) :: xarray,yarray
+	real(kind=skr), dimension(nbin), intent(inout) :: xarray,yarray,y2array
 
 	real(kind=skr),    optional, intent(inout)     :: center,width
 	integer(kind=ski), optional, intent(inout)  :: npoint1,ncol1
@@ -1638,7 +1669,7 @@ IF (present(ncol1))  ncol2 = ncol1
 IF (present(npoint1)) npoint2 = npoint1
 
 call histo1_calc(ray,npoint2,ncol2, &
-                   xarray,yarray,nBin,&
+                   xarray,yarray,y2array,nBin,&
                    n_col,iener2,center2,width2,&
                    ilost2,inorm2,irefl2)
 
@@ -4388,44 +4419,20 @@ END SUBROUTINE ReColor
 SUBROUTINE Intens
 	implicit none
 
-     	!real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-     	!real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-     	!real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-     	!real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
 	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 
-
-!C
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:DIM.PAR/LIST'
-!#endif
-!C
 	character(len=sklen)  :: file1,file2,outFil
 	real(kind=skr),dimension(:,:),allocatable :: ray1,ray2
-	real(kind=skr)   :: r_tot,pwFac,rFac,xpl,ypl,zpl,zpl0
+	real(kind=skr)   :: sigma,r_tot,r_tot2,pwFac,rFac,xpl,ypl,zpl,zpl0
 
         integer(kind=ski) :: ncol1,ncol2,no,iFlag,iErr,kUnit,kPower,np
-        integer(kind=ski) :: i_tot,i_lost,i,iLost,kind,kPow,kPlt,kx,ky
+        integer(kind=ski) :: i_tot,i_lost,i,iLost,kind1,kPow,kPlt,kx,ky
         integer(kind=ski) :: kScaX,kScaY
 
 
-     	!CHARACTER*80	FILE1,FILE2,OUTFIL
-     	!REAL*8		RAY1(18,N_DIM),RAY2(18,N_DIM),R_TOT
-!C Statements to define the use of RSTRING
-!     	CHARACTER*80	RSTRING
-
-
-
-
-!10     	CONTINUE
      	FILE1	=   RSTRING ('File for Intensity calculations ? ' )
-
-     	!CALL	RBEAM18 (FILE1,RAY1,NCOL1,NP,IFLAG,IERR)
-     	!IF ( IERR.NE.0) STOP	'Error reading ray file.'
 
 	!
 	! it is necessary to allocate ray array here, at the main level. 
@@ -4452,8 +4459,8 @@ SUBROUTINE Intens
 	    ENDIF
 	    I_TOT  = I_TOT + 1
  29	CONTINUE
-	WRITE(6,*)  'Total rays :', I_TOT 
-	WRITE(6,*)  'Good rays :', I_TOT - I_LOST
+	WRITE(6,*) 'Total rays :', I_TOT 
+	WRITE(6,*) 'Good rays :', I_TOT - I_LOST
 	WRITE(6,*) 'Each ray has ',NCOL1,' entries.'
 !C
 !C  Modified so that the info provided below *is* used for generating 
@@ -4465,33 +4472,28 @@ SUBROUTINE Intens
 	WRITE(6,*) '      2 for only lost rays'
 	ILOST = IRINT ('<?>')
 !C
-	DO 39 I = 1, NP
-	    IF (ILOST .EQ. 0) THEN
-	       IF (RAY1 (10, I) .LT. 0.0D0) GOTO 39
-	    ELSE IF (ILOST .EQ. 2) THEN
-		IF (RAY1 (10, I) .GT. 0.0D0) GOTO 39
-	    ENDIF
-     	  R_TOT = R_TOT + RAY1(7,I)**2 + RAY1(8,I)**2 + RAY1(9,I)**2
- 39	CONTINUE
-	IF (NCOL1.EQ.18) THEN
-	DO 49 I = 1, NP
-	    IF (ILOST .EQ. 0) THEN
-	       IF (RAY1 (10, I) .LT. 0.0D0) GOTO 49
-	    ELSE IF (ILOST .EQ. 2) THEN
-		IF (RAY1 (10, I) .GT. 0.0D0) GOTO 49
-	    ENDIF
-	  R_TOT = R_TOT + RAY1(16,I)**2 + RAY1(17,I)**2 + RAY1(18,I)**2
- 49	CONTINUE
-	END IF	
+!       initialize counters
+        R_TOT = 0.0D0
+        R_TOT2 = 0.0D0
+        ! calculate total intensity 
+	CALL INTENS_CALC(ray1,np,ncol1,ilost,r_tot,r_tot2)
+	SIGMA = sqrt(max(R_TOT2-(R_TOT**2)/NP,0))
      	WRITE(6,*) 'Total intensity is :',R_TOT
+     	WRITE(6,*) 'Standard deviation in total intensity ',sigma
+     	WRITE(6,*) ' '
      	WRITE(6,*) 'Normalized intensity is :',R_TOT/NP
-30     	CONTINUE
+     	WRITE(6,*) 'Standard deviation for normalized intensity',sigma/NP
+     	WRITE(6,*) ' '
+
      	WRITE(6,*) 'Options:'
+	WRITE(6,*) 'EXIT the application ................. -1'
      	WRITE(6,*) 'Intensity transmitted/reflected ....... 0'
      	WRITE(6,*) 'Intensity absorbed .................... 1'
      	WRITE(6,*) 'Local reflectivity/transmission ....... 2'
-     	KIND	=   IRINT (' Then ? ')
-     	IF (KIND.NE.2) THEN
+     	kind1	=   IRINT (' Then ? ')
+        IF (kind1.EQ.-1) RETURN
+
+     	IF (kind1.NE.2) THEN
 	  WRITE(6,*)'Spectrum type :'
 	  WRITE(6,*)'  [0]    # photons/sec.'
 	  WRITE(6,*)'  [1]    Watt'
@@ -4501,7 +4503,7 @@ SUBROUTINE Intens
       		PWFAC = RNUMBER ('Total source power emitted ? ')
 	  RFAC	= PWFAC/NP
      	END IF
-     	IF (KIND.NE.0) THEN
+     	IF (kind1.NE.0) THEN
      	  FILE2 = RSTRING ('Input I0 file : ' )
      	  !CALL RBEAM18 (FILE2,RAY2,NCOL2,NP,IFLAG,IERR)
 	  !
@@ -4539,117 +4541,113 @@ SUBROUTINE Intens
 	       KSCAY = IRINT ('Then ? ')
 	     END IF
      	   ELSE
-     	    KX	=  IRINT ('Row for plot x-axis ? ')
-	    KSCAX = 0
-	     IF (KX.EQ.11) THEN
-	       WRITE(6,*) 'Enter :'
-	       WRITE(6,*) '	0		cm-1'
-	       WRITE(6,*) '	1		eV'
-	       WRITE(6,*) '	2		angst'
-	       KSCAX = IRINT ('Then ? ')
-	     END IF
-     	   END IF
+		    KX	=  IRINT ('Row for plot x-axis ? ')
+		    KSCAX = 0
+		     IF (KX.EQ.11) THEN
+		       WRITE(6,*) 'Enter :'
+		       WRITE(6,*) '	0		cm-1'
+		       WRITE(6,*) '	1		eV'
+		       WRITE(6,*) '	2		angst'
+		       KSCAX = IRINT ('Then ? ')
+		     END IF
+		   END IF
 
 
-!#ifdef vms
-!     	 OPEN (20,FILE=FILE2,STATUS='NEW',ERR=20)
-!#else
-     	 OPEN (20,FILE=FILE2,STATUS='UNKNOWN',ERR=20)
-	 REWIND (20)
-!#endif
-     	 DO I=1,NP
-     	   XPL	=    RAY1(KX,I)
-     	   YPL	=    RAY1(KY,I)
-     	   ZPL	=    RAY1(7,I)**2 + RAY1(8,I)**2 + RAY1(9,I)**2
-	   IF (NCOL1.EQ.18) &
-      	     ZPL = ZPL + RAY1(16,I)**2 + RAY1(17,I)**2 + RAY1(18,I)**2
-     	  IF (KIND.EQ.1) THEN
-     	    ZPL0=    RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2 
-	    IF (NCOL2.EQ.18) &
-      	      ZPL0 = ZPL0 + RAY2(16,I)**2 + RAY2(17,I)**2 +  &
-      							RAY2(18,I)**2
-     	    ZPL	=    ZPL0 - ZPL
-     	  ELSE IF (KIND.EQ.2) THEN
-     	    ZPL0=    RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2
-	    IF (NCOL2.EQ.18) &
-      	      ZPL0 = ZPL0 + RAY2(16,I)**2 + RAY2(17,I)**2 +  &
-      							RAY2(18,I)**2
-     	    ZPL	=    ZPL/ZPL0
-     	  END IF
+		 OPEN (20,FILE=FILE2,STATUS='UNKNOWN',ERR=20)
+		 REWIND (20)
+		 DO I=1,NP
+		   XPL	=    RAY1(KX,I)
+		   YPL	=    RAY1(KY,I)
+		   ZPL	=    RAY1(7,I)**2 + RAY1(8,I)**2 + RAY1(9,I)**2
+		   IF (NCOL1.EQ.18) &
+		     ZPL = ZPL + RAY1(16,I)**2 + RAY1(17,I)**2 + RAY1(18,I)**2
+		  IF (kind1.EQ.1) THEN
+		    ZPL0=    RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2 
+		    IF (NCOL2.EQ.18) &
+		      ZPL0 = ZPL0 + RAY2(16,I)**2 + RAY2(17,I)**2 +  &
+								RAY2(18,I)**2
+		    ZPL	=    ZPL0 - ZPL
+		  ELSE IF (kind1.EQ.2) THEN
+		    ZPL0=    RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2
+		    IF (NCOL2.EQ.18) &
+		      ZPL0 = ZPL0 + RAY2(16,I)**2 + RAY2(17,I)**2 +  &
+								RAY2(18,I)**2
+		    ZPL	=    ZPL/ZPL0
+		  END IF
 
-	  IF (KIND.NE.2) THEN
-     	    IF (KUNIT.EQ.1) THEN		! Watt
-     	      IF (KPOW.EQ.0) THEN
-     		ZPL = ZPL*TOCM*RAY1(11,I)/TWOPI*1.602D-19
-     	      ELSE
-     		ZPL = ZPL*RFAC
-     	      END IF
-	    ELSE				! Photons/sec
-     	      IF (KPOW.EQ.0) THEN
-     		ZPL = ZPL
-     	      ELSE
-     		ZPL = ZPL*RFAC/(TOCM*RAY1(11,I)/TWOPI*1.602D-19)
-     	      END IF
-     	    END IF
-	  END IF
-!C
-!C For the 3-D plot case, write out plot files that take
-!C into account whether the user wishes to use all the rays, only the
-!C good rays, or only the lost rays.
-!C
-     	   IF (KPLT.EQ.1) THEN
-     	     IF (ILOST.EQ.1) THEN 
-	    	IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
-     			WRITE (20,*)	XPL,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.1)		THEN
-     			WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.2)		THEN
-     			WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
-	    	ELSE	IF (KSCAY.EQ.1)		THEN
-     			WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
-	    	ELSE	IF (KSCAY.EQ.2)		THEN
-     			WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
-     	    	END IF
-     	     ELSE IF (ILOST.EQ.0.AND.RAY1(10,I).GE.0.0D0) THEN
-     	     	IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
-     			WRITE (20,*)	XPL,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.1)		THEN
-     			WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.2)		THEN
-     			WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
-	    	ELSE	IF (KSCAY.EQ.1)		THEN
-     			WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
-	    	ELSE	IF (KSCAY.EQ.2)		THEN
-     			WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
-     	    	END IF
-     	     	
-     	     ELSE IF (ILOST.EQ.2.AND.RAY1(10,I).LT.0.0D0) THEN
-     	     	IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
-     				WRITE (20,*)	XPL,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.1)		THEN
-     				WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
-	    	ELSE	IF (KSCAX.EQ.2)		THEN
-     			WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
-	    	ELSE	IF (KSCAY.EQ.1)		THEN
-     			WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
-	    	ELSE	IF (KSCAY.EQ.2)		THEN
-     			WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
-     	    	END IF
-     	     END IF
-!C
-!C For the 2-D plot case too, now write out plot files that take
-!C into account whether the user wishes to use all the rays, only the
-!C good rays, or only the lost rays.
-!C
-     	   ELSE	IF (KPLT.EQ.0) THEN
-     	     IF (ILOST.EQ.1) THEN
-	    	IF (KSCAX.EQ.0)	WRITE (20,*)	XPL,ZPL
-	    	IF (KSCAX.EQ.1)	WRITE (20,*)    TOCM*XPL/TWOPI,ZPL
-	    	IF (KSCAX.EQ.2)	WRITE (20,*)    TWOPI/XPL*1.0D8,ZPL
-	     ELSE IF (ILOST.EQ.0.AND.RAY1(10,I).GE.0.0D0) THEN
-	     	IF (KSCAX.EQ.0)	WRITE (20,*)	XPL,ZPL
-	    	IF (KSCAX.EQ.1)	WRITE (20,*)    TOCM*XPL/TWOPI,ZPL
-	    	IF (KSCAX.EQ.2)	WRITE (20,*)    TWOPI/XPL*1.0D8,ZPL
+		  IF (kind1.NE.2) THEN
+		    IF (KUNIT.EQ.1) THEN		! Watt
+		      IF (KPOW.EQ.0) THEN
+			ZPL = ZPL*TOCM*RAY1(11,I)/TWOPI*1.602D-19
+		      ELSE
+			ZPL = ZPL*RFAC
+		      END IF
+		    ELSE				! Photons/sec
+		      IF (KPOW.EQ.0) THEN
+			ZPL = ZPL
+		      ELSE
+			ZPL = ZPL*RFAC/(TOCM*RAY1(11,I)/TWOPI*1.602D-19)
+		      END IF
+		    END IF
+		  END IF
+	!C
+	!C For the 3-D plot case, write out plot files that take
+	!C into account whether the user wishes to use all the rays, only the
+	!C good rays, or only the lost rays.
+	!C
+		   IF (KPLT.EQ.1) THEN
+		     IF (ILOST.EQ.1) THEN 
+			IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
+				WRITE (20,*)	XPL,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.1)		THEN
+				WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.2)		THEN
+				WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
+			ELSE	IF (KSCAY.EQ.1)		THEN
+				WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
+			ELSE	IF (KSCAY.EQ.2)		THEN
+				WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
+			END IF
+		     ELSE IF (ILOST.EQ.0.AND.RAY1(10,I).GE.0.0D0) THEN
+			IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
+				WRITE (20,*)	XPL,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.1)		THEN
+				WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.2)		THEN
+				WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
+			ELSE	IF (KSCAY.EQ.1)		THEN
+				WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
+			ELSE	IF (KSCAY.EQ.2)		THEN
+				WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
+			END IF
+			
+		     ELSE IF (ILOST.EQ.2.AND.RAY1(10,I).LT.0.0D0) THEN
+			IF (KSCAX.EQ.0.AND.KSCAY.EQ.0)	THEN
+					WRITE (20,*)	XPL,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.1)		THEN
+					WRITE (20,*)    TOCM*XPL/TWOPI,YPL,ZPL
+			ELSE	IF (KSCAX.EQ.2)		THEN
+				WRITE (20,*)    TWOPI/XPL*1.0D8,YPL,ZPL
+			ELSE	IF (KSCAY.EQ.1)		THEN
+				WRITE (20,*)    XPL,TOCM*YPL/TWOPI,ZPL
+			ELSE	IF (KSCAY.EQ.2)		THEN
+				WRITE (20,*)    XPL,TWOPI/YPL*1.0D8,ZPL
+			END IF
+		     END IF
+	!C
+	!C For the 2-D plot case too, now write out plot files that take
+	!C into account whether the user wishes to use all the rays, only the
+	!C good rays, or only the lost rays.
+	!C
+		   ELSE	IF (KPLT.EQ.0) THEN
+		     IF (ILOST.EQ.1) THEN
+			IF (KSCAX.EQ.0)	WRITE (20,*)	XPL,ZPL
+			IF (KSCAX.EQ.1)	WRITE (20,*)    TOCM*XPL/TWOPI,ZPL
+			IF (KSCAX.EQ.2)	WRITE (20,*)    TWOPI/XPL*1.0D8,ZPL
+		     ELSE IF (ILOST.EQ.0.AND.RAY1(10,I).GE.0.0D0) THEN
+			IF (KSCAX.EQ.0)	WRITE (20,*)	XPL,ZPL
+			IF (KSCAX.EQ.1)	WRITE (20,*)    TOCM*XPL/TWOPI,ZPL
+			IF (KSCAX.EQ.2)	WRITE (20,*)    TWOPI/XPL*1.0D8,ZPL
 	     ELSE IF (ILOST.EQ.2.AND.RAY1(10,I).LT.0.0D0) THEN
 	     	IF (KSCAX.EQ.0)	WRITE (20,*)	XPL,ZPL
 	    	IF (KSCAX.EQ.1)	WRITE (20,*)    TOCM*XPL/TWOPI,ZPL
@@ -4661,10 +4659,36 @@ SUBROUTINE Intens
 
         IF (allocated(ray1)) deallocate(ray1)
         IF (allocated(ray2)) deallocate(ray2)
-!	ITRY	= IRINT ('Another run [1/0] ? ')
-!     	IF (ITRY.EQ.1)	GO TO 10
 END SUBROUTINE Intens
 
+
+SUBROUTINE Intens_calc(ray1,np,ncol1,ilost,r_tot,r_tot2)
+	implicit none
+
+	real(kind=skr),dimension(:,:), intent(in):: ray1
+        integer(kind=ski),intent(in)  :: np,ncol1,ilost
+	real(kind=skr), intent(inout):: r_tot,r_tot2
+
+        integer(kind=ski)  :: i
+	real(kind=skr)     :: w
+
+
+! not initialized, to accumulate results if called in a loop
+!        R_TOT = 0.0D0
+!        R_TOT2 = 0.0D0
+         DO I = 1, NP
+	    IF (ILOST .EQ. 0) THEN
+	       IF (RAY1 (10, I) .LT. 0.0D0) CYCLE
+	    ELSE IF (ILOST .EQ. 2) THEN
+		IF (RAY1 (10, I) .GT. 0.0D0) CYCLE
+	    ENDIF
+     	  W = RAY1(7,I)**2 + RAY1(8,I)**2 + RAY1(9,I)**2
+	  IF (NCOL1.EQ.18) W = W + RAY1(16,I)**2 + RAY1(17,I)**2 + RAY1(18,I)**2
+     	  R_TOT = R_TOT + W
+          ! srio@esrf.eu 20110414 store also the squares for error.
+     	  R_TOT2 = R_TOT2 + W**2
+         END DO
+END SUBROUTINE Intens_calc
 
 !
 !

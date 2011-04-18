@@ -108,8 +108,11 @@ Contains
      !write(*,*) "                                     XX: ",XX
        		CALL RANDOM_NUMBER(HARVEST=XX)
        		first = 0
+                CALL RANDOM_NUMBER(WRAN)
+     !write(*,*) "                                     WRAN: ",WRAN
+         else 
+                CALL RANDOM_NUMBER(WRAN)
          end if
-         CALL RANDOM_NUMBER(WRAN)
 
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment for Penelope random number generator

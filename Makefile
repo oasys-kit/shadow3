@@ -140,7 +140,7 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
-	/bin/rm -f SRSPEC SRANG SRDIST F12LIB.INDEX
+	/bin/rm -f SRSPEC SRANG SRDISTR F12LIB.INDEX
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
