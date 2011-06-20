@@ -69,9 +69,6 @@ examples:
 	$(FC) $(FFLAGS) -c example01_f95.f90 -o example01_f95.o
 	$(FC) $(FFLAGS) -o example01_f95 example01_f95.o -L. -lshadow
 
-	$(FC) $(FFLAGS) -c example02_f95.f90 -o example02_f95.o
-	$(FC) $(FFLAGS) -o example02_f95 example02_f95.o -L. -lshadow
-
 	$(CC) -I. $(CFLAGS) -c example01_c.c -o example01_c.o
 	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadowc
 
@@ -100,14 +97,14 @@ python: setup.py
 all: shadow3 lib examples python idl
 
 shadow_variables.f90: shadow_variables_precpp.F90
-	cpp -w -C -I. shadow_variables_precpp.F90 -o tmp1.f90  
-	sed 's/newline/\n/g' <tmp1.f90 > tmp2.f90
-	sed 's/^#/!#/' < tmp2.f90 > shadow_variables.f90
+# The sed commands have been put into a separate script because
+# the sed in MacOS do not accept \n
+	./Makefile_use_precompiler shadow_variables
 
 shadow_kernel.f90: shadow_kernel_precpp.F90
-	cpp -w -C -I. shadow_kernel_precpp.F90 -o tmp3.f90  
-	sed 's/newline/\n/g' <tmp3.f90 > tmp4.f90
-	sed 's/^#/!#/' < tmp4.f90 > shadow_kernel.f90
+# The sed commands have been put into a separate script because
+# the sed in MacOS do not accept \n
+	./Makefile_use_precompiler shadow_kernel
 
 
 ShadowMask_c.o: ShadowMask.c
@@ -126,11 +123,13 @@ clean:
 
 # binaries
 	/bin/rm -f gen_source trace trace3 trace3_c trace3_cpp shadow3 fig3
-	/bin/rm -f example01_f95 example02_f95 example01_c example01_cpp
+	/bin/rm -f example01_f95 example01_c example01_cpp
 	/bin/rm -f ../bin/*
 
 # files created by the preprocessor
-	/bin/rm -f tmp1.f90 tmp2.f90 tmp3.f90 tmp4.f90
+#	/bin/rm -f tmp1.f90 tmp2.f90 tmp3.f90 tmp4.f90
+	/bin/rm -f tmp1_shadow_variables.f90 tmp2_shadow_variables.f90 
+	/bin/rm -f tmp1_shadow_kernel.f90 tmp2_shadow_kernel.f90 
 	/bin/rm -f shadow_variables.f90 shadow_kernel.f90
 
 # files created by python
@@ -140,15 +139,14 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
-	/bin/rm -f SRSPEC SRANG SRDISTR F12LIB.INDEX
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
-	#/bin/cp  shadow3 ../DISTR/
-	#/bin/cp  gen_source ../DISTR/
-	#/bin/cp  trace3 ../DISTR/
-	#/bin/cp  trace ../DISTR/
 	#mv *.o ../obj
+	/bin/cp  shadow3 ../DISTR/
+	/bin/cp  gen_source ../DISTR/
+	/bin/cp  trace3 ../DISTR/
+	/bin/cp  trace ../DISTR/
 	#/bin/cp libshado*.so ../lib/
 	#/bin/cp build/lib.linux-x86_64-2.6/Shadow.so ../lib
 	#/bin/cp  shadow3 ../bin/

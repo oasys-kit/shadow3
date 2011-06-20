@@ -1,0 +1,17 @@
+#!/bin/sh
+echo "---Using script $0...."
+echo "-----Called: $0 $1"
+if [ "$1" = "" ]; then 
+  echo "$0: Error" ; exit 1
+#else
+#  echo "$0: OK."
+fi
+
+echo "-----Running: cpp -w -C -I. $1_precpp.F90 > tmp1_$1.f90  "
+cpp -w -C -I. $1_precpp.F90 > tmp1_$1.f90  
+echo "-----Running: sed -e 's/newline/\'$'\n/g' < tmp1_$1.f90 > tmp2_$1.f90"
+sed -e 's/newline/\'$'\n/g' < tmp1_$1.f90 > tmp2_$1.f90
+echo "-----Running: sed 's/^#/!#/' < tmp2_$1.f90 > $1.f90"
+sed 's/^#/!#/' < tmp2_$1.f90 > $1.f90
+
+exit 0
