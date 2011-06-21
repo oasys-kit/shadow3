@@ -1293,7 +1293,7 @@ SUBROUTINE Histo1
 	integer(kind=ski)  :: nCol1,nPoint1,nCol2,nPoint2,iNorm
 	
 	integer(kind=ski)  :: iLost,iRefl,iFile,jBin,nBin
-	real(kind=skr)     :: center,width
+	real(kind=skr)     :: center,width,zero=0.0
 	real(kind=skr)     :: xmin,xmax,xArg,xLow,sigma
 
         real(kind=skr),dimension(:,:),allocatable :: ray,ray2
@@ -1399,7 +1399,8 @@ SUBROUTINE Histo1
             ! write a first empty bin, for helping gnuplot to make the plot
      	    WRITE (20,*)	XARRAY(1)-(XARRAY(2)-XARRAY(1)),0.0D0,0.0D0
      	    DO I=1,NBIN
-	      SIGMA = sqrt(max(Y2ARRAY(I)-(YARRAY(I)**2)/NPOINT1,0))
+!	      SIGMA = sqrt(max(Y2ARRAY(I)-(YARRAY(I)**2)/NPOINT1,0))
+	      SIGMA = sqrt(max(Y2ARRAY(I)-(YARRAY(I)**2)/NPOINT1,zero))
      	      WRITE (20,*)	XARRAY(I),YARRAY(I),SIGMA
             END DO
             ! write a last empty bin, for helping gnuplot to make the plot
@@ -4426,6 +4427,7 @@ SUBROUTINE Intens
 	character(len=sklen)  :: file1,file2,outFil
 	real(kind=skr),dimension(:,:),allocatable :: ray1,ray2
 	real(kind=skr)   :: sigma,r_tot,r_tot2,pwFac,rFac,xpl,ypl,zpl,zpl0
+	real(kind=skr)   :: zero=0.0
 
         integer(kind=ski) :: ncol1,ncol2,no,iFlag,iErr,kUnit,kPower,np
         integer(kind=ski) :: i_tot,i_lost,i,iLost,kind1,kPow,kPlt,kx,ky
@@ -4477,7 +4479,7 @@ SUBROUTINE Intens
         R_TOT2 = 0.0D0
         ! calculate total intensity 
 	CALL INTENS_CALC(ray1,np,ncol1,ilost,r_tot,r_tot2)
-	SIGMA = sqrt(max(R_TOT2-(R_TOT**2)/NP,0))
+	SIGMA = sqrt(max(R_TOT2-(R_TOT**2)/NP,zero))
      	WRITE(6,*) 'Total intensity is :',R_TOT
      	WRITE(6,*) 'Standard deviation in total intensity ',sigma
      	WRITE(6,*) ' '
@@ -4953,7 +4955,9 @@ SUBROUTINE FocNew
      	   RAY(3,JJ) = RAY(3,JJ) - ZEXTER
 13     	 CONTINUE
      	END IF
-     	CALL FINDOUT (3,NN,AZ1,AZ2,AZ3,AZ4,AZ5,AZ6,RAY,nn)
+     	!CALL FINDOUT (3,NN,AZ1,AZ2,AZ3,AZ4,AZ5,AZ6,RAY,nn)
+        iTmp=3
+     	CALL FINDOUT (iTmp,NN,AZ1,AZ2,AZ3,AZ4,AZ5,AZ6,RAY,nn)
 	ZBAR	=  AZ4
 	VZBAR	=  AZ6
 	IF (ICENTER.NE.1) THEN
@@ -4966,7 +4970,9 @@ SUBROUTINE FocNew
 	ELSE
 	  TPARZ	=  0.0D0
 	END IF
-     	CALL FINDOUT (1,NN,AX1,AX2,AX3,AX4,AX5,AX6,RAY,nn)
+     	!CALL FINDOUT (1,NN,AX1,AX2,AX3,AX4,AX5,AX6,RAY,nn)
+        iTmp=1
+     	CALL FINDOUT (iTmp,NN,AX1,AX2,AX3,AX4,AX5,AX6,RAY,nn)
 	XBAR	=  AX4
 	VXBAR	=  AX6
 	TBAR	=  ZBAR + XBAR

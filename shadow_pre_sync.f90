@@ -830,7 +830,8 @@ SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
 	  IF (EMAX.GT.10.0D0**EX_UPP) THEN
 	    CMAX = 1.0D0
 	  ELSE IF (EMAX.LT.10.0D0**EX_LOW) THEN
-	    CALL LEAVE ('NPhotonCalc','Maximum photon energy is too small.',0)
+            iZero=0
+	    CALL LEAVE ('NPhotonCalc','Maximum photon energy is too small.',iZero)
 	    IFLAG	= -1
 	    RETURN
 	  ELSE
@@ -839,7 +840,8 @@ SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
 	  IF (EMIN.GT.10.0D0**EX_UPP) THEN
 	    CMIN = 1.0D0
 	  ELSE IF (EMIN.LT.10.0D0**EX_LOW) THEN
-	    CALL LEAVE ('NPhotonCalc','Minimum photon energy is too small.',0)
+            iZero=0
+	    CALL LEAVE ('NPhotonCalc','Minimum photon energy is too small.',iZero)
 	    IFLAG	= -1
 	    RETURN
 	  ELSE
@@ -2061,7 +2063,9 @@ SUBROUTINE Undul_Phot
 !C
 !C Sets up REPORT
 !C
-          CALL     REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, -1)
+!          CALL     REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, -1)
+	  iTmp=-1
+          CALL     REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, iTmp)
 !C
 !C  Compute the # of photons from internal routine UPHOTON
 !C  All preliminaries completed. Starts real calculations.
@@ -2090,7 +2094,9 @@ SUBROUTINE Undul_Phot
                   CALL CPU_TIME(ttime)
      	          TTIME = TTIME - TIME0
                   PERC = IPOINTS/TOTPOINTS*100
-     	          CALL	REPORT ( ENER, THETA, PHI, TTIME, PERC, 1)
+                  iOne = 1
+     	          !CALL	REPORT ( ENER, THETA, PHI, TTIME, PERC, 1)
+     	          CALL	REPORT ( ENER, THETA, PHI, TTIME, PERC, iOne)
                   KCHECK = 0
      	        END IF
 !C

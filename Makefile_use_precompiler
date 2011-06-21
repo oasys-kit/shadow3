@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# this script calls the precompiler for expanding the lists of
+# variables. 
+#
 echo "---Using script $0...."
 echo "-----Called: $0 $1"
 if [ "$1" = "" ]; then 

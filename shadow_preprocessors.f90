@@ -149,7 +149,7 @@ SUBROUTINE IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)
 !C                                  SPECIFICATIONS FOR ARGUMENTS         
       !INTEGER            NX,NY,IC,IER                                   
       !DOUBLE PRECISION   F(IC,1),X(1),Y(1),C(2,IC,1),WK(1)              
-      integer(kind=ski) :: NX,NY,IC,IER                                   
+      integer(kind=ski) :: NX,NY,IC,IER,iTmp,iTmp2
       real(kind=skr),dimension(1)      :: X,Y,WK
       real(kind=skr),dimension(IC,1)   :: F
       real(kind=skr),dimension(2,IC,1) :: C
@@ -166,7 +166,10 @@ SUBROUTINE IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)
       IWK = 2*NY*NX                                                     
       CALL IBCDCU(X,F,NX,NY,WK(IWK+1),WK,IC,NY,IER)                     
       IF (IER .GT. 0) GO TO 9000                                        
-      CALL IBCDCU(Y,WK,NY,2*NX,WK(IWK+1),C,NY,2*IC,IER)                 
+      !CALL IBCDCU(Y,WK,NY,2*NX,WK(IWK+1),C,NY,2*IC,IER)                 
+      iTmp = 2*NX
+      iTmp2 = 2*IC
+      CALL IBCDCU(Y,WK,NY,iTmp,WK(IWK+1),C,NY,iTmp2,IER)                 
       IF (IER .EQ. 0) GO TO 9005                                        
  9000 CONTINUE                                                          
       !CALL UERTST(IER,6HIBCCCU)                                         
@@ -343,7 +346,7 @@ SUBROUTINE PRESURFACE
 	!real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
 	real(kind=skr),dimension(:),allocatable       :: WK
 	real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
-	integer(kind=ski)   :: iErr,iWhat,nx,ny,i,j,iEr,ic,nw
+	integer(kind=ski)   :: iErr,iWhat,nx,ny,i,j,iEr,ic,nw,iTmp
 
 !C     	DIMENSION	X(101),Y(101),Z(101,101)
      	!DIMENSION	X(201),Y(201),Z(201,201)
@@ -422,7 +425,9 @@ SUBROUTINE PRESURFACE
 !C
 !C     	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 101, WK, IER)
      	!CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 201, WK, IER)
-     	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 201, WK, IER)
+     	!CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 201, WK, IER)
+        iTmp = 201
+     	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
      	
 	IF (IER.EQ.132) THEN
 !C     	  WRITE(6,*)'The X and/or Y array are not ordered properly. 
@@ -549,7 +554,9 @@ SUBROUTINE OPT_COM (RF1,RF2,ENERGY,DENSITY)
      	  NTOT 		= NTOT + IREL(I)
 16      CONTINUE
      	DO 17 I=1,NATOMS
-     	  RREL(I) = FLOAT(IREL(I))/NTOT
+          !srio 
+     	  !RREL(I) = FLOAT(IREL(I))/NTOT
+     	  RREL(I) = DBLE(IREL(I))/NTOT
 17     	CONTINUE
 !** Get the data. F1 and F2 are then 'averaged' together
      	RMOL	= 0.0
@@ -616,13 +623,14 @@ SUBROUTINE WriteF12LibIndex
 
 implicit none
 
-integer(kind=ski) :: iErr
+integer(kind=ski) :: iErr,iOne=1
 
 !OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='UNFORMATTED', IOSTAT=iErr)
 OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='FORMATTED', IOSTAT=iErr)
 
 IF (iErr /= 0) THEN 
-     CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', 1)
+     !CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', 1)
+     CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', iOne)
 ENDIF
 !REWIND (20)
 write(20,'(A)')  "AC 89"
@@ -754,6 +762,7 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 
 	!DIMENSION ENG(420),F1(420),F2(420)
 	!CHARACTER*2	ELEMENT
+	implicit none
         character(len=2),intent(in)                 ::  ele
         integer(kind=ski),intent(out)               :: nz
         real(kind=skr)   ,intent(out)               :: atwt,c1,c2
@@ -766,8 +775,8 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 
         character(len=80),dimension(92)   ::  LIST
         integer(kind=ski),dimension(92)   ::  LOOKUP
-        integer(kind=ski)                 ::  POS, R
-        integer(kind=ski)                 ::  iFlag,i,fUnit,iErr
+        integer(kind=ski)                 ::  POS, R, iOne=1
+        integer(kind=ski)                 :: iFlag,i,fUnit,iErr,iTmp,iTmp2
 	character(len=sklen) :: F12LIB, INDEXF
 
 	!DIMENSION REALBUF(844)
@@ -815,7 +824,8 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
             print *,'Please copy this file from old SHADOW distribution (data dir)'
             print *,'or download it from the SHADOW distribution website. '
             print *,' '
-	    CALL LEAVE ('READLIB', 'F12LIB.FULL not found', 1)
+	    !CALL LEAVE ('READLIB', 'F12LIB.FULL not found', 1)
+	    CALL LEAVE ('READLIB', 'F12LIB.FULL not found', iOne)
             !return
 	ENDIF
 
@@ -865,7 +875,10 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 !C READ THE DATA OUT OF THE LIBRARY FILE
 !C DATA IS ASSUMED TO BE SORTED IN ORDER OF ENTERIES IN 'FILES' IN LIBRARY FILE
 !C
-        CALL BINARY(LIST, 1, 92, ELEMENT, POS)
+        !CALL BINARY(LIST, 1, 92, ELEMENT, POS)
+        iTmp=1
+        iTmp2=92
+        CALL BINARY(LIST, iTmp, iTmp2, ELEMENT, POS)
 !C	READ	(71, REC= (LOOKUP(POS)+1)) REALBUF
 	R = LOOKUP(POS) + 1
 	READ	(71, REC= R) REALBUF
@@ -903,9 +916,12 @@ SUBROUTINE Binary(data, lb, ub, item, loc)
 !C   mid denote, respectively, the beginning, end and middle locations
 !C   of a segment of elements of data.  This algorithm finds the location
 !C   loc of item in data or set loc = null.
-	 integer lb, ub, loc, mid, beg, fin, i
-	 character*(*) item
-	 character*(*) data(ub)
+	 !integer lb, ub, loc, mid, beg, fin, i
+         integer(kind=ski) ::  lb, ub, loc, mid, beg, fin, i
+	 !character*(*) item
+	 !character*(*) data(ub)
+	 character(len=*) :: item
+	 character(len=*),dimension(ub) ::  data
 
 	 beg = lb
 	 fin = ub
@@ -1397,7 +1413,9 @@ SUBROUTINE Grade_Mlayer
 !C
 !C Call IMSL routine to compute spline
 !C
-     	CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, 101, WK, IER)
+     	!CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, 101, WK, IER)
+        iTmp=101
+     	CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, iTmp, WK, IER)
      	IF (IER.EQ.132) THEN
      	  WRITE(6,*) 'The X and/or Y array are not ordered properly.',  &
        'Please check data in '//trim(INFILE)

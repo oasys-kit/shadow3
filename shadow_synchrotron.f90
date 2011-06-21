@@ -3682,9 +3682,11 @@ SUBROUTINE SrCdf
      	DO I=1,NP
      	  X_EX 	=  EX_UPP - EX_STEP*(I-1)
      	  X 	=  10.0D0**X_EX
-     	  CALL	BSKM(X,BK,1,ORD13)
+     	  !CALL	BSKM(X,BK,1,ORD13)
+     	  CALL	BSKM(X,BK,iOne,ORD13)
 	  ARR(I,1)=BK
-	  CALL	BSKM(X,BK,2,ORD23)
+	  !CALL	BSKM(X,BK,2,ORD23)
+	  CALL	BSKM(X,BK,iTwo,ORD23)
 	  ARR(I,2)=BK
           !C
           !C Added the 5/3 case by recursion formula -- Nov 26 1983
@@ -3790,8 +3792,10 @@ SUBROUTINE SrCdf
      	   CDF (1,I) = PSI
       	   ARG  =  (1 + PSI**2)
      	   XCALL=   0.5D0*ARG**1.5D0*ARRX(J)
-     	  CALL	BSKM (XCALL,Y23,2,ORD23)
-     	  CALL	BSKM (XCALL,Y13,1,ORD13)
+     	  !CALL	BSKM (XCALL,Y23,2,ORD23)
+     	  !CALL	BSKM (XCALL,Y13,1,ORD13)
+     	  CALL	BSKM (XCALL,Y23,iTwo,ORD23)
+     	  CALL	BSKM (XCALL,Y13,iOne,ORD13)
      	   F_PAR(I)=  ARG**2*Y23**2
      	   F_PER(I)=  PSI**2*ARG*Y13**2
      	   F_TOT(I)=  F_PAR(I) + F_PER(I)
@@ -3905,9 +3909,11 @@ SUBROUTINE SrFunc
      	DO I=1,NP
      	  X_EX 	=  EX_UPP - EX_STEP*(I-1)
      	  X 	=  10.0D0**X_EX
-     	 CALL	BSKM(X,BK,1,ORD13)
+     	 !CALL	BSKM(X,BK,1,ORD13)
+     	 CALL	BSKM(X,BK,iOne,ORD13)
 	  ARR(I,1)=BK
-	 CALL	BSKM(X,BK,2,ORD23)
+	 !CALL	BSKM(X,BK,2,ORD23)
+	 CALL	BSKM(X,BK,iTwo,ORD23)
 	  ARR(I,2)=BK
 !C
 !C Added the 5/3 case by recursion formula -- Nov 26 1983
