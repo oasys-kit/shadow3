@@ -4,10 +4,16 @@
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
 #
-#in coral, source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
-#in kukulcan, setenv LD_LIBRARY_PATH .
-FC = g95
-#FC = gfortran
+#in ESRF/NICE: 
+#   source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
+#   use  FC=gfortran
+#
+#in ESRF/kukulcan: 
+#    setenv LD_LIBRARY_PATH .
+#    use  FC=g95
+
+#FC = g95
+FC = gfortran
 CC = gcc
 CCP = g++
 FFLAGS = -fPIC 

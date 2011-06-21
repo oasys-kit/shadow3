@@ -98,8 +98,8 @@ Contains
     
     iOut = GfTypeAllocate(gf,zero,zero)
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, "name", src%name) .and. iOut
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, "name", src%name) .and. iOut
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, #name, src%name) .and. iOut
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, #name, src%name) .and. iOut
 #include "ShadowMaskSource.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
   End Subroutine PoolSourceToGf
@@ -129,15 +129,15 @@ Contains
     !srio danger
     !iOut= iOut .and. GfForceSetValue(gf,"NPOINT",pool01%NPOINTOE)
 
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, "name", oe%name) .and. iOut
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, "name", oe%name) .and. iOut
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, #name, oe%name) .and. iOut
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, #name, oe%name) .and. iOut
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
     do i=1, arrdim newline \
-       iOut=GfForceSetValue(gf, myConcat( "name", trim(str(i))), oe%name(i)) .and. iOut newline \
+       iOut=GfForceSetValue(gf, myConcat( #name, trim(str(i))), oe%name(i)) .and. iOut newline \
     end do
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \ 
     do i=1, arrdim newline \
-       iOut=GfForceSetValue(gf, myConcat( "name", trim(str(i))), oe%name(i)) .and. iOut newline \
+       iOut=GfForceSetValue(gf, myConcat( #name, trim(str(i))), oe%name(i)) .and. iOut newline \
     end do
 #include "ShadowMaskOE.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
@@ -178,8 +178,8 @@ Contains
     END SELECT
 
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf,"name",src%name)  .and. iOut
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf,"name",src%name)  .and. iOut
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf,#name,src%name)  .and. iOut
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf,#name,src%name)  .and. iOut
 #include "ShadowMaskSource.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
 
@@ -547,15 +547,15 @@ Contains
     !! END CODE CREATED AUTOMATICALLY (makecode1.pro)
 
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf, "name", oe%name) .and. iOut
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf, "name", oe%name) .and. iOut
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf, #name, oe%name) .and. iOut
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf, #name, oe%name) .and. iOut
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \ 
     do i=1,arrdim newline \
-       iOut=GfGetValue(gf, myConcat( "name", trim(str(i)) ), oe%name(i)) .and. iOut newline \
+       iOut=GfGetValue(gf, myConcat( #name, trim(str(i)) ), oe%name(i)) .and. iOut newline \
     end do
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \ 
     do i=1,arrdim newline \
-       iOut=GfGetValue(gf, myConcat( "name", trim(str(i)) ), oe%name(i)) .and. iOut newline \
+       iOut=GfGetValue(gf, myConcat( #name, trim(str(i)) ), oe%name(i)) .and. iOut newline \
     end do
 #include "ShadowMaskOE.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
