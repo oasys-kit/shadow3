@@ -8,14 +8,14 @@
 #include <numpy/arrayobject.h>
 
 /*  C-Layer dependencies  */
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 
 /*  Standard library included  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define ShadowRay_CheckExact(op) (Py_TYPE(op) == &ShadowRayType)
+#define ShadowBeam_CheckExact(op) (Py_TYPE(op) == &ShadowBeamType)
 #define ShadowSource_CheckExact(op) (Py_TYPE(op) == &ShadowSourceType)
 #define ShadowOE_CheckExact(op) (Py_TYPE(op) == &ShadowOEType)
 
@@ -23,7 +23,7 @@ typedef struct {
   PyObject_HEAD
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ctype name;
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) PyObject* name;
-#include "ShadowMaskSource.def"
+#include "shadow_source.def"
 } Shadow_Source;
 
 /*  Definition of the functions  */
@@ -32,7 +32,7 @@ void SourceToPySource ( poolSource*, Shadow_Source* );
 static void Source_dealloc ( Shadow_Source* );
 static PyObject* Source_new ( PyTypeObject*, PyObject*, PyObject* );
 static int Source_init ( Shadow_Source*, PyObject*, PyObject* );
-static PyObject* Source_read ( Shadow_Source*, PyObject* );
+static PyObject* Source_load ( Shadow_Source*, PyObject* );
 static PyObject* Source_write ( Shadow_Source*, PyObject* );
 static PyObject* Source_SpacePoint ( Shadow_Source* );
 static PyObject* Source_SpaceRectangle ( Shadow_Source*, PyObject* );
@@ -53,11 +53,11 @@ static PyObject* Source_EnergyRelative ( Shadow_Source*, PyObject* );
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* Source_get_##name(Shadow_Source*, void*);
-#include "ShadowMaskSource.def"
+#include "shadow_source.def"
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int Source_set_##name(Shadow_Source*, PyObject*, void*);
-#include "ShadowMaskSource.def"
+#include "shadow_source.def"
 
 
 typedef struct {
@@ -66,7 +66,7 @@ typedef struct {
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) PyObject* name;
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) PyObject* name;
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) PyObject* name;
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 } Shadow_OE;
 
 void PyOEToOE ( Shadow_OE*, poolOE* );
@@ -74,38 +74,38 @@ void OEToPyOE ( poolOE*, Shadow_OE* );
 static void OE_dealloc ( Shadow_OE* );
 static PyObject* OE_new ( PyTypeObject*, PyObject*, PyObject* );
 static int OE_init ( Shadow_OE*, PyObject*, PyObject* );
-static PyObject* OE_read ( Shadow_OE*, PyObject* );
+static PyObject* OE_load ( Shadow_OE*, PyObject* );
 static PyObject* OE_write ( Shadow_OE*, PyObject* );
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* OE_get_##name(Shadow_OE*, void*);
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue)
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue)
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int OE_set_##name(Shadow_OE*, PyObject*, void*);
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue)
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue)
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 
 
 typedef struct {
   PyObject_HEAD
   PyArrayObject* rays;
-} Shadow_Ray;
+} Shadow_Beam;
 
-static void Ray_dealloc ( Shadow_Ray* );
-static PyObject* Ray_new ( PyTypeObject*, PyObject*, PyObject* );
-static int Ray_init ( Shadow_Ray*, PyObject*, PyObject* );
-static PyObject* Ray_read ( Shadow_Ray*, PyObject* );
-static PyObject* Ray_write ( Shadow_Ray*, PyObject* );
-static PyObject* Ray_genSource ( Shadow_Ray*, PyObject* );
-static PyObject* Ray_trace ( Shadow_Ray*, PyObject* );
+static void Beam_dealloc ( Shadow_Beam* );
+static PyObject* Beam_new ( PyTypeObject*, PyObject*, PyObject* );
+static int Beam_init ( Shadow_Beam*, PyObject*, PyObject* );
+static PyObject* Beam_load ( Shadow_Beam*, PyObject* );
+static PyObject* Beam_write ( Shadow_Beam*, PyObject* );
+static PyObject* Beam_genSource ( Shadow_Beam*, PyObject* );
+static PyObject* Beam_traceOE ( Shadow_Beam*, PyObject* );
 
-char RayRays_doc[2000] = "";
+char BeamRays_doc[2000] = "";
 
-const char Ray_doc[2000] = "";
+const char Beam_doc[2000] = "";
 
 typedef struct {
   PyObject_HEAD
@@ -137,7 +137,7 @@ char ImageIntensity_doc[2000] = "Intensity not normalized of diffracted beam on 
 const char Image_doc[2000] = "Shadow.Image class helps the user in performing optic calculations with Shadow3.";
 
 
-static PyObject* saveRay ( PyObject*, PyObject* );
+static PyObject* saveBeam ( PyObject*, PyObject* );
 
 
 

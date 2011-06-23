@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 
 #ifdef __OPENMP
 #include <omp.h>
@@ -76,18 +76,18 @@ int main ( int argc, char** argv )
 
   if ( use_src ) {
     CShadowPoolSourceLoad ( &src, "start.00" );    
-    ray = CShadowAllocateRay ( &src, ray );
+    ray = CShadowAllocateBeamFromPool ( &src, ray );
     CShadowSourceGeom ( &src, ray );
-    CShadowWriteRay ( ray, src.NCOL, src.NPOINT, "begin.dat" );
+    CShadowBeamWrite ( ray, src.NCOL, src.NPOINT, "begin.dat" );
     nPoint = src.NPOINT;
     nCol   = src.NCOL;
   }
 
   if ( use_trc && !use_src ) {    
-    CShadowGetDimRay ( &nCol, &nPoint, "begin.dat" );
-    ray = CShadowAllocateRayInt (nPoint, ray);
-    CShadowReadRay ( ray, nCol, nPoint, "begin.dat" );
-    CShadowWriteRay( ray, nCol, nPoint, "debug.dat" );
+    CShadowBeamGetDim ( &nCol, &nPoint, "begin.dat" );
+    ray = CShadowAllocateBeam (nPoint, ray);
+    CShadowBeamLoad ( ray, nCol, nPoint, "begin.dat" );
+    CShadowBeamWrite( ray, nCol, nPoint, "debug.dat" );
   }
   if ( use_trc ) {
     sysFile = fopen ( "systemfile.dat","r" );
@@ -111,18 +111,18 @@ int main ( int argc, char** argv )
 #pragma        omp barrier
         slice=nPoint/nthreads;
         if(tid!=(nthreads-1)){
-          CShadowTrace ( &oe, &(ray[slice * 18 * tid]), slice, i+1 );
+          CShadowTraceOE ( &oe, &(ray[slice * 18 * tid]), slice, i+1 );
       }
         else{
-          CShadowTrace ( &oe, &(ray[slice * tid * 18]), slice+ nPoint%nthreads, i+1 );
+          CShadowTraceOE ( &oe, &(ray[slice * tid * 18]), slice+ nPoint%nthreads, i+1 );
 
         }
       }
 #else
-          CShadowTrace ( &oe, ray,nPoint, i+1 );
+          CShadowTraceOE ( &oe, ray,nPoint, i+1 );
 #endif      
       sprintf ( str_i,"star.0%d",i+1 );      
-      CShadowWriteRay ( ray, nCol, nPoint, str_i );
+      CShadowBeamWrite ( ray, nCol, nPoint, str_i );
     }
   }
 

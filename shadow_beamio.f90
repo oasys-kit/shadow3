@@ -1,11 +1,12 @@
 !----
-!---- MODULE:  SHADOW_BEAMIO
+!----
+!---- MODULE:  shadow_beamio
 !----
 !---- i/o a file with a shadow beam (begin.dat, star.xx, mirr.xx, screen.xx)
 !----
-!---- Module grouping the adapted f77 routines rbeam, rbeam18, write_off 
-!----        newly added: 
-!----        write_off18, rbeamanalyze (to deal with allocatable arrays)
+!---- Module grouping the adapted f77 routines and new ones: 
+!----           beamGetDim (new), rbeam, beamLoad (old rbeam18),
+!----           write_off, beamWrite  (old write_off18)
 !----
 !----     srio@esrf.eu 2009-09-18
 !----
@@ -24,28 +25,31 @@ module shadow_beamio
 !---- Everything is private unless explicitly made public ----!
     private
 
-    public :: rbeamanalyze, rbeam, rbeam18, write_off, write_off18 
+    public :: beamGetDim, rbeam, beamLoad, write_off, beamWrite 
 
 
 contains
 
-!>	rbeamanalyze read the first three integers of the input binary file.
-!!  Analyze the binary file where beam's rays are written.
+!!	beamGetDim read the first three integers of the input binary file.
+!!      Analyze the binary file where beam's rays are written.
 !!	Rays are written in form of a array of 2two dimensions.
 !!	The file format is the next:
 !!	Three integers giving the information about the shape of the array.
 !!	the rays'array itself.
 
-    subroutine rbeamanalyze (fname, ncol, npoint, iFlag, iErr) !bind(C,NAME="rbeamanalyze")
-
+    subroutine beamGetDim (fname, ncol, npoint, iFlag, iErr) 
 
        	character(len=*), intent(in)      :: fname  	!< Input file name.
-       	integer(kind=ski), intent(out)      :: ncol  	!< Number of colomn of the matrix, each rays can have 12, 13, 18 colomns.
-		integer(kind=ski), intent(out)      :: npoint	!< Number of rays.
-		integer(kind=ski), intent(out)      :: iFlag	!< don't know please srio@esrf help !!!
-		integer(kind=ski), intent(out)      :: iErr		!< Error flag.
-
-       	integer(kind=ski)                   :: lun		!  Internal variable: unit number.
+        ! Number of colomn of the matrix, each rays can have 12, 13, 18 colomns.
+       	integer(kind=ski), intent(out)    :: ncol
+        !< Number of rays.
+	integer(kind=ski), intent(out)    :: npoint	
+        !< don't know please srio@esrf help !!!
+	integer(kind=ski), intent(out)    :: iFlag	
+        !< Error flag.
+	integer(kind=ski), intent(out)    :: iErr		
+        !  Internal variable: unit number.
+       	integer(kind=ski)                 :: lun		
     
    	    ierr = 0
     	ncol = 0
@@ -56,7 +60,7 @@ contains
     
        	open(unit=lun, file=fname, status="old", action="read", form="unformatted", iostat=iErr)
        	if (iErr /= 0 ) then
-        	print *,"RBEAMANALYZE: Error opening file: : "//trim(fName)
+        	print *,"beamGetDim: Error opening file: : "//trim(fName)
          	iErr = 1
        	        close (unit=lun)
          	return
@@ -64,7 +68,7 @@ contains
     
        	read(unit=lun, iostat=iErr) NCOL, NPOINT, IFLAG
        	if (iErr /= 0) then
-        	print *, "RBEAMANALYZE: Error reading header in file: "//trim(fname)
+        	print *, "beamGetDim: Error reading header in file: "//trim(fname)
             iErr = 2
        	        close (unit=lun)
             return
@@ -72,7 +76,7 @@ contains
     
        	close (unit=lun)
        	return
-    end	subroutine rbeamanalyze
+    end	subroutine beamGetDim
 
 
 
@@ -213,7 +217,7 @@ contains
 
 
     !!+++
-    !!	SUBROUTINE	RBEAM18	(FNAME,RAY,IERR)
+    !!	SUBROUTINE	beamLoad	(FNAME,RAY,IERR)
     !!
     !!	purpose		The same as RBEAM, except return everything in
     !!			one single array RAY(18,N_DIM) instead of three
@@ -239,7 +243,7 @@ contains
 
 !>	The same as RBEAM, but returns everything in one single array RAY(18,ncol) instead of three separate arrays.
 !!	NEW version, ENCOURAGED.
-	subroutine rbeam18 (ray,iErr,ncol1,npoint,FNAME) !bind(C,NAME="rbeam18")
+	subroutine beamLoad (ray,iErr,ncol1,npoint,FNAME) !bind(C,NAME="beamLoad")
 
      	integer(kind=ski),intent(in)    :: npoint   !< number of rays
      	character(len=*),intent(in)	:: fname    !< Input file name.
@@ -256,9 +260,9 @@ contains
         open(unit=lun,file=fname,status="old",action="read",form="unformatted", iostat=iErr)
 
         if (iErr /= 0 ) then
-          	print *,"RBEAM18 Error opening file: "//trim(fName)
+          	print *,"beamLoad Error opening file: "//trim(fName)
           	iErr=1
-		stop 'Program failure in RBEAM18'
+		stop 'Program failure in beamLoad'
           	!return
         end if
 
@@ -266,35 +270,35 @@ contains
         read(unit=lun,iostat=iErr) ncol1, npoint1, iflag1
 
         if (iErr /= 0) then
-            print *, "RBEAM18 Error reading header in file: "//trim(fname)
+            print *, "beamLoad Error reading header in file: "//trim(fname)
 	    close (unit=lun)
        	    !iErr = 2
-	    stop 'Program failure in RBEAM18'
+	    stop 'Program failure in beamLoad'
        	    !return
         end if
 
         if (iFlag1 /= 0) then
-            print *, "RBEAM18 Error (Flag /=0) in file: "//trim(fname)
+            print *, "beamLoad Error (Flag /=0) in file: "//trim(fname)
 	    close (unit=lun)
        	    iErr = 2
-            stop 'Program failure in RBEAM18'
+            stop 'Program failure in beamLoad'
        	    !return
         end if
 
  	if (npoint /= npoint1) then
-            print *, "RBEAM18 Error with number of rays"
+            print *, "beamLoad Error with number of rays"
             print *, "   in input variables: ", npoint
             print *, "   in file: ", npoint1
 	    close (unit=lun)
-	    stop 'Program failure in RBEAM18'
+	    stop 'Program failure in beamLoad'
        	    !iErr = 3
        	    !return
         end if
 
   	if (ncol1.ne.12.and.ncol1.ne.13.and.ncol1.ne.18) then
-            print *, "RBEAM18 Error with number of columns in file: ", ncol1
+            print *, "beamLoad Error with number of columns in file: ", ncol1
 	    close (unit=lun)
-	    stop 'Program failure in RBEAM18'
+	    stop 'Program failure in beamLoad'
        	    !iErr = 4
        	    !return
         end if
@@ -304,16 +308,16 @@ contains
 	  read (unit=lun, iostat=iErr) (RAY(j,i), j=1, ncol1)
           if (iErr /= 0) then
        	    	!iErr = 2
-            	print *, "RBEAM18 Error reading ray file: "//trim(fname)
+            	print *, "beamLoad Error reading ray file: "//trim(fname)
             	print *, "        ray number, iErr: ",i,iErr
-		stop 'Program failure in RBEAM18'
+		stop 'Program failure in beamLoad'
        	    	!exit
           end if
         end do
 
         close (unit=lun)
       	return
-    end subroutine rbeam18
+    end subroutine beamLoad
 
     !
     !
@@ -460,7 +464,7 @@ contains
     !
 
     !! 
-    !! 	SUBROUTINE	WRITE_OFF18 (FNAME,RAY,IERR)
+    !! 	SUBROUTINE	beamWrite (FNAME,RAY,IERR)
     !! 
     !! 	Input	:	FNAME	Output file name
     !! 			RAY	Array which contains the basic 12,13 or 18 
@@ -472,7 +476,7 @@ contains
     !! 
     !! 
 
-	subroutine write_off18 (ray, iErr, ncol, npoint, fname) !bind(C, name="write_off18")
+	subroutine beamWrite (ray, iErr, ncol, npoint, fname) !bind(C, name="beamWrite")
      	character(len=*), intent(in)	:: fname
         integer(kind=ski),intent(in)	:: ncol
         integer(kind=ski),intent(in)	:: npoint
@@ -490,7 +494,7 @@ contains
 
         !! just a warning...
         if (ncol.ne.12.and.ncol.ne.13.and.ncol.ne.18) then
-            print *, "WRITE_OFF18 Warning: number of columns: ",ncol
+            print *, "beamWrite Warning: number of columns: ",ncol
         end if
 
         iForm=0
@@ -503,7 +507,7 @@ contains
      	open (unit=iounit, file=fname, status='unknown', form=fformat, iostat=iErr)
 
         if (iErr /= 0 ) then
-        	print *,"WRITE_OFF18 Error opening file: "//trim(fName)
+        	print *,"beamWrite Error opening file: "//trim(fName)
         	iErr=1
         	return
         end if
@@ -532,7 +536,7 @@ contains
         !! unsuccesful end
     20	iErr = 2
      	return
-    end subroutine write_off18
+    end subroutine beamWrite
     !
     !
     !

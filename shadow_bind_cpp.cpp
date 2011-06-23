@@ -1,19 +1,19 @@
 
 //#include <complex.h>
-#include "ShadowMask.hpp"
+#include "shadow_bind_cpp.hpp"
 /*
- *  Ray Class methods here
+ *  Beam Class methods here
  */
 
-Ray::Ray() { 
+Beam::Beam() { 
   this->rays=NULL;
 }
 
-Ray::~Ray() {
+Beam::~Beam() {
   free ( this->rays );
 }
 
-Ray::Ray ( const Ray &r )
+Beam::Beam ( const Beam &r )
 {
   this->rays=NULL;
   init ( 18, r.nPoint );
@@ -21,14 +21,14 @@ Ray::Ray ( const Ray &r )
     this->rays[i] = r.rays[i];
 }
 
-void Ray::init ( int col, int point )
+void Beam::init ( int col, int point )
 {
   this->rays = ( double* ) realloc ( ( void* ) this->rays, 18*point*sizeof ( double ) );
   this->nCol = col;
   this->nPoint = point;
 }
 
-void Ray::genSource ( Source *Src )
+void Beam::genSource ( Source *Src )
 {
   init ( 18,Src->NPOINT );
   if ( ( Src->FDISTR==4 ) || ( Src->FSOURCE_DEPTH==4 ) || ( Src->F_WIGGLER>0 ) ) {
@@ -39,24 +39,24 @@ void Ray::genSource ( Source *Src )
   }
 }
 
-void Ray::trace ( OE *Oe, int iCount )
+void Beam::traceOE ( OE *Oe, int iCount )
 {
-  CShadowTrace ( Oe, this->rays, this->nPoint, iCount );
+  CShadowTraceOE ( Oe, this->rays, this->nPoint, iCount );
 }
 
-void Ray::write ( char *FileDat )
+void Beam::write ( char *FileDat )
 {
-  CShadowWriteRay ( this->rays, this->nCol, this->nPoint, FileDat );
+  CShadowBeamWrite ( this->rays, this->nCol, this->nPoint, FileDat );
 }
 
-void Ray::read ( char *FileDat )
+void Beam::load ( char *FileDat )
 {
-  CShadowGetDimRay ( & ( this->nCol ), & ( this->nPoint ), FileDat );
+  CShadowBeamGetDim ( & ( this->nCol ), & ( this->nPoint ), FileDat );
   this->rays = ( double* ) realloc ( ( void* ) this->rays, 18*this->nPoint*sizeof ( double ) );
-  CShadowReadRay ( this->rays, this->nCol, this->nPoint, FileDat );
+  CShadowBeamLoad ( this->rays, this->nCol, this->nPoint, FileDat );
 }
 
-void Ray::ffresnel2D ( double dist, dComplex *image, pixel *x, pixel *z ) {
+void Beam::ffresnel2D ( double dist, dComplex *image, pixel *x, pixel *z ) {
   CShadowFFresnel2D ( this->rays, this->nPoint, dist, image, x, z );
 }
 
@@ -71,7 +71,7 @@ Source::Source()
 Source::Source ( char *FileStart00 )
 {
   CShadowSetupDefaultSource ( ( poolSource* ) this );
-  read ( FileStart00 );
+  load ( FileStart00 );
 }
 
 Source::Source ( const Source &Src )
@@ -88,7 +88,7 @@ void Source::write ( char *FileStart00 )
   CShadowPoolSourceWrite ( this, FileStart00 );
 }
 
-void Source::read ( char *FileStart00 )
+void Source::load ( char *FileStart00 )
 {
   CShadowPoolSourceLoad ( this, FileStart00 );
 }
@@ -104,7 +104,7 @@ OE::OE()
 OE::OE ( char *FileStart0X )
 {
   CShadowSetupDefaultOE ( ( poolOE* ) this );
-  read ( FileStart0X );
+  load ( FileStart0X );
 }
 
 OE::OE ( const OE &oe )
@@ -121,7 +121,7 @@ void OE::write ( char *FileStart0X )
   CShadowPoolOEWrite ( this, FileStart0X );
 }
 
-void OE::read ( char *FileStart0X )
+void OE::load ( char *FileStart0X )
 {
   CShadowPoolOELoad ( this, FileStart0X );
 }

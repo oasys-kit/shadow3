@@ -1,5 +1,5 @@
 #include <iostream>
-#include <ShadowMask.hpp>
+#include <shadow_bind_cpp.hpp>
 
 using namespace std;
 
@@ -7,10 +7,10 @@ int main()
 {
   Source src;
   OE     oe1;
-  Ray    ray;
+  Beam    ray;
 
   // load variables from start.00
-  src.read( (char*) "start.00");
+  src.load( (char*) "start.00");
 
   cout << " Number of rays: " << src.NPOINT << endl;
   src.NPOINT=100000;
@@ -19,10 +19,10 @@ int main()
   // calculate source
   ray.genSource(&src);
   ray.write( (char*) "begin.dat");
-  // reads start.01 into oe1
-  oe1.read( (char*) "start.01");
+  // load start.01 into oe1
+  oe1.load( (char*) "start.01");
   // traces OE1
-  ray.trace(&oe1,1);
+  ray.traceOE(&oe1,1);
 
   // write file star.01
   ray.write( (char*) "star.01");

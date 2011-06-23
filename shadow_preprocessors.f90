@@ -1,5 +1,6 @@
 !----
-!---- MODULE:  shadow_Pre
+!----
+!---- MODULE:  shadow_PreProcessors
 !----
 !---- Preprocessors for Shadow
 !---- Contains: 
@@ -14,11 +15,8 @@ Module shadow_PreProcessors
     !---- Use Modules ----!
 
     use stringio
-    use shadow_math
+    use shadow_math, only : ibcccu, ibcdcu
     use shadow_globaldefinitions
-!use shadow_variables
-!use shadow_kernel
-!    use shadow_sourcesync, only : srcdf ! needed by nphoton only
 
     !---- Variables ----!
     implicit none
@@ -28,16 +26,6 @@ Module shadow_PreProcessors
     !COMMON	/DAT	/  ENER(420),DELTA(420),BETA(420)
     real(kind=skr),dimension(420) :: ENER,DELTA,BETA
     integer(kind=ski)             :: ISTART,IFINAL
-
-
-!todo: fix this repetition
-!
-! the global variables here are only used for undulator and not for wiggler
-! 
-!      	real(kind=ski),parameter :: PI=3.141592653589793238462643D0
-!     	real(kind=ski),parameter :: TWOPI=6.283185307179586476925287D0
-!     	real(kind=ski),parameter :: PIHALF=1.570796326794896619231322D0
-!     	real(kind=ski),parameter :: TOANGS=1.239852D+4
 
 
     !---- Everything is private unless explicitly made public ----!
@@ -66,251 +54,6 @@ Module shadow_PreProcessors
     !
 
 
-!todo: mv ibccu and the other to math_imsl
-
-!C   IMSL ROUTINE NAME   - IBCCCU                                        
-!C                                                                       
-!C-----------------------------------------------------------------------
-!C                                                                       
-!C   COMPUTER            - VAX/DOUBLE                                    
-!C                                                                       
-!C   LATEST REVISION     - JUNE 1, 1982                                  
-!C                                                                       
-!C   PURPOSE             - BICUBIC SPLINE TWO-DIMENSIONAL COEFFICIENT    
-!C                           CALCULATOR                                  
-!C                                                                       
-!C   USAGE               - CALL IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)         
-!C                                                                       
-!C   ARGUMENTS    F      - NX BY NY MATRIX CONTAINING THE FUNCTION       
-!C                           VALUES. (INPUT) F(I,J) IS THE FUNCTION VALUE
-!C                           AT THE POINT (X(I),Y(J)) FOR I=1,...,NX AND 
-!C                           J=1,...,NY.                                 
-!C                X      - VECTOR OF LENGTH NX. (INPUT) X MUST BE        
-!C                           ORDERED SO THAT X(I) .LT. X(I+1) FOR        
-!C                           I=1,...,NX-1.                               
-!C                NX     - NUMBER OF ELEMENTS IN X. (INPUT) NX MUST BE   
-!C                           .GE. 4.                                     
-!C                Y      - VECTOR OF LENGTH NY. (INPUT) Y MUST BE        
-!C                           ORDERED SO THAT Y(J) .LT. Y(J+1) FOR        
-!C                           J=1,...,NY-1.                               
-!C                NY     - NUMBER OF ELEMENTS IN Y. (INPUT) NY MUST BE   
-!C                           .GE. 4.                                     
-!C                         NOTE - THE COORDINATE PAIRS (X(I),Y(J)), FOR  
-!C                           I=1,...,NX AND J=1,...,NY, GIVE THE POINTS  
-!C                           WHERE THE FUNCTION VALUES F(I,J) ARE        
-!C                           DEFINED.                                    
-!C                C      - ARRAY OF SPLINE COEFFICIENTS. (OUTPUT)        
-!C                           C IS OF DIMENSION 2 BY NX BY 2 BY NY.       
-!C                           AT THE POINT (X(I),Y(J))                    
-!C                             C(1,I,1,J) = S                            
-!C                             C(2,I,1,J) = DS/DX                        
-!C                             C(1,I,2,J) = DS/DY                        
-!C                             C(2,I,2,J) = D(DS/DX)/DY                  
-!C                           WHERE S(X,Y) IS THE SPLINE APPROXIMATION.   
-!C                           (NOTE - C IS TREATED INTERNALLY AS A        
-!C                             2 BY NX BY 2*NY ARRAY BECAUSE CERTAIN     
-!C                             ENVIRONMENTS DO NOT PERMIT QUADRUPLY-     
-!C                             DIMENSIONED ARRAYS.  IN THESE             
-!C                             ENVIRONMENTS THE CALLING PROGRAM MAY      
-!C                             DIMENSION C IN THE SAME MANNER.)          
-!C                IC     - ROW DIMENSION OF MATRIX F AND SECOND          
-!C                           DIMENSION OF ARRAY C EXACTLY AS             
-!C                           SPECIFIED IN THE DIMENSION STATEMENT.       
-!C                           (INPUT). IC MUST BE .GE. NX.                
-!C                WK     - WORK VECTOR OF LENGTH                         
-!C                           2*NX*NY+2*MAX(NX,NY)                        
-!C                IER    - ERROR PARAMETER. (OUTPUT)                     
-!C                         TERMINAL ERROR                                
-!C                           IER = 129, IC IS LESS THAN NX               
-!C                           IER = 130, NX IS LESS THAN 4                
-!C                           IER = 131, NY IS LESS THAN 4                
-!C                           IER = 132, X OR Y ARE NOT ORDERED SO THAT   
-!C                             X(I) .LT. X(I+1) AND                      
-!C                             Y(I) .LT. Y(I+1)                          
-!C                                                                       
-!C   PRECISION/HARDWARE  - SINGLE AND DOUBLE/H32                         
-!C                       - SINGLE/H36,H48,H60                            
-!C                                                                       
-!C   REQD. IMSL ROUTINES - IBCDCU,UERTST,UGETIO                          
-!C                                                                       
-!C   NOTATION            - INFORMATION ON SPECIAL NOTATION AND           
-!C                           CONVENTIONS IS AVAILABLE IN THE MANUAL      
-!C                           INTRODUCTION OR THROUGH IMSL ROUTINE UHELP  
-!C                                                                       
-!C   COPYRIGHT           - 1982 BY IMSL, INC. ALL RIGHTS RESERVED.       
-!C                                                                       
-!C   WARRANTY            - IMSL WARRANTS ONLY THAT IMSL TESTING HAS BEEN 
-!C                           APPLIED TO THIS CODE. NO OTHER WARRANTY,    
-!C                           EXPRESSED OR IMPLIED, IS APPLICABLE.        
-!C                                                                       
-!C-----------------------------------------------------------------------
-!C                                                                       
-SUBROUTINE IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)                       
-!C                                  SPECIFICATIONS FOR ARGUMENTS         
-      !INTEGER            NX,NY,IC,IER                                   
-      !DOUBLE PRECISION   F(IC,1),X(1),Y(1),C(2,IC,1),WK(1)              
-      integer(kind=ski) :: NX,NY,IC,IER,iTmp,iTmp2
-      real(kind=skr),dimension(1)      :: X,Y,WK
-      real(kind=skr),dimension(IC,1)   :: F
-      real(kind=skr),dimension(2,IC,1) :: C
-!C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
-      !INTEGER            IWK                                            
-      integer(kind=ski) :: IWK
-!C                                  FIRST EXECUTABLE STATEMENT           
-      IER = 129                                                         
-      IF (IC .LT. NX) GO TO 9000                                        
-      IER = 130                                                         
-      IF (NX .LT. 4) GO TO 9000                                         
-      IER = 131                                                         
-      IF (NY .LT. 4) GO TO 9000                                         
-      IWK = 2*NY*NX                                                     
-      CALL IBCDCU(X,F,NX,NY,WK(IWK+1),WK,IC,NY,IER)                     
-      IF (IER .GT. 0) GO TO 9000                                        
-      !CALL IBCDCU(Y,WK,NY,2*NX,WK(IWK+1),C,NY,2*IC,IER)                 
-      iTmp = 2*NX
-      iTmp2 = 2*IC
-      CALL IBCDCU(Y,WK,NY,iTmp,WK(IWK+1),C,NY,iTmp2,IER)                 
-      IF (IER .EQ. 0) GO TO 9005                                        
- 9000 CONTINUE                                                          
-      !CALL UERTST(IER,6HIBCCCU)                                         
-      PRINT *,'IBCCCU Error'
-      STOP 'Aborted'
- 9005 RETURN                                                            
-END SUBROUTINE IBCCCU                                                              
-!C   IMSL ROUTINE NAME   - IBCDCU                                        
-!C                                                                       
-!C-----------------------------------------------------------------------
-!C                                                                       
-!C   COMPUTER            - VAX/DOUBLE                                    
-!C                                                                       
-!C   LATEST REVISION     - JUNE 1, 1982                                  
-!C                                                                       
-!C   PURPOSE             - NUCLEUS CALLED ONLY BY IMSL SUBROUTINE IBCCCU 
-!C                                                                       
-!C   PRECISION/HARDWARE  - SINGLE AND DOUBLE/H32                         
-!C                       - SINGLE/H36,H48,H60                            
-!C                                                                       
-!C   REQD. IMSL ROUTINES - NONE REQUIRED                                 
-!C                                                                       
-!C   NOTATION            - INFORMATION ON SPECIAL NOTATION AND           
-!C                           CONVENTIONS IS AVAILABLE IN THE MANUAL      
-!C                           INTRODUCTION OR THROUGH IMSL ROUTINE UHELP  
-!C                                                                       
-!C   COPYRIGHT           - 1982 BY IMSL, INC. ALL RIGHTS RESERVED.       
-!C                                                                       
-!C   WARRANTY            - IMSL WARRANTS ONLY THAT IMSL TESTING HAS BEEN 
-!C                           APPLIED TO THIS CODE. NO OTHER WARRANTY,    
-!C                           EXPRESSED OR IMPLIED, IS APPLICABLE.        
-!C                                                                       
-!C-----------------------------------------------------------------------
-!C                                                                       
-SUBROUTINE IBCDCU (TAU,GTAU,N,M,W,VS,IC1,IC2,IER)                 
-!C                                  SPECIFICATIONS FOR ARGUMENTS         
-      !INTEGER            N,M,IC1,IC2,IER                                
-      !DOUBLE PRECISION   TAU(N),GTAU(IC1,1),W(N,2),VS(IC2,2,1)          
-      integer(kind=ski) :: N,M,IC1,IC2,IER                                
-      real(kind=skr),dimension(N)      :: TAU
-      real(kind=skr),dimension(IC1,1)  :: GTAU
-      real(kind=skr),dimension(N,2)    :: W
-      !!real(kind=skr),dimension(IC2,2,1):: VS
-      !! changed srio. Warning!!!
-      real(kind=skr),dimension(IC2,2,2):: VS
-!C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
-      !INTEGER            I,JJ,JM1,JP1,J,K,LIM,LL,LP1,NM1                
-      integer(kind=ski) :: I,JJ,JM1,JP1,J,K,LIM,LL,LP1,NM1
-      !DOUBLE PRECISION   AA,BB,C1,C2,CC,DD,DTAU,G,H,RATIO,U,XILIM       
-      real(kind=skr) :: AA,BB,C1,C2,CC,DD,DTAU,G,H,RATIO,U,XILIM       
-!C                                  FIRST EXECUTABLE STATEMENT           
-      LIM = N-3                                                         
-      NM1 = N-1                                                         
-      LP1 = LIM+1                                                       
-      IER = 132                                                         
-      W(2,1) = TAU(3)-TAU(1)                                            
-      IF (W(2,1).LE.0.0D0) RETURN                                       
-      DO 5 K=1,M                                                        
-         VS(K,1,1) = GTAU(1,K)                                          
-    5 CONTINUE                                                          
-      XILIM = TAU(1)                                                    
-      IF (LIM.LT.2) GO TO 20                                            
-      XILIM = TAU(N-2)                                                  
-      DO 15 I=2,LIM                                                     
-         J = I+1                                                        
-         W(J,1) = TAU(I+2)-TAU(J)                                       
-         IF (W(J,1).LE.0.0D0) RETURN                                    
-         DO 10 K=1,M                                                    
-   10    VS(K,1,I) = GTAU(J,K)                                          
-   15 CONTINUE                                                          
-   20 W(LP1,1) = TAU(N)-XILIM                                           
-      IF (W(LP1,1).LE.0.0D0) RETURN                                     
-      DO 25 K=1,M                                                       
-   25 VS(K,1,LP1) = GTAU(N,K)                                           
-      DO 35 I=2,LP1                                                     
-         DO 30 K=1,M                                                    
-   30    VS(K,2,I) = (VS(K,1,I)-VS(K,1,I-1))/W(I,1)                     
-   35 CONTINUE                                                          
-      DTAU = TAU(2)-TAU(1)                                              
-      RATIO = DTAU/W(2,1)                                               
-      W(1,2) = (RATIO-1.D0)**2                                          
-      W(1,1) = RATIO*(RATIO-1.D0)                                       
-      C1 = RATIO*(2.D0*RATIO-3.D0)                                      
-      DO 40 K=1,M                                                       
-   40 VS(K,2,1) = (GTAU(2,K)-GTAU(1,K))/DTAU+VS(K,2,2)*C1               
-      IF (LIM.LT.2) GO TO 55                                            
-      DO 50 I=2,LIM                                                     
-         J = I+1                                                        
-         JJ = I-1                                                       
-         G = -W(J,1)/W(JJ,2)                                            
-         C1 = 3.D0*W(I,1)                                               
-         C2 = 3.D0*W(J,1)                                               
-         DO 45 K=1,M                                                    
-   45    VS(K,2,I) = G*VS(K,2,JJ)+C1*VS(K,2,J)+C2*VS(K,2,I)             
-         W(I,2) = G*W(JJ,1)+2.D0*(W(I,1)+W(J,1))                        
-   50 CONTINUE                                                          
-   55 DTAU = TAU(N-1)-XILIM                                             
-      RATIO = DTAU/W(LP1,1)                                             
-      G = -(RATIO-1.D0)**2/W(LIM,2)                                     
-      W(LP1,2) = RATIO*(RATIO-1.D0)                                     
-      C1 = RATIO*(2.D0*RATIO-3.D0)                                      
-      DO 60 K=1,M                                                       
-   60 VS(K,2,LP1) = (GTAU(N-1,K)-VS(K,1,LIM))/DTAU+VS(K,2,LP1)*C1       
-      W(LP1,2) = G*W(LIM,1)+W(LP1,2)                                    
-      DO 65 K=1,M                                                       
-   65 VS(K,2,LP1) = (G*VS(K,2,LIM)+VS(K,2,LP1))/W(LP1,2)                
-      J = LIM                                                           
-   70 DO 75 K=1,M                                                       
-   75 VS(K,2,J) = (VS(K,2,J)-W(J,1)*VS(K,2,J+1))/W(J,2)                 
-      J = J-1                                                           
-      IF (J.GT.0) GO TO 70                                              
-      DO 95 K=1,M                                                       
-         DO 85 JJ=1,N                                                   
-            J = N+1-JJ                                                  
-            JM1 = J-1                                                   
-            IF (J.EQ.N) JM1 = J-2                                       
-            IF (J.EQ.1) JM1 = J                                         
-            DO 80 LL=1,2                                                
-               VS(K,LL,J) = VS(K,LL,JM1)                                
-   80       CONTINUE                                                    
-   85    CONTINUE                                                       
-         DO 90 J=2,NM1,LIM                                              
-            JM1 = J-1                                                   
-            JP1 = J+1                                                   
-            IF (JM1.EQ.2) JM1 = 1                                       
-            IF (JP1.EQ.NM1) JP1 = N                                     
-            H = TAU(JP1)-TAU(JM1)                                       
-            U = TAU(J)-TAU(JM1)                                         
-            AA = VS(K,1,JM1)                                            
-            BB = VS(K,2,JM1)                                            
-            CC = (3.D0*(VS(K,1,JP1)-VS(K,1,JM1))/H-(VS(K,2,JP1)+ &
-            2.D0*VS(K,2,JM1)))/H                                        
-            DD = (2.D0*(VS(K,1,JM1)-VS(K,1,JP1))/H+(VS(K,2,JP1)+ &
-            VS(K,2,JM1)))/H**2                                          
-            VS(K,1,J) = AA+U*(BB+U*(CC+DD*U))                           
-            VS(K,2,J) = BB+U*(2.D0*CC+3.D0*DD*U)                        
-   90    CONTINUE                                                       
-   95 CONTINUE                                                          
-      IER = 0                                                           
-      RETURN                                                            
-END SUBROUTINE IBCDCU
 !C+++
 !C	PROGRAM		PRESURFACE
 !C
@@ -339,19 +82,10 @@ SUBROUTINE PRESURFACE
 !C Below I have used the correct formula and have dimensioned WK for 201
 !C points, as I have CSPL, X, Y, and Z.
 
-	!DIMENSION	CSPL (2,201,2,201), WK (81204)
-
-	!real(kind=skr),dimension(2,201,2,201) :: CSPL 
-        !real(kind=skr),dimension(81204)       :: WK
-	!real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
 	real(kind=skr),dimension(:),allocatable       :: WK
 	real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
 	integer(kind=ski)   :: iErr,iWhat,nx,ny,i,j,iEr,ic,nw,iTmp
 
-!C     	DIMENSION	X(101),Y(101),Z(101,101)
-     	!DIMENSION	X(201),Y(201),Z(201,201)
-     	!real(kind=skr),dimension(201,201) :: Z
-        !real(kind=skr),dimension(201)     :: X,Y
 ! todo: by now, only allocatable in Y direction. To continue with X
 !       (problema in calling imsl stuff...)
         real(kind=skr),dimension(201)     :: X
@@ -384,30 +118,13 @@ SUBROUTINE PRESURFACE
      	  STOP 'Please retry with smaller arrays.'
      	END IF
 
-	! allocating arrays
-        !nw = 2*nx*ny+2*max(nx,ny)
         nw = 2*201*ny+2*max(201,ny)
-!print *,'nx: ',nx
-!print *,'ny: ',ny
-!print *,'nw: ',nw
-        !allocate(Z(NX,NY))	
         allocate(Z(201,NY))	
         allocate(Y(NY))
-        !allocate(X(NX))
-	!allocate(CSPL(2,NX,2,NY))
 	allocate(CSPL(2,201,2,NY))
 	allocate(WK(nw))
-	!ic = 1+max(nx,ny)
 	ic = 1+max(201,ny)
 
-!C     	IF (NX.GT.101.OR.NY.GT.101) THEN
-!C Below, we now allow a maximum of 101 points instead of 201.
-!C
-!     	IF (NX.GT.201.OR.NY.GT.201) THEN
-!!C     	  WRITE(6,*)'Arrays too large. Maximum allowed is 101 points.'
-!     	  WRITE(6,*)'Arrays too large. Maximum allowed is 201 points.'
-!     	  STOP 'Please retry with smaller arrays.'
-!     	END IF
      	WRITE(6,*)'Setting up ',NX,' by ',NY,' array.'
 !C
 !C Reads in Y array
@@ -423,38 +140,23 @@ SUBROUTINE PRESURFACE
 !C
 !C Call IMSL routine to compute spline. Now use 201 points instead of 101.
 !C
-!C     	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 101, WK, IER)
-     	!CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 201, WK, IER)
-     	!CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, 201, WK, IER)
         iTmp = 201
      	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
      	
 	IF (IER.EQ.132) THEN
-!C     	  WRITE(6,*)'The X and/or Y array are not ordered properly. 
-!C     $    Please check data in ',INFILE
      	  WRITE(6,*)'The X and/or Y array are/is not ordered properly.' 
           WRITE(6,*)'Please check data in ',INFILE
 	  STOP
      	END IF
      	WRITE(6,*)'Spline succesfully completed.'
      	OUTFILE	=   RSTRING ('Please enter file-name for storage: ')
-!#ifdef vms
-!     	OPEN (20, FILE=OUTFILE, STATUS='NEW', FORM='UNFORMATTED')
-!#else
      	OPEN (20, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
 	REWIND (20)
-!#endif 
      	 WRITE (20)	NX, NY
      	 WRITE (20)	X,Y
      	 WRITE (20)	CSPL
      	CLOSE (20)
-        !deallocate(Z)
-        !deallocate(Y)
-        !deallocate(X)
-	!deallocate(CSPL)
-	!deallocate(WK)
      	WRITE(6,*)'Task completed. Spline stored in ',OUTFILE
-     	!STOP
 	RETURN
 END SUBROUTINE PreSurface
 
@@ -472,19 +174,12 @@ END SUBROUTINE PreSurface
 !C---
 SUBROUTINE OPT_ELE (RF1,RF2,ENERGY,DENSITY)
 
-	!REAL*4		ATWT,RMU,EMF,DENSITY
-     	!REAL*4		ENERGY(420),RF1(420),RF2(420)
-     	!REAL*4		avog,atoms
-     	!INTEGER *4 	NUMBER1
-     	!INTEGER *4 	i
-	!CHARACTER*2	ELEMENT
 	real(kind=skr)  :: ATWT,RMU,EMF,DENSITY
      	real(kind=skr),dimension(420) :: ENERGY,RF1,RF2
      	real(kind=skr)    :: avog,atoms
      	integer(kind=ski) :: NUMBER1
      	integer(kind=ski) :: i
 	character(len=2)  :: ELEMENT
-	!CHARACTER*80	RSTRING
 !todo Sort out constants and physical constants...
      	DATA	AVOG	/  6.022098E+23 		     /
 
@@ -514,7 +209,6 @@ END SUBROUTINE OPT_ELE
 SUBROUTINE OPT_COM (RF1,RF2,ENERGY,DENSITY)
 	real(kind=skr) :: ATWT,RMU,EMF,DENSITY
         real(kind=skr),dimension(420) :: RF1,RF2,ENERGY
-	!DIMENSION	IREL(5)
 	integer(kind=ski),dimension(5) :: IREL
 	integer(kind=ski)              :: i,nAtoms,nTot
 	real(kind=skr)                 :: rMol,rMolec,at1,at2,at3,at4,at5,f1,f2
@@ -522,12 +216,6 @@ SUBROUTINE OPT_COM (RF1,RF2,ENERGY,DENSITY)
      	integer(kind=ski),dimension(5) :: NATOM
 	CHARACTER(len=2),dimension(5)  :: ELEMENT
 	CHARACTER(len=2)               :: ELE
-	!CHARACTER*80	RSTRING
-     	!REAL*4		OUTFIL11(420),OUTFIL12(420)
-     	!REAL*4		OUTFIL21(420),OUTFIL22(420)
-     	!REAL*4		OUTFIL31(420),OUTFIL32(420)
-     	!REAL*4		OUTFIL41(420),OUTFIL42(420)
-     	!REAL*4		OUTFIL51(420),OUTFIL52(420)
      	real(kind=skr),dimension(420) :: OUTFIL11,OUTFIL12
      	real(kind=skr),dimension(420) :: OUTFIL21,OUTFIL22
      	real(kind=skr),dimension(420) :: OUTFIL31,OUTFIL32
@@ -625,14 +313,11 @@ implicit none
 
 integer(kind=ski) :: iErr,iOne=1
 
-!OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='UNFORMATTED', IOSTAT=iErr)
 OPEN (20, FILE="F12LIB.INDEX", STATUS='UNKNOWN', FORM='FORMATTED', IOSTAT=iErr)
 
 IF (iErr /= 0) THEN 
-     !CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', 1)
      CALL LEAVE ('WriteF12LibIndex', 'Cannot write F12LIB.INDEX ', iOne)
 ENDIF
-!REWIND (20)
 write(20,'(A)')  "AC 89"
 write(20,'(A)')  "AG 47"
 write(20,'(A)')  "AL 13"
@@ -745,7 +430,6 @@ END SUBROUTINE WriteF12LibIndex
 !C
 !C---
 
-!SUBROUTINE ReadLib (ELEMENT,NZ,ATWT,C1,C2,ENG,F1,F2)
 SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 
 !C
@@ -782,21 +466,10 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 	!DIMENSION REALBUF(844)
         !CHARACTER*2     ELE
 
-!C       NEW ADDITIONS FOR BINARY SEARCH
-        !CHARACTER*80 LIST(92)
-        !character(len=80),dimension(92) ::  LIST
-        !INTEGER LOOKUP(92)
 !C
 !C This remembers if this routines already been visited at least once. Then
 !C Skip a few of the environment management steps.
 !C
-!C	LOGICAL		LVISITED
-!C	COMMON		/ RDLIBCM /	LVISITED
-!C	DATA		LVISITED	/ .FALSE. /
-!C
-	!CHARACTER*132	F12LIB, INDEXF
-!C
-!C	LVISITED = .TRUE.
 !C
 !C If user specified 'HH' according to old version, change it to 'H ' instead.
 !C
@@ -824,15 +497,11 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
             print *,'Please copy this file from old SHADOW distribution (data dir)'
             print *,'or download it from the SHADOW distribution website. '
             print *,' '
-	    !CALL LEAVE ('READLIB', 'F12LIB.FULL not found', 1)
 	    CALL LEAVE ('READLIB', 'F12LIB.FULL not found', iOne)
-            !return
 	ENDIF
 
 !C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS
         fUnit=11
-	!open (unit=fUnit, file=INDEXF) !, status = 'OLD') !, ACTION='READ')
-	!open (unit=fUnit, file='F12FULL.INDEX', status = 'OLD', iostat=iErr )
 	open (unit=fUnit, file=INDEXF, status = 'OLD', iostat=iErr )
         IF (iErr /= 0) THEN 
           print *,'File not found: '//trim(INDEXF), iErr
@@ -844,18 +513,8 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 
         CLOSE (11)
 
-!#ifndef vms
-!	OPEN(UNIT=71,FILE=F12LIB,
-!     $	ACCESS='DIRECT',RECL=3376, STATUS = 'OLD')
-!
-!C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS
-!	open (unit=11, file=INDEXF, status = 'OLD')
-!#else
-	!OPEN(UNIT=71,FILE="F12LIB.FULL", ioStat=iErr, &
 	OPEN(UNIT=71,FILE=F12LIB, ioStat=iErr, &
            ACCESS='DIRECT',RECL=3376, STATUS = 'OLD', ACTION='READ')
-!	OPEN(UNIT=71,FILE=F12LIB, &
-!           !ACCESS='DIRECT',RECL=3376, STATUS = 'OLD', 'readonly')
 
         IF (iErr /= 0) THEN 
           print *,"File not found: "//trim(F12LIB)
@@ -916,10 +575,7 @@ SUBROUTINE Binary(data, lb, ub, item, loc)
 !C   mid denote, respectively, the beginning, end and middle locations
 !C   of a segment of elements of data.  This algorithm finds the location
 !C   loc of item in data or set loc = null.
-	 !integer lb, ub, loc, mid, beg, fin, i
          integer(kind=ski) ::  lb, ub, loc, mid, beg, fin, i
-	 !character*(*) item
-	 !character*(*) data(ub)
 	 character(len=*) :: item
 	 character(len=*),dimension(ub) ::  data
 
@@ -972,24 +628,17 @@ END SUBROUTINE Binary
 !C	Link with READLIB.OBJ
 !***********************************************************************
 SUBROUTINE PREREFL
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:DIM.PAR/LIST'
-!#endif
 	real(kind=skr),dimension(420)   :: RF1,RF2,ENERGY
 	real(kind=skr),dimension(420,2) :: OUTFIL
 	real(kind=skr) :: DENSITY
-	!CHARACTER*80	OUT_FILE,RSTRING
 	character(len=sklen) :: OUT_FILE
-	!DIMENSION	AF1(N_DIM),AF2(N_DIM)
 	integer(kind=ski),parameter     :: N_DIM=10000
 	real(kind=skr),dimension(N_DIM) :: AF1,AF2
 	EQUIVALENCE	(OUTFIL(1,1),RF1(1))	
 	EQUIVALENCE	(OUTFIL(1,2),RF2(1))	
+
      	DATA	PI     	/  3.141592653589793238462643D0 /
      	DATA	PIHALF 	/  1.570796326794896619231322D0 /
      	DATA	TWOPI 	/  6.283185307179586476925287D0 /
@@ -1018,14 +667,8 @@ SUBROUTINE PREREFL
      	NPOINT	=  (EFINAL-ESTART)/ESTEP + 1
 	DEPTH0	=   DENSITY/2.0D0
 	IF (NPOINT.GT.N_DIM) STOP	'Too many points (*N_DIM* max.)'
-!** Computes the ALPHA and gamma coefficients.
-!*** Finds and interpolate for the photon energy.
-!#ifdef vms
-!     	OPEN (20,FILE=OUT_FILE,STATUS='NEW',FORM='UNFORMATTED')
-!#else
      	OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
 	REWIND (20)
-!#endif
      	WRITE (20)	QMIN,QMAX,QSTEP,DEPTH0
      	WRITE (20)	NPOINT
 	ELFACTOR	= LOG10(1.0D4/30.0D0)/300.0D0
@@ -1066,25 +709,14 @@ END SUBROUTINE PREREFL
 !C---
 SUBROUTINE OptPropComp	
 	implicit none
-        !REAL *8 	RNUMBER
         REAL(kind=skr)  :: DENSITY
-     	!DIMENSION	ENERGY(420),IREL(5),AT(5)
 	real(kind=skr),dimension(420) :: ENERGY
 	integer(kind=ski),dimension(5):: IREL
 	real(kind=skr),dimension(5)   :: AT
 
-     	!INTEGER *4 	NUMBER
 	integer(kind=ski)   :: NUMBER
-	!CHARACTER*1	ELEMENT(5,2),ELE(2)
 	character(len=2)                :: ELE
 	character(len=2),dimension(5)   :: ELEMENT
-     	!COMMON	/OPCON	/  ISTART,IFINAL
-     	!COMMON	/DAT	/  ENER(420),DELTA(420),BETA(420)
-     	!DIMENSION	OUTFIL11(420),OUTFIL12(420)
-     	!DIMENSION	OUTFIL21(420),OUTFIL22(420)
-     	!DIMENSION	OUTFIL31(420),OUTFIL32(420)
-     	!DIMENSION	OUTFIL41(420),OUTFIL42(420)
-     	!DIMENSION	OUTFIL51(420),OUTFIL52(420)
      	real(kind=skr),dimension(420) ::OUTFIL11,OUTFIL12
      	real(kind=skr),dimension(420) ::OUTFIL21,OUTFIL22
      	real(kind=skr),dimension(420) ::OUTFIL31,OUTFIL32
@@ -1115,9 +747,7 @@ SUBROUTINE OptPropComp
      	DO 13 I = 1,NATOMS
      	WRITE(6,*)'Enter 2-letters (capitalized) atomic symbol and ',&
       'formula index for : ',I
-	!!READ	(5,2)	(ELEMENT(I,K),K=1,2)
 	READ	(5,2)	ELEMENT(I)
-!!2	FORMAT	(2A1)
 2	FORMAT	(A2)
      	READ(5,*)IREL(I)
 13     	CONTINUE
@@ -1152,11 +782,9 @@ SUBROUTINE OptPropComp
      	RMOL	= RMOL+         ATWT*IREL(1)
      	WRITE (6,1110)
      	DO 14 I=1,NATOMS
-     	!WRITE (6,1111) ELEMENT(I,1),ELEMENT(I,2),IREL(I)
      	WRITE (6,1111) ELEMENT(I),IREL(I)
 14     	CONTINUE
 1110	FORMAT (1X,'Formula:  ',$)
-!1111	FORMAT ('+',A1,A1,'(',I2,') ',$)
 1111	FORMAT ('+',A2,'(',I2,') ',$)
      	WRITE (6,*)
 !** Computes atomic concentrations and molecular weigth
@@ -1222,9 +850,6 @@ SUBROUTINE Pre_Mlayer
         real(kind=skr) :: ESTART, EFINAL 
 	real(kind=skr)    :: ElFactor
 	integer(kind=ski)    :: np,i,j,npair,iGrade
-        !REAL *8 RNUMBER
-     	!COMMON	/OPCON	/  ISTART,IFINAL
-     	!COMMON	/DAT	/  ENER(420),DELTA(420),BETA(420)
 
 	FILEOUT	= RSTRING ('Name of output file : ')
 10     	ESTART = RNUMBER ('Photon energy (eV) from : ')
@@ -1337,14 +962,10 @@ END SUBROUTINE Pre_Mlayer
 !C			IMSL function IBCCCU
 !C---
 SUBROUTINE Grade_Mlayer
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
-     	!CHARACTER*80	INFILE,OUTFILE,RSTRING
      	character(len=sklen) :: INFILE,OUTFILE
-     	!DIMENSION	CSPL (2,101,2,101), WK (20602)
-     	!DIMENSION	X(101),Y(101),F(101,101)
      	real(kind=skr),dimension(2,101,2,101) :: CSPL 
      	real(kind=skr),dimension(20602)       :: WK 
      	real(kind=skr),dimension(101)         :: X,Y
@@ -1361,12 +982,8 @@ SUBROUTINE Grade_Mlayer
 
 	ITER	= 1
      	OUTFILE	=   RSTRING ('Enter file-name for output: ')
-!#ifdef vms
-!     	OPEN (21, FILE=OUTFILE, STATUS='NEW', FORM='UNFORMATTED')
-!#else
      	OPEN (21, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
 	REWIND (21)
-!#endif
 
 15	WRITE(6,*) ' '
 	IF (ITER.EQ.1) THEN
@@ -1375,11 +992,7 @@ SUBROUTINE Grade_Mlayer
 	  INFILE = RSTRING ('File containing the gamma factor mesh : ')
 	END IF
 
-!#ifdef vms
-!     	OPEN	(20, FILE=INFILE, STATUS='OLD', READONLY, IOSTAT = IERR)
-!#else
      	OPEN	(20, FILE=INFILE, STATUS='OLD', IOSTAT = IERR)
-!#endif
 
      	IF (IERR.NE.0) THEN
      	  WRITE(6,*) 'Cannot access ',INFILE
@@ -1413,7 +1026,6 @@ SUBROUTINE Grade_Mlayer
 !C
 !C Call IMSL routine to compute spline
 !C
-     	!CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, 101, WK, IER)
         iTmp=101
      	CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, iTmp, WK, IER)
      	IF (IER.EQ.132) THEN
@@ -1429,8 +1041,6 @@ SUBROUTINE Grade_Mlayer
      	 WRITE (21)	CSPL(1,I,1,J), CSPL(1,I,2,J),  &
       		CSPL(2,I,1,J), CSPL(2,I,2,J)
 299	 CONTINUE
-!C     	 WRITE (21)	(((CSPL(1,I,1,J), CSPL(1,I,2,J), 
-!C     $		CSPL(2,I,1,J), CSPL(2,I,2,J)), J = 1,NY), I = 1,NX)
 
 	IF (ITER.EQ.1) THEN
 	  ITER   = 2
@@ -1438,7 +1048,6 @@ SUBROUTINE Grade_Mlayer
 	END IF
 	CLOSE	(21)
      	WRITE(6,*) 'Task completed. Spline stored in ',OUTFILE
-     	!CALL	EXIT
      	RETURN
 END SUBROUTINE Grade_Mlayer
 
@@ -1459,7 +1068,6 @@ END SUBROUTINE Grade_Mlayer
 !C				which passes through the 3 points (x,y)
 !C---
 SUBROUTINE POLY_2 (X,Y,A,IFLAG)
-	!REAL*8		X(3),Y(3),A(3),C1,C2,C3
 	real(kind=skr),dimension(3) :: X,Y,A
 	real(kind=skr)              :: C1,C2,C3
         integer(kind=ski)           :: IFLAG
@@ -1501,7 +1109,6 @@ END SUBROUTINE POLY_2
 !C---
 SUBROUTINE BRAGG
 
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
@@ -1515,7 +1122,6 @@ SUBROUTINE BRAGG
      	real(kind=skr),parameter ::E2_MC2=2.817939D-13
 	real(kind=skr),parameter ::AVOG=6.022098D+23
 
-     	!CHARACTER *80	OUTFIL,RSTRING
      	character(len=sklen) :: OUTFIL
 	COMPLEX*16	CI,FA,FB,STRUCT,F_0,REFRAC
 	COMPLEX*16	RCS1_O,RCP1_O,RCS2_O,RCP2_O,RCS_O,RCP_O
@@ -1789,12 +1395,8 @@ SUBROUTINE BRAGG
 !C Now prepare the file for SHADOW.
 !C
 	OUTFIL	= RSTRING ('Output file name (for SHADOW) : ')
-!#ifdef vms
-!	OPEN	(25,FILE=OUTFIL,STATUS='NEW',FORM='FORMATTED')
-!#else
 	OPEN	(25,FILE=OUTFIL,STATUS='UNKNOWN',FORM='FORMATTED')
 	REWIND (25)
-!#endif
 	WRITE	(25,*)	I_LATT,RN,SP_HKL
 	WRITE	(25,*)	ATNUM_A,ATNUM_B,TEMPER
 	WRITE	(25,*)	GA
@@ -2381,12 +1983,8 @@ SUBROUTINE BRAGG
 !C
 !C Write out the parameters used.
 !C
-!#ifdef vms
-!	OPEN	(23,FILE='ROCK_CURVE.PAR',STATUS='NEW')
-!#else
 	OPEN	(23,FILE='rock_curve.par',STATUS='UNKNOWN')
 	REWIND (23)
-!#endif
 	IF (I_LATT.EQ.0) THEN
 	  WRITE	(23,*)	'ZincBlende structure :'
 	  WRITE	(23,*)	'For atom A, fo + f'' + if" = ',FA
@@ -2490,8 +2088,6 @@ SUBROUTINE BRAGG
          write (23,*) '   abs coef secn ext =',abssecp_mosaic,'cm-1'
          write (23,*) '   peak refl = ',refmax_p
          write (23,*) '  '
-!D        CLOSE  (31)
-!D        CLOSE  (32)
         END IF
 	CLOSE	(20)
 	CLOSE	(21)

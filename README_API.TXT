@@ -62,20 +62,20 @@ exposed variables:
  - typedef struct dComplex
 
 exposed functions:
- - double* CShadowAllocateRay ( poolSource* src, double* ray);
- - double* CShadowAllocateRayInt ( int, double* );
+ - double* CShadowAllocateBeamFromPool ( poolSource* src, double* ray);
+ - double* CShadowAllocateBeam ( int, double* );
  - void CShadowPoolSourceLoad ( poolSource* src, char* filename);
  - void CShadowPoolSourceWrite ( poolSource* src, char* filename);
  - void CShadowPoolOELoad ( poolOE* oe, char* filename);
  - void CShadowPoolOEWrite ( poolOE* oe, char* filename);
  - void CShadowSetupDefaultSource ( poolSource* src);
  - void CShadowSetupDefaultOE ( poolOE* oe);
- - void CShadowGetDimRay ( int* nCol, int* nPoint, char* filename);
- - void CShadowReadRay ( double* ray, int nCol, int nPoint, char* filename);
- - void CShadowWriteRay ( double* ray, int nCol, int nPoint, char* filename);
+ - void CShadowBeamGetDim ( int* nCol, int* nPoint, char* filename);
+ - void CShadowBeamLoad ( double* ray, int nCol, int nPoint, char* filename);
+ - void CShadowBeamWrite ( double* ray, int nCol, int nPoint, char* filename);
  - void CShadowSourceGeom ( poolSource* src, double* ray);
  - void CShadowSourceSync ( poolSource* src, double* ray);
- - void CShadowTrace ( poolOE* oe, double* ray, int nPoint, int iCount);
+ - void CShadowTraceOE ( poolOE* oe, double* ray, int nPoint, int iCount);
  - void CShadowFFresnel2D ( double* ray, int nPoint, double dist, dComplex* E, pixel* xp, pixel* zp);
 
 all defined in file: ShadowMask.h
@@ -98,7 +98,7 @@ struct containing:
  - double      imag
 
 
-CShadowAllocateRay
+CShadowAllocateBeamFromPool
 purpose:
   Ensure the Allocation of the array ray where SHADOW store the physical quantities.
   It allocate ray using realloc.
@@ -109,7 +109,7 @@ output
  . double     *ray
 
 
-CShadowAllocateRayInt
+CShadowAllocateBeam
 purpose:
   Ensure the Allocation of the array ray where SHADOW store the physical quantities.
   It allocate ray using realloc.
@@ -150,7 +150,7 @@ input
 output
  . none
 
-CShadowGetDimRay
+CShadowBeamGetDim
 purpose: 
   It gets the dimension of the ray, written in the file called "filename". Although nCol is always fixed to 18 we keep it for back compatibility reason.
   It is used to Allocate ray before reading it. (see next).
@@ -162,7 +162,7 @@ output
  . none direct, but nCol and nPoint will be changed, and will survive after the function since one passes the pointers
 
 
-CShadowReadRay (CShadowWriteRay)
+CShadowBeamLoad (CShadowBeamWrite)
 purpose:
   It reads (writes) ray from (to) the file called filename.
 input
@@ -194,7 +194,7 @@ output
  . none, but ray is changed.
 
 
-CShadowTrace
+CShadowTraceOE
 purpose
   It propagates ray from the input state to final according to the optical element oe.
 input
@@ -261,10 +261,12 @@ constructors, destructor and functions
  . ~Ray()                   : destructor, use free(rays)
  . Ray(const Ray& r)        : copy-constructor
  . init(int col, int point) : <-- I want to make it protected
- . read(char* filename)     : read values from the file filename, using CShadowGetDimRay and CShadowReadRay
- . write(char* filename)    : write values to file filename, using CShadowWriteRay
+ . read(char* filename)     : read values from the file filename, using CShadowBeamGetDim and CShadowBeamLoad
+ . write(char* filename)    : write values to file filename, using
+CShadowBeamWrite
  . genSource(Source* src)   : generates rays according to src (doesn't matter if src is geometrical or synchrotron), using CShadowSourceGeom or CShadowSourceSync
- . trace(OE* oe, int count) : propagates rays according to oe, using CShadowTrace
+ . trace(OE* oe, int count) : propagates rays according to oe, using
+CShadowTraceOE
  . ffresnel2D(double dist, dComplex* E, pixel* xp, pixel* zp) : use CShadowFFresnel2D to generate E. E must be setup outside.
 
 

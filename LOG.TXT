@@ -1,0 +1,53 @@
+
+
+SHADOW 3  Modifications Log
+===========================
+
+
+20110623  Beta1
+===============
+Cosmetics.  Changed file names and subroutine names to become mode readable. 
+            Clean a lot of old commented code. Move some routines from
+            one module to another.
+
+File(F) Routine(R) Method(M)
+
+R/R     OLD                                  NEW
+START STEP1
+F       ShadowMaskSource.def                 shadow_source.def
+F       ShadowMaskOE.def                     shadow_oe.def
+F       ShadowMaskOEwithoutRepetitions.def shadow_oe_without_repetitions.def
+R       SourceG                              sourceGeom
+R       write_off18                          beamWrite
+R       rbeam18                              beamLoad
+R       rbeamanalyze                         beamGetDim
+START STEP2
+R       BindShadowWriteRay                   BindShadowBeamWrite
+R       BindShadowReadRay                    BindShadowBeamLoad
+R       BindShadowGetDimRay                  BindShadowBeamGetDim
+START STEP3
+F       ShadowMask.h                         shadow_bind_c.h
+F       ShadowMask.c                         shadow_bind_c.c
+F       ShadowMask.cpp                       shadow_bind_cpp.cpp
+F       ShadowMask.hpp                       shadow_bind_cpp.hpp
+R       CShadowAllocateRay                   CShadowAllocateBeamFromPool
+R       CShadowAllocateRayInt                CShadowAllocateBeam
+R       CShadowTrace                         CShadowTraceOE
+R       CShadowGetDimRay                     CShadowBeamGetDim
+R       CShadowReadRay                       CShadowBeamLoad
+R       CShadowWriteRay                      CShadowBeamWrite
+START STEP4
+M       Ray::                                Beam::
+M       ::trace                              ::traceOE
+M       ::read                               ::load
+START STEP5 (python)
+F       Shadow_python.c                      shadow_bind_python.c
+F       Shadow_python.h                      shadow_bind_python.h
+M       Ray                                  Beam
+M       ::read                               ::load
+M       ::trace                              ::traceOE
+START STEP6 cleaning *.F90
+START STEP7 cleaning *.f90
+START STEP8 mv preprocessors routines to math
+
+

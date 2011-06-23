@@ -9,7 +9,7 @@
 
 
 extern "C" {
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 }
 
 /*
@@ -25,7 +25,7 @@ public:
   Source(char*);
   Source(const Source&);
   void write(char*);
-  void read(char*);
+  void load(char*);
 };
 
 
@@ -40,13 +40,13 @@ public:
   OE(char*);
   OE(const OE&);
   void write(char*);
-  void read(char*);
+  void load(char*);
 };
 
 /*
- *  Ray Class here
+ *  Beam Class here
  */
-class Ray
+class Beam
 {
 protected:
   int nCol;
@@ -54,14 +54,14 @@ protected:
 
 public:
   double *rays;
-  Ray();
-  ~Ray();
-  Ray(const Ray&);
+  Beam();
+  ~Beam();
+  Beam(const Beam&);
   void init(int, int);
   void write(char*);
-  void read(char*);
+  void load(char*);
   void genSource(Source*);
-  void trace(OE*,int);
+  void traceOE(OE*,int);
   void ffresnel2D(double, dComplex*, pixel*, pixel*);
 };
 

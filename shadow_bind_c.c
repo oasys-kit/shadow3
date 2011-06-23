@@ -2,21 +2,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 
 const int NCOL=18;
 
 /*
- *  CShadowAllocateRay(poolSource*,double*) purpose is to allocate correctly Ray.
+ *  CShadowAllocateBeamFromPool(poolSource*,double*) purpose is to allocate correctly Ray.
  *  This piece of memory will be used by fortran routines, and shared with C.
  */
-double* CShadowAllocateRay ( poolSource* Src, double* Ray )
+double* CShadowAllocateBeamFromPool ( poolSource* Src, double* Ray )
 {
   Ray = ( double* ) realloc ( Ray, 18*Src->NPOINT*sizeof ( double ) );
   return Ray;
 }
 
-double* CShadowAllocateRayInt ( int nPoint, double* Ray )
+double* CShadowAllocateBeam ( int nPoint, double* Ray )
 {
   Ray = ( double* ) realloc ( Ray, 18*nPoint*sizeof ( double ) );
   return Ray;
@@ -73,28 +73,28 @@ void CShadowSourceSync ( poolSource* Src, double* Ray )
   BindShadowSourceSync ( Src, Ray, & ( Src->NPOINT ) );
 }
 
-void CShadowTrace ( poolOE* OE, double* Ray, int nPoint, int iCount )
+void CShadowTraceOE ( poolOE* OE, double* Ray, int nPoint, int iCount )
 {
   BindShadowTraceOE ( OE, Ray, &nPoint, &iCount );
 }
 
-void CShadowGetDimRay ( int* nCol, int* nPoint, char* FileDat )
+void CShadowBeamGetDim ( int* nCol, int* nPoint, char* FileDat )
 {
-  BindShadowGetDimRay ( FileDat, strlen ( FileDat ), nPoint, nCol );
+  BindShadowBeamgetDim ( FileDat, strlen ( FileDat ), nPoint, nCol );
 }
 
-void CShadowReadRay ( double* Ray, int nCol, int nPoint, char* FileDat )
+void CShadowBeamLoad ( double* Ray, int nCol, int nPoint, char* FileDat )
 {
-  BindShadowReadRay ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
+  BindShadowBeamLoad ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
 }
 
 
 /*
- *  CShadowWriteRay(int,int,double*,char*) purpose is to write Ray in a binary file
+ *  CShadowBeamWrite(int,int,double*,char*) purpose is to write Ray in a binary file
  */
-void CShadowWriteRay ( double* Ray, int nCol, int nPoint, char* FileDat )
+void CShadowBeamWrite ( double* Ray, int nCol, int nPoint, char* FileDat )
 {
-  BindShadowWriteRay ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
+  BindShadowBeamWrite ( Ray, &nPoint, &nCol, FileDat, strlen ( FileDat ) );
 }
 
 /*

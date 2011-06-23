@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdio>
 #include <cstring>
-#include "ShadowMask.hpp"
+#include "shadow_bind_cpp.hpp"
 
 using namespace std;
 
@@ -34,16 +34,16 @@ int main ( int argc, char** argv )
   stringstream      tmp2;
   Source            src;
   OE                oe;
-  Ray               ray;
+  Beam               ray;
 
 
   if ( use_src ) {
-    src.read ( ( char* ) "start.00" );
+    src.load ( ( char* ) "start.00" );
     ray.genSource ( &src );
     ray.write ( ( char* ) "begin.dat" );
   }
   if ( use_trc && !use_src ) {
-    ray.read ( ( char* ) "begin.dat" );
+    ray.load ( ( char* ) "begin.dat" );
   }
   if ( use_trc ) {
     sysFile.open ( "systemfile.dat" );
@@ -54,8 +54,8 @@ int main ( int argc, char** argv )
     }
     sysFile.close();
     for ( int i=0 ; i<files.size() ; i++ ) {
-      oe.read ( ( char* ) files[i].c_str() );
-      ray.trace ( &oe,i+1 );
+      oe.load ( ( char* ) files[i].c_str() );
+      ray.traceOE ( &oe,i+1 );
       tmp2 << "star.0" << i+1;
       tmp1 = tmp2.str();
       ray.write ( ( char* ) tmp1.c_str() );

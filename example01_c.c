@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 
 int main()
 {
@@ -17,18 +17,18 @@ int main()
   printf(" Number of rays (modified): %d\n", src.NPOINT);
 
   // allocate ray
-  ray = CShadowAllocateRay(&src,ray);
+  ray = CShadowAllocateBeamFromPool(&src,ray);
 
   // calculate source
   CShadowSourceSync(&src, ray);
-  CShadowWriteRay(ray,18,src.NPOINT,"begin.dat");
+  CShadowBeamWrite(ray,18,src.NPOINT,"begin.dat");
   // reads start.01 into oe1
   CShadowPoolOELoad(&oe1,"start.01");
   // traces OE1
-  CShadowTrace(&oe1,ray,src.NPOINT,1);
+  CShadowTraceOE(&oe1,ray,src.NPOINT,1);
 
   // write file star.01
-  CShadowWriteRay(ray,18,src.NPOINT,"star.01");
+  CShadowBeamWrite(ray,18,src.NPOINT,"star.01");
 
   free(ray);
   return EXIT_SUCCESS;

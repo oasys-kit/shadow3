@@ -84,10 +84,10 @@ Program	Trace
             .OR.   (.NOT. ALLOCATED(Ap)) &
             .OR.   (.NOT. ALLOCATED(Phase)) ) THEN
 
-        CALL RBeamAnalyze (file_source,ncol1,np,iflag,ierr)
+        CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
 
          IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
-            PRINT *,'TRACE: RBeamAnalyze: Error in file: '//TRIM(file_source)
+            PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
             STOP
          ELSE
  

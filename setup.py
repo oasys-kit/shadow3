@@ -11,7 +11,7 @@ header = headers + glob (os.path.join ("Include/numpy","*.h") )
 setup (	name = "Shadow", 
 	version = "1.0",
 	ext_modules = [Extension('Shadow', 
-				['Shadow_python.c',], 
+				['shadow_bind_python.c',], 
 				library_dirs  = ['.'],
 				libraries     = ['shadowc'],
 				include_dirs  = ['.',numpy.get_include()],

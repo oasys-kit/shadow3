@@ -1,4 +1,5 @@
 !----
+!----
 !---- MODULE:  shadow_sourcesync
 !----
 !---- Main module for shadow synchrotron sources
@@ -132,14 +133,6 @@ Module shadow_synchrotron
     !todo: mv icsevu icsccu zbrent                to math_imsl
     !todo: mv bskm cubspl sort_spl                to math
 
-    !
-    !
-    !
-
-    !
-    !
-    !
-
 !C   IMSL ROUTINE NAME   - ICSEVU                                        
 !C                                                                       
 !C-----------------------------------------------------------------------
@@ -216,9 +209,6 @@ Module shadow_synchrotron
 !C-----------------------------------------------------------------------
 !C                                                                       
 SUBROUTINE ICSEVU  (X,Y,NX,C,IC,U,S,M,IER)                        
-!C                                  SPECIFICATIONS FOR ARGUMENTS         
-!      INTEGER            NX,IC,M,IER                                    
-!      DOUBLE PRECISION   X(NX),Y(NX),C(IC,3),U(M),S(M)                  
       integer(kind=ski) ::             NX,IC,M,IER                                    
       real(kind=skr)    ::    X(NX),Y(NX),C(IC,3),U(M),S(M)                  
 !C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
@@ -522,18 +512,11 @@ SUBROUTINE ZBRENT (F,EPS,NSIG,A,B,MAXFN,IER)
 !C                                  SPECIFICATIONS FOR ARGUMENTS         
       integer(kind=ski)         :: NSIG,MAXFN,IER                                 
       real(kind=skr)  ::    F,EPS,A,B 
-      !INTEGER            NSIG,MAXFN,IER                                 
-      !DOUBLE PRECISION   F,EPS,A,B                                      
 !C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
-      !INTEGER            IC                                             
       integer(kind=ski)         :: IC                                             
       real(kind=skr)  :: ZERO=0.0D0,HALF=0.5D0,ONE=1.0D0,&
                                  THREE=3.0D0,TEN=10.0D0
       real(kind=skr)  :: T,FA,FB,C,FC,D,E,TOL,RM,S,P,Q,R,RONE,TEMP      
-      !DOUBLE PRECISION   ZERO,HALF,ONE,THREE,TEN, &
-      !                   T,FA,FB,C,FC,D,E,TOL,RM,S,P,Q,R,RONE,TEMP      
-      !DATA               ZERO/0.0D0/,HALF/.5D0/,ONE/1.0D0/,THREE/3.0D0/, &
-      !                   TEN/10.0D0/                                    
 !C                                  FIRST EXECUTABLE STATEMENT           
       IER = 0                                                           
       T = TEN**(-NSIG)                                                  
@@ -639,16 +622,12 @@ End  Subroutine zbrent
 !C---
 SUBROUTINE BSKM(X,BK,IQ,ORD)
 
-!	  IMPLICIT 	REAL*8 		(A-H,O-Z)
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
 	  G13 = 2.678938534707748D0
 	  G23 = 1.354117939426400D0
-!srio already defines in shadow_variables...
-!	  PI = 3.141592653589793238D0
 	  K = 0
 	  BK = 0.0D0
 
@@ -722,24 +701,10 @@ Subroutine PIECESPL (G, Y, N, IER)
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!	IMPLICIT	REAL*8	(A-H,O-Z)
-!#if defined(vms)
-!	INCLUDE		'SHADOW$INC:DIM.PAR/LIST'
-!#elif defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#endif
-
-!todo: Check this NPOINT. Make it allocatable? 
-!	REAL*8		G(5,N), Y(N)
-!	REAL*8		GTEMP(5,N_DIM), YTEMP(N_DIM), SLOPE(N_DIM)
 	real(kind=skr),dimension(5,N) :: G
 	real(kind=skr),dimension(N)   :: Y
 	real(kind=skr),dimension(5,N) :: GTEMP
 	real(kind=skr),dimension(N)   :: YTEMP, SLOPE
-!#if defined(vms)
-!	INTEGER		MPURGE(2)
-!#endif
-!	INTEGER		N,IER
 	integer(kind=ski)   :: N,IER
 
 !C
@@ -772,17 +737,6 @@ Subroutine PIECESPL (G, Y, N, IER)
 	CALL	CUBSPL	(G, Y, N, IER)
 100	CONTINUE
 
-!#if defined(vms)
-!	MPURGE(1)	= %LOC(GTEMP(1,1))
-!	MPURGE(2)	= %LOC(GTEMP(5,N_DIM))
-!	CALL	SYS$PURGWS	(MPURGE)
-!	MPURGE(1)	= %LOC(YTEMP(1))
-!	MPURGE(2)	= %LOC(YTEMP(N_DIM))
-!	CALL	SYS$PURGWS	(MPURGE)
-!	MPURGE(1)	= %LOC(SLOPE(1))
-!	MPURGE(2)	= %LOC(SLOPE(N_DIM))
-!	CALL	SYS$PURGWS	(MPURGE)
-!#endif
 	RETURN
 !C
 !C Piecewise splines case.
@@ -863,17 +817,10 @@ End Subroutine piecespl
 !***************************************************************************
 FUNCTION POL_PAR(XPAR_IN)
 
-!	IMPLICIT	REAL*8 		(A-H,O-Z)
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
 !C
 	DIMENSION	X_IN(1),Y_OUT(1)
 
@@ -898,18 +845,10 @@ End Function pol_par
 !  ***************************************************************************
 FUNCTION POL_PER(XPAR_IN)
 
-!	IMPLICIT	REAL*8		(A-H,O-Z)
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
-!C
 	DIMENSION	X_IN(1),Y_OUT(1)
 
 	N_ELEM 		= 1001
@@ -933,18 +872,10 @@ End Function pol_per
 !***************************************************************************
 FUNCTION POL_TOT(XPAR_IN)
 
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!	IMPLICIT	REAL*8		(A-H,O-Z)
-!C
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
 !C
 	DIMENSION	X_IN(1),Y_OUT(1)
 
@@ -963,17 +894,6 @@ FUNCTION POL_TOT(XPAR_IN)
 	RETURN
 End Function pol_tot
 
-    !
-    !
-    !
-
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include		<header.txt>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-!#endif
-
 !C+++
 !C	SUBROUTINE	SETUP
 !C
@@ -987,15 +907,6 @@ SUBROUTINE SETUP
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
-
-!	IMPLICIT 	REAL*8 		(A-H,O-Z)
-
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
-!C
 
 !todo: update all these numerical constants with latest CODATA values
 
@@ -1018,16 +929,6 @@ SUBROUTINE SETUP
 	RETURN
 End Subroutine setup
 
-    !
-    !
-    !
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include		<header.txt>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-!#endif
-
 !C+++
 !C	SUBROUTINE	COMPUTE
 !C
@@ -1036,17 +937,9 @@ End Subroutine setup
 !C---
 	SUBROUTINE COMPUTE
 
-!	IMPLICIT 	REAL*8 		(A-H,O-Z)
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
-
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
 
 	DO 100 IC=1,1001
 
@@ -1098,12 +991,8 @@ End Subroutine setup
      	TOT_PWR	=   88.5D0*BENER**4/RAD
      	RING_GAMMA = 1957*BENER
      	SIG_EQ	=   1.54D0*(CR_ENER/PHOT)**0.38D0/RING_GAMMA
-!#ifdef vms
-!     	OPEN (22,FILE='FLUX',STATUS='NEW')
-!#else
      	OPEN (22,FILE='FLUX',STATUS='UNKNOWN')
 	REWIND (22)
-!#endif
      	WRITE (22,*) '-----------------------------------------------'
      	WRITE (22,1001) BENER,RING_GAMMA,RAD
      	WRITE (22,1002)	CR_ENER,R_LCRIT
@@ -1155,36 +1044,8 @@ End Subroutine setup
 	IF (IER1.NE.0.OR.IER2.NE.0.OR.IER3.NE.0)  &
           WRITE(6,*)'Error in ICSCCU ',IER1,IER2,IER3
 
-!D     	OPEN (UNIT=20,FILE='SRPAR.CDF',STATUS='NEW')
-!D		WRITE (20,*) 'PARALLEL'
-!D		WRITE (20,*) '        '
-!D     	DO 600 J=1,1001
-!D600     	WRITE (20,*) ANG_ARR(J),PPAR_INT(J)
-!D	CLOSE(20)
-!D     	OPEN (UNIT=20,FILE='SRPERP.CDF',STATUS='NEW')
-!D		WRITE (20,*) 'PERPENDICULAR'
-!D		WRITE (20,*) '        '
-!D     	DO 400 J=1,1001
-!D400		WRITE (20,*) ANG_ARR(J),PPER_INT(J)
-!D	CLOSE(20)
-!D     	OPEN (UNIT=20,FILE='SRTOT.CDF',STATUS='NEW')
-!D		WRITE (20,*) 'TOTAL'
-!D		WRITE (20,*) '        '
-!D     	DO 500 J=1,1001
-!D500		WRITE (20,*) ANG_ARR(J),PTOT_INT(J)
-!D	CLOSE (20)
 	RETURN
 End Subroutine compute
-
-    !
-    !
-    !
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include		<header.txt>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-!#endif
 
 !C+++
 !C	SUBROUTINE	FILESAVE
@@ -1198,16 +1059,9 @@ SUBROUTINE FILESAVE
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!	IMPLICIT 	REAL*8 		(A-H,O-Z)
 			CHARACTER *9 	FILSAV(3)
      			CHARACTER *5	VALUE
 
-!!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
-!C
      	IPHOT	=   PHOT
 
      	WRITE (VALUE,100)  IPHOT
@@ -1217,7 +1071,6 @@ SUBROUTINE FILESAVE
      	FILSAV(3) = 'STOT'//VALUE
 
 	DO 200 IC = 1,3
-!C	OPEN(UNIT = 20,FILE=FILSAV(IC),STATUS = 'NEW',DISPOSE = 'SAVE')
 	OPEN(UNIT = 20,FILE=FILSAV(IC),STATUS = 'UNKNOWN')
 	REWIND (20)
 	  IF (IC.EQ.1)THEN
@@ -1228,7 +1081,6 @@ SUBROUTINE FILESAVE
 	   WRITE(20,110) ((PTOT(I,K),K = 1,2),I = 1,NP,10)
 	  END IF
 200	CLOSE(20)
-!C 200	CLOSE(20,DISPOSE = 'SAVE')
 110	FORMAT(1X,G12.5,10X,G12.5)
 
 	RETURN 
@@ -1250,16 +1102,6 @@ SUBROUTINE SOLVE(Y_IN,X_OUT,I_FLAG)
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
-!	IMPLICIT 	REAL*8 		(A-H,O-Z)
-
-!#if defined(unix) || HAVE_F77_CPP
-!#       include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'bm.blk'
-!#endif
-!C
-!srio danger
-!	EXTERNAL POL_PAR,POL_PER,POL_TOT
 
 	R_INPUT = Y_IN
 	EPS      = 0.0D0
@@ -1288,16 +1130,6 @@ SUBROUTINE SOLVE(Y_IN,X_OUT,I_FLAG)
 End Subroutine solve
 
 
-    !
-    !
-    !
-
-! #if defined(unix) || HAVE_F77_CPP
-! #	include		<header.txt>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-! #endif
-!
 !C+++
 !C	SUBROUTINE	ALADDIN1
 !C
@@ -1334,15 +1166,7 @@ SUBROUTINE ALADDIN1 (R_VAR,ANG_OUT,I_FLAG,IERROR)
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!	IMPLICIT 	REAL*8 		(A-H,O-Z)
 			CHARACTER *6 	FILSAV,Q
-!C
-!#if defined(unix) || HAVE_F77_CPP
-!#	include		"bm.blk"
-!#elif defined(vms)
-!	INCLUDE		'BM.BLK'
-!#endif
-
 !srio danger
 !	COMMON	/FOURT/	FILSAV,Q
 !C
@@ -1356,7 +1180,7 @@ SUBROUTINE ALADDIN1 (R_VAR,ANG_OUT,I_FLAG,IERROR)
                 PHOT	=    PH1
      		PSIMAX	=    MAX(VDIV1,VDIV2)
      		RAD	=    ABS(R_MAGNET)
-print *,'ALADDIN1: Setting RAD=',RAD,R_MAGNET
+!print *,'ALADDIN1: Setting RAD=',RAD,R_MAGNET
 !srio commented this: I do not why this game BENER<->B_ENER
 !srio BENER is in start.00 and should be used here.
 !srio     		BENER	=    B_ENER
@@ -1415,61 +1239,7 @@ End Subroutine aladdin1
     !
 
 ! srio danger
-! COMMENTED BECAUSE IT IS ALREADY IN math
-
-!!#if defined(unix) || HAVE_F77_CPP
-!!#	include		<header.txt>
-!!#elif defined(vms)
-!!     	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-!!#endif
-!!
-!!C+++
-!!C     PROGRAM    INTSPL
-!!C
-!!C     PURPOSE    TO INTERPOLATE THE VALUE Y FOR A POINT X, USING THE ARRAY
-!!C                G(5,N) FROM THE PROGRAM CUBSPL.
-!!C
-!!C     INPUT      G(5,N) AS FROM CUBSPL.
-!!C                N, THE # OF DATA POINTS IN G(5,N).
-!!C                X, THE POINT WHERE YOU WANT THE INTERPOLATION TO BE MADE.   
-!!C 
-!!C     OUTPUT     Y, THE INTERPOLATED VALUE.
-!!C                IER =1 FOR ERROR, =0 OTHERWISE.
-!!C
-!!C---              
-!SUBROUTINE SPL_INT(G,N,X,Y,IER)
-!
-!        ! todo: remove implicits
-!	implicit real(kind=kind(1.0d0)) (a-h,o-z)
-!	implicit integer(kind=4)        (i-n)
-!
-!      !IMPLICIT	REAL*8	(A-H,O-Z)
-!      REAL*8   G(5,N), X, Y, Z
-!      INTEGER  I, IER, N
-!      GMAX	= MAX(G(1,1),G(1,N))
-!      GMIN	= MIN(G(1,1),G(1,N))
-!      IF ((X .LT. GMIN) .OR. (X .GT. GMAX)) THEN
-!        WRITE(6,*) 'SPL_INT: x is outside the interpolation range.'
-!        IER = 1
-!        RETURN
-!      ELSE IF (X .EQ. G(1,N)) THEN
-!        I = N-1 
-!        GO TO 10
-!      END IF  
-!      I = 0
-!21    IF (G(1,I+1) .LE. X) THEN
-!        I = I + 1
-!      GOTO 21
-!	  END IF
-!10    Z = X - G(1,I)
-!      Y = G(2,I) + Z*(G(3,I) + Z*(G(4,I) + Z*G(5,I)))
-!      IER = 0
-!      RETURN
-!End Subroutine spl_int
-
-    !
-    !
-    !
+! INTSPL REMOVED (IT IS ALREADY IN shadow_math)
 
 !C ------------------------------------------------------------------------
 !C+++
@@ -1483,20 +1253,6 @@ End Subroutine aladdin1
 !C
 !C---
 SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
-
-!#if defined(unix) || HAVE_F77_CPP
-!c
-!c This causes problems with F77 drivers, since can't use -I directive.
-!c so I'll use the standard cpp directive instead.
-!c
-!c	INCLUDE         './../include/common.blk'
-!c
-!c
-!#	include		<common.blk>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!#endif
-
 
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
@@ -1518,7 +1274,6 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
 !	COMMON  /CDFINDEX/	IMAX_1,IMIN_1,IINT_1,NKOL,
 !     $				IMAX_2,IMIN_2,IINT_2,IST
 
-	!CHARACTER*132	SRSPEC, SRDISTR
 	character(len=1024)      :: SRSPEC, SRDISTR
 !c
 !c Get the data file path using either SHADOW$DATA or Unix SHADOW_DATA_DIR
@@ -1569,10 +1324,6 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
 !c	IF (EMIN.LT.10.0**EX_LOW) CALL LEAVE
 !c     $	  ('WHTRCDF','Minimum photon energy is too small.',0)
 !c
-!#ifdef vms
-!     	OPEN	(20, FILE=SRDISTR, STATUS='OLD', 
-!     $		 READONLY,FORM='UNFORMATTED')
-!#else
      	!OPEN	(20, FILE=SRDISTR(1:IBLANK(SRDISTR)), STATUS='OLD', &
       	!	FORM='UNFORMATTED')
      	open	(unit=20, file=trim(SRDISTR), status='OLD', &
@@ -1581,7 +1332,6 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
            call leave ('WHTRCDF','Could not open file: '//trim(SRDISTR),&
                 iErr)
         ENDIF
-!#endif
 	READ 	(20)	ICOL,NP
 	IMIN	= NP - (EX_UPP - LOG10(EMIN))/EX_STEP
 	IMAX	= NP - (EX_UPP - LOG10(EMAX))/EX_STEP
@@ -1636,10 +1386,10 @@ SUBROUTINE WHTRCDF(RAD_MIN,RAD_MAX)
 !c
 	  DO 65 I = 1, NKOL
 !srio	    CALL SPL_INT (PHOT,IINT_1,PORDER(I)-PDIFF,CMIN,IER)
-print *,'WHTRCDF calls 1 SPL_INT (phot_spline) ...'
+!print *,'WHTRCDF calls 1 SPL_INT (phot_spline) ...'
 	    CALL SPL_INT (PHOT_SPLINE,IINT_1,PORDER(I)-PDIFF,CMIN,IER)
 !srio	    CALL SPL_INT (PHOT,IINT_1,PORDER(I)+PDIFF,CMAX,IER)
-print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
+!print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
 	    CALL SPL_INT (PHOT_SPLINE,IINT_1,PORDER(I)+PDIFF,CMAX,IER)
 	    WORKY(I+1)	= WORKY(I) + CMAX - CMIN
 	    Y(I+1)	= I + 1.0D0
@@ -1687,18 +1437,12 @@ print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
 !c------------------------------------------------------------------------------
 !c First calculate the appropriate indices
 200	CONTINUE
-!#ifdef vms
-!     	OPEN	(30, FILE=SRSPEC, STATUS='OLD', 
-!     $		 READONLY,FORM='UNFORMATTED')
-!#else
-!print *,'>>>>>> opening file: '//trim(SRSPEC)
      	OPEN	(30, FILE=SRSPEC(1:IBLANK(SRSPEC)), STATUS='OLD', &
       		FORM='UNFORMATTED',IOSTAT=iErr)
         IF (iErr .ne. 0) THEN
            call leave ('WHTRCDF','Could not open file: '//trim(SRSPEC),&
                 iErr)
         ENDIF
-!#endif
      	READ	(30)	NPHOT,ICOL,IST
 	ITRY	= ((NP - IMIN_1)/IST) + 2
 	IMIN_2  = ((NP - IMAX_1)/IST) + 1
@@ -1758,15 +1502,6 @@ print *,'WHTRCDF calls 2 SPL_INT (phot_spline) ...'
 137	    CONTINUE
 136	  CONTINUE
 140	CONTINUE
-!c
-!c Erase some useless memory spaces
-!c
-!#ifdef vms
-!	MPURGE(1)	= %LOC(Y(1))
-!	MPURGE(2)	= %LOC(Y(1010))
-!	CALL SYS$PURGWS (MPURGE)
-!#endif
-!c
 	RETURN 
 End Subroutine whtrcdf
 
@@ -1784,19 +1519,6 @@ End Subroutine whtrcdf
 !srio changes this argument from RAD (global variable) to RAD33
 !to avoid conflict!
 SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
-
-!#if defined(unix) || HAVE_F77_CPP
-!C
-!C This causes problems with F77 drivers, since can't use -I directive.
-!C so I'll use the standard cpp directive instead.
-!C
-!C	INCLUDE         './../include/common.blk'
-!C
-!C
-!#	include		<common.blk>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!#endif
 
         ! todo: remove implicits
 	implicit real(kind=skr) (a-h,o-z)
@@ -1820,8 +1542,6 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 !	COMMON  /CDFINDEX/	IMAX_1,IMIN_1,IINT_1,NKOL, &
 !     $				IMAX_2,IMIN_2,IINT_2,IST
 !C Define some useful data
-	!DATA		EX_UPP	/2.0D0/
-	!DATA		EX_LOW	/-5.0D0/
 	real(kind=skr) :: EX_UPP=2.0D0,EX_LOW=-5.0D0
 
 	EX_STEP	= (EX_UPP - EX_LOW)*1.0D-3
@@ -1848,15 +1568,11 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 !C
 
 	  EMIN	= PHOTON(1)/C_PHOT
-!srio	  IF (EMIN.LT.PHOT(1,1))	EMIN = PHOT(1,1)
 	  IF (EMIN.LT.PHOT_SPLINE(1,1))	EMIN = PHOT_SPLINE(1,1)
 	  EMAX	= PHOTON(2)/C_PHOT
-!srio	  IF (EMAX.GT.PHOT(1,IINT_1))	EMAX = PHOT(1,IINT_1)
 	  IF (EMAX.GT.PHOT_SPLINE(1,IINT_1))	EMAX = PHOT_SPLINE(1,IINT_1)
 
-!csrio	  CALL SPL_INT (PHOT,IINT_1,EMIN,CMIN,IER)
 	  CALL SPL_INT (PHOT_SPLINE,IINT_1,EMIN,CMIN,IER)
-!srio	  CALL SPL_INT (PHOT,IINT_1,EMAX,CMAX,IER)
 	  CALL SPL_INT (PHOT_SPLINE,IINT_1,EMAX,CMAX,IER)
 	  PSEED	= CMIN + PSEED*(CMAX-CMIN)
 	  CALL SPL_INT (PHOT_INV,IINT_1,PSEED,PE,IER)
@@ -1900,7 +1616,6 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 	IER	= 0
 	i4 = 4
 	CALL CUBSPL  (WORKX,WORKP,i4,IER)
-        !print *,'WHTICDF calls 11 SPL_INT i4,PE,WARKX...',i4,PE,WORKX
 	CALL SPL_INT (WORKX,i4,PE,PSI,IER)
 	IF (ASEED.GT.0.5)	PSI = -PSI		!Radians
 !C Now the polarization
@@ -1947,19 +1662,6 @@ End Subroutine whticdf
 !C---
 SUBROUTINE WHITE (RAD1,RAD2,A_PSEED,A_ASEED,A_WAVE_NO,A_PSI,A_POLAR,IER)
 
-!#if defined(unix) || HAVE_F77_CPP
-!c
-!c This causes problems with F77 drivers, since can't use -I directive.
-!c so I'll use the standard cpp directive instead.
-!c
-!c	INCLUDE         './../include/common.blk'
-!c
-!c
-!#	include		<common.blk>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!#endif
-
 !srio danger
 !	COMMON /CDFINDEX/	IMAX_1,IMIN_1,IINT_1,NKOL,
 !     $				IMAX_2,IMIN_2,IINT_2,IST
@@ -1977,8 +1679,6 @@ SUBROUTINE WHITE (RAD1,RAD2,A_PSEED,A_ASEED,A_WAVE_NO,A_PSI,A_POLAR,IER)
 
         real(kind=skr),dimension(10) :: porder
         real(kind=skr) :: RAD1,RAD2,PSEED,ASEED,PSI,POLAR
-!srio	REAL*8		PORDER(10),RAD1,RAD2
-!srio	REAL*8		PSEED,ASEED,PSI,POLAR
 
 	IF (IER.EQ.0.0D0)	GO TO 100
 	IF (IER.LT.0.0D0)	GO TO 200
@@ -2015,61 +1715,37 @@ SUBROUTINE WHITE (RAD1,RAD2,A_PSEED,A_ASEED,A_WAVE_NO,A_PSI,A_POLAR,IER)
 	CALL WHTRCDF (RAD1,RAD2)
 	RETURN
 200	CONTINUE
-!#ifdef vms
-!	MPURGE(1)	= %LOC(PHOT_INV(1,1))
-!        MPURGE(2)	= %LOC(PHOT_INV(5,1010))
-!	CALL SYS$PURGWS	(MPURGE)	
-!	MPURGE(1)	= %LOC(XPHOT(1))
-!	MPURGE(2)	= %LOC(XPHOT(251))
-!	CALL SYS$PURGWS	(MPURGE)	
-!	MPURGE(1)	= %LOC(PSI_INV(1,1,1))
-!
-!	CALL SYS$PURGWS	(MPURGE)	
-!	MPURGE(1)	= %LOC(PSI_POL(1,1,1))
-!	MPURGE(2)	= %LOC(PSI_POL(2,21,251))
-!	CALL SYS$PURGWS	(MPURGE)	
-!#endif
 	RETURN
 End Subroutine white
 
-    !
-    !
-    !
 
-    !
-    !
-    !
-
-    ! C+++
-    ! C	SUBROUTINE	SOURCE
-    ! C
-    ! C	PURPOSE		To generate a (12,ndim) array describing the system
-    ! C			source.
-    ! C
-    ! C	INPUTS		From modules SETSOUR, MSETUP, through COMMON.BLK
-    ! C			The following two input parameters are meant to
-    ! C			be passed to the WRITE_OFF subroutine to control
-    ! C			the output format.
-    ! C	    INFILE	Name of the input start file. 
-    ! C	    FNAME	Name of the output file. This enables us to use
-    ! C			use ASCII or BINARY output files (BEGIN.DAT's).
-    ! C	    IOFORM = 0, Binary output file.
-    ! C		   = 1, ASCII output file. (only unix version)
-    ! C
-    ! C	OUTPUTS		File BEGIN.DAT
-    ! C
-    ! C	MODIFICATIONS	Included wiggler and undulator source (2/26/88)
-    ! C
-    ! C---
-!!SUBROUTINE SOURCESYNC (infile, FNAME, IOFORM) bind(C,NAME="SourceSync")
+! C+++
+! C	SUBROUTINE	SOURCE
+! C
+! C	PURPOSE		To generate a (12,ndim) array describing the system
+! C			source.
+! C
+! C	INPUTS		From modules SETSOUR, MSETUP, through COMMON.BLK
+! C			The following two input parameters are meant to
+! C			be passed to the WRITE_OFF subroutine to control
+! C			the output format.
+! C	    INFILE	Name of the input start file. 
+! C	    FNAME	Name of the output file. This enables us to use
+! C			use ASCII or BINARY output files (BEGIN.DAT's).
+! C	    IOFORM = 0, Binary output file.
+! C		   = 1, ASCII output file. (only unix version)
+! C
+! C	OUTPUTS		File BEGIN.DAT
+! C
+! C	MODIFICATIONS	Included wiggler and undulator source (2/26/88)
+! C
+! C---
 SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
 
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
-	! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
-	! IMPLICIT	INTEGER*4	(F,I-N)
 
     integer(kind=ski), intent(in)                         :: npoint1
     real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
@@ -2077,50 +1753,25 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
     ! C
     	INTEGER(kind=ski)         :: IOFORM
-    !!srio
     	INTEGER(kind=ski)         :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
-    	!<> CHARACTER(len=512)      :: infile, FNAME
     ! C
     	CHARACTER(len=80)       :: ERRMSG
     
     
-    !!	DIMENSION	BEGIN(12,N_DIM), PHASE(3,N_DIM), AP(3,N_DIM)
-    !!!    real(kind=kind(1.0d0)), dimension(:,:), allocatable :: begin,phase,ap
-
     !!srio for SR, force 18 columns
 
 
     !! needed for calling source_bound
        real(kind=skr),dimension(3)     :: XDUM, YDUM
     
-    
-    
-    !!	DIMENSION 	DIREC(3),AP_VEC(3),E_TEMP(3),SB_POS(3), &
-    !!     			VTEMP(3),GRID(6,N_DIM),A_VEC(3),A_TEMP(3), &
-    !!     			E_BEAM(3)
-    !!   DIMENSION 	DIREC(3),AP_VEC(3),E_TEMP(3),SB_POS(3), &
-    !!                          VTEMP(3),A_VEC(3),A_TEMP(3), E_BEAM(3)
        real(kind=skr),dimension(3)  :: DIREC,AP_VEC,E_TEMP,SB_POS
        real(kind=skr),dimension(3)  :: VTEMP,A_VEC,A_TEMP, E_BEAM
 
-       !<> real(kind=kind(1.0d0)), dimension(:,:), allocatable :: grid
        real(kind=skr), dimension(6,NPOINT1) :: grid
     
     
        real(kind=skr),dimension(10)  :: SIGXL,SIGZL
-    !! 	DIMENSION	SIGXL(10),SIGZL(10)
     
-    !!	REAL*8		SEED_Y(5,N_DIM),Y_X(5,N_DIM),Y_XPRI(5,N_DIM), &
-    !!                       Y_Z(5,N_DIM),Y_ZPRI(5,N_DIM), &
-    !!     			Y_CURV(5,N_DIM),Y_PATH(5,N_DIM)
-    !!	REAL*8		Y_TEMP(N_DIM),C_TEMP(N_DIM),X_TEMP(N_DIM), &
-    !!     			Z_TEMP(N_DIM),ANG_TEMP(N_DIM),P_TEMP(N_DIM), &
-    !!                       ANG2_TEMP(N_DIM)
-    
-!            real(kind=8), dimension(:,:), allocatable :: seed_y,y_x,y_xpri, &
-!                           y_z,y_zpri,y_curv,y_path
-!            real(kind=8), dimension(:), allocatable :: y_temp,c_temp,x_temp, &
-!                           z_temp, ang_temp, p_temp, ang2_temp, abd2_temp 
             real(kind=skr), dimension(5,5001) :: seed_y,y_x,y_xpri, &
                            y_z,y_zpri,y_curv,y_path
             real(kind=skr), dimension(5001) :: y_temp,c_temp,x_temp, &
@@ -2129,8 +1780,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     
             real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
             real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
-    	!! DOUBLE PRECISION YRAN,DPS_RAN1,DPS_RAN2
-    	!! DOUBLE PRECISION TMP_A,TMP_B,DPS_RAN3
 
             real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
             real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
@@ -2138,14 +1787,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
             real(kind=skr),dimension(10)       :: RELINT,PRELINT
             real(kind=skr),dimension(4)        :: II,DX,PHI_INT
             real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
-    	!! DIMENSION	CDFX(31,31,51),CDFZ(31,51),CDFW(51)
-    	!! DIMENSION	D_POL(31,31,51)
-    	!! DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-    	!! DIMENSION	JI(2),DZ(2),THE_INT(2)
-    	!! DIMENSION	II(4),DX(4),PHI_INT(4)
-    
-    	!! DIMENSION	RELINT(10),PRELINT(10)
-    
     
     ! C
     ! C Save the *big* arrays so it will:
@@ -2164,74 +1805,17 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     !srio      	DATA  SQRT_2  /1.4142135623730950488016887D0/
     
     
-    !! load gfile (moved from gen_source)
-    
+    ! load gfile (moved from gen_source)
     
     !
     ! put inputs (pool) into global variables
     !
-    !TODO: work without globals!!!!
+    !todo: work without globals!!!!
     CALL PoolSourceToGlobal(pool00)
 
     
          	ISTAT = 0
          	IDUMM = 0
-	    !<>call rwname(infile,'R_SOUR',iFlag)
-            !call gfload_source (infile, idumm)
-            !<> IF (IFLAG.NE.0) CALL LEAVE ('SHADOW-SOURCESYNC','Failed to read input file: '//infile,idumm)
-            !! PROVISIONAL STUFF...
-            IF ((FDISTR.EQ.4).OR.(FSOURCE_DEPTH.EQ.4)) THEN
-            END IF
-!!            IF (F_WIGGLER.GT.0) THEN
-!!               ITMP=1
-!!               CALL LEAVE ('SOURCESYNC','No synchrotron ID allowed here',ITMP)
-!!            ENDIF
-    !!        CALL  SOURCESYNC (BGNFILE, IOFORM)
-    
-    !!
-    !! Allocate arrays
-    !!
-    
-    !!!           if (ALLOCATED(begin)) then
-    !!!               ITMP=1
-    !!!               CALL LEAVE ('SOURCESYNC','Arrays already allocated.',ITMP)
-    !!!           else
-    !!!              ALLOCATE(begin(12,NPOINT),stat=ierr)
-    !!!              ALLOCATE(phase(3,NPOINT),stat=ierr)
-    !!!              ALLOCATE(ap(3,NPOINT),stat=ierr)
-    
-    !!     			VTEMP(3),GRID(6,N_DIM),A_VEC(3),A_TEMP(3), &
-    !!!              ALLOCATE(grid(6,NPOINT),stat=ierr)
-    
-    
-    !!	REAL*8		SEED_Y(5,N_DIM),Y_X(5,N_DIM),Y_XPRI(5,N_DIM), &
-    !!                       Y_Z(5,N_DIM),Y_ZPRI(5,N_DIM), &
-    !!     			Y_CURV(5,N_DIM),Y_PATH(5,N_DIM)
-    !!              ALLOCATE(seed_y(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_x(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_xpri(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_z(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_zpri(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_curv(5,NPOINT),stat=ierr)
-    !!              ALLOCATE(y_path(5,NPOINT),stat=ierr)
-    
-    !!	REAL*8		Y_TEMP(N_DIM),C_TEMP(N_DIM),X_TEMP(N_DIM), &
-    !!     			Z_TEMP(N_DIM),ANG_TEMP(N_DIM),P_TEMP(N_DIM), &
-    !!                       ANG2_TEMP(N_DIM)
-    !!              ALLOCATE(y_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(c_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(x_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(z_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(ang_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(p_temp(NPOINT),stat=ierr)
-    !!              ALLOCATE(ang2_temp(NPOINT),stat=ierr)
-    !!!           end if
-    
-    
-    
-    !!srio test empty arrays to file:
-    !!srio  CALL WRITE_OFF('tmp.dat',BEGIN,PHASE,AP,18,333,IFLAG,IOFORM,IERR)
-    !!srio
     
          	KREJ = 0
          	NREJ = 0
@@ -2254,44 +1838,12 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
      ! C Normal wigger case:
      ! C read in the wiggler trajectory, tangent and radius, and other parameters
      ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED', READONLY)
-    !!srio #else
      	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
-    !!srio #endif
      	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
-
-
-          ! 
-          ! allocate arrays
-          !
-
-          !  real(kind=8), dimension(:,:), allocatable :: seed_y,y_x,y_xpri, &
-          !                 y_z,y_zpri,y_curv,y_path
-          !  real(kind=8), dimension(:), allocatable :: y_temp,c_temp,x_temp, &
-          !                 z_temp, ang_temp, p_temp, ang2_temp, abd2_temp 
-
-!                  ALLOCATE(seed_y(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_x(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_xpri(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_z(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_zpri(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_curv(5,NP_TRAJ),stat=ierr)
-!                  ALLOCATE(y_path(5,NP_TRAJ),stat=ierr)
-!    
-!                  ALLOCATE(y_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(c_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(x_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(z_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(ang_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(p_temp(NP_TRAJ),stat=ierr)
-!                  ALLOCATE(ang2_temp(NP_TRAJ),stat=ierr)
 
 
      	  DO 13 I = 1, NP_TRAJ
      	    READ (29)	XIN,YIN,SEEDIN,ANGIN,CIN
-!print *,'I,XIN,YIN,SEEDIN,ANGIN,CIN: ',I,XIN,YIN,SEEDIN,ANGIN,CIN
      ! C+++
      ! C The program will build the splines for generating the stocastic source.
      ! C the splines are defined by:
@@ -2371,12 +1923,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C
     ! C Elliptical wiggler case:
     ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED', READONLY)
-    !!srio #else
     	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
-    !!srio #endif
     	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
     	  DO 14 I = 1, NP_TRAJ
     	    READ (29) XIN,YIN,ZIN,SEEDIN,ANGIN1,ANGIN2,CIN	
@@ -2501,16 +2048,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     		DO 87 I = 1,NP
     87	  	   READ	(30)	D_POL(I,J,K)
     
-    !!srio D	  READ	(30)	(UENER(K), K = 1,NE)
-    !!srio D	  READ	(30)	((UTHETA(J,K), J = 1,NT), K = 1,NE)
-    !!srio D	  READ	(30)	(((UPHI(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio D
-    !!srio D	  READ	(30)	(CDFW(K), K = 1,NE)
-    !!srio D	  READ	(30)	((CDFZ(J,K), J = 1,NT), K = 1,NE)
-    !!srio D	  READ	(30)	(((CDFX(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio D
-    !!srio D	  READ	(30)	(((D_POL(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio 
     	  CLOSE	(30)
     ! C
     ! C These flags are set because of the original program structure.
@@ -2751,9 +2288,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     121	    CONTINUE
     113	  CONTINUE
     	ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-    !!srio	  DO 131 C_X = -CL_X, CL_X
-    !!srio	    DO 141 C_Y = -CL_Y, CL_Y
-    !!srio	      DO 151 C_Z = -CL_Z, CL_Z
     	  DO 131 C_X = -INT(CL_X), INT(CL_X)
     	    DO 141 C_Y = -INT(CL_Y), INT(CL_Y)
     	      DO 151 C_Z = -INT(CL_Z), INT(CL_Z)
@@ -2822,13 +2356,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C
     ! C
     10001	CONTINUE
-    !!srio ! C
-    !!srio ! C
-    !!srio ! C The following interpolation is done for wiggler: GRID -> Y, Y -> X, Y -> Z, 
-    !!srio ! C Y -> X', Y -> RAD, Y -> path length from middle of wiggler.
-    !!srio ! C 
-    !!srio ! C Either wiggler case
-    !!srio ! C
         	IF ((F_WIGGLER.EQ.1).OR.(F_WIGGLER.EQ.3)) THEN
     ! C
     ! C Normal wiggler case
@@ -2854,7 +2381,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
     	    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
               END IF
-    !!srio ! C
      	  EPSI_PATH	= EPSI_PATH - PATH0	! now refer to wiggler's origin
      	  IF (CURV.LT.0) THEN
      	    POL_ANGLE	= 90.0D0		! instant orbit is CW
@@ -2872,9 +2398,9 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
          	ELSE IF (FSOURCE_DEPTH.EQ.4) THEN		! Synchrontron depth
           ANGLE		=   GRID(2,ITIK) * (HDIV1 + HDIV2) - HDIV2
     	  EPSI_PATH	=   ABS(R_ALADDIN)*ANGLE
-    !!srio ! C
-    !!srio ! C Undulator case : first interpolate for the photon energy.
-    !!srio ! C
+    ! C
+    ! C Undulator case : first interpolate for the photon energy.
+    ! C
          	ELSE IF (F_WIGGLER.EQ.2) THEN
      	  ESEED		= GRID(2,ITIK)* CDFW(NE)
      	  DO 221 K = 1, NE-1
@@ -2903,8 +2429,8 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
      520	      INDEX = INDEX + 1
      231	  CONTINUE
      
-     !!	  THETA	= THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
-     !!   warning use this instead : 
+     !	  THETA	= THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
+     !   warning use this instead : 
         THETABM=THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
      
      ! C
@@ -3089,52 +2615,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     
     7	CONTINUE
     
-    !!srio ! C
-    !!srio ! C Dense Plasma Source
-    !!srio ! C	PLASMA_ANGLE is the full angle source cone opening,
-    !!srio ! C	WYSOU is the total length of the source, and
-    !!srio ! C	the angular distribution for a ray originating at
-    !!srio ! C	any point in the dense plasma source is conical.
-    !!srio ! C
-    !!srio 	PLASMA_APERTURE = TAN(PLASMA_ANGLE/2.0D0)
-    !!srio ! C
-    !!srio ! C	The commented out statement for YYY below let to a uniform
-    !!srio ! C	depth distribution, with the same number of points being
-    !!srio ! C 	generated in any X-Z plane disk irrespective of the y-position.
-    !!srio ! C	Since we want the POINT DENSITY in each disk to remain the 
-    !!srio ! C 	same, we use the cubic root of the uniformly distributed
-    !!srio ! C	random number GRID(2,ITIK) instead of the random number itself.
-    !!srio ! C	This is because if (dN/dY)*(1/area) must be constant, Y must
-    !!srio ! C	be proportional to the cubic root of N.  Since the probability
-    !!srio ! C	of the non-uniformly distributed variable (k*N^(1/3)) must
-    !!srio ! C 	be 0 over the interval (0,1) over which N is defined, k is 1
-    !!srio ! C	and Y is simply equal to the cube root of N.
-    !!srio ! C
-    !!srio 	DPS_RAN1	= 	GRID(2,ITIK)
-    !!srio 
-    !!srio 	DPS_RAN2	= 	WRAN(ISTAR1)
-    !!srio 	
-    !!srio 	IF (DPS_RAN2.LE.0.5000) THEN
-    !!srio 		YYY	=	 (DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
-    !!srio 	ELSE
-    !!srio 		YYY	=	-(DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
-    !!srio 	ENDIF
-    !!srio 
-    !!srio 	IF (YYY.GT.0.0) THEN
-    !!srio 		RMAX	=  PLASMA_ANGLE*(WYSOU/2.D0-YYY)
-    !!srio 	ELSE
-    !!srio 		RMAX	=  ABS(PLASMA_ANGLE*(YYY+WYSOU/2.D0))
-    !!srio 	END IF
-    !!srio 
-    !!srio 	IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-    !!srio 	  PHI		= TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
-    !!srio 	ELSE
-    !!srio 	  PHI 		= TWOPI*GRID(1,ITIK)
-    !!srio 	END IF
-    !!srio 	RADIUS 		= SQRT(GRID(3,ITIK))
-    !!srio 	XXX 		= RMAX*RADIUS*COS(PHI)
-    !!srio 	ZZZ 		= RMAX*RADIUS*SIN(PHI)
-    ! C	GOTO 111
     	GOTO 550
     
      111	CONTINUE
@@ -3371,10 +2851,10 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     	 AZ	= (1-POL_DEG)/DENOM
     	 CALL	SCALAR 	(AP_VEC,AZ,AP_VEC)
     	ELSE
-    !!srio !!srio ! C
-    !!srio !!srio ! C If don't want the full polarization, then POL_DEG is only defined in the 
-    !!srio !!srio ! C case of synchrotron radiation.
-    !!srio !!srio ! C
+    !srio ! C
+    !srio ! C If don't want the full polarization, then POL_DEG is only defined in the 
+    !srio ! C case of synchrotron radiation.
+    !srio ! C
       IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) THEN
     	   IF (WRAN(ISTAR1).GT.POL_DEG) THEN
     ! C
@@ -3395,17 +2875,17 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     	   PHASEX	= WRAN(ISTAR1) * TWOPI
     	 END IF
     	 PHASEZ		= PHASEX + POL_ANGLE*I_CHANGE
-    !!srio ! C
-    !!srio ! C---------------------------------------------------------------------
-    !!srio ! C            PHOTON   ENERGY
-    !!srio ! C
-    !!srio ! C Generates the wavevector of the ray. Depending on the choice, a
-    !!srio ! C single or a set of Q is created.NOTE: units are cm -1
-    !!srio ! C
-    !!srio ! C
-    !!srio ! C
-    !!srio ! C In the case of SR, Q_WAVE is already known
-    !!srio ! C
+    ! C
+    ! C---------------------------------------------------------------------
+    ! C            PHOTON   ENERGY
+    ! C
+    ! C Generates the wavevector of the ray. Depending on the choice, a
+    ! C single or a set of Q is created.NOTE: units are cm -1
+    ! C
+    ! C
+    ! C
+    ! C In the case of SR, Q_WAVE is already known
+    ! C
     	IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) GO TO 2050
          	GO TO (2020,2030,2040,2045)	F_COLOR
     
@@ -3497,46 +2977,18 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C Create the final array 
     ! C
     2050	CONTINUE
-!!!                    BEGIN (1,ITIK) 	=   XXX
-!!!                    BEGIN (2,ITIK) 	=   YYY
-!!!                    BEGIN (3,ITIK) 	=   ZZZ
-!!!                    BEGIN (4,ITIK) 	=    DIREC(1)
-!!!                    BEGIN (5,ITIK) 	=    DIREC(2)
-!!!    !!srioTest BEGIN (5,ITIK) 	=    1.0D0
-!!!                    BEGIN (6,ITIK) 	=    DIREC(3)
-!!!                    BEGIN (7,ITIK)	=   A_VEC(1)
-!!!    !!srioTest BEGIN (7,ITIK)	=   1.0D0
-!!!                    BEGIN (8,ITIK)	=   A_VEC(2)
-!!!                    BEGIN (9,ITIK)	=   A_VEC(3)
-!!!                    BEGIN (10,ITIK)	=   1.0D0
-!!!                    BEGIN (11,ITIK)	=   Q_WAVE
-!!!    !!srio                BEGIN (12,ITIK)	=   FLOAT (ITIK)
-!!!                    BEGIN (12,ITIK)	=   ITIK
-!!!    	IF (F_POLAR.EQ.1) THEN
-!!!                    PHASE (1,ITIK)	=   0.0D0
-!!!                    PHASE (2,ITIK)  	=   PHASEX
-!!!                    PHASE (3,ITIK)  	=   PHASEZ
-!!!                    AP    (1,ITIK)	=   AP_VEC(1)
-!!!                    AP    (2,ITIK)	=   AP_VEC(2)
-!!!                    AP    (3,ITIK)	=   AP_VEC(3)
-!!!    	END IF
-
-
 
     ray (1,ITIK) 	=   XXX
     ray (2,ITIK) 	=   YYY
     ray (3,ITIK) 	=   ZZZ
     ray (4,ITIK) 	=    DIREC(1)
     ray (5,ITIK) 	=    DIREC(2)
-    !!srioTest BEGIN (5,ITIK) 	=    1.0D0
     ray (6,ITIK) 	=    DIREC(3)
     ray (7,ITIK)	=   A_VEC(1)
-    !!srioTest BEGIN (7,ITIK)	=   1.0D0
     ray (8,ITIK)	=   A_VEC(2)
     ray (9,ITIK)	=   A_VEC(3)
     ray (10,ITIK)	=   1.0D0
     ray (11,ITIK)	=   Q_WAVE
-    !!srio                BEGIN (12,ITIK)	=   FLOAT (ITIK)
     ray (12,ITIK)	=   dble(ITIK)
     IF (F_POLAR.EQ.1) THEN
        ray (13,ITIK)	=   0.0D0
@@ -3591,28 +3043,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     	   EPSI_Z = EPSI_ZOLD
     	ENDIF
     
-    !! deallocate everything...
-    
-!!!    IF (allocated(begin)) deallocate(begin)
-!!!    IF (allocated(phase)) deallocate(phase)
-!!!    IF (allocated(ap)) deallocate(ap)
-
-!    IF (allocated(seed_y)) deallocate(seed_y)
-!    IF (allocated(y_x)) deallocate(y_x)
-!    IF (allocated(y_xpri)) deallocate(y_xpri)
-!    IF (allocated(y_z)) deallocate(y_z)
-!    IF (allocated(y_zpri)) deallocate(y_zpri)
-!    IF (allocated(y_curv)) deallocate(y_curv)
-!    IF (allocated(y_path)) deallocate(y_path)
-!    IF (allocated(y_temp)) deallocate(y_temp)
-!    IF (allocated(c_temp)) deallocate(c_temp)
-!    IF (allocated(x_temp)) deallocate(x_temp)
-!    IF (allocated(z_temp)) deallocate(z_temp)
-!    IF (allocated(ang_temp)) deallocate(ang_temp)
-!    IF (allocated(p_temp)) deallocate(p_temp)
-!    IF (allocated(ang2_temp)) deallocate(ang2_temp)
-    
-
     !
     ! put global variables into pool 
     !
@@ -3642,9 +3072,6 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 SUBROUTINE SrCdf
 
         implicit none 
-	!IMPLICIT 	REAL(kind=skr) 		(A-H,O-Z)
-        !implicit real(kind=skr) (a-h,o-z)
-        !implicit integer(kind=ski)        (i-n)
 
 	REAL(kind=skr) :: X_WRI,Y_WRI,Z_WRI
 	REAL(kind=skr) :: X1_WRI,X2_WRI,X3_WRI,X4_WRI,X5_WRI
@@ -3660,12 +3087,6 @@ SUBROUTINE SrCdf
 	real(kind=skr)   :: y23,y13,c2_max,c3_max,c4_max,c2_min,c3_min,c4_min
 	integer(kind=ski):: i,j,nst
 
-	!CHARACTER*132	SRSPEC, SRANG, SRDISTR
-	!DATA		SRSPEC	/ 'SRSPEC' /
-	!DATA		SRANG	/ 'SRANG'  /
-	!DATA		SRDISTR	/ 'SRDISTR' /
-!C
-	!PI=3.141592653589793238D0
 !C
 !     	ORD23	=  2.0D0/3.0D0
 !     	ORD13	=  1.0D0/3.0D0
@@ -3717,7 +3138,6 @@ SUBROUTINE SrCdf
 !C This is the unformatted file that will eventually contain the
 !C whole synchrotron radiation spectrum.
 !C
-     	!OPEN 	(23, FILE=SRDISTR(1:IBLANK(SRDISTR)),STATUS='UNKNOWN', &
      	OPEN 	(23, FILE='SRDISTR',STATUS='UNKNOWN', &
                  FORM='UNFORMATTED')
 	REWIND 	(23)
@@ -3759,10 +3179,8 @@ SUBROUTINE SrCdf
 !C for low h_nu.
 !C
 
-     	!OPEN	(23, FILE=SRSPEC(1:IBLANK(SRSPEC)),STATUS='UNKNOWN', &
      	OPEN	(23, FILE='SRSPEC',STATUS='UNKNOWN', FORM='UNFORMATTED')
 	REWIND	(23)
-     	!OPEN	(24, FILE=SRANG(1:IBLANK(SRANG)),STATUS='UNKNOWN', &
      	OPEN	(24, FILE='SRANG',STATUS='UNKNOWN', FORM='UNFORMATTED')
 	REWIND	(24)
 !C
@@ -3844,9 +3262,7 @@ SUBROUTINE SrCdf
 !C
      	  X_WRI =   ARRX(J)
      	  Z_WRI =   PSIMAX
-!C     	 WRITE (23,*)	X_WRI,Z_WRI
      	 WRITE (23)	X_WRI,Z_WRI
-!C	 WRITE (24,*)	X_WRI,Z_WRI,G0(J)
 	 WRITE (24)	X_WRI,Z_WRI,G0(J)
      	 DO  80 I=1,21
      	   X1_WRI =   CDF(1,I)
@@ -3854,16 +3270,12 @@ SUBROUTINE SrCdf
      	   X3_WRI =   CDF(3,I)
      	   X4_WRI =   CDF(4,I)
 	   X5_WRI =   DEG_POL(I)
-!C     	  WRITE (23,*)	X1_WRI,X2_WRI,X3_WRI,X4_WRI,X5_WRI
      	  WRITE (23)	X1_WRI,X2_WRI,X3_WRI,X4_WRI,X5_WRI
-!C	  WRITE (24,*)	PDF(1,I),PDF(2,I),PDF(3,I),PDF(4,I)
 	  WRITE (24)	PDF(1,I),PDF(2,I),PDF(3,I),PDF(4,I)
 80     	 CONTINUE
      	END DO
-!40     	CONTINUE
 111	CONTINUE
 	
-	!srio
 	CLOSE(23)
         print *,'File written to disk: SRSPEC'
 	CLOSE(24)
@@ -3891,8 +3303,6 @@ END SUBROUTINE SrCdf
 SUBROUTINE SrFunc
 
         implicit none
-        !implicit real(kind=skr) (a-h,o-z)
-        !implicit integer(kind=ski)        (i-n)
      	real(kind=skr),dimension(1000) :: PPAR,PPER,PTOT,ANGARR
 	real(kind=skr)  :: ORD23=2.0D0/3.0D0,ORD13=1.0D0/3.0D0
 	real(kind=skr),dimension(10000)   :: ARRX,G0
@@ -4030,24 +3440,24 @@ END SELECT
   IF (iSynchrotron .eq. 1) THEN 
     CALL  SourceSync (pool00,ray,pool00%npoint)
   ELSE 
-    ! Note that the routine SourceG (geometrical source) in 
+    ! Note that the routine sourceGeom (geometrical source) in 
     ! shadow_kernel is a subset of SourceSync (in shadow_sourcesync)
     ! therefore this call is unnecessary because the same work can be
     ! done by SourceSync.
     ! The reason for keeping the two functions is for simplicity and 
-    ! to structurate better the shadow3 code: SourceG uses a relatively
+    ! to structurate better the shadow3 code: sourceGeom uses a relatively
     ! small number of subroutines and functions, all available in the
     ! kernel, whereas SourceSync is much more complex and is included in
     ! a separated synchrotron module. 
     ! Therefore, users that do not want synchrotron, they just comment 
     ! the "USE shadow_sourcesync" and "CALL SourceSync"
-    CALL  SourceG(pool00, ray,pool00%npoint)
+    CALL  sourceGeom(pool00, ray,pool00%npoint)
   ENDIF 
   
   ! write file begin.dat
   bgnfile  = "begin.dat"
-  CALL Write_off18(ray,ierr,pool00%ncol,pool00%npoint,bgnfile)
-  IF (ierr.NE.0) PRINT *, "GEN_SOURCE: Write_off18 failed to write file: "//TRIM(bgnfile)
+  CALL beamWrite(ray,ierr,pool00%ncol,pool00%npoint,bgnfile)
+  IF (ierr.NE.0) PRINT *, "GEN_SOURCE: beamWrite failed to write file: "//TRIM(bgnfile)
 
   ! write end.00 file
   CALL GlobalToPoolSource(pool00)

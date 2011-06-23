@@ -57,118 +57,16 @@ Module shadow_kernel
     
     ! now the declaration of the variables in start.00
     !
-    ! NOTE: FOR ADDING A NEW VARIABLE, IT SHOULD BE ADDED IN 3 PLACES
-    !     1) here (declaration)
-    !     2) in get_variables ( get variables into the variables pool)
-    !     3) in put_variables ( copy variables from pool to gFile type, 
-    !        needed for writing end.xx)
+    ! NOTE: FOR ADDING A NEW VARIABLE, IT SHOULD BE ADDED IN *.def
 
   	!---- Variables SOURCE ----!
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
-#include "ShadowMaskSource.def"
-
+#include "shadow_source.def"
 
 
 !     integer(kind=ski)     :: FDISTR
-!     integer(kind=ski)     :: FGRID
-!     integer(kind=ski)     :: FSOUR
-!     integer(kind=ski)     :: FSOURCE_DEPTH
-!     integer(kind=ski)     :: F_COHER
-!     integer(kind=ski)     :: F_COLOR
-!     integer(kind=ski)     :: F_PHOT
-!     integer(kind=ski)     :: F_POL
-!     integer(kind=ski)     :: F_POLAR
-!     integer(kind=ski)     :: F_OPD
-!     integer(kind=ski)     :: F_WIGGLER
-!     integer(kind=ski)     :: F_BOUND_SOUR
-!     integer(kind=ski)     :: F_SR_TYPE
-!     integer(kind=ski)     :: ISTAR1
-!     integer(kind=ski)     :: NPOINT
-!     integer(kind=ski)     :: NCOL
-!     integer(kind=ski)     :: N_CIRCLE
-!     integer(kind=ski)     :: N_COLOR
-!     integer(kind=ski)     :: N_CONE
-!     integer(kind=ski)     :: IDO_VX
-!     integer(kind=ski)     :: IDO_VZ
-!     integer(kind=ski)     :: IDO_X_S
-!     integer(kind=ski)     :: IDO_Y_S
-!     integer(kind=ski)     :: IDO_Z_S
-!     integer(kind=ski)     :: IDO_XL
-!     integer(kind=ski)     :: IDO_XN
-!     integer(kind=ski)     :: IDO_ZL
-!     integer(kind=ski)     :: IDO_ZN
-!     real(kind=skr)        :: SIGXL1
-!     real(kind=skr)        :: SIGXL2
-!     real(kind=skr)        :: SIGXL3
-!     real(kind=skr)        :: SIGXL4
-!     real(kind=skr)        :: SIGXL5
-!     real(kind=skr)        :: SIGXL6
-!     real(kind=skr)        :: SIGXL7
-!     real(kind=skr)        :: SIGXL8
-!     real(kind=skr)        :: SIGXL9
-!     real(kind=skr)        :: SIGXL10
-!     real(kind=skr)        :: SIGZL1
-!     real(kind=skr)        :: SIGZL2
-!     real(kind=skr)        :: SIGZL3
-!     real(kind=skr)        :: SIGZL4
-!     real(kind=skr)        :: SIGZL5
-!     real(kind=skr)        :: SIGZL6
-!     real(kind=skr)        :: SIGZL7
-!     real(kind=skr)        :: SIGZL8
-!     real(kind=skr)        :: SIGZL9
-!     real(kind=skr)        :: SIGZL10
-!     real(kind=skr)        :: CONV_FACT
-!     real(kind=skr)        :: CONE_MAX
-!     real(kind=skr)        :: CONE_MIN
-!     real(kind=skr)        :: EPSI_DX
-!     real(kind=skr)        :: EPSI_DZ
-!     real(kind=skr)        :: EPSI_X
-!     real(kind=skr)        :: EPSI_Z
-!     real(kind=skr)        :: HDIV1
-!     real(kind=skr)        :: HDIV2
-!     real(kind=skr)        :: PH1
-!     real(kind=skr)        :: PH2
-!     real(kind=skr)        :: PH3
-!     real(kind=skr)        :: PH4
-!     real(kind=skr)        :: PH5
-!     real(kind=skr)        :: PH6
-!     real(kind=skr)        :: PH7
-!     real(kind=skr)        :: PH8
-!     real(kind=skr)        :: PH9
-!     real(kind=skr)        :: PH10
-!     real(kind=skr)        :: RL1
-!     real(kind=skr)        :: RL2
-!     real(kind=skr)        :: RL3
-!     real(kind=skr)        :: RL4
-!     real(kind=skr)        :: RL5
-!     real(kind=skr)        :: RL6
-!     real(kind=skr)        :: RL7
-!     real(kind=skr)        :: RL8
-!     real(kind=skr)        :: RL9
-!     real(kind=skr)        :: RL10
-!     real(kind=skr)        :: BENER
-!     real(kind=skr)        :: POL_ANGLE
-!     real(kind=skr)        :: POL_DEG
-!     real(kind=skr)        :: R_ALADDIN
-!     real(kind=skr)        :: R_MAGNET
-!     real(kind=skr)        :: SIGDIX
-!     real(kind=skr)        :: SIGDIZ
-!     real(kind=skr)        :: SIGMAX
-!     real(kind=skr)        :: SIGMAY
-!     real(kind=skr)        :: SIGMAZ
-!     real(kind=skr)        :: VDIV1
-!     real(kind=skr)        :: VDIV2
-!     real(kind=skr)        :: WXSOU
-!     real(kind=skr)        :: WYSOU
-!     real(kind=skr)        :: WZSOU
-!     real(kind=skr)        :: PLASMA_ANGLE
-!     character(len=1024)  :: FILE_TRAJ
-!     character(len=1024)  :: FILE_SOURCE
-!     character(len=1024)  :: FILE_BOUND
-!     integer(kind=ski)     :: OE_NUMBER
-!     integer(kind=ski)     :: IDUMMY
-!     real(kind=skr)        :: DUMMY
+!...
 !     integer(kind=ski)     :: F_NEW
 
 
@@ -179,209 +77,23 @@ Module shadow_kernel
     
     ! now the declaration of the variables in start.xx
     !
-    ! NOTE: FOR ADDING A NEW VARIABLE, IT SHOULD BE ADDED IN 3 PLACES
-    !     1) here (declaration)
-    !     2) in get_variablesOE ( get variables into the variables pool)
-    !     3) in put_variablesOE ( copy variables from pool to gFile type, 
-    !        needed for writing end.xx)
+    ! NOTE: FOR ADDING A NEW VARIABLE, IT SHOULD BE ADDED IN *.def
     
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) ftype(kind=fkind), dimension(arrdim) :: name
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=length), dimension(arrdim) :: name
-#include "ShadowMaskOEwithoutRepetitions.def"
+#include "shadow_oe_without_repetitions.def"
 
 
 
 !     integer(kind=ski)     :: FMIRR
-!     integer(kind=ski)     :: F_TORUS
-!     integer(kind=ski)     :: FCYL
-!     integer(kind=ski)     :: F_EXT
-!     integer(kind=ski)     :: FSTAT
-!     integer(kind=ski)     :: F_SCREEN
-!     integer(kind=ski)     :: F_PLATE
-!     integer(kind=ski)     :: FSLIT
-!     integer(kind=ski)     :: FWRITE
-!     integer(kind=ski)     :: F_RIPPLE
-!     integer(kind=ski)     :: F_MOVE
-!     integer(kind=ski)     :: F_THICK
-!     integer(kind=ski)     :: F_BRAGG_A
-!     integer(kind=ski)     :: F_G_S
-!     integer(kind=ski)     :: F_R_RAN
-!     integer(kind=ski)     :: F_GRATING
-!     integer(kind=ski)     :: F_MOSAIC
-!     integer(kind=ski)     :: F_JOHANSSON
-!     integer(kind=ski)     :: F_SIDE
-!     integer(kind=ski)     :: F_CENTRAL
-!     integer(kind=ski)     :: F_CONVEX
-!     integer(kind=ski)     :: F_REFLEC
-!     integer(kind=ski)     :: F_RUL_ABS
-!     integer(kind=ski)     :: F_RULING
-!     integer(kind=ski)     :: F_PW
-!     integer(kind=ski)     :: F_PW_C
-!     integer(kind=ski)     :: F_VIRTUAL
-!     integer(kind=ski)     :: FSHAPE
-!     integer(kind=ski)     :: FHIT_C
-!     integer(kind=ski)     :: F_MONO
-!     integer(kind=ski)     :: F_REFRAC
-!     integer(kind=ski)     :: F_DEFAULT
-!     integer(kind=ski)     :: F_REFL
-!     integer(kind=ski)     :: F_HUNT
-!     integer(kind=ski)     :: F_CRYSTAL
-!     integer(kind=ski)     :: F_PHOT_CENT
-!     integer(kind=ski)     :: F_ROUGHNESS
-!     integer(kind=ski)     :: F_ANGLE
-!     integer(kind=ski)     :: NPOINTOE
-!     !!    integer(kind=ski)                                         :: NCOL
-!     integer(kind=ski)     :: N_SCREEN
-!     !!    integer(kind=ski)                                         :: ISTAR1
-!     real(kind=skr)        :: CIL_ANG
-!     real(kind=skr)        :: ELL_THE
-!     integer(kind=ski)     :: N_PLATES
-!     integer(kind=ski)     :: IG_SEED
-!     integer(kind=ski)     :: MOSAIC_SEED
-!     real(kind=skr)        :: ALPHA
-!     real(kind=skr)        :: SSOUR
-!     real(kind=skr)        :: THETA
-!     real(kind=skr)        :: SIMAG
-!     real(kind=skr)        :: RDSOUR
-!     real(kind=skr)        :: RTHETA
-!     real(kind=skr)        :: OFF_SOUX
-!     real(kind=skr)        :: OFF_SOUY
-!     real(kind=skr)        :: OFF_SOUZ
-!     real(kind=skr)        :: ALPHA_S
-!     real(kind=skr)        :: RLEN1
-!     real(kind=skr)        :: RLEN2
-!     real(kind=skr)        :: RMIRR
-!     real(kind=skr)        :: AXMAJ
-!     real(kind=skr)        :: AXMIN
-!     real(kind=skr)        :: CONE_A
-!     real(kind=skr)        :: R_MAJ
-!     real(kind=skr)        :: R_MIN
-!     real(kind=skr)        :: RWIDX1
-!     real(kind=skr)        :: RWIDX2
-!     real(kind=skr)        :: PARAM
-!     real(kind=skr)        :: HUNT_H
-!     real(kind=skr)        :: HUNT_L
-!     real(kind=skr)        :: BLAZE
-!     real(kind=skr)        :: RULING
-!     real(kind=skr)        :: ORDER
-!     real(kind=skr)        :: PHOT_CENT
-!     real(kind=skr)        :: X_ROT
-!     real(kind=skr)        :: D_SPACING
-!     real(kind=skr)        :: A_BRAGG
-!     real(kind=skr)        :: SPREAD_MOS
-!     real(kind=skr)        :: THICKNESS
-!     real(kind=skr)        :: R_JOHANSSON
-!     real(kind=skr)        :: Y_ROT
-!     real(kind=skr)        :: Z_ROT
-!     real(kind=skr)        :: OFFX
-!     real(kind=skr)        :: OFFY
-!     real(kind=skr)        :: OFFZ
-!     real(kind=skr)        :: SLLEN
-!     real(kind=skr)        :: SLWID
-!     real(kind=skr)        :: SLTILT
-!     real(kind=skr)        :: COD_LEN
-!     real(kind=skr)        :: COD_WID
-!     real(kind=skr)        :: X_SOUR
-!     real(kind=skr)        :: Y_SOUR
-!     real(kind=skr)        :: Z_SOUR
-!     real(kind=skr)        :: X_SOUR_ROT
-!     real(kind=skr)        :: Y_SOUR_ROT
-!     real(kind=skr)        :: Z_SOUR_ROT
-!     real(kind=skr)        :: R_LAMBDA
-!     real(kind=skr)        :: THETA_I
-!     real(kind=skr)        :: ALPHA_I
-!     real(kind=skr)        :: T_INCIDENCE
-!     real(kind=skr)        :: T_SOURCE
-!     real(kind=skr)        :: T_IMAGE
-!     real(kind=skr)        :: T_REFLECTION
-!     !     !    character(len=1024)                              :: FILE_SOURCE
-!     character(len=1024)  :: FILE_RIP
-!     character(len=1024)  :: FILE_REFL
-!     character(len=1024)  :: FILE_MIR
-!     character(len=1024)  :: FILE_ROUGH
-!     integer(kind=ski)     :: FZP
-!     real(kind=skr)        :: HOLO_R1
-!     real(kind=skr)        :: HOLO_R2
-!     real(kind=skr)        :: HOLO_DEL
-!     real(kind=skr)        :: HOLO_GAM
-!     real(kind=skr)        :: HOLO_W
-!     real(kind=skr)        :: HOLO_RT1
-!     real(kind=skr)        :: HOLO_RT2
-!     real(kind=skr)        :: AZIM_FAN
-!     real(kind=skr)        :: DIST_FAN
-!     real(kind=skr)        :: COMA_FAC
-!     real(kind=skr)        :: ALFA
-!     real(kind=skr)        :: GAMMA
-!     real(kind=skr)        :: R_IND_OBJ
-!     real(kind=skr)        :: R_IND_IMA
-!     real(kind=skr)        :: RUL_A1
-!     real(kind=skr)        :: RUL_A2
-!     real(kind=skr)        :: RUL_A3
-!     real(kind=skr)        :: RUL_A4
-!     integer(kind=ski)     :: F_POLSEL
-!     integer(kind=ski)     :: F_FACET
-!     integer(kind=ski)     :: F_FAC_ORIENT
-!     integer(kind=ski)     :: F_FAC_LATT
-!     real(kind=skr)        :: RFAC_LENX
-!     real(kind=skr)        :: RFAC_LENY
-!     real(kind=skr)        :: RFAC_PHAX
-!     real(kind=skr)        :: RFAC_PHAY
-!     real(kind=skr)        :: RFAC_DELX1
-!     real(kind=skr)        :: RFAC_DELX2
-!     real(kind=skr)        :: RFAC_DELY1
-!     real(kind=skr)        :: RFAC_DELY2
-!     character(len=1024)  :: FILE_FAC
-!     integer(kind=ski)     :: F_SEGMENT
-!     integer(kind=ski)     :: ISEG_XNUM
-!     integer(kind=ski)     :: ISEG_YNUM
-!     character(len=1024)  :: FILE_SEGMENT
-!     character(len=1024)  :: FILE_SEGP
-!     real(kind=skr)        :: SEG_LENX
-!     real(kind=skr)        :: SEG_LENY
-!     integer(kind=ski)     :: F_KOMA
-!     character(len=1024)  :: FILE_KOMA
-!     integer(kind=ski)     :: F_EXIT_SHAPE
-!     integer(kind=ski)     :: F_INC_MNOR_ANG
-!     real(kind=skr)        :: ZKO_LENGTH
-!     real(kind=skr)        :: RKOMA_CX
-!     real(kind=skr)        :: RKOMA_CY
-!     integer(kind=ski)     :: F_KOMA_CA
-!     character(len=1024)  :: FILE_KOMA_CA
-!     integer(kind=ski)     :: F_KOMA_BOUNCE
-!     real(kind=skr)        :: X_RIP_AMP
-!     real(kind=skr)        :: X_RIP_WAV
-!     real(kind=skr)        :: X_PHASE
-!     real(kind=skr)        :: Y_RIP_AMP
-!     real(kind=skr)        :: Y_RIP_WAV
-!     real(kind=skr)        :: Y_PHASE
-!     integer(kind=ski)     :: N_RIP
-!     real(kind=skr)        :: ROUGH_X
-!     real(kind=skr)        :: ROUGH_Y
-!     !    integer(kind=ski)                            :: OE_NUMBER
-!     !    integer(kind=ski)                            :: IDUMMY
-!     !    real(kind=skr)                     :: DUMMY
-!     real(kind=skr), dimension(aDim)       :: CX_SLIT
-!     real(kind=skr), dimension(aDim)       :: CZ_SLIT
-!     real(kind=skr), dimension(aDim)       :: D_PLATE
-!     character(len=1024), dimension(aDim) :: FILE_ABS
-!     character(len=1024), dimension(aDim) :: FILE_SCR_EXT
-!     integer(kind=ski), dimension(aDim)    :: I_ABS
-!     integer(kind=ski), dimension(aDim)    :: I_SCREEN
-!     integer(kind=ski), dimension(aDim)    :: I_SLIT
-!     integer(kind=ski), dimension(aDim)    :: I_STOP
-!     integer(kind=ski), dimension(aDim)    :: K_SLIT
-!     real(kind=skr), dimension(aDim)       :: RX_SLIT
-!     real(kind=skr), dimension(aDim)       :: RZ_SLIT
-!     integer(kind=ski), dimension(aDim)    :: SCR_NUMBER
-!     real(kind=skr), dimension(aDim)       :: SL_DIS
+!...
 !     real(kind=skr), dimension(aDim)       :: THICK
     
   !---- Variables EX-COMMONS ----!
 
     !  now the variables in the ex-common blocks not defined in the gfiles
-    !  They will be added as far as needed...
     
     !!--	INTEGER*4 FMIRR,F_TORUS,FCYL,FANG,FSTAT,F_COHER, &
     !!--     		FANG1,FSLIT,FGRID,F_NEW,FSOURCE_DEPTH, &
@@ -668,7 +380,7 @@ Module shadow_kernel
   ! public :: rwname
   !---- List of public overloaded functions ----!
   !---- List of public subroutines ----!
-  	public :: rwname, input_source1, sourceG, source_bound
+  	public :: rwname, input_source1, sourceGeom, source_bound
   	public :: reset, switch_inp, trace_step
 
   	public :: PoolOEToGlobal,PoolSourceToGlobal
@@ -732,7 +444,7 @@ Contains
   !C				      	 -2 = file-not-found
   !C					 -3 = error in flag
   !C---
-  SUBROUTINE RWNAME (NAME,WHAT,IFLAG) !bind(C,NAME="rwname")
+  SUBROUTINE RWNAME (NAME,WHAT,IFLAG) 
     
     implicit none
     
@@ -757,17 +469,6 @@ Contains
     select case (trim(what))
        
     case('W_SOUR') 
-       !CALL gfsave_source (NAME, IFLAG)
-       ! makes a local copy of gStart00 to avoid changing it 
-       ! Smeagolas
-       !            gEnd00 = gStart00
-       ! this copies the values of the variables pool in gEnd00
-       !            call put_variables00(gEnd00)
-       
-       
-       ! dump gStart00 to file
-       !            iOut = GfFileWrite(gEnd00,trim(name))
-       
        call GlobalToPoolSource(pool00)
        call PoolSourceWrite(pool00,trim(name))
        iOut = .true.
@@ -792,11 +493,7 @@ Contains
        ! this loads the variables of the gfile into gStart00 type
        !            iOut = GfFileLoad(gStart00,trim(name))
        call PoolSourceLoad(pool00,trim(name))
-!       print *, "chiamato PoolSourceLoad"
-!       print *, "pool00%npoint", pool00%npoint
        call PoolSourceToGlobal(pool00)
-!       print *, "chiamato PoolSourceToGlobal"
-!       print *, "npoint", npoint
        iout = .true.
        if (.not. iOut) then 
           iFlag=-1
@@ -806,22 +503,9 @@ Contains
        ! prints to the terminal the list of variables
        ! iOut = GfTypePrint(gStart00)
        
-       ! this copies the values of the individual variables in gStart00
-       ! to the variable pool
-       !            call get_variables00(gStart00)
-       
-       
     case('W_OE') 
        
-       !CALL gfsave_source (NAME, IFLAG)
-       ! makes a local copy of gStart00 to avoid changing it 
-       !            gEndOE = gStartOE
-       ! this copies the values of the variables pool in gEndOE
-       !            call put_variablesOE(gEndOE)
        call GlobalToPoolOE(pool01)
-       
-       ! dump gStartOE to file
-       !            iOut = GfFileWrite(gEndOE,trim(name))
        call PoolOEWrite(pool01,trim(name))
        iout = .true.
        if (.not. iOut) then 
@@ -857,17 +541,12 @@ Contains
        ! prints to the terminal the list of variables
        ! iOut = GfTypePrint(gStartOE)
        
-       ! this copies the values of the individual variables in gStart00
-       ! to the variable pool
-       !            call get_variablesOE(gStartOE)
-       
     case default 
        print *,"SHADOW-RWNAME: Undefined label: "//trim(what)
        stop
     end select
     
     RETURN
-    !CALL LEAVE ( 'RWNAME', 'Undefined action. Check code.',IFLAG)
   END SUBROUTINE RWNAME
   
   !
@@ -909,12 +588,7 @@ Contains
     !C  checks for initialization
     !C 
     IF (IFLAG.LT.0) THEN
-       !! #ifdef vms
-       !!      	  OPEN	(30, FILE=FILE_BOUND, STATUS='OLD', READONLY, 
-       !!      $		     FORM='UNFORMATTED', IOSTAT=IERR)
-       !! #else
        OPEN	(30, FILE=FILE_BOUND, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=IERR)
-       !! #endif
        IF (IERR.NE.0) THEN
           WRITE(6,*)'Error opening file: ',S_BOUND
           STOP
@@ -1229,7 +903,7 @@ Contains
        ! C
        IF (F_MOSAIC.EQ.1) THEN
           ! C
-          ! C >>>>>>>>>>>>>>>>>>>> Mosaic crystal calculation <<<<<<<<<<<<<<<<<<<<<<
+          ! C >>>>>>>>>>>>>>>>>>>> Mosaic crystal calculation <<<<<<<<<<<<<<<<<<
           ! C
           R_STRUCT = DREAL(STRUCT)
           ! C srio, remove the TEMPER factor from here and placed in FH and FH_BAR
@@ -1278,7 +952,7 @@ Contains
           PHASE_P = 0.0D0
        ELSE
           ! C
-          ! C >>>>>>>>>>>>>>>>>>>> Perfect crystal calculation <<<<<<<<<<<<<<<<<<<
+          ! C >>>>>>>>>>>>>>>>>>>> Perfect crystal calculation <<<<<<<<<<<<<<<<<
           ! C
           ! C Main calculation (symmetrical case and asym incident case)
           ! C I change to reflectivity formulae of Zachariasen,
@@ -1818,8 +1492,8 @@ Contains
           
           TEST1 = (XNEW - U_1)*(U_2 - XNEW)
           TEST2 = (ZNEW - V_1)*(V_2 - ZNEW)
-          ! C    		TEST1 = (RAY(1,ICHECK) - U_1)*(U_2 - RAY(1,ICHECK))
-          ! C    		TEST2 = (RAY(3,ICHECK) - V_1)*(V_2 - RAY(3,ICHECK))
+          ! C TEST1 = (RAY(1,ICHECK) - U_1)*(U_2 - RAY(1,ICHECK))
+          ! C TEST2 = (RAY(3,ICHECK) - V_1)*(V_2 - RAY(3,ICHECK))
           IF (TEST1.GE.0.0D0.AND.TEST2.GE.0.0D0) THEN
              PLATE(10,ICHECK) = 1.0D0
           ELSE
@@ -2083,27 +1757,9 @@ Contains
     ! ** The outputs are in the source reference frame.
     ! ** We use T_REFLECTION to take in account the case of the grating.
     
-    ! #if defined(unix) || HAVE_F77_CPP
-    ! C
-    ! C This causes problems with F77 drivers, since can't use -I directive.
-    ! C so I'll use the standard cpp directive instead.
-    ! C
-    ! C	INCLUDE         './../include/common.blk'
-    ! C
-    ! C
-    ! #	include		<common.blk>
-    !! #	include		<common.h>
-    ! #elif defined(vms)
-    !      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-    ! #endif
-    
     ! todo: remove implicits
     !	implicit real(kind=kind(1.0d0)) (a-e,g-h,o-z)
     !	implicit integer(kind=ski)        (f,i-n)
-    
-    !	DIMENSION 	V_REF(3),V_TEMP(3),U_VEC(3),V_VEC(3),W_VEC(3), &
-    !     			V_PERP(3),U_OLD(3),V_OLD(3),W_OLD(3),R_OLD(3), &
-    !     			RP_OLD(3)
     
     integer(kind=ski),intent(in)         :: i_mirror
     real(kind=skr),dimension(3)  :: V_REF,V_TEMP,U_VEC,V_VEC,W_VEC
@@ -2115,11 +1771,7 @@ Contains
 
 
     WRITE(6,*)'Call to OPTAXIS'
-    ! #ifdef vms
-    !      	CALL	FNAME (FFILE,'OPTAX',I_MIRROR,2)
-    ! #else
     CALL	FNAME (FFILE,'optax',I_MIRROR,itwo)
-    ! #endif
     DEFLECTION	=   T_INCIDENCE + T_REFLECTION
     IF (I_MIRROR.EQ.1) THEN
        U_VEC (1)	=   COSAL
@@ -2284,16 +1936,11 @@ Contains
        
     END IF
     
-    ! #ifdef vms vms
-    !     	OPEN (UNIT=23,FILE= FFILE,STATUS='NEW',DISPOSE='SAVE')
-    ! #else
 
     ! srio@esrf.eu 20110412 avoid writing optax.xx if FWRITE=3
     IF (FWRITE.NE.3) THEN 
     OPEN (UNIT=23,FILE= FFILE,STATUS='UNKNOWN')
     REWIND (23)
-    ! #endif
-!    DO 100 I_WRITE=1,I_MIRROR
     DO I_WRITE=1,I_MIRROR
        WRITE (23,*) I_WRITE
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  1,3)
@@ -2304,7 +1951,6 @@ Contains
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =16,18)
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =19,21)
        WRITE (23,*) ( CENTRAL(I_WRITE,J), J =22,24)
-!100 CONTINUE
     END DO
     CLOSE (23)
     END IF
@@ -2337,7 +1983,6 @@ Contains
     
     
     real(kind=skr),dimension(3)  :: xin,vin
-    !DIMENSION	XIN(3),VIN(3)
     ! C
     ! C tests for non-conic mirrors
     ! C
@@ -2444,20 +2089,12 @@ Contains
     ! C
     ! C Success
     ! C
-!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-!    write(13,*) aa,bb,cc
 100 IFLAG =  0
-!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-!    write(13,*) aa,bb,cc
-!    write(13,*) ">>>XIN: ",XIN
-!    write(13,*) ">>>VIN: ",VIN
     RETURN
     ! C
     ! C failure
     ! C
 200 IFLAG = -1
-!    write(13,*) iflag,t_source,tpar1,tpar2,tpar 
-!    write(13,*) aa,bb,cc
     RETURN
   End Subroutine intercept
 
@@ -3104,7 +2741,7 @@ Contains
    End Subroutine spoly
    
    
-   ! C+++
+! C+++
 ! C
 ! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! C
@@ -3503,7 +3140,7 @@ Contains
     End Subroutine poly
        
                    
-                   ! C+++
+! C+++
 ! C	SUBROUTINE	POLY_GRAD
 ! C
 ! C	PURPOSE		To compute the normal to a polinomial surface
@@ -3519,20 +3156,6 @@ Contains
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
 
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-! #	include		<common.h>
-! C
        	DIMENSION	POS (3), VNOR(3)
        	X 	=   POS(1)
        	 Y	=   POS(2)
@@ -3627,22 +3250,6 @@ End Subroutine poly_grad
 
 SUBROUTINE READPOLY (INFILE, IERR)
 
-! C
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-! #	include		<common.h>
-! C
-
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
 
@@ -3655,12 +3262,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 31	    CONTINUE
 21	  CONTINUE
 11	CONTINUE
-! C
-! #if defined(vms)
-! 	OPEN (20, FILE=INFILE, STATUS='OLD', READONLY)
-! #else
      	OPEN (20, FILE=INFILE, STATUS='OLD')
-! #endif
      	  READ (20,*,ERR=10,END=10)	NDEG
           I = 0
 41     	 IF (I.GE.0) THEN
@@ -3687,20 +3289,6 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C---
       SUBROUTINE MSETUP (IWHICH)
 
-!!#	include		<common.h>
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-
         ! todo: remove implicits
   implicit real(kind=skr) (a-e,g-h,o-z)
   implicit integer(kind=ski)        (f,i-n)
@@ -3711,11 +3299,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	INTEGER(KIND=ski)	SERR
 ! C
      	WRITE(6,*) 'Call to MSETUP'
-! #ifdef vms
-!      	CALL	FNAME	(FFILE,'MSET',IWHICH,2)
-! #else
      	CALL	FNAME	(FFILE,'mset',IWHICH,itwo)
-! #endif
 	VIN(1)	 = 0.0D0
 	VIN(2)	 = COSDEL
 	VIN(3)	 = -SINDEL
@@ -3829,10 +3413,6 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	RTCEN(1)  =  .0D0
 	RTCEN(2)  =   RNCEN(3)
 	RTCEN(3)  = - RNCEN(2)
-! Csrio
-	!write(*,*) "YCEN,ZCEN: ",YCEN,ZCEN
-	!write(*,*) "RNCEN: ",RNCEN
-	!write(*,*) "RTCEN: ",RTCEN
 ! C
 ! C Computes now the quadric coefficient with the mirror center
 ! C located at (0,0,0) and normal along (0,0,1)
@@ -4015,23 +3595,12 @@ SUBROUTINE READPOLY (INFILE, IERR)
 !srio         OPEN (25,FILE="ccc.inp",STATUS='OLD',IOSTAT=IOSTAT)
 !srio         IF (IOSTAT.EQ.0) THEN
 !srio 	write(*,*) ">>Using conic coefficients from file ccc.inp"
-!srio ! Csrio	write(*,*) ">>old ccc:"
-!srio ! Csrio        DO I=1,10  
-!srio ! Csrio          write(*,*) "   CCC[",i,"]=",CCC(I)
-!srio ! Csrio        END DO
-!srio ! Csrio	write(*,*) ">>read ccc:"
 !srio         DO I=1,10  
 !srio           read(25,*) TMP
 !srio           CCC(I)=TMP
 !srio         END DO
 !srio 	CLOSE(25)
 !srio 
-!srio ! Csrio        DO I=1,10  
-!srio ! Csrio          write(*,*) "   CCC[",i,"]=",CCC(I)
-!srio ! Csrio        END DO
-!srio ! C          write(*,*) "YCEN,ZCEN: ",YCEN,ZCEN
-!srio ! C          write(*,*) "RNCEN: ",RNCEN
-!srio ! C          write(*,*) "RTCEN: ",RTCEN
 !srio         END IF
 
 ! C
@@ -4136,11 +3705,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C CHECK/FIXME: Replace OPEN calls with library routine FOPENR()
 ! C	CALL FOPENR (20, FILE_RIP, 'FORMATTED', IFERR, IOSTAT)
 ! C
-! #ifdef vms
-! 	OPEN (20,FILE=FILE_RIP,STATUS='OLD',IOSTAT=IOSTAT,READONLY)
-! #else
 	OPEN (20,FILE=FILE_RIP,STATUS='OLD',IOSTAT=IOSTAT)
-! #endif
 ! C
 	IF (IOSTAT.NE.0) THEN
 	  CALL LEAVE ('MSETUP', &
@@ -4191,12 +3756,8 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C CHECK/FIXME: Replace OPEN calls with library routine FOPENR()
 ! C	CALL FOPENW (22, 'SURFACE_ERRORS', 'FORMATTED', IFERR, IOSTAT)
 ! C
-! #ifdef vms
-! 	OPEN (22,STATUS='NEW',FILE='SURFACE_ERRORS',IOSTAT=IOSTAT)
-! #else
 	OPEN (22,STATUS='UNKNOWN',FILE='SURFACE_ERRORS',IOSTAT=IOSTAT)
 	REWIND (22)
-! #endif
 	IF (IOSTAT.NE.0) THEN
 	  CALL LEAVE ('MSETUP', &
      		      'Error opening output file "SURFACE_ERRORS".', &
@@ -4249,12 +3810,8 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C SET FDEBUG = 1 if you want debugging -- MK.
 ! C
      	IF (FDEBUG.EQ.1) THEN
-! #ifdef vms
-! 	OPEN(UNIT=20, FILE=FFILE, STATUS='NEW')
-! #else
 	OPEN(UNIT=20, FILE=FFILE, STATUS='UNKNOWN')
 	REWIND (20)
-! #endif
      	WRITE (20,1110) IWHICH,FMIRR,FCYL
      	WRITE (20,1110) FHIT_C,FSHAPE,F_CONVEX,F_EXT
 	WRITE (20,1112) 'Mirror radius ',RMIRR
@@ -4275,11 +3832,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	WRITE (20,1112) 'Left H. div',HDIV2
 	WRITE (20,1114) 'Quadric coefficients'
 	WRITE (20,1115) (CCC(I), I=1,10)
-! #ifdef vms
-!  	CLOSE (20,DISP='SAVE')
-! #else
  	CLOSE (20)
-! #endif
      	END IF
 1110	FORMAT (1X,4(2X,I4))
 1112	FORMAT (1X,A15,T17,G20.13)
@@ -4354,23 +3907,6 @@ End Subroutine msetup
 !C 			
 !C ---
 Subroutine MOSAIC (VVIN,VNOR,WAVEN,VNORG)
-
-! #if defined(unix) || HAVE_F77_CPP
-!C 
-!C  This causes problems with F77 drivers, since can't use -I directive.
-!C  so I'll use the standard cpp directive instead.
-!C 
-!C 	INCLUDE         './../include/common.blk'
-!C 	INCLUDE         './../include/warning.blk'
-!C 
-!C 
-! #	include		<common.blk>
-! #	include		<common.h>
-! #	include		<warning.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!      	INCLUDE		'SHADOW$INC:WARNING.BLK/LIST'
-! #endif
 
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -4577,11 +4113,7 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
 ! C        dimension 	do(200),de(200)
 	!dimension	ener(300),delta_s(300),beta_s(300),delta_e(300)
 	!dimension	beta_e(300),delta_o(300),beta_o(300)
-!#if G77
         logical 	ele(5),elo(5),els(5)
-!#else
-!        logical*1 	ele(5),elo(5),els(5)
-!#endif
 	character(len=sklen)    ::  file_grade
 	!character*80	file_grade
 
@@ -4633,10 +4165,6 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
 ! C
      	IF (K_WHAT.EQ.0) THEN
 	  IF (F_REFL.EQ.0) THEN
-! #ifdef vms
-!      	    OPEN  (23,FILE=FILE_REFL,STATUS='OLD',
-!      $	        	READONLY,FORM='UNFORMATTED')
-! #else
      	    OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
      	        	FORM='UNFORMATTED', IOSTAT=iErr)
 	   ! srio added test
@@ -4645,7 +4173,6 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
              STOP ' Fatal error: aborted'
            END IF
 
-! #endif
      	    READ (23) QMIN,QMAX,QSTEP,DEPTH0
 	    READ (23) NREFL
      	    READ (23) (ZF1(I),I=1,NREFL)
@@ -4679,9 +4206,6 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
 ! C
 ! C
 	iunit = 23
-! #ifdef vms
-!         open(unit=iunit,FILE=FILE_REFL,status='OLD',readonly)
-! #else
 ! WARNING: I got sometimes segmentation fault around this point. 
 !          Problem not identified....  srio@esrf.eu 2010-08-26
 !print *,'<><> opening file: '//trim(file_refl)
@@ -4693,7 +4217,6 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
           print *,"MIRROR: File not found: "//trim(file_refl)
           stop 'File not found. Aborted.'
 	end if
-! #endif
 	READ(iunit,*)	NIN
         IF (NIN > dimMLenergy) THEN 
           print *,'REFLEC: Error: In file: '//trim(file_refl)
@@ -4998,23 +4521,6 @@ subroutine FRESNEL (TFACT,GFACT,N,SIN_REF,COS_POLE,xlam,ans, &
 ! C---
 SUBROUTINE NORMAL (PIN,VOUT)
 
-! C
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #include		<common.blk>
-! #endif
-! #if defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-! #include		<common.h>
-! C
-
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
 
@@ -5082,20 +4588,6 @@ SUBROUTINE RESET
 
 	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
 	IMPLICIT INTEGER(kind=ski)        (F,I-N)
-! C
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
 ! C
      	WRITE(6,*)'Call to RESET'
 ! C
@@ -5165,13 +4657,8 @@ SUBROUTINE RESET
      	K_SLIT(I)	=	0
      	I_STOP(I)	=	0
      	I_ABS(I)	=	0
-! #ifdef HP_F77_BUGGY_NAMELIST
-!      	FILABS(I)	=	'NONE SPECIFIED'
-!      	FILSCR(I)	=	'NONE SPECIFIED'
-! #else
      	FILE_ABS(I)	=	'NONE SPECIFIED'
      	FILE_SCR_EXT(I)	=	'NONE SPECIFIED'
-! #endif
 11     	CONTINUE
 ! C
 ! C  SYSTEM block
@@ -5434,20 +4921,6 @@ SUBROUTINE RESTART (RAY,PHASE,AP)
 	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
 	IMPLICIT INTEGER(kind=ski)        (F,I-N)
 
-!#	include		<common.h>
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-
         !DIMENSION RAY(12,NPOINT),AP(3,NPOINT), PHASE(3,NPOINT)
         real(kind=skr),dimension(:,:), intent(in out) :: RAY, PHASE, AP
         real(kind=skr),dimension(9)  :: temp_1,temp_2,temp_1p
@@ -5593,20 +5066,6 @@ End Subroutine restart
 ! C---
 SUBROUTINE ROT_FOR (RAY,AP)
 
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-!! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -5725,20 +5184,6 @@ End Subroutine rot_for
 ! C---
 SUBROUTINE ROT_BACK(RAY,AP)
 
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-!! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -5854,20 +5299,6 @@ End Subroutine rot_back
 ! C
 ! C---
 SUBROUTINE ROT_SOUR (RAY,AP)
-
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #include		<common.blk>
-! #include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
 
 	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
 	IMPLICIT INTEGER(kind=ski)        (F,I-N)
@@ -6025,11 +5456,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
      	  FTEMP	=  F_REFL
      	  F_REFL = 0
 	  FILE_TMP = FILE_REFL
-! #ifdef HP_F77_BUGGY_NAMELIST
-!      	  FILE_REFL = FILABS(I_WHAT)
-! #else
      	  FILE_REFL = FILE_ABS(I_WHAT)
-! #endif
      	  !srio CALL	REFLEC (DUM,DUM,DUM,DUM,DUM,DUM,DUM,DUM, &
      	  CALL	REFLEC (ppout,DUM,DUM,DUM,DUM,DUM,DUM,DUM, &
     			THICK(I_WHAT),izero)
@@ -6221,11 +5648,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 !C  EOF marker
 !C 
      	KOUNTS	=   100*I_ELEMENT + I_WHAT
-! #ifdef vms
-!      	CALL	FNAME	(LOCFILE,'SCREEN',KOUNTS,4)
-! #else
      	CALL	FNAME	(LOCFILE,'screen',KOUNTS,ifour)
-! #endif
 	IFLAG	= 0
      	CALL	WRITE_OFF (LOCFILE,OUT,PH_OUT,AP_OUT,NCOL,NPOINT,IFLAG, &
                           izero,IERR)
@@ -6235,16 +5658,6 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 	    F_REFL	=   FTEMP
 	    FILE_REFL 	=   FILE_TMP
 	END IF
-!C  Purge away some useless arrays
-!C %	MPURGE(1)	= %LOC(OUT(1,1))
-!C %	MPURGE(2)	= %LOC(OUT(12,N_DIM))
-!C %	CALL SYS$PURGWS	(MPURGE)
-!C %	MPURGE(1)	= %LOC(AP_OUT(1,1))
-!C %	MPURGE(2)	= %LOC(AP_OUT(3,N_DIM))
-!C %	CALL SYS$PURGWS	(MPURGE)
-!C %	MPURGE(1)	= %LOC(PH_OUT(1,1))
-!C %	MPURGE(2)	= %LOC(PH_OUT(3,N_DIM))
-!C %	CALL SYS$PURGWS	(MPURGE)
 	WRITE(6,*)'Exit from SCREEN'
 	RETURN
 End Subroutine screen
@@ -6310,12 +5723,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 ! C indices (into xvec and zvec) and number of points per polygon.
 ! C 
 	IFLAG = 0
-!#if HP_F77_BUGGY_NAMELIST
-!# define filename FILSCR(I_SCR)
-!#else
-!# define filename FILE_SCR_EXT(I_SCR)
         filename = FILE_SCR_EXT(I_SCR)
-!#endif
 	CALL SCREEN_LOAD_EXTERNAL(filename, MAX_NPOLY,  &
      	   			MAX_NPOINTS,XVEC,ZVEC,IVEC1,IVEC2, &
      				N_POLYS,N_POINTS,IFLAG)
@@ -6513,22 +5921,7 @@ End Subroutine screen_load_external
 ! C---
 SUBROUTINE SETSOUR
 
-
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-
-
+!todo implicit?
 !	implicit real(kind=skr) (a-e,g-h,o-z)
 !	implicit integer(kind=ski)        (f,i-n)
 
@@ -6891,25 +6284,11 @@ End Subroutine setsour
 ! C---
 SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
 
-! #if defined(unix) || HAVE_F77_CPP
 
 ! C This routine now takes an additional parameter SERR which indiates
 ! C whether errors occur when calculating the ray's intersection with the
 ! C mirror as specified by a PRESURFACE spline file.
 
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-! C     	DIMENSION	CSPL (2,101,2,101),X(101),Y(101),PDS(6)
 ! C Below, the CSPL, X, and Y have been changed to allow a maximum of
 ! C 201 points instead of 101.
 ! C
@@ -6963,8 +6342,6 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
 ! C
 ! D	  WRITE(6,*)'Read ',NX,' by ',NY,' array.'
      	  IERR = 0
-!print *,'<><> Reading .... X(5),Y(5): ',X(5),Y(5)
-!read(*,*)
      	 RETURN
      	ELSE IF (IERR.EQ.-2) THEN !deallocate arrays
           IF(ALLOCATED( Y ))    DEALLOCATE(Y)
@@ -6978,7 +6355,6 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
 ! C to -9 to indicate this fact.
 ! C
 ! C      	CALL	DBCEVL (X,NX,Y,NY,CSPL,101,XIN,YIN,PDS,IER)
-!print *,'<><> Calling .... X(5),Y(5): ',X(5),Y(5)
      	CALL	DBCEVL (X,NX,Y,NY,CSPL,i201,XIN,YIN,PDS,IER)
 ! C
      	IF (IER.NE.0) THEN
@@ -7026,22 +6402,8 @@ End Subroutine sur_spline
 
 SUBROUTINE SURFACE (P_IN,P_DISPL,V_NORMAL,SPLERR)
 
-! #if defined(unix) || HAVE_F77_CPP
-
 ! C This subroutine has been modified to take the additional parameter 
 ! C SPLERR to keep track of errors in spline calulations.
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #	include		<common.h>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
 	
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -7061,7 +6423,6 @@ SUBROUTINE SURFACE (P_IN,P_DISPL,V_NORMAL,SPLERR)
 ! C  the utility PRESURFACE.
 
 	  CALL	SUR_SPLINE (XIN, YIN, ZOUT, V_CORR, IERR, SPLERR)
-!print *,'<><><> SPLERR: ',SPLERR
 	  P_DISPL(1)	= P_IN(1)
 	  P_DISPL(2)	= P_IN(2)
 	  P_DISPL(3)	= P_IN(3) + ZOUT
@@ -7170,20 +6531,6 @@ End Subroutine surface
 ! C---
 SUBROUTINE FA_ROT (P_IN,P_OUT,OFF,AU,AV,AW)
 
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-! 	INCLUDE         'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-!! #	include		<common.h>
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -7212,20 +6559,6 @@ End Subroutine fa_rot
 ! C
 ! C---
 SUBROUTINE FA_ROTBACK (P_IN,P_OUT,OFF,AU,AV,AW)
-
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C
-! C
-! #	include		<common.blk>
-! #elif defined(vms)
-! 	INCLUDE         'SHADOW$INC:COMMON.BLK/LIST'
-! #endif
-!! #	include		<common.h>
 
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
@@ -8628,11 +7961,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! C* Insert also an 'end of file' marker for external processor *
 ! C
      	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
-! #ifdef	vms
-!      	  CALL	FNAME	(FFILE, 'MIRR', I_WHICH, 2)
-! #else
      	  CALL	FNAME	(FFILE, 'mirr', I_WHICH, itwo)
-! #endif
 	  IFLAG	= 0
 	  CALL  WRITE_OFF   (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
           IF    (IERR.NE.0) CALL LEAVE  &
@@ -8646,11 +7975,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! C If codling slit, write out
 ! C
      	IF (FMIRR.EQ.6) THEN
-! #ifdef vms
-!      	  CALL	FNAME	(FFILE, 'CODL', I_WHICH, 2)
-! #else
      	  CALL	FNAME	(FFILE, 'codl', I_WHICH, itwo)
-! #endif
 	  IFLAG	= 0
      	  CALL	WRITE_OFF (FFILE,CODLING,PHASE,AP,NCOL,NPOINT,IFLAG,izero, IERR)
      	  IF	(IERR.NE.0) CALL LEAVE &
@@ -8680,16 +8005,11 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
      	  ABS_REF	=  (EFF_REF/K_6)
      	  OVERALL	=  ABS_REF*EFF_GEOM
      	END IF
-! #if vms
-!      	CALL	FNAME	(FFILE, 'EFFIC', I_WHICH, 2)
-! 	OPEN (UNIT=20,FILE=FFILE,STATUS='NEW',CARRIAGECONTROL='LIST')
-! #elif unix
         ! srio@esrf.eu 20110412 avoid writing effic.xx if FWRITE=3
         IF (FWRITE.NE.3) THEN
      	CALL	FNAME	(FFILE, 'effic', I_WHICH, itwo)
 	OPEN (UNIT=20,FILE=FFILE,STATUS='UNKNOWN')
 	REWIND (20)
-! #endif
      	IF (K_2.EQ.0)	WRITE (20,3000)
 	WRITE (20,2000) NPOINT,K_2,K_5,I_WHICH,EFF_GEOM
      	IF (F_REFLEC.EQ.1) THEN
@@ -8701,12 +8021,8 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
            WRITE(20,2040) krough_count2,krough_count
         END IF
      	IF (F_REFLEC.NE.0) WRITE (20,2030) OVERALL
-! #if vms
-! 	CLOSE (20,DISP='SAVE')
-! #elif unix
 	CLOSE (20)
         END IF
-! #endif
 
 3000	FORMAT (1X,'WATCH OUT !! NO GOOD RAYS IN INPUT !!')
 2000	FORMAT (1X,'Of a total of ',I6,' rays, of which ',I6,' formed ', &
@@ -8727,12 +8043,8 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 ! C write incidence and reflection information to file
  
         CALL FNAME (FFILE, 'angle', I_WHICH, itwo)
-! #if vms
-!         OPEN (UNIT=55,FILE=FFILE,STATUS='NEW',CARRIAGECONTROL='LIST')
-! #elif unix
         OPEN (UNIT=55,FILE=FFILE,STATUS='UNKNOWN')
         REWIND (55)
-! #endif
  
         DO 2525 J = 1,NPOINT
 2525      WRITE(55,*) ANGLE(1,J),ANGLE(2,J),ANGLE(3,J),ANGLE(4,J)
@@ -8742,11 +8054,7 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
 
 
      	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
-! #ifdef vms
-!      	  CALL	FNAME	(FFILE, 'RMIR', I_WHICH, 2)
-! #else
      	  CALL	FNAME	(FFILE, 'rmir', I_WHICH, itwo)
-! #endif
      	 IF (F_MOVE.EQ.1)   THEN
      	   CALL ROT_BACK (RAY,AP)
 	   IFLAG	= 0
@@ -8757,11 +8065,6 @@ write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
      	WRITE(6,*) 'Exit from MIRROR'
 ! D	CLOSE (23)
 
-! #if vms
-! 	MPURGE(1)	= %LOC(CODLING(1,1))
-! 	MPURGE(2)	= %LOC(CODLING(12,N_DIM))
-! 	CALL	SYS$PURGWS	(MPURGE)
-! #endif
 	END IF
 
 End Subroutine mirror1
@@ -8783,24 +8086,6 @@ End Subroutine mirror1
 ! C---
 ! #if defined(unix) || HAVE_F77_CPP
 SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C	INCLUDE         './../include/namelist.blk'
-! C
-! C
-!! #	include		<common.h>
-! #	include		<common.blk>
-! #	include		<namelist.blk>
-	!CHARACTER*(*)	OUTP
-! #elif defined(vms)
-!      	SUBROUTINE	SWITCH_INP (IFLAG)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!      	INCLUDE		'SHADOW$INC:NAMELIST.BLK/LIST'
-! 	CHARACTER*80	OUTP
-! #endif
 
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
@@ -8826,14 +8111,6 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! srio: MOVED TO TRACE LEVEL
 !     	CALL	RESET
 
-! C
-! C Tests for selected mode
-! C
-! #ifdef vms
-!    	IRET	=   LIB$GET_SYMBOL ('MENU_STAT', OUTP)
-!      	IF (.NOT.IRET) CALL LEAVE ('SWITCH_INP','SHADOW setup not run.',IRET)
-! #endif
-!sriosrio	CALL CLSCREEN
 ! C
 ! C Tests for continuation or new optical system
 ! C
@@ -8870,18 +8147,10 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C   MENU  case
 ! C
 	IF (IPASS.EQ.0) THEN
-! C
-! #ifndef vms
-! C
 	   OPEN (37, FILE='systemfile.dat', STATUS='old', IOSTAT=IWHAT)
 ! C
-! #elif defined(vms)
 ! C
 ! C First call; must seek the files list
-! C
-! 	   OPEN (37, FILE='SYSTEMFILE', STATUS='OLD', READONLY, 
-!      $		IOSTAT=IWHAT)
-! #endif
 ! C
 ! C Tests if files found; if not, return to main program
 ! C
@@ -8900,7 +8169,6 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C No more files to input; end of OS
 ! C
         IF (IEND.NE.0) THEN
-          !print *,'<><><> stopping here...'
           !STOP
           iTerminate = 1
           RETURN
@@ -8966,7 +8234,6 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C   NAMELIST CASE
 ! C
 ! C
-!#ifndef vms
      	  INFILE = RSTRING ('Input file [ EXIT terminates OS ] ?')
 ! C
 ! C If ^Z detected, assumes end of system
@@ -8977,14 +8244,6 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
            iTerminate=1
 	   RETURN
          END IF
-!#elif defined(vms)
-!     	  INFILE = RSTRING ('Input file [ ^Z or %EXIT terminates OS ] ?')
-! C
-! C If ^Z detected, assumes end of system
-! C
-!     	 IF (INFILE(1:2).EQ.'^Z') STOP
-!     	 IF (INFILE(1:5).EQ.'%EXIT')  STOP
-!#endif
 ! C
 ! C Valid element; read in NAMELIST block
 ! C
@@ -9060,25 +8319,6 @@ End Subroutine switch_inp
 ! C ---
 ! C
 SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
-! #if defined(unix) || HAVE_F77_CPP
-! C
-! C This causes problems with F77 drivers, since can't use -I directive.
-! C so I'll use the standard cpp directive instead.
-! C
-! C	INCLUDE         './../include/common.blk'
-! C	INCLUDE         './../include/warning.blk'
-! C
-! C
-! #	include		<common.blk>
-!! #	include		<common.h>
-! #	include		<warning.blk>
-! #elif defined(vms)
-!      	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-! 	INCLUDE		'SHADOW$INC:NAMELIST.BLK/LIST'
-! #endif
-! C
-
-
         ! todo: remove implicits
 	implicit real(kind=skr) (a-e,g-h,o-z)
 	implicit integer(kind=ski)        (f,i-n)
@@ -9122,7 +8362,7 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
      	  END IF
 
           ! srio: get NCOL from source file. Up to here it is undefined
-          CALL RBEAMANALYZE (FILE_SOURCE,NCOL,NP,IFLAG,IERR)
+          CALL beamGetDim (FILE_SOURCE,NCOL,NP,IFLAG,IERR)
 
 	  NSAVE	= NCOL
 ! C
@@ -9186,11 +8426,7 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
 	CALL DEALLOC
 
 
-! #ifdef vms
-!      	CALL	FNAME	(FFILE, 'END', ICOUNT, 2)
-! #else
      	CALL	FNAME	(FFILE, 'end', ICOUNT, itwo)
-! #endif
      	IDUMM = 0
      	CALL	RWNAME  ( FFILE, 'W_OE', IDUMM)
      	IF (IDUMM.NE.0) CALL LEAVE &
@@ -9209,20 +8445,6 @@ End Subroutine trace_step
 !c---
 SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
 
-!#if defined(unix) || HAVE_F77_CPP
-!c
-!c This causes problems with F77 drivers, since can't use -I directive.
-!c so I'll use the standard cpp directive instead.
-!c
-!c	INCLUDE         './../include/common.blk'
-!c
-!c
-!#	include		<common.blk>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!#endif
-!c
-
         !todo remove implicits
 	!implicit real(kind=skr) (a-e,g-h,o-z)
 	!implicit integer(kind=ski)        (f,i-n)
@@ -9237,14 +8459,6 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
 !c
 	iTerminate=0
      	WRITE(6,*)'Call to INPUT_OE'
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c     	CALL	LIB$ERASE_PAGE(1,1)
-!c    	CALL	LIB$SET_SCROLL (5,24)
-!c#endif
-	!CALL CLSCREEN
-!c		       123456789 123456789 123456789 123456789 1
      	MSSG (1:40) = '--------------------------------- S H A '
         MSSG (41:80)= 'D O W  -------------------------------  '
      	WRITE (6,'(1X,A)')  trim(MSSG)
@@ -9257,11 +8471,7 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
 !	IF (IFLAG.NE.0) THEN
 !	    CALL LEAVE ('INPUT_OE', 'VERSION file not found', IFLAG)
 !	END IF
-!#ifndef vms
 !    	OPEN (11, FILE=VERSION, STATUS='OLD')
-!#elif defined(vms)
-!    	OPEN (11, FILE=VERSION, STATUS='OLD', READONLY)
-!#endif
 !     	READ (11,*) I1,I1,I1
 !     	READ (11,'(1X,A)') MSSG2
 !     	CLOSE(11)
@@ -9278,7 +8488,6 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
      	WRITE (6,2222) I_OENUM
 2222	FORMAT (1X,/,1X,'Defining Optical Element: ', I2)
      	I_MIR	=   I_OENUM
-!#ifndef vms
      	TEXT	=   RSTRING('Continue ? [ EXIT to terminate OS ] ')
      	IF (TEXT(1:5).EQ.'EXIT'.OR.TEXT(1:5).EQ.'exit') THEN
      	  print *,''
@@ -9288,14 +8497,6 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
      	  !STOP
           RETURN
      	END IF
-!#elif defined(vms)
-!     	TEXT	=   
-!     $		RSTRING('Continue ? [ ^Z or %EXIT to terminate OS ] ')
-!     	IF ((TEXT(1:2).EQ.'^Z').OR.(TEXT(1:5).EQ.'%EXIT')) THEN
-!     	  WRITE(6,*)'End of session'
-!     	  STOP
-!     	END IF
-!#endif
      	WRITE (6,'(1X,///)')
      	IVERB = IYES ('Do you want a verbose [ 1 ] or terse [ 0 ] output ?')
      	IF (IVERB.EQ.1) THEN
@@ -9311,11 +8512,6 @@ SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
      	WRITE(6,*)'None............................[ 3 ] '
      	FWRITE = IRINT (' Then ? ')
 !**---------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1) ! Inquires about the nominal geometry
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9368,11 +8564,6 @@ print *,'diffraction elements.                                                  
      	T_IMAGE     = RNUMBER ('Image Distance  ? ')
      	F_REFRAC    = IRINT   ('Reflector [ 0 ] or refractor [ 1 ] ? ')
 !**---------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9489,14 +8680,11 @@ print *,'diffraction elements.                                                  
 	RFAC_LENX =RNUMBER(' x-length ?')
 	RFAC_LENY =RNUMBER(' y-length ?')
 	END IF
-!c#endif
 
      	IF (IVERB.EQ.1) THEN
-!c#ifdef FACET
 	 IF(F_FACET.EQ.1) THEN
 	  WRITE(6,*)'Choose the baseline for facet'
          END IF
-!c#endif
 !     	WRITE(6,*) &
 !      'Lets define the mirror. I may compute its parameters, like the' &
 !      ,'radius or the axes. This will not affect the rest of the calcu' &
@@ -9529,12 +8717,10 @@ print *,'parameters yourself.                                                   
         WRITE(6,*)'The inputs for the relative positions are disregarded.'
      	F_SIDE = IRINT ('Focus location ? ')
 	 ELSE IF (FMIRR.EQ.3) THEN
-!c#ifdef FACET
 	IF (F_FACET.EQ.1) THEN
 	  WRITE(6,*)'In facet, only selection 0 has been developed'
       WRITE(6,*)'Do not use Angle=0 0 The R_MAJ will be 0'
 	END IF
-!c#endif
 
 	WRITE(6,*)'Toroidal Selected.'
 	WRITE(6,*)'Enter 0, if mirror pole is at the lower outer '//&
@@ -9560,9 +8746,7 @@ print *,'parameters yourself.                                                   
 !c
 !c end of the Komakofu IF block
 !c
-!c#ifdef FACET
 	END IF
-!c#endif
 !c
 !c end of the segmented mirror IF block
 !c
@@ -9577,11 +8761,6 @@ print *,'parameters yourself.                                                   
 	END IF
      	 IF (F_GRATING.EQ.1) THEN
 !**-------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Grating parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9717,11 +8896,6 @@ print *,'parameters yourself.                                                   
      	  END IF
      	END IF
 !**------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c     	CALL	LIB$ERASE_PAGE(5,1)
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9730,11 +8904,6 @@ print *,'parameters yourself.                                                   
      	IF (F_GRATING.EQ.0) THEN
      	F_CRYSTAL = IYES ('Are we dealing with a crystal [ Y/N ] ? ')
 	    IF (F_REFRAC.EQ.1.and.f_crystal.ne.1) THEN     !lens
-!c#if unix
-!c	      CALL	SYSTEM ('clear')
-!c#elif vms
-!c	      CALL	LIB$ERASE_PAGE(5,1)
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9833,11 +9002,6 @@ print *,'parameters yourself.                                                   
     END IF
      	F_REFLEC  =  IRINT ('Reflectivity mode [ 0,1,2 ] ? ')
      	IF (F_REFLEC.NE.0) THEN
-!c#if unix
-!cC	CALL	SYSTEM ('clear')
-!c#elif vms
-!c    	CALL	LIB$ERASE_PAGE(5,1)
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9871,11 +9035,6 @@ print *,'parameters yourself.                                                   
      	END IF
 	END IF
 !c------------------------------------------------------------------------
-!c#if unix
-!cC	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9901,11 +9060,6 @@ print *,'parameters yourself.                                                   
      	END IF
      	ALPHA = RNUMBER ('Orientation Angle [ Alpha ] ? ')
 !c----------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -9935,11 +9089,6 @@ print *,'parameters yourself.                                                   
      	   END IF
      	END IF
 !*----------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -10018,11 +9167,6 @@ print *,'parameters yourself.                                                   
 	ELSE
 	END IF
 !**---------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -10130,11 +9274,6 @@ print *,'parameters yourself.                                                   
 	end if
 !c
 !**-----------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -10158,11 +9297,6 @@ print *,'parameters yourself.                                                   
      	END IF
      	K_SLIT(I) = IRINT ('Stop shape [ 0 r, 1 e, 2 ex ] ? ')
 	IF (K_SLIT(I).EQ.2) THEN
-!#if HP_F77_BUGGY_NAMELIST
-!# define XXFILSCR FILSCR
-!#else
-!# define XXFILSCR FILE_SCR_EXT
-!#endif
 !	  XXFILSCR(I) = RSTRING('File containing the mask coordinates ? ')
 	  FILE_SCR_EXT(I) = RSTRING('File containing the mask coordinates ? ')
 	ELSE
@@ -10176,11 +9310,7 @@ print *,'parameters yourself.                                                   
      	I_ABS(I)= IYES ('Include absorption [ Y/N ] ? ')
      	   IF (I_ABS(I).EQ.1) THEN
      	WRITE(6,*) 'File with optical constants ?'
-!#ifdef HP_F77_BUGGY_NAMELIST
-!     	READ (5,111)	FILABS(I)
-!#else
      	READ (5,111)	FILE_ABS(I)
-!#endif
      	THICK(I) = RNUMBER ('Thickness of film [ cm ] ? ')
      	   END IF
 11     	CONTINUE
@@ -10188,11 +9318,6 @@ print *,'parameters yourself.                                                   
      	ELSE
      	END IF
 !**---------------------------------------------------------------------
-!c#if unix
-!c	CALL	SYSTEM ('clear')
-!c#elif vms
-!c	CALL LIB$ERASE_PAGE (5,1)  ! Mirror parameters.
-!c#endif
 	!CALL CLSCREEN
 	!WRITE(6,'(1X,A)') trim(MSSG)
 	!WRITE(6,'(1X,A)') trim(MSSG2)
@@ -10248,11 +9373,7 @@ print *,'parameters yourself.                                                   
 !c                  SAVE     FILE
 !c
 !c
-!#ifdef vms
-!    	CALL	FNAME	(FFILE, 'SYS$START:START', I_OENUM, 2)
-!#else
      	CALL	FNAME	(FFILE, 'start', I_OENUM, itwo)
-!#endif
      	IDUMM = 0
      	CALL	RWNAME	(FFILE, 'W_OE', IDUMM)
      	IF (IDUMM.NE.0) CALL LEAVE ('INPUT_OE','Error writing NAMELIST',IDUMM)
@@ -10890,7 +10011,7 @@ End Subroutine input_source1
   !
 
   ! C+++
-  ! C	SUBROUTINE	SOURCEG
+  ! C	SUBROUTINE	sourceGeom
   ! C
   ! C	PURPOSE		To generate a array describing a geometric source.
   ! C
@@ -10903,7 +10024,7 @@ End Subroutine input_source1
   ! C---
   
 !  SUBROUTINE 	SOURCE1B (infile, FNAME, IOFORM)
-SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
+SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     
     
     ! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
@@ -11008,52 +10129,7 @@ SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
        ITMP=1
        CALL LEAVE ('SOURCE1','Only geometrical source. No synchrotron source allowed here',ITMP)
     END IF
-    !!        CALL  SOURCE1 (BGNFILE, IOFORM)
     
-!<>    !!
-!<>    !! Allocate arrays
-!<>    !!
-!<>    
-!<>    if (ALLOCATED(begin)) then
-!<>       ITMP=1
-!<>       CALL LEAVE ('SOURCE1','Arrays already allocated.',ITMP)
-!<>    else
-!<>       ALLOCATE(begin(12,NPOINT),stat=ierr)
-!<>       ALLOCATE(phase(3,NPOINT),stat=ierr)
-!<>       ALLOCATE(ap(3,NPOINT),stat=ierr)
-!<>       
-!<>       !!     			VTEMP(3),GRID(6,N_DIM),A_VEC(3),A_TEMP(3), &
-!<>       ALLOCATE(grid(6,NPOINT),stat=ierr)
-!<>       
-!<>       
-!<>       !!	REAL*8		SEED_Y(5,N_DIM),Y_X(5,N_DIM),Y_XPRI(5,N_DIM), &
-!<>       !!                       Y_Z(5,N_DIM),Y_ZPRI(5,N_DIM), &
-!<>       !!     			Y_CURV(5,N_DIM),Y_PATH(5,N_DIM)
-!<>       !!              ALLOCATE(seed_y(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_x(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_xpri(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_z(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_zpri(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_curv(5,NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(y_path(5,NPOINT),stat=ierr)
-!<>       
-!<>       !!	REAL*8		Y_TEMP(N_DIM),C_TEMP(N_DIM),X_TEMP(N_DIM), &
-!<>       !!     			Z_TEMP(N_DIM),ANG_TEMP(N_DIM),P_TEMP(N_DIM), &
-!<>       !!                       ANG2_TEMP(N_DIM)
-!<>       !!              ALLOCATE(y_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(c_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(x_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(z_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(ang_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(p_temp(NPOINT),stat=ierr)
-!<>       !!              ALLOCATE(ang2_temp(NPOINT),stat=ierr)
-!<>    end if
-    
-    
-    
-    !!srio test empty arrays to file:
-    !!srio  CALL WRITE_OFF('tmp.dat',BEGIN,PHASE,AP,18,333,IFLAG,IOFORM,IERR)
-    !!srio
     
     KREJ = 0
     NREJ = 0
@@ -11070,271 +10146,8 @@ SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
        NCOL	= 12
     END IF
     
-    
-    !!srio	IF (F_WIGGLER.EQ.1) THEN
-    !!srio ! C
-    !!srio ! C Normal wigger case:
-    !!srio ! C read in the wiggler trajectory, tangent and radius, and other parameters
-    !!srio ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED', READONLY)
-    !!srio #else
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED')
-    !!srio #endif
-    !!srio 	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
-    !!srio 	  DO 13 I = 1, NP_TRAJ
-    !!srio 	    READ (29)	
-    !!srio      $		XIN,YIN,SEEDIN,ANGIN,CIN
-    !!srio ! C+++
-    !!srio ! C The program will build the splines for generating the stocastic source.
-    !!srio ! C the splines are defined by:
-    !!srio ! C
-    !!srio ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
-    !!srio ! C
-    !!srio ! C which is valid between the interval X(I) and X(I+1)
-    !!srio ! C
-    !!srio ! C We define the 5 arrays:
-    !!srio ! C    Y_X(5,N)    ---> X(Y)
-    !!srio ! C    Y_XPRI(5,N) ---> X'(Y)
-    !!srio ! C    Y_CURV(5,N) ---> CURV(Y)
-    !!srio ! C    Y_PATH(5,N) ---> PATH(Y)
-    !!srio ! C    F(1,N) contains the array of Y values where the nodes are located.
-    !!srio ! C+++
-    !!srio 	    Y_TEMP(I)	= YIN*CONV_FACT			! Convert to user units
-    !!srio 	    X_TEMP(I)	= XIN*CONV_FACT			! Convert to user units
-    !!srio 	    SEED_Y(1,I)	= SEEDIN
-    !!srio 	    ANG_TEMP(I)	= ANGIN
-    !!srio 	    C_TEMP(I)	= CIN
-    !!srio 	    P_TEMP(I)	= (I-1)*PATH_STEP*CONV_FACT	! Convert to user units
-    !!srio ! C
-    !!srio ! C Array initialization:
-    !!srio ! C
-    !!srio 	    Y_X(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_XPRI(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_CURV(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_PATH(1,I)	= Y_TEMP(I)
-    !!srio 13	  CONTINUE
-    !!srio 	  CLOSE	(29)
-    !!srio ! C
-    !!srio ! C Generate the (5) splines. Notice that the nodes are always in the first
-    !!srio ! C element already.
-    !!srio ! C      Y_X     : on input, first row contains nodes.
-    !!srio ! C      X_TEMP  : input array to which to fit the splines
-    !!srio ! C      NP_TRAJ : # of spline points
-    !!srio ! C      IER     : status flag
-    !!srio ! C On output:
-    !!srio ! C      Y_X(1,*)    : spline nodes
-    !!srio ! C      Y_X(2:5,*)  : spline coefficients (relative to X_TEMP)
-    !!srio ! C
-    !!srio 	  NP_SY	= NP_TRAJ
-    !!srio 	  IER	= 1
-    !!srio ! C*************************************
-    !!srio 	  CALL	PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_X,    X_TEMP,   NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_CURV, C_TEMP,   NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_PATH, P_TEMP,   NP_TRAJ, IER)
-    !!srio ! C+++
-    !!srio ! C Compute the path length to the middle (origin) of the wiggler.
-    !!srio ! C We need to know the "center" of the wiggler coordinate.
-    !!srio ! C input:     Y_PATH  ---> spline array
-    !!srio ! C            NP_TRAJ ---> # of points
-    !!srio ! C            Y_TRAJ  ---> calculation point (ind. variable)
-    !!srio ! C output:    PATH0   ---> value of Y_PATH at X = Y_TRAJ. If
-    !!srio ! C                         Y_TRAJ = 0, then PATH0 = 1/2 length 
-    !!srio ! C                         of trajectory.
-    !!srio ! C+++
-    !!srio 	  Y_TRAJ	= 0.0D0
-    !!srio 	  CALL	SPL_INT	(Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
-    !!srio ! C
-    !!srio ! C These flags are set because of the original program structure.
-    !!srio ! C
-    !!srio  	F_PHOT		= 0
-    !!srio   	F_COLOR		= 3
-    !!srio ! C	FGRID		= 0
-    !!srio   	FSOUR		= 3
-    !!srio   	FDISTR		= 4
-    !!srio 	ELSE IF (F_WIGGLER.EQ.3) THEN
-    !!srio ! C
-    !!srio ! C Elliptical wiggler case:
-    !!srio ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED', READONLY)
-    !!srio #else
-    !!srio 	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', 
-    !!srio      $			FORM='UNFORMATTED')
-    !!srio #endif
-    !!srio 	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
-    !!srio 	  DO 14 I = 1, NP_TRAJ
-    !!srio 	    READ (29) XIN,YIN,ZIN,SEEDIN,ANGIN1,ANGIN2,CIN	
-    !!srio ! C+++
-    !!srio ! C The program will build the splines for generating the stocastic source.
-    !!srio ! C the splines are defined by:
-    !!srio ! C
-    !!srio ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
-    !!srio ! C
-    !!srio ! C which is valid between the interval X(I) and X(I+1)
-    !!srio ! C
-    !!srio ! C We define the 7 arrays:
-    !!srio ! C    Y_X(5,N)    ---> X(Y)
-    !!srio ! C    Y_XPRI(5,N) ---> X'(Y)
-    !!srio ! C    Y_Z(5,N)    ---> Z(Y)
-    !!srio ! C    Y_ZPRI(5,N) ---> Z'(Y)
-    !!srio ! C    Y_CURV(5,N) ---> CURV(Y)
-    !!srio ! C    Y_PATH(5,N) ---> PATH(Y)
-    !!srio ! C    F(1,N) contains the array of Y values where the nodes are located.
-    !!srio ! C+++
-    !!srio 	    Y_TEMP(I)	= YIN*CONV_FACT			! Convert to user units
-    !!srio 	    X_TEMP(I)	= XIN*CONV_FACT			! Convert to user units
-    !!srio 	    Z_TEMP(I)	= ZIN*CONV_FACT			! Convert to user units
-    !!srio 	    SEED_Y(1,I)	= SEEDIN
-    !!srio 	    ANG_TEMP(I)= ANGIN1
-    !!srio 	    ANG2_TEMP(I)= ANGIN2
-    !!srio 	    C_TEMP(I)	= CIN
-    !!srio 	    P_TEMP(I)	= (I-1)*PATH_STEP*CONV_FACT	! Convert to user units
-    !!srio ! C
-    !!srio ! C Array initialization:
-    !!srio ! C
-    !!srio 	    Y_X(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_XPRI(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_Z(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_ZPRI(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_CURV(1,I)	= Y_TEMP(I)
-    !!srio 	    Y_PATH(1,I)	= Y_TEMP(I)
-    !!srio 14	  CONTINUE
-    !!srio 	  CLOSE	(29)
-    !!srio ! C
-    !!srio ! C Generate the (7) splines. Notice that the nodes are always in the first
-    !!srio ! C element already.
-    !!srio ! C      Y_X (or Y_Z)       : on input, first row contains nodes.
-    !!srio ! C      X_TEMP (or Z_TEMP) : input array to which fit the splines
-    !!srio ! C      NP_TRAJ : # of spline points
-    !!srio ! C      IER     : status flag
-    !!srio ! C On output:
-    !!srio ! C      Y_X(1,*) or (Y_Z(1,*))     : spline nodes
-    !!srio ! C      Y_X(2:5,*) (or Y_Z(2:5,*)) : spline coefficients (relative to
-    !!srio ! C                                   X_TEMP (or Z_TEMP))
-    !!srio ! C
-    !!srio 	  NP_SY	= NP_TRAJ
-    !!srio 	  IER	= 1
-    !!srio ! C*************************************
-    !!srio 	  CALL	PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_X,    X_TEMP,   NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_Z,    Z_TEMP,   NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_ZPRI, ANG2_TEMP, NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_CURV, C_TEMP,   NP_TRAJ, IER)
-    !!srio 	  IER	= 0
-    !!srio 	  CALL	CUBSPL	(Y_PATH, P_TEMP,   NP_TRAJ, IER)
-    !!srio ! C+++
-    !!srio ! C Compute the path length to the middle (origin) of the wiggler.
-    !!srio ! C We need to know the "center" of the wiggler coordinate.
-    !!srio ! C input:     Y_PATH  ---> spline array
-    !!srio ! C            NP_TRAJ ---> # of points
-    !!srio ! C            Y_TRAJ  ---> calculation point (ind. variable)
-    !!srio ! C output:    PATH0   ---> value of Y_PATH at X = Y_TRAJ. If
-    !!srio ! C                         Y_TRAJ = 0, then PATH0 = 1/2 length 
-    !!srio ! C                         of trajectory.
-    !!srio ! C+++
-    !!srio 	  Y_TRAJ	= 0.0D0
-    !!srio 	  CALL	SPL_INT	(Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
-    !!srio ! C
-    !!srio ! C These flags are set because of the original program structure.
-    !!srio ! C
-    !!srio  	F_PHOT		= 0
-    !!srio   	F_COLOR		= 3
-    !!srio ! C	FGRID		= 0
-    !!srio   	FSOUR		= 3
-    !!srio   	FDISTR		= 4
-    !!srio 	ELSE IF (F_WIGGLER.EQ.2) THEN
-    !!srio ! C
-    !!srio ! C Uudulator case : first read in the CDF's and degree of polarization.
-    !!srio ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(30, FILE=FILE_TRAJ, STATUS='OLD',
-    !!srio      $	  	FORM='UNFORMATTED', READONLY)
-    !!srio #else
-    !!srio 	  OPEN	(30, FILE=FILE_TRAJ, STATUS='OLD',
-    !!srio      $	  	FORM='UNFORMATTED')
-    !!srio #endif
-    !!srio 	  READ	(30)	NE,NT,NP,IANGLE
-    !!srio 
-    !!srio 	  DO 17 K = 1,NE
-    !!srio 17	     READ  	(30)	UENER(K)
-    !!srio 	  DO 27 K = 1,NE
-    !!srio 	     DO 27 J = 1,NT
-    !!srio 27	        READ   	(30)   	UTHETA(J,K)
-    !!srio 	  DO 37 K = 1,NE
-    !!srio 	     DO 37 J = 1,NT
-    !!srio 		DO 37 I = 1,NP
-    !!srio 37	           READ	(30)	UPHI(I,J,K)
-    !!srio 
-    !!srio 	  DO 47 K = 1,NE
-    !!srio 47	     READ   	(30) 	CDFW(K)
-    !!srio 	  DO 57 K = 1,NE
-    !!srio 	     DO 57 J = 1,NT
-    !!srio 57	        READ	(30)	CDFZ(J,K)
-    !!srio 	  DO 67 K = 1,NE
-    !!srio 	     DO 67 J = 1,NT
-    !!srio 		DO 67 I = 1,NP
-    !!srio 67	           READ	(30)	CDFX(I,J,K)
-    !!srio 
-    !!srio 	  DO 87 K = 1,NE
-    !!srio 	     DO 87 J = 1,NT
-    !!srio 		DO 87 I = 1,NP
-    !!srio 87	  	   READ	(30)	D_POL(I,J,K)
-    !!srio 
-    !!srio D	  READ	(30)	(UENER(K), K = 1,NE)
-    !!srio D	  READ	(30)	((UTHETA(J,K), J = 1,NT), K = 1,NE)
-    !!srio D	  READ	(30)	(((UPHI(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio D
-    !!srio D	  READ	(30)	(CDFW(K), K = 1,NE)
-    !!srio D	  READ	(30)	((CDFZ(J,K), J = 1,NT), K = 1,NE)
-    !!srio D	  READ	(30)	(((CDFX(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio D
-    !!srio D	  READ	(30)	(((D_POL(I,J,K), I = 1,NP), J = 1,NT), K = 1,NE)
-    !!srio 
-    !!srio 	  CLOSE	(30)
-    !!srio ! C
-    !!srio ! C These flags are set because of the original program structure.
-    !!srio ! C
-    !!srio 	  F_PHOT	= 0
-    !!srio 	  F_COLOR	= 3
-    !!srio ! C	  FGRID		= 0
-    !!srio 	  FSOUR		= 3
-    !!srio 	  F_COHER	= 1
-    !!srio 	ELSE
     RAD_MIN	= ABS(R_MAGNET)
     RAD_MAX	= ABS(R_MAGNET)
-    !!srio 	END IF
-    !!srio ! C
-    !!srio ! C Prepares some SR variables; the vertical divergence replaces the emittance
-    !!srio ! C
-    !!srio      	IF (FDISTR.EQ.4.OR.FDISTR.EQ.6) THEN
-    !!srio 	  F_COHER = 0
-    !!srio 	  IF (R_ALADDIN.LT.0.0D0) THEN
-    !!srio 	    POL_ANGLE = -90.0D0
-    !!srio 	  ELSE
-    !!srio 	    POL_ANGLE = 90.0D0
-    !!srio 	  END IF
-    !!srio 	END IF
-    !!srio 	POL_ANGLE     =   TORAD*POL_ANGLE
-    !!srio ! C
-    !!srio ! C Saved values of emittance that user inputs.  Write these out to 
-    !!srio ! C namelist instead of EPSI/SIGMA.  6/25/93 clw.
-    !!srio ! C
     
     IF (FSOUR.EQ.3) THEN
        EPSI_XOLD = EPSI_X
@@ -11415,16 +10228,6 @@ SUBROUTINE SourceG (pool00,ray,npoint1) !bind(C,NAME="SourceG")
 31        CONTINUE
        END IF
     END IF
-    ! C
-    ! C If the S.R. case has been chosen, set up the subroutine for the
-    ! C  vertical distribution.
-    ! C
-    ! Csrio	IF (FDISTR.EQ.6) CALL ALADDIN1 (DUMMY,DUMMY,-1,IER)
-    ! Csrio     	IF (FDISTR.EQ.4) 
-    ! Csrio     $	CALL WHITE (RAD_MIN,RAD_MAX,DUMMY,DUMMY,DUMMY,DUMMY,DUMMY,0)
-    ! C
-    ! C Calculate the total number of rays.
-    ! C
 102 CONTINUE
     
     IF (FDISTR.NE.5) THEN
@@ -11491,11 +10294,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
              GRID (6,INDEXMOM)	= C_VZ * STEP_VZ + 0.5D0
 61        CONTINUE
 51     CONTINUE
-    ! C	  IF (FDISTR.EQ.5) THEN
-    ! C	    INDEXMOM = INDEXMOM + 1
-    ! C	    GRID (4,INDEXMOM)	= 0.0D0
-    ! C	    GRID (6,INDEXMOM)	= -1.0D0
-    ! C	  END IF
        ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
     	  DO 71 I = 1, IDO_XL
              IF (FGRID.EQ.4) THEN
@@ -11613,170 +10411,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           ! C
           ! C
 10001     CONTINUE
-          !!srio ! C
-          !!srio ! C
-          !!srio ! C The following interpolation is done for wiggler: GRID -> Y, Y -> X, Y -> Z, 
-          !!srio ! C Y -> X', Y -> RAD, Y -> path length from middle of wiggler.
-          !!srio ! C 
-          !!srio ! C Either wiggler case
-          !!srio ! C
-          !!srio     	IF ((F_WIGGLER.EQ.1).OR.(F_WIGGLER.EQ.3)) THEN
-          !!srio ! C
-          !!srio ! C Normal wiggler case
-          !!srio ! C
-          !!srio 	  IF (F_WIGGLER.EQ.1) THEN
-          !!srio 	    ARG_Y = GRID(2,ITIK)
-          !!srio 	    CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
-          !!srio 	    CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
-          !!srio 	    CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE,     IER)
-          !!srio 	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
-          !!srio 	    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
-          !!srio           END IF
-          !!srio ! C
-          !!srio ! C Elliptical wiggler case
-          !!srio ! C
-          !!srio           IF (F_WIGGLER.EQ.3) THEN
-          !!srio 	    ARG_Y = GRID(2,ITIK)
-          !!srio 	    CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
-          !!srio 	    CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
-          !!srio 	    CALL SPL_INT (Y_Z,    NP_TRAJ, Y_TRAJ, Z_TRAJ,    IER)
-          !!srio 	    CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE1,    IER)
-          !!srio 	    CALL SPL_INT (Y_ZPRI, NP_TRAJ, Y_TRAJ, ANGLE2,    IER)
-          !!srio 	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
-          !!srio 	    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
-          !!srio           END IF
-          !!srio ! C
-          !!srio 	  EPSI_PATH	= EPSI_PATH - PATH0	! now refer to wiggler's origin
-          !!srio 	  IF (CURV.LT.0) THEN
-          !!srio 	    POL_ANGLE	= 90.0D0		! instant orbit is CW
-          !!srio 	  ELSE
-          !!srio 	    POL_ANGLE	= -90.0D0		!		   CCW
-          !!srio 	  END IF
-          !!srio 	  IF (CURV.EQ.0) THEN
-          !!srio 	    R_MAGNET	= 1.0D+20
-          !!srio 	  ELSE
-          !!srio 	    R_MAGNET	= ABS(1.0D0/CURV)
-          !!srio 	  END IF
-          !!srio 	  POL_ANGLE 	= TORAD*POL_ANGLE
-          !!srio ! C above statement added 24 march 1992 to change POL_ANGLE to radians. clw.
-          !!srio ! C
-          !!srio     	ELSE IF (FSOURCE_DEPTH.EQ.4) THEN		! Synchrontron depth
-          !!srio      	  ANGLE		=   GRID(2,ITIK) * (HDIV1 + HDIV2) - HDIV2
-          !!srio 	  EPSI_PATH	=   ABS(R_ALADDIN)*ANGLE
-          !!srio ! C
-          !!srio ! C Undulator case : first interpolate for the photon energy.
-          !!srio ! C
-          !!srio     	ELSE IF (F_WIGGLER.EQ.2) THEN
-          !!srio 	  ESEED		= GRID(2,ITIK)* CDFW(NE)
-          !!srio 	  DO 221 K = 1, NE-1
-          !!srio 	    IF (ESEED.LE.CDFW(K+1)) GO TO 510
-          !!srio 221	  CONTINUE
-          !!srio 510    	  DK		= (ESEED - CDFW(K))/(CDFW(K+1) - CDFW(K))
-          !!srio 	  KI		= K
-          !!srio 	  PENERGY	= UENER(K) + DK*(UENER(K+1) - UENER(K))
-          !!srio 	  Q_WAVE	= TWOPI*PENERGY/TOCM
-          !!srio ! C
-          !!srio ! C then interpolate for theta (Z').
-          !!srio ! C
-          !!srio 	  ZSEED		= GRID(6,ITIK) 
-          !!srio 
-          !!srio 	  INDEX	= 1
-          !!srio 	  DO 231 K = KI, KI+1
-          !!srio 	      CZMAX	= ZSEED*CDFZ(NT,K)
-          !!srio 	      DO 241 J = 1, NT-1
-          !!srio 	        IF (CZMAX.LE.CDFZ(J+1,K)) THEN
-          !!srio 		  JI(INDEX) = J
-          !!srio     	  	  DZ(INDEX) = (CZMAX - CDFZ(J,K))/(CDFZ(J+1,K) - 
-          !!srio      $							CDFZ(J,K))
-          !!srio 		  THE_INT(INDEX) = UTHETA(J,K) + DZ(INDEX)*
-          !!srio      $				(UTHETA(J+1,K) - UTHETA(J,K))
-          !!srio 		  GO TO 520
-          !!srio 	        END IF	
-          !!srio 241	      CONTINUE
-          !!srio 520	      INDEX = INDEX + 1
-          !!srio 231	  CONTINUE
-          !!srio 
-          !!srio 	  THETA	= THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
-          !!srio 
-          !!srio ! C
-          !!srio ! C Finally interpolate for phi (X').
-          !!srio ! C
-          !!srio 	  XSEED		= GRID(4,ITIK) 
-          !!srio 
-          !!srio 	  INDEX	= 1
-          !!srio 	  DO 251 K = KI, KI+1
-          !!srio 	    JNOW = JI(K-KI+1)
-          !!srio 	    DO 261 J = JNOW, JNOW + 1
-          !!srio 	        CXMAX	= XSEED * CDFX(NP,J,K)
-          !!srio 	        DO 271 I = 1, NP-1
-          !!srio 	          IF (CXMAX.LE.CDFX(I+1,J,K)) THEN
-          !!srio 		    II(INDEX) = I
-          !!srio     	  	    DX(INDEX) = (CXMAX - CDFX(I,J,K))
-          !!srio      $				/(CDFX(I+1,J,K) - CDFX(I,J,K))
-          !!srio 	  	    PHI_INT(INDEX) = UPHI(I,J,K) + DX(INDEX)*
-          !!srio      $					(UPHI(I+1,J,K) - UPHI(I,J,K))
-          !!srio 		    GO TO 530
-          !!srio 	          END IF	
-          !!srio 271	        CONTINUE
-          !!srio 530	      INDEX = INDEX + 1
-          !!srio 261	    CONTINUE
-          !!srio 251	  CONTINUE
-          !!srio 
-          !!srio 	  PHI1 = PHI_INT(1) + DZ(1)*(PHI_INT(2) - PHI_INT(1))
-          !!srio 	  PHI2 = PHI_INT(3) + DZ(2)*(PHI_INT(4) - PHI_INT(3))
-          !!srio 	  PHI  = PHI1 + DK*(PHI2 - PHI1)
-          !!srio 
-          !!srio ! C
-          !!srio ! C Also the degree of polarization.
-          !!srio ! C
-          !!srio 
-          !!srio ! C ++++
-          !!srio ! C
-          !!srio ! C BEGIN BUG BUG BUG BUG (Tue Apr  8 21:25:51 CDT 1997)
-          !!srio ! C
-          !!srio ! C DELTAI, DELTAJ and DELTAK are used uninitialized here, and I have no 
-          !!srio ! C idea what these are supposed represent. I'm setting it to zero for 
-          !!srio ! C now, which is what most compilers do (not F77 standard however, and
-          !!srio ! C on some systems, you understandably get garbage). Also, fixed THETA3
-          !!srio ! C calculation (was THETA4 -- typo). -- MK
-          !!srio ! C
-          !!srio 	  DELTAI = 0.0D0
-          !!srio 	  DELTAJ = 0.0D0
-          !!srio 	  DELTAK = 0.0D0
-          !!srio ! C
-          !!srio ! C END BUG  BUG
-          !!srio ! C
-          !!srio ! C ---
-          !!srio 	  THETA1	= D_POL(I,J,K) + (D_POL(I,J,K+1)     - D_POL(I,J,K))*		DELTAK
-          !!srio 	  THETA2	= D_POL(I,J+1,K) + (D_POL(I,J+1,K+1)   - D_POL(I,J+1,K))*		DELTAK
-          !!srio 	  THETA3	= D_POL(I+1,J,K) + (D_POL(I+1,J,K+1)   - D_POL(I+1,J,K))*		DELTAK
-          !!srio 	  THETA4	= D_POL(I+1,J+1,K) + (D_POL(I+1,J+1,K+1) - D_POL(I+1,J+1,K))* 	DELTAK
-          !!srio 	  PHI1		= THETA1 + (THETA2-THETA1)*DELTAJ	
-          !!srio 	  PHI2		= THETA3 + (THETA4-THETA3)*DELTAJ	
-          !!srio 	  POL_DEG	= PHI1 + (PHI2-PHI1)*DELTAI
-          !!srio ! C
-          !!srio 	  POL_ANGLE	= 90.0D0
-          !!srio 	  EPSI_PATH	= 0.0D0
-          !!srio 	  I_CHANGE	= 1
-          !!srio 	  POL_ANGLE 	= TORAD*POL_ANGLE
-          !!srio ! C above statement added 24 march 1992 to change POL_ANGLE to radians. clw.
-          !!srio ! C
-          !!srio ! C If the cdf's are in polar coordinates switch them to cartesian angles.
-          !!srio ! C
-          !!srio 	  IF (IANGLE.EQ.1) THEN
-          !!srio 	    A_Z = ASIN(SIN(THETA)*SIN(PHI))
-          !!srio 	    A_X = ACOS(COS(THETA)/COS(A_Z))
-          !!srio 	    THETA	= A_Z
-          !!srio 	    PHI		= A_X
-          !!srio 	  END IF
-          !!srio ! C
-          !!srio ! C Decide in which quadrant THETA and PHI are.
-          !!srio ! C
-          !!srio 	  IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
-          !!srio 	    IF (WRAN(ISTAR1).LT.0.5)	PHI = -PHI
-          !!srio 	    IF (WRAN(ISTAR1).LT.0.5)	THETA = -THETA
-          !!srio 	  END IF
-          !!srio        END IF                          !Undulator ends.
     
           GO TO (1,2,3,4,5,5,7), FSOUR+1
     
@@ -11823,33 +10457,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           EPSI_WZ		= EPSI_DZ + EPSI_PATH
           CALL GAUSS (SIGMAX, EPSI_X, EPSI_WX, XXX, E_BEAM(1), istar1)
           CALL GAUSS (SIGMAZ, EPSI_Z, EPSI_WZ, ZZZ, E_BEAM(3), istar1)
-          !!srio ! C
-          !!srio ! C For normal wiggler, XXX is perpendicular to the electron trajectory at 
-          !!srio ! C the point defined by (X_TRAJ,Y_TRAJ,0).
-          !!srio ! C
-          !!srio 	IF (F_WIGGLER.EQ.1) THEN
-          !!srio 	  YYY	= Y_TRAJ - XXX*SIN(ANGLE)
-          !!srio 	  XXX	= X_TRAJ + XXX*COS(ANGLE)
-          !!srio 	  GO TO 550
-          !!srio 	ELSE IF (F_WIGGLER.EQ.2) THEN
-          !!srio 	  ANGLEX	= E_BEAM(1) + PHI
-          !!srio 	  ANGLEV	= E_BEAM(3) + THETA
-          !!srio 	  DIREC(1)	= TAN(ANGLEX)
-          !!srio 	  DIREC(2)	= 1.0D0
-          !!srio 	  DIREC(3)	= TAN(ANGLEV)/COS(ANGLEX)
-          !!srio 	  CALL	NORM	(DIREC,DIREC)
-          !!srio 	  GO TO 1111	  
-          !!srio         ELSE IF (F_WIGGLER.EQ.3) THEN
-          !!srio           VTEMP(1) = XXX
-          !!srio           VTEMP(2) = 0.0D0
-          !!srio           VTEMP(3) = ZZZ
-          !!srio           ANGLE1= -ANGLE1
-          !!srio           ANGLE3= 0.0D0
-          !!srio           CALL ROTATE(VTEMP,ANGLE3,ANGLE2,ANGLE1,VTEMP)
-          !!srio           XXX=X_TRAJ + VTEMP(1)
-          !!srio           YYY=Y_TRAJ + VTEMP(2)
-          !!srio           ZZZ=Z_TRAJ + VTEMP(3)
-          !!srio 	END IF
           GO TO 111
           
 5         CONTINUE
@@ -11869,52 +10476,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           
 7         CONTINUE
           
-          !!srio ! C
-          !!srio ! C Dense Plasma Source
-          !!srio ! C	PLASMA_ANGLE is the full angle source cone opening,
-          !!srio ! C	WYSOU is the total length of the source, and
-          !!srio ! C	the angular distribution for a ray originating at
-          !!srio ! C	any point in the dense plasma source is conical.
-          !!srio ! C
-          !!srio 	PLASMA_APERTURE = TAN(PLASMA_ANGLE/2.0D0)
-          !!srio ! C
-          !!srio ! C	The commented out statement for YYY below let to a uniform
-          !!srio ! C	depth distribution, with the same number of points being
-          !!srio ! C 	generated in any X-Z plane disk irrespective of the y-position.
-          !!srio ! C	Since we want the POINT DENSITY in each disk to remain the 
-          !!srio ! C 	same, we use the cubic root of the uniformly distributed
-          !!srio ! C	random number GRID(2,ITIK) instead of the random number itself.
-          !!srio ! C	This is because if (dN/dY)*(1/area) must be constant, Y must
-          !!srio ! C	be proportional to the cubic root of N.  Since the probability
-          !!srio ! C	of the non-uniformly distributed variable (k*N^(1/3)) must
-          !!srio ! C 	be 0 over the interval (0,1) over which N is defined, k is 1
-          !!srio ! C	and Y is simply equal to the cube root of N.
-          !!srio ! C
-          !!srio 	DPS_RAN1	= 	GRID(2,ITIK)
-          !!srio 
-          !!srio 	DPS_RAN2	= 	WRAN(ISTAR1)
-          !!srio 	
-          !!srio 	IF (DPS_RAN2.LE.0.5000) THEN
-          !!srio 		YYY	=	 (DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
-          !!srio 	ELSE
-          !!srio 		YYY	=	-(DPS_RAN1**(1/3.D0) - 1)*WYSOU/2.D0
-          !!srio 	END IF
-          !!srio 
-          !!srio 	IF (YYY.GT.0.0) THEN
-          !!srio 		RMAX	=  PLASMA_ANGLE*(WYSOU/2.D0-YYY)
-          !!srio 	ELSE
-          !!srio 		RMAX	=  ABS(PLASMA_ANGLE*(YYY+WYSOU/2.D0))
-          !!srio 	END IF
-          !!srio 
-          !!srio 	IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-          !!srio 	  PHI		= TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
-          !!srio 	ELSE
-          !!srio 	  PHI 		= TWOPI*GRID(1,ITIK)
-          !!srio 	END IF
-          !!srio 	RADIUS 		= SQRT(GRID(3,ITIK))
-          !!srio 	XXX 		= RMAX*RADIUS*COS(PHI)
-          !!srio 	ZZZ 		= RMAX*RADIUS*SIN(PHI)
-          ! C	GOTO 111
           GOTO 550
           
 111       CONTINUE
@@ -11944,19 +10505,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        YYY 		= YYY*SIGMAY
        
        GO TO 550
-       ! C
-       ! C Synchrotron depth distribution
-       ! C
 440    CONTINUE
-       !!srio ! CC	R_ALADDIN NEGATIVE FOR COUNTER-CLOCKWISE SOURCE	
-       !!srio 	IF (R_ALADDIN.LT.0) THEN
-       !!srio 	  YYY		=   (ABS(R_ALADDIN) + XXX) * SIN(ANGLE)
-       !!srio 	ELSE
-       !!srio 	  YYY 		=   ( R_ALADDIN - XXX) * SIN(ANGLE)
-       !!srio 	END IF
-       !!srio 	XXX 		=   COS(ANGLE) * XXX +
-       !!srio      $				R_ALADDIN * (1.0D0 - COS(ANGLE))
-       !!srio 
 550    CONTINUE
        ! C
        ! C---------------------------------------------------------------------
@@ -12022,61 +10571,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        GO TO 1111
        
 44     CONTINUE
-       !!srio ! C
-       !!srio ! C Synchrotron source 
-       !!srio ! C Note. The angle of emission IN PLANE is the same as the one used
-       !!srio ! C before. This will give rise to a source curved along the orbit.
-       !!srio ! C The elevation angle is instead characteristic of the SR distribution.
-       !!srio ! C The electron beam emittance is included at this stage. Note that if
-       !!srio ! C EPSI = 0, we'll have E_BEAM = 0.0, with no changes.
-       !!srio ! C
-       !!srio     	IF (F_WIGGLER.EQ.3) ANGLE=0        ! Elliptical Wiggler.
-       !!srio      	ANGLEX		=   ANGLE + E_BEAM(1)
-       !!srio 	DIREC(1) 	=   TAN(ANGLEX)
-       !!srio      	IF (R_ALADDIN.LT.0.0D0) DIREC(1) = - DIREC(1)
-       !!srio 	DIREC(2) 	=   1.0D0
-       !!srio 	ARG_ANG 	=   GRID(6,ITIK)
-       !!srio ! C
-       !!srio ! C In the case of SR, we take into account the fact that the electron
-       !!srio ! C trajectory is not orthogonal to the field. This will give a correction
-       !!srio ! C to the photon energy.  We can write it as a correction to the 
-       !!srio ! C magnetic field strength; this will linearly shift the critical energy
-       !!srio ! C and, with it, the energy of the emitted photon.
-       !!srio ! C
-       !!srio      	 E_TEMP(3)	=   TAN(E_BEAM(3))/COS(E_BEAM(1))
-       !!srio      	 E_TEMP(2)	=   1.0D0
-       !!srio      	 E_TEMP(1)	=   TAN(E_BEAM(1))
-       !!srio      	 CALL	NORM	(E_TEMP,E_TEMP)
-       !!srio      	 CORREC	=   SQRT(1.0D0-E_TEMP(3)**2)
-       !!srio 4400    IF (FDISTR.EQ.6) THEN
-       !!srio ! Csrio	  CALL ALADDIN1 (ARG_ANG,ANGLEV,F_POL,IER)
-       !!srio      	  Q_WAVE	=   TWOPI*PHOTON(1)/TOCM*CORREC
-       !!srio      	  POL_DEG	=   ARG_ANG
-       !!srio      	ELSE IF (FDISTR.EQ.4) THEN
-       !!srio      	  ARG_ENER	=   WRAN (ISTAR1)
-       !!srio 	  RAD_MIN	=   ABS(R_MAGNET)
-       !!srio ! Csrio     	  CALL WHITE 
-       !!srio ! Csrio     $	      (RAD_MIN,CORREC,ARG_ENER,ARG_ANG,Q_WAVE,ANGLEV,POL_DEG,1)
-       !!srio      	END IF
-       !!srio       	IF (ANGLEV.LT.0.0) I_CHANGE = -1
-       !!srio      	ANGLEV		=   ANGLEV + E_BEAM(3)
-       !!srio ! C
-       !!srio ! C Test if the ray is within the specified limits
-       !!srio ! C
-       !!srio      	IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
-       !!srio      	 IF (ANGLEV.GT.VDIV1.OR.ANGLEV.LT.-VDIV2) THEN
-       !!srio      	  ARG_ANG = WRAN(ISTAR1)
-       !!srio ! C
-       !!srio ! C If it is outside the range, then generate another ray.
-       !!srio ! C
-       !!srio      	  GO TO 4400
-       !!srio      	 END IF
-       !!srio      	END IF
-       !!srio 	DIREC(3) 	=   TAN(ANGLEV)/COS(ANGLEX)
-       !!srio     	IF (F_WIGGLER.EQ.3) THEN
-       !!srio            CALL ROTATE (DIREC, ANGLE3,ANGLE2,ANGLE1,DIREC)
-       !!srio         END IF
-       !!srio      	CALL	NORM	(DIREC,DIREC)
        GO TO 1111
 55     CONTINUE
        ! C   Now generates a set of rays along a cone centered about the normal,
@@ -12149,20 +10643,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        AZ	= (1-POL_DEG)/DENOM
        CALL	SCALAR 	(AP_VEC,AZ,AP_VEC)
     ELSE
-       !!srio !!srio ! C
-       !!srio !!srio ! C If don't want the full polarization, then POL_DEG is only defined in the 
-       !!srio !!srio ! C case of synchrotron radiation.
-       !!srio !!srio ! C
-       !!srio !!srio 	 IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) THEN
-       !!srio !!srio 	   IF (WRAN(ISTAR1).GT.POL_DEG) THEN
-       !!srio !!srio ! C
-       !!srio !!srio ! C A_VEC is along x or z -axis according to POL_DEG.
-       !!srio !!srio ! C
-       !!srio !!srio 	     A_VEC(1)	= AP_VEC(1)
-       !!srio !!srio 	     A_VEC(2)	= AP_VEC(2)
-       !!srio !!srio 	     A_VEC(3)	= AP_VEC(3)
-       !!srio !!srio 	   END IF
-       !!srio !!srio 	 END IF
     END IF
     ! C
     ! C Now the phases of A_VEC and AP_VEC.
@@ -12173,18 +10653,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        PHASEX	= WRAN(ISTAR1) * TWOPI
     END IF
     PHASEZ		= PHASEX + POL_ANGLE*I_CHANGE
-    !!srio ! C
-    !!srio ! C---------------------------------------------------------------------
-    !!srio ! C            PHOTON   ENERGY
-    !!srio ! C
-    !!srio ! C Generates the wavevector of the ray. Depending on the choice, a
-    !!srio ! C single or a set of Q is created.NOTE: units are cm -1
-    !!srio ! C
-    !!srio ! C
-    !!srio ! C
-    !!srio ! C In the case of SR, Q_WAVE is already known
-    !!srio ! C
-    !!srio 	IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) GO TO 2050
     GO TO (2020,2030,2040,2045)	F_COLOR
     
 2010 CONTINUE
@@ -12275,30 +10743,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
     ! C Create the final array 
     ! C
 2050 CONTINUE
-!<>     BEGIN (1,ITIK) 	=   XXX
-!<>     BEGIN (2,ITIK) 	=   YYY
-!<>     BEGIN (3,ITIK) 	=   ZZZ
-!<>     BEGIN (4,ITIK) 	=    DIREC(1)
-!<>     BEGIN (5,ITIK) 	=    DIREC(2)
-!<>     !!srioTest BEGIN (5,ITIK) 	=    1.0D0
-!<>     BEGIN (6,ITIK) 	=    DIREC(3)
-!<>     BEGIN (7,ITIK)	=   A_VEC(1)
-!<>     !!srioTest BEGIN (7,ITIK)	=   1.0D0
-!<>     BEGIN (8,ITIK)	=   A_VEC(2)
-!<>     BEGIN (9,ITIK)	=   A_VEC(3)
-!<>     BEGIN (10,ITIK)	=   1.0D0
-!<>     BEGIN (11,ITIK)	=   Q_WAVE
-!<>     !!srio                BEGIN (12,ITIK)	=   FLOAT (ITIK)
-!<>     BEGIN (12,ITIK)	=   ITIK
-!<>     IF (F_POLAR.EQ.1) THEN
-!<>        PHASE (1,ITIK)	=   0.0D0
-!<>        PHASE (2,ITIK)  	=   PHASEX
-!<>        PHASE (3,ITIK)  	=   PHASEZ
-!<>        AP    (1,ITIK)	=   AP_VEC(1)
-!<>        AP    (2,ITIK)	=   AP_VEC(2)
-!<>        AP    (3,ITIK)	=   AP_VEC(3)
-!<>     END IF
-
     ray (1,ITIK) 	=   XXX
     ray (2,ITIK) 	=   YYY
     ray (3,ITIK) 	=   ZZZ
@@ -12351,12 +10795,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 10000 CONTINUE
     
     IFLAG	= 0
-    !<> CALL WRITE_OFF(FNAME,BEGIN,PHASE,AP,NCOL,NTOTAL,IFLAG,IOFORM,IERR)
-    !<> IF (IERR.NE.0) THEN
-    !<>    ERRMSG = 'Error Writing File '// FNAME
-    !<>    CALL LEAVE ('SOURCE', ERRMSG, IERR)
-    !<> END IF
-    !<> NPOINT = NTOTAL
     IF (FSOUR.EQ.3) THEN
        ! C
        ! C Reset EPSI_X and EPSI_Z to the values input by the user.
@@ -12365,25 +10803,6 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        EPSI_Z = EPSI_ZOLD
     END IF
     
-    !! deallocate everything...
-    
-    !<> IF (allocated(begin)) deallocate(begin)
-    !<> IF (allocated(phase)) deallocate(phase)
-    !<> IF (allocated(ap)) deallocate(ap)
-    !!IF (allocated(seed_y)) deallocate(seed_y)
-    !!IF (allocated(y_x)) deallocate(y_x)
-    !!IF (allocated(y_xpri)) deallocate(y_xpri)
-    !!IF (allocated(y_z)) deallocate(y_z)
-    !!IF (allocated(y_zpri)) deallocate(y_zpri)
-    !!IF (allocated(y_curv)) deallocate(y_curv)
-    !!IF (allocated(y_path)) deallocate(y_path)
-    !!IF (allocated(y_temp)) deallocate(y_temp)
-    !!IF (allocated(c_temp)) deallocate(c_temp)
-    !!IF (allocated(x_temp)) deallocate(x_temp)
-    !!IF (allocated(z_temp)) deallocate(z_temp)
-    !!IF (allocated(ang_temp)) deallocate(ang_temp)
-    !!IF (allocated(p_temp)) deallocate(p_temp)
-    !!IF (allocated(ang2_temp)) deallocate(ang2_temp)
     !
     ! put global variables into pool 
     !
@@ -12392,7 +10811,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 
     WRITE(6,*)'Exit from SOURCE'
     RETURN
-  END SUBROUTINE SourceG
+  END SUBROUTINE sourceGeom
   !
   !
   !
@@ -12403,110 +10822,11 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) name = src%name
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) name = src%name
-#include "ShadowMaskSource.def"
+#include "shadow_source.def"
 
-
-! !! START CODE CREATED AUTOMATICALLY (makecode1.pro)
 !  
 !     FDISTR= pool00%FDISTR
-!     FGRID= pool00%FGRID
-!     FSOUR= pool00%FSOUR
-!     FSOURCE_DEPTH= pool00%FSOURCE_DEPTH
-!     F_COHER= pool00%F_COHER
-!     F_COLOR= pool00%F_COLOR
-!     F_PHOT= pool00%F_PHOT
-!     F_POL= pool00%F_POL
-!     F_POLAR= pool00%F_POLAR
-!     F_OPD= pool00%F_OPD
-!     F_WIGGLER= pool00%F_WIGGLER
-!     F_BOUND_SOUR= pool00%F_BOUND_SOUR
-!     F_SR_TYPE= pool00%F_SR_TYPE
-!     ISTAR1= pool00%ISTAR1
-!     NPOINT= pool00%NPOINT
-!     NCOL= pool00%NCOL
-!     N_CIRCLE= pool00%N_CIRCLE
-!     N_COLOR= pool00%N_COLOR
-!     N_CONE= pool00%N_CONE
-!     IDO_VX= pool00%IDO_VX
-!     IDO_VZ= pool00%IDO_VZ
-!     IDO_X_S= pool00%IDO_X_S
-!     IDO_Y_S= pool00%IDO_Y_S
-!     IDO_Z_S= pool00%IDO_Z_S
-!     IDO_XL= pool00%IDO_XL
-!     IDO_XN= pool00%IDO_XN
-!     IDO_ZL= pool00%IDO_ZL
-!     IDO_ZN= pool00%IDO_ZN
-!     SIGXL1= pool00%SIGXL1
-!     SIGXL2= pool00%SIGXL2
-!     SIGXL3= pool00%SIGXL3
-!     SIGXL4= pool00%SIGXL4
-!     SIGXL5= pool00%SIGXL5
-!     SIGXL6= pool00%SIGXL6
-!     SIGXL7= pool00%SIGXL7
-!     SIGXL8= pool00%SIGXL8
-!     SIGXL9= pool00%SIGXL9
-!     SIGXL10= pool00%SIGXL10
-!     SIGZL1= pool00%SIGZL1
-!     SIGZL2= pool00%SIGZL2
-!     SIGZL3= pool00%SIGZL3
-!     SIGZL4= pool00%SIGZL4
-!     SIGZL5= pool00%SIGZL5
-!     SIGZL6= pool00%SIGZL6
-!     SIGZL7= pool00%SIGZL7
-!     SIGZL8= pool00%SIGZL8
-!     SIGZL9= pool00%SIGZL9
-!     SIGZL10= pool00%SIGZL10
-!     CONV_FACT= pool00%CONV_FACT
-!     CONE_MAX= pool00%CONE_MAX
-!     CONE_MIN= pool00%CONE_MIN
-!     EPSI_DX= pool00%EPSI_DX
-!     EPSI_DZ= pool00%EPSI_DZ
-!     EPSI_X= pool00%EPSI_X
-!     EPSI_Z= pool00%EPSI_Z
-!     HDIV1= pool00%HDIV1
-!     HDIV2= pool00%HDIV2
-!     PH1= pool00%PH1
-!     PH2= pool00%PH2
-!     PH3= pool00%PH3
-!     PH4= pool00%PH4
-!     PH5= pool00%PH5
-!     PH6= pool00%PH6
-!     PH7= pool00%PH7
-!     PH8= pool00%PH8
-!     PH9= pool00%PH9
-!     PH10= pool00%PH10
-!     RL1= pool00%RL1
-!     RL2= pool00%RL2
-!     RL3= pool00%RL3
-!     RL4= pool00%RL4
-!     RL5= pool00%RL5
-!     RL6= pool00%RL6
-!     RL7= pool00%RL7
-!     RL8= pool00%RL8
-!     RL9= pool00%RL9
-!     RL10= pool00%RL10
-!     BENER= pool00%BENER
-!     POL_ANGLE= pool00%POL_ANGLE
-!     POL_DEG= pool00%POL_DEG
-!     R_ALADDIN= pool00%R_ALADDIN
-!     R_MAGNET= pool00%R_MAGNET
-!     SIGDIX= pool00%SIGDIX
-!     SIGDIZ= pool00%SIGDIZ
-!     SIGMAX= pool00%SIGMAX
-!     SIGMAY= pool00%SIGMAY
-!     SIGMAZ= pool00%SIGMAZ
-!     VDIV1= pool00%VDIV1
-!     VDIV2= pool00%VDIV2
-!     WXSOU= pool00%WXSOU
-!     WYSOU= pool00%WYSOU
-!     WZSOU= pool00%WZSOU
-!     PLASMA_ANGLE= pool00%PLASMA_ANGLE
-!     FILE_TRAJ= pool00%FILE_TRAJ
-!     FILE_SOURCE= pool00%FILE_SOURCE
-!     FILE_BOUND= pool00%FILE_BOUND
-!     OE_NUMBER= pool00%OE_NUMBER
-!     IDUMMY= pool00%IDUMMY
-!     DUMMY= pool00%DUMMY
+!...
 !     F_NEW= pool00%F_NEW
 !     !! END CODE CREATED AUTOMATICALLY (makecode1.pro)
   End Subroutine PoolSourceToGlobal
@@ -12525,327 +10845,12 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) name = oe%name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) forall(i=1:arrdim) name(i) = oe%name(i)
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) forall(i=1:arrdim) name(i) = oe%name(i)
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 
 
-!     !! START CODE CREATED AUTOMATICALLY (makecode1.pro)
-!     
 !     FMIRR= pool01%FMIRR
-!     F_TORUS= pool01%F_TORUS
-!     FCYL= pool01%FCYL
-!     F_EXT= pool01%F_EXT
-!     FSTAT= pool01%FSTAT
-!     F_SCREEN= pool01%F_SCREEN
-!     F_PLATE= pool01%F_PLATE
-!     FSLIT= pool01%FSLIT
-!     FWRITE= pool01%FWRITE
-!     F_RIPPLE= pool01%F_RIPPLE
-!     F_MOVE= pool01%F_MOVE
-!     F_THICK= pool01%F_THICK
-!     F_BRAGG_A= pool01%F_BRAGG_A
-!     F_G_S= pool01%F_G_S
-!     F_R_RAN= pool01%F_R_RAN
-!     F_GRATING= pool01%F_GRATING
-!     F_MOSAIC= pool01%F_MOSAIC
-!     F_JOHANSSON= pool01%F_JOHANSSON
-!     F_SIDE= pool01%F_SIDE
-!     F_CENTRAL= pool01%F_CENTRAL
-!     F_CONVEX= pool01%F_CONVEX
-!     F_REFLEC= pool01%F_REFLEC
-!     F_RUL_ABS= pool01%F_RUL_ABS
-!     F_RULING= pool01%F_RULING
-!     F_PW= pool01%F_PW
-!     F_PW_C= pool01%F_PW_C
-!     F_VIRTUAL= pool01%F_VIRTUAL
-!     FSHAPE= pool01%FSHAPE
-!     FHIT_C= pool01%FHIT_C
-!     F_MONO= pool01%F_MONO
-!     F_REFRAC= pool01%F_REFRAC
-!     F_DEFAULT= pool01%F_DEFAULT
-!     F_REFL= pool01%F_REFL
-!     F_HUNT= pool01%F_HUNT
-!     F_CRYSTAL= pool01%F_CRYSTAL
-!     F_PHOT_CENT= pool01%F_PHOT_CENT
-!     F_ROUGHNESS= pool01%F_ROUGHNESS
-!     F_ANGLE= pool01%F_ANGLE
-!     ! srio danger
-!     ! NPOINT= pool01%NPOINT
-!     NCOL= pool01%NCOL
-!     N_SCREEN= pool01%N_SCREEN
-!     ISTAR1= pool01%ISTAR1
-!     CIL_ANG= pool01%CIL_ANG
-!     ELL_THE= pool01%ELL_THE
-!     N_PLATES= pool01%N_PLATES
-!     IG_SEED= pool01%IG_SEED
-!     MOSAIC_SEED= pool01%MOSAIC_SEED
-!     ALPHA= pool01%ALPHA
-!     SSOUR= pool01%SSOUR
-!     THETA= pool01%THETA
-!     SIMAG= pool01%SIMAG
-!     RDSOUR= pool01%RDSOUR
-!     RTHETA= pool01%RTHETA
-!     OFF_SOUX= pool01%OFF_SOUX
-!     OFF_SOUY= pool01%OFF_SOUY
-!     OFF_SOUZ= pool01%OFF_SOUZ
-!     ALPHA_S= pool01%ALPHA_S
-!     RLEN1= pool01%RLEN1
-!     RLEN2= pool01%RLEN2
-!     RMIRR= pool01%RMIRR
-!     AXMAJ= pool01%AXMAJ
-!     AXMIN= pool01%AXMIN
-!     CONE_A= pool01%CONE_A
-!     R_MAJ= pool01%R_MAJ
-!     R_MIN= pool01%R_MIN
-!     RWIDX1= pool01%RWIDX1
-!     RWIDX2= pool01%RWIDX2
-!     PARAM= pool01%PARAM
-!     HUNT_H= pool01%HUNT_H
-!     HUNT_L= pool01%HUNT_L
-!     BLAZE= pool01%BLAZE
-!     RULING= pool01%RULING
-!     ORDER= pool01%ORDER
-!     PHOT_CENT= pool01%PHOT_CENT
-!     X_ROT= pool01%X_ROT
-!     D_SPACING= pool01%D_SPACING
-!     A_BRAGG= pool01%A_BRAGG
-!     SPREAD_MOS= pool01%SPREAD_MOS
-!     THICKNESS= pool01%THICKNESS
-!     R_JOHANSSON= pool01%R_JOHANSSON
-!     Y_ROT= pool01%Y_ROT
-!     Z_ROT= pool01%Z_ROT
-!     OFFX= pool01%OFFX
-!     OFFY= pool01%OFFY
-!     OFFZ= pool01%OFFZ
-!     SLLEN= pool01%SLLEN
-!     SLWID= pool01%SLWID
-!     SLTILT= pool01%SLTILT
-!     COD_LEN= pool01%COD_LEN
-!     COD_WID= pool01%COD_WID
-!     X_SOUR= pool01%X_SOUR
-!     Y_SOUR= pool01%Y_SOUR
-!     Z_SOUR= pool01%Z_SOUR
-!     X_SOUR_ROT= pool01%X_SOUR_ROT
-!     Y_SOUR_ROT= pool01%Y_SOUR_ROT
-!     Z_SOUR_ROT= pool01%Z_SOUR_ROT
-!     R_LAMBDA= pool01%R_LAMBDA
-!     THETA_I= pool01%THETA_I
-!     ALPHA_I= pool01%ALPHA_I
-!     T_INCIDENCE= pool01%T_INCIDENCE
-!     T_SOURCE= pool01%T_SOURCE
-!     T_IMAGE= pool01%T_IMAGE
-!     T_REFLECTION= pool01%T_REFLECTION
-!     FILE_SOURCE= pool01%FILE_SOURCE
-!     FILE_RIP= pool01%FILE_RIP
-!     FILE_REFL= pool01%FILE_REFL
-!     FILE_MIR= pool01%FILE_MIR
-!     FILE_ROUGH= pool01%FILE_ROUGH
-!     FZP= pool01%FZP
-!     HOLO_R1= pool01%HOLO_R1
-!     HOLO_R2= pool01%HOLO_R2
-!     HOLO_DEL= pool01%HOLO_DEL
-!     HOLO_GAM= pool01%HOLO_GAM
-!     HOLO_W= pool01%HOLO_W
-!     HOLO_RT1= pool01%HOLO_RT1
-!     HOLO_RT2= pool01%HOLO_RT2
-!     AZIM_FAN= pool01%AZIM_FAN
-!     DIST_FAN= pool01%DIST_FAN
-!     COMA_FAC= pool01%COMA_FAC
-!     ALFA= pool01%ALFA
-!     GAMMA= pool01%GAMMA
-!     R_IND_OBJ= pool01%R_IND_OBJ
-!     R_IND_IMA= pool01%R_IND_IMA
-!     RUL_A1= pool01%RUL_A1
-!     RUL_A2= pool01%RUL_A2
-!     RUL_A3= pool01%RUL_A3
-!     RUL_A4= pool01%RUL_A4
-!     F_POLSEL= pool01%F_POLSEL
-!     F_FACET= pool01%F_FACET
-!     F_FAC_ORIENT= pool01%F_FAC_ORIENT
-!     F_FAC_LATT= pool01%F_FAC_LATT
-!     RFAC_LENX= pool01%RFAC_LENX
-!     RFAC_LENY= pool01%RFAC_LENY
-!     RFAC_PHAX= pool01%RFAC_PHAX
-!     RFAC_PHAY= pool01%RFAC_PHAY
-!     RFAC_DELX1= pool01%RFAC_DELX1
-!     RFAC_DELX2= pool01%RFAC_DELX2
-!     RFAC_DELY1= pool01%RFAC_DELY1
-!     RFAC_DELY2= pool01%RFAC_DELY2
-!     FILE_FAC= pool01%FILE_FAC
-!     F_SEGMENT= pool01%F_SEGMENT
-!     ISEG_XNUM= pool01%ISEG_XNUM
-!     ISEG_YNUM= pool01%ISEG_YNUM
-!     FILE_SEGMENT= pool01%FILE_SEGMENT
-!     FILE_SEGP= pool01%FILE_SEGP
-!     SEG_LENX= pool01%SEG_LENX
-!     SEG_LENY= pool01%SEG_LENY
-!     F_KOMA= pool01%F_KOMA
-!     FILE_KOMA= pool01%FILE_KOMA
-!     F_EXIT_SHAPE= pool01%F_EXIT_SHAPE
-!     F_INC_MNOR_ANG= pool01%F_INC_MNOR_ANG
-!     ZKO_LENGTH= pool01%ZKO_LENGTH
-!     RKOMA_CX= pool01%RKOMA_CX
-!     RKOMA_CY= pool01%RKOMA_CY
-!     F_KOMA_CA= pool01%F_KOMA_CA
-!     FILE_KOMA_CA= pool01%FILE_KOMA_CA
-!     F_KOMA_BOUNCE= pool01%F_KOMA_BOUNCE
-!     X_RIP_AMP= pool01%X_RIP_AMP
-!     X_RIP_WAV= pool01%X_RIP_WAV
-!     X_PHASE= pool01%X_PHASE
-!     Y_RIP_AMP= pool01%Y_RIP_AMP
-!     Y_RIP_WAV= pool01%Y_RIP_WAV
-!     Y_PHASE= pool01%Y_PHASE
-!     N_RIP= pool01%N_RIP
-!     ROUGH_X= pool01%ROUGH_X
-!     ROUGH_Y= pool01%ROUGH_Y
-!     OE_NUMBER= pool01%OE_NUMBER
-!     IDUMMY= pool01%IDUMMY
-!     DUMMY= pool01%DUMMY
-!     CX_SLIT(1)= pool01%CX_SLIT(1)
-!     CX_SLIT(2)= pool01%CX_SLIT(2)
-!     CX_SLIT(3)= pool01%CX_SLIT(3)
-!     CX_SLIT(4)= pool01%CX_SLIT(4)
-!     CX_SLIT(5)= pool01%CX_SLIT(5)
-!     CX_SLIT(6)= pool01%CX_SLIT(6)
-!     CX_SLIT(7)= pool01%CX_SLIT(7)
-!     CX_SLIT(8)= pool01%CX_SLIT(8)
-!     CX_SLIT(9)= pool01%CX_SLIT(9)
-!     CX_SLIT(10)= pool01%CX_SLIT(10)
-!     CZ_SLIT(1)= pool01%CZ_SLIT(1)
-!     CZ_SLIT(2)= pool01%CZ_SLIT(2)
-!     CZ_SLIT(3)= pool01%CZ_SLIT(3)
-!     CZ_SLIT(4)= pool01%CZ_SLIT(4)
-!     CZ_SLIT(5)= pool01%CZ_SLIT(5)
-!     CZ_SLIT(6)= pool01%CZ_SLIT(6)
-!     CZ_SLIT(7)= pool01%CZ_SLIT(7)
-!     CZ_SLIT(8)= pool01%CZ_SLIT(8)
-!     CZ_SLIT(9)= pool01%CZ_SLIT(9)
-!     CZ_SLIT(10)= pool01%CZ_SLIT(10)
-!     D_PLATE(1)= pool01%D_PLATE(1)
-!     D_PLATE(2)= pool01%D_PLATE(2)
-!     D_PLATE(3)= pool01%D_PLATE(3)
-!     D_PLATE(4)= pool01%D_PLATE(4)
-!     D_PLATE(5)= pool01%D_PLATE(5)
-!     FILE_ABS(1)= pool01%FILE_ABS(1)
-!     FILE_ABS(2)= pool01%FILE_ABS(2)
-!     FILE_ABS(3)= pool01%FILE_ABS(3)
-!     FILE_ABS(4)= pool01%FILE_ABS(4)
-!     FILE_ABS(5)= pool01%FILE_ABS(5)
-!     FILE_ABS(6)= pool01%FILE_ABS(6)
-!     FILE_ABS(7)= pool01%FILE_ABS(7)
-!     FILE_ABS(8)= pool01%FILE_ABS(8)
-!     FILE_ABS(9)= pool01%FILE_ABS(9)
-!     FILE_ABS(10)= pool01%FILE_ABS(10)
-!     FILE_SCR_EXT(1)= pool01%FILE_SCR_EXT(1)
-!     FILE_SCR_EXT(2)= pool01%FILE_SCR_EXT(2)
-!     FILE_SCR_EXT(3)= pool01%FILE_SCR_EXT(3)
-!     FILE_SCR_EXT(4)= pool01%FILE_SCR_EXT(4)
-!     FILE_SCR_EXT(5)= pool01%FILE_SCR_EXT(5)
-!     FILE_SCR_EXT(6)= pool01%FILE_SCR_EXT(6)
-!     FILE_SCR_EXT(7)= pool01%FILE_SCR_EXT(7)
-!     FILE_SCR_EXT(8)= pool01%FILE_SCR_EXT(8)
-!     FILE_SCR_EXT(9)= pool01%FILE_SCR_EXT(9)
-!     FILE_SCR_EXT(10)= pool01%FILE_SCR_EXT(10)
-!     I_ABS(1)= pool01%I_ABS(1)
-!     I_ABS(2)= pool01%I_ABS(2)
-!     I_ABS(3)= pool01%I_ABS(3)
-!     I_ABS(4)= pool01%I_ABS(4)
-!     I_ABS(5)= pool01%I_ABS(5)
-!     I_ABS(6)= pool01%I_ABS(6)
-!     I_ABS(7)= pool01%I_ABS(7)
-!     I_ABS(8)= pool01%I_ABS(8)
-!     I_ABS(9)= pool01%I_ABS(9)
-!     I_ABS(10)= pool01%I_ABS(10)
-!     I_SCREEN(1)= pool01%I_SCREEN(1)
-!     I_SCREEN(2)= pool01%I_SCREEN(2)
-!     I_SCREEN(3)= pool01%I_SCREEN(3)
-!     I_SCREEN(4)= pool01%I_SCREEN(4)
-!     I_SCREEN(5)= pool01%I_SCREEN(5)
-!     I_SCREEN(6)= pool01%I_SCREEN(6)
-!     I_SCREEN(7)= pool01%I_SCREEN(7)
-!     I_SCREEN(8)= pool01%I_SCREEN(8)
-!     I_SCREEN(9)= pool01%I_SCREEN(9)
-!     I_SCREEN(10)= pool01%I_SCREEN(10)
-!     I_SLIT(1)= pool01%I_SLIT(1)
-!     I_SLIT(2)= pool01%I_SLIT(2)
-!     I_SLIT(3)= pool01%I_SLIT(3)
-!     I_SLIT(4)= pool01%I_SLIT(4)
-!     I_SLIT(5)= pool01%I_SLIT(5)
-!     I_SLIT(6)= pool01%I_SLIT(6)
-!     I_SLIT(7)= pool01%I_SLIT(7)
-!     I_SLIT(8)= pool01%I_SLIT(8)
-!     I_SLIT(9)= pool01%I_SLIT(9)
-!     I_SLIT(10)= pool01%I_SLIT(10)
-!     I_STOP(1)= pool01%I_STOP(1)
-!     I_STOP(2)= pool01%I_STOP(2)
-!     I_STOP(3)= pool01%I_STOP(3)
-!     I_STOP(4)= pool01%I_STOP(4)
-!     I_STOP(5)= pool01%I_STOP(5)
-!     I_STOP(6)= pool01%I_STOP(6)
-!     I_STOP(7)= pool01%I_STOP(7)
-!     I_STOP(8)= pool01%I_STOP(8)
-!     I_STOP(9)= pool01%I_STOP(9)
-!     I_STOP(10)= pool01%I_STOP(10)
-!     K_SLIT(1)= pool01%K_SLIT(1)
-!     K_SLIT(2)= pool01%K_SLIT(2)
-!     K_SLIT(3)= pool01%K_SLIT(3)
-!     K_SLIT(4)= pool01%K_SLIT(4)
-!     K_SLIT(5)= pool01%K_SLIT(5)
-!     K_SLIT(6)= pool01%K_SLIT(6)
-!     K_SLIT(7)= pool01%K_SLIT(7)
-!     K_SLIT(8)= pool01%K_SLIT(8)
-!     K_SLIT(9)= pool01%K_SLIT(9)
-!     K_SLIT(10)= pool01%K_SLIT(10)
-!     RX_SLIT(1)= pool01%RX_SLIT(1)
-!     RX_SLIT(2)= pool01%RX_SLIT(2)
-!     RX_SLIT(3)= pool01%RX_SLIT(3)
-!     RX_SLIT(4)= pool01%RX_SLIT(4)
-!     RX_SLIT(5)= pool01%RX_SLIT(5)
-!     RX_SLIT(6)= pool01%RX_SLIT(6)
-!     RX_SLIT(7)= pool01%RX_SLIT(7)
-!     RX_SLIT(8)= pool01%RX_SLIT(8)
-!     RX_SLIT(9)= pool01%RX_SLIT(9)
-!     RX_SLIT(10)= pool01%RX_SLIT(10)
-!     RZ_SLIT(1)= pool01%RZ_SLIT(1)
-!     RZ_SLIT(2)= pool01%RZ_SLIT(2)
-!     RZ_SLIT(3)= pool01%RZ_SLIT(3)
-!     RZ_SLIT(4)= pool01%RZ_SLIT(4)
-!     RZ_SLIT(5)= pool01%RZ_SLIT(5)
-!     RZ_SLIT(6)= pool01%RZ_SLIT(6)
-!     RZ_SLIT(7)= pool01%RZ_SLIT(7)
-!     RZ_SLIT(8)= pool01%RZ_SLIT(8)
-!     RZ_SLIT(9)= pool01%RZ_SLIT(9)
-!     RZ_SLIT(10)= pool01%RZ_SLIT(10)
-!     SCR_NUMBER(1)= pool01%SCR_NUMBER(1)
-!     SCR_NUMBER(2)= pool01%SCR_NUMBER(2)
-!     SCR_NUMBER(3)= pool01%SCR_NUMBER(3)
-!     SCR_NUMBER(4)= pool01%SCR_NUMBER(4)
-!     SCR_NUMBER(5)= pool01%SCR_NUMBER(5)
-!     SCR_NUMBER(6)= pool01%SCR_NUMBER(6)
-!     SCR_NUMBER(7)= pool01%SCR_NUMBER(7)
-!     SCR_NUMBER(8)= pool01%SCR_NUMBER(8)
-!     SCR_NUMBER(9)= pool01%SCR_NUMBER(9)
-!     SCR_NUMBER(10)= pool01%SCR_NUMBER(10)
-!     SL_DIS(1)= pool01%SL_DIS(1)
-!     SL_DIS(2)= pool01%SL_DIS(2)
-!     SL_DIS(3)= pool01%SL_DIS(3)
-!     SL_DIS(4)= pool01%SL_DIS(4)
-!     SL_DIS(5)= pool01%SL_DIS(5)
-!     SL_DIS(6)= pool01%SL_DIS(6)
-!     SL_DIS(7)= pool01%SL_DIS(7)
-!     SL_DIS(8)= pool01%SL_DIS(8)
-!     SL_DIS(9)= pool01%SL_DIS(9)
-!     SL_DIS(10)= pool01%SL_DIS(10)
-!     THICK(1)= pool01%THICK(1)
-!     THICK(2)= pool01%THICK(2)
-!     THICK(3)= pool01%THICK(3)
-!     THICK(4)= pool01%THICK(4)
-!     THICK(5)= pool01%THICK(5)
-!     THICK(6)= pool01%THICK(6)
-!     THICK(7)= pool01%THICK(7)
-!     THICK(8)= pool01%THICK(8)
-!     THICK(9)= pool01%THICK(9)
+!...
 !     THICK(10)= pool01%THICK(10)
-!     !! END CODE CREATED AUTOMATICALLY (makecode1.pro)
     
   End Subroutine PoolOEToGlobal
   
@@ -12860,111 +10865,11 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) src%name = name
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) src%name = name
-#include "ShadowMaskSource.def"   
+#include "shadow_source.def"   
  
-!     !! START CODE CREATED AUTOMATICALLY (makecode1.pro)
-!     
 !     pool00%FDISTR = FDISTR
-!     pool00%FGRID = FGRID
-!     pool00%FSOUR = FSOUR
-!     pool00%FSOURCE_DEPTH = FSOURCE_DEPTH
-!     pool00%F_COHER = F_COHER
-!     pool00%F_COLOR = F_COLOR
-!     pool00%F_PHOT = F_PHOT
-!     pool00%F_POL = F_POL
-!     pool00%F_POLAR = F_POLAR
-!     pool00%F_OPD = F_OPD
-!     pool00%F_WIGGLER = F_WIGGLER
-!     pool00%F_BOUND_SOUR = F_BOUND_SOUR
-!     pool00%F_SR_TYPE = F_SR_TYPE
-!     pool00%ISTAR1 = ISTAR1
-!     pool00%NPOINT = NPOINT
-!     pool00%NCOL = NCOL
-!     pool00%N_CIRCLE = N_CIRCLE
-!     pool00%N_COLOR = N_COLOR
-!     pool00%N_CONE = N_CONE
-!     pool00%IDO_VX = IDO_VX
-!     pool00%IDO_VZ = IDO_VZ
-!     pool00%IDO_X_S = IDO_X_S
-!     pool00%IDO_Y_S = IDO_Y_S
-!     pool00%IDO_Z_S = IDO_Z_S
-!     pool00%IDO_XL = IDO_XL
-!     pool00%IDO_XN = IDO_XN
-!     pool00%IDO_ZL = IDO_ZL
-!     pool00%IDO_ZN = IDO_ZN
-!     pool00%SIGXL1 = SIGXL1
-!     pool00%SIGXL2 = SIGXL2
-!     pool00%SIGXL3 = SIGXL3
-!     pool00%SIGXL4 = SIGXL4
-!     pool00%SIGXL5 = SIGXL5
-!     pool00%SIGXL6 = SIGXL6
-!     pool00%SIGXL7 = SIGXL7
-!     pool00%SIGXL8 = SIGXL8
-!     pool00%SIGXL9 = SIGXL9
-!     pool00%SIGXL10 = SIGXL10
-!     pool00%SIGZL1 = SIGZL1
-!     pool00%SIGZL2 = SIGZL2
-!     pool00%SIGZL3 = SIGZL3
-!     pool00%SIGZL4 = SIGZL4
-!     pool00%SIGZL5 = SIGZL5
-!     pool00%SIGZL6 = SIGZL6
-!     pool00%SIGZL7 = SIGZL7
-!     pool00%SIGZL8 = SIGZL8
-!     pool00%SIGZL9 = SIGZL9
-!     pool00%SIGZL10 = SIGZL10
-!     pool00%CONV_FACT = CONV_FACT
-!     pool00%CONE_MAX = CONE_MAX
-!     pool00%CONE_MIN = CONE_MIN
-!     pool00%EPSI_DX = EPSI_DX
-!     pool00%EPSI_DZ = EPSI_DZ
-!     pool00%EPSI_X = EPSI_X
-!     pool00%EPSI_Z = EPSI_Z
-!     pool00%HDIV1 = HDIV1
-!     pool00%HDIV2 = HDIV2
-!     pool00%PH1 = PH1
-!     pool00%PH2 = PH2
-!     pool00%PH3 = PH3
-!     pool00%PH4 = PH4
-!     pool00%PH5 = PH5
-!     pool00%PH6 = PH6
-!     pool00%PH7 = PH7
-!     pool00%PH8 = PH8
-!     pool00%PH9 = PH9
-!     pool00%PH10 = PH10
-!     pool00%RL1 = RL1
-!     pool00%RL2 = RL2
-!     pool00%RL3 = RL3
-!     pool00%RL4 = RL4
-!     pool00%RL5 = RL5
-!     pool00%RL6 = RL6
-!     pool00%RL7 = RL7
-!     pool00%RL8 = RL8
-!     pool00%RL9 = RL9
-!     pool00%RL10 = RL10
-!     pool00%BENER = BENER
-!     pool00%POL_ANGLE = POL_ANGLE
-!     pool00%POL_DEG = POL_DEG
-!     pool00%R_ALADDIN = R_ALADDIN
-!     pool00%R_MAGNET = R_MAGNET
-!     pool00%SIGDIX = SIGDIX
-!     pool00%SIGDIZ = SIGDIZ
-!     pool00%SIGMAX = SIGMAX
-!     pool00%SIGMAY = SIGMAY
-!     pool00%SIGMAZ = SIGMAZ
-!     pool00%VDIV1 = VDIV1
-!     pool00%VDIV2 = VDIV2
-!     pool00%WXSOU = WXSOU
-!     pool00%WYSOU = WYSOU
-!     pool00%WZSOU = WZSOU
-!     pool00%PLASMA_ANGLE = PLASMA_ANGLE
-!     pool00%FILE_TRAJ = FILE_TRAJ
-!     pool00%FILE_SOURCE = FILE_SOURCE
-!     pool00%FILE_BOUND = FILE_BOUND
-!     pool00%OE_NUMBER = OE_NUMBER
-!     pool00%IDUMMY = IDUMMY
-!     pool00%DUMMY = DUMMY
+!...
 !     pool00%F_NEW = F_NEW
-!     !! END CODE CREATED AUTOMATICALLY (makecode1.pro)
     
   End Subroutine GlobalToPoolSource
   
@@ -12982,325 +10887,12 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) oe%name = name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) forall(i=1:arrdim) oe%name(i) = name(i)
 #define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) forall(i=1:arrdim) oe%name(i) = name(i)
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 
-!     !! START CODE CREATED AUTOMATICALLY (makecode1.pro)
 !     
 !     pool01%FMIRR = FMIRR
-!     pool01%F_TORUS = F_TORUS
-!     pool01%FCYL = FCYL
-!     pool01%F_EXT = F_EXT
-!     pool01%FSTAT = FSTAT
-!     pool01%F_SCREEN = F_SCREEN
-!     pool01%F_PLATE = F_PLATE
-!     pool01%FSLIT = FSLIT
-!     pool01%FWRITE = FWRITE
-!     pool01%F_RIPPLE = F_RIPPLE
-!     pool01%F_MOVE = F_MOVE
-!     pool01%F_THICK = F_THICK
-!     pool01%F_BRAGG_A = F_BRAGG_A
-!     pool01%F_G_S = F_G_S
-!     pool01%F_R_RAN = F_R_RAN
-!     pool01%F_GRATING = F_GRATING
-!     pool01%F_MOSAIC = F_MOSAIC
-!     pool01%F_JOHANSSON = F_JOHANSSON
-!     pool01%F_SIDE = F_SIDE
-!     pool01%F_CENTRAL = F_CENTRAL
-!     pool01%F_CONVEX = F_CONVEX
-!     pool01%F_REFLEC = F_REFLEC
-!     pool01%F_RUL_ABS = F_RUL_ABS
-!     pool01%F_RULING = F_RULING
-!     pool01%F_PW = F_PW
-!     pool01%F_PW_C = F_PW_C
-!     pool01%F_VIRTUAL = F_VIRTUAL
-!     pool01%FSHAPE = FSHAPE
-!     pool01%FHIT_C = FHIT_C
-!     pool01%F_MONO = F_MONO
-!     pool01%F_REFRAC = F_REFRAC
-!     pool01%F_DEFAULT = F_DEFAULT
-!     pool01%F_REFL = F_REFL
-!     pool01%F_HUNT = F_HUNT
-!     pool01%F_CRYSTAL = F_CRYSTAL
-!     pool01%F_PHOT_CENT = F_PHOT_CENT
-!     pool01%F_ROUGHNESS = F_ROUGHNESS
-!     pool01%F_ANGLE = F_ANGLE
-!     pool01%NPOINTOE = NPOINT
-!     pool01%NCOL = NCOL
-!     pool01%N_SCREEN = N_SCREEN
-!     pool01%ISTAR1 = ISTAR1
-!     pool01%CIL_ANG = CIL_ANG
-!     pool01%ELL_THE = ELL_THE
-!     pool01%N_PLATES = N_PLATES
-!     pool01%IG_SEED = IG_SEED
-!     pool01%MOSAIC_SEED = MOSAIC_SEED
-!     pool01%ALPHA = ALPHA
-!     pool01%SSOUR = SSOUR
-!     pool01%THETA = THETA
-!     pool01%SIMAG = SIMAG
-!     pool01%RDSOUR = RDSOUR
-!     pool01%RTHETA = RTHETA
-!     pool01%OFF_SOUX = OFF_SOUX
-!     pool01%OFF_SOUY = OFF_SOUY
-!     pool01%OFF_SOUZ = OFF_SOUZ
-!     pool01%ALPHA_S = ALPHA_S
-!     pool01%RLEN1 = RLEN1
-!     pool01%RLEN2 = RLEN2
-!     pool01%RMIRR = RMIRR
-!     pool01%AXMAJ = AXMAJ
-!     pool01%AXMIN = AXMIN
-!     pool01%CONE_A = CONE_A
-!     pool01%R_MAJ = R_MAJ
-!     pool01%R_MIN = R_MIN
-!     pool01%RWIDX1 = RWIDX1
-!     pool01%RWIDX2 = RWIDX2
-!     pool01%PARAM = PARAM
-!     pool01%HUNT_H = HUNT_H
-!     pool01%HUNT_L = HUNT_L
-!     pool01%BLAZE = BLAZE
-!     pool01%RULING = RULING
-!     pool01%ORDER = ORDER
-!     pool01%PHOT_CENT = PHOT_CENT
-!     pool01%X_ROT = X_ROT
-!     pool01%D_SPACING = D_SPACING
-!     pool01%A_BRAGG = A_BRAGG
-!     pool01%SPREAD_MOS = SPREAD_MOS
-!     pool01%THICKNESS = THICKNESS
-!     pool01%R_JOHANSSON = R_JOHANSSON
-!     pool01%Y_ROT = Y_ROT
-!     pool01%Z_ROT = Z_ROT
-!     pool01%OFFX = OFFX
-!     pool01%OFFY = OFFY
-!     pool01%OFFZ = OFFZ
-!     pool01%SLLEN = SLLEN
-!     pool01%SLWID = SLWID
-!     pool01%SLTILT = SLTILT
-!     pool01%COD_LEN = COD_LEN
-!     pool01%COD_WID = COD_WID
-!     pool01%X_SOUR = X_SOUR
-!     pool01%Y_SOUR = Y_SOUR
-!     pool01%Z_SOUR = Z_SOUR
-!     pool01%X_SOUR_ROT = X_SOUR_ROT
-!     pool01%Y_SOUR_ROT = Y_SOUR_ROT
-!     pool01%Z_SOUR_ROT = Z_SOUR_ROT
-!     pool01%R_LAMBDA = R_LAMBDA
-!     pool01%THETA_I = THETA_I
-!     pool01%ALPHA_I = ALPHA_I
-!     pool01%T_INCIDENCE = T_INCIDENCE
-!     pool01%T_SOURCE = T_SOURCE
-!     pool01%T_IMAGE = T_IMAGE
-!     pool01%T_REFLECTION = T_REFLECTION
-!     pool01%FILE_SOURCE = FILE_SOURCE
-!     pool01%FILE_RIP = FILE_RIP
-!     pool01%FILE_REFL = FILE_REFL
-!     pool01%FILE_MIR = FILE_MIR
-!     pool01%FILE_ROUGH = FILE_ROUGH
-!     pool01%FZP = FZP
-!     pool01%HOLO_R1 = HOLO_R1
-!     pool01%HOLO_R2 = HOLO_R2
-!     pool01%HOLO_DEL = HOLO_DEL
-!     pool01%HOLO_GAM = HOLO_GAM
-!     pool01%HOLO_W = HOLO_W
-!     pool01%HOLO_RT1 = HOLO_RT1
-!     pool01%HOLO_RT2 = HOLO_RT2
-!     pool01%AZIM_FAN = AZIM_FAN
-!     pool01%DIST_FAN = DIST_FAN
-!     pool01%COMA_FAC = COMA_FAC
-!     pool01%ALFA = ALFA
-!     pool01%GAMMA = GAMMA
-!     pool01%R_IND_OBJ = R_IND_OBJ
-!     pool01%R_IND_IMA = R_IND_IMA
-!     pool01%RUL_A1 = RUL_A1
-!     pool01%RUL_A2 = RUL_A2
-!     pool01%RUL_A3 = RUL_A3
-!     pool01%RUL_A4 = RUL_A4
-!     pool01%F_POLSEL = F_POLSEL
-!     pool01%F_FACET = F_FACET
-!     pool01%F_FAC_ORIENT = F_FAC_ORIENT
-!     pool01%F_FAC_LATT = F_FAC_LATT
-!     pool01%RFAC_LENX = RFAC_LENX
-!     pool01%RFAC_LENY = RFAC_LENY
-!     pool01%RFAC_PHAX = RFAC_PHAX
-!     pool01%RFAC_PHAY = RFAC_PHAY
-!     pool01%RFAC_DELX1 = RFAC_DELX1
-!     pool01%RFAC_DELX2 = RFAC_DELX2
-!     pool01%RFAC_DELY1 = RFAC_DELY1
-!     pool01%RFAC_DELY2 = RFAC_DELY2
-!     pool01%FILE_FAC = FILE_FAC
-!     pool01%F_SEGMENT = F_SEGMENT
-!     pool01%ISEG_XNUM = ISEG_XNUM
-!     pool01%ISEG_YNUM = ISEG_YNUM
-!     pool01%FILE_SEGMENT = FILE_SEGMENT
-!     pool01%FILE_SEGP = FILE_SEGP
-!     pool01%SEG_LENX = SEG_LENX
-!     pool01%SEG_LENY = SEG_LENY
-!     pool01%F_KOMA = F_KOMA
-!     pool01%FILE_KOMA = FILE_KOMA
-!     pool01%F_EXIT_SHAPE = F_EXIT_SHAPE
-!     pool01%F_INC_MNOR_ANG = F_INC_MNOR_ANG
-!     pool01%ZKO_LENGTH = ZKO_LENGTH
-!     pool01%RKOMA_CX = RKOMA_CX
-!     pool01%RKOMA_CY = RKOMA_CY
-!     pool01%F_KOMA_CA = F_KOMA_CA
-!     pool01%FILE_KOMA_CA = FILE_KOMA_CA
-!     pool01%F_KOMA_BOUNCE = F_KOMA_BOUNCE
-!     pool01%X_RIP_AMP = X_RIP_AMP
-!     pool01%X_RIP_WAV = X_RIP_WAV
-!     pool01%X_PHASE = X_PHASE
-!     pool01%Y_RIP_AMP = Y_RIP_AMP
-!     pool01%Y_RIP_WAV = Y_RIP_WAV
-!     pool01%Y_PHASE = Y_PHASE
-!     pool01%N_RIP = N_RIP
-!     pool01%ROUGH_X = ROUGH_X
-!     pool01%ROUGH_Y = ROUGH_Y
-!     pool01%OE_NUMBER = OE_NUMBER
-!     pool01%IDUMMY = IDUMMY
-!     pool01%DUMMY = DUMMY
-!     pool01%CX_SLIT(1) = CX_SLIT(1)
-!     pool01%CX_SLIT(2) = CX_SLIT(2)
-!     pool01%CX_SLIT(3) = CX_SLIT(3)
-!     pool01%CX_SLIT(4) = CX_SLIT(4)
-!     pool01%CX_SLIT(5) = CX_SLIT(5)
-!     pool01%CX_SLIT(6) = CX_SLIT(6)
-!     pool01%CX_SLIT(7) = CX_SLIT(7)
-!     pool01%CX_SLIT(8) = CX_SLIT(8)
-!     pool01%CX_SLIT(9) = CX_SLIT(9)
-!     pool01%CX_SLIT(10) = CX_SLIT(10)
-!     pool01%CZ_SLIT(1) = CZ_SLIT(1)
-!     pool01%CZ_SLIT(2) = CZ_SLIT(2)
-!     pool01%CZ_SLIT(3) = CZ_SLIT(3)
-!     pool01%CZ_SLIT(4) = CZ_SLIT(4)
-!     pool01%CZ_SLIT(5) = CZ_SLIT(5)
-!     pool01%CZ_SLIT(6) = CZ_SLIT(6)
-!     pool01%CZ_SLIT(7) = CZ_SLIT(7)
-!     pool01%CZ_SLIT(8) = CZ_SLIT(8)
-!     pool01%CZ_SLIT(9) = CZ_SLIT(9)
-!     pool01%CZ_SLIT(10) = CZ_SLIT(10)
-!     pool01%D_PLATE(1) = D_PLATE(1)
-!     pool01%D_PLATE(2) = D_PLATE(2)
-!     pool01%D_PLATE(3) = D_PLATE(3)
-!     pool01%D_PLATE(4) = D_PLATE(4)
-!     pool01%D_PLATE(5) = D_PLATE(5)
-!     pool01%FILE_ABS(1) = FILE_ABS(1)
-!     pool01%FILE_ABS(2) = FILE_ABS(2)
-!     pool01%FILE_ABS(3) = FILE_ABS(3)
-!     pool01%FILE_ABS(4) = FILE_ABS(4)
-!     pool01%FILE_ABS(5) = FILE_ABS(5)
-!     pool01%FILE_ABS(6) = FILE_ABS(6)
-!     pool01%FILE_ABS(7) = FILE_ABS(7)
-!     pool01%FILE_ABS(8) = FILE_ABS(8)
-!     pool01%FILE_ABS(9) = FILE_ABS(9)
-!     pool01%FILE_ABS(10) = FILE_ABS(10)
-!     pool01%FILE_SCR_EXT(1) = FILE_SCR_EXT(1)
-!     pool01%FILE_SCR_EXT(2) = FILE_SCR_EXT(2)
-!     pool01%FILE_SCR_EXT(3) = FILE_SCR_EXT(3)
-!     pool01%FILE_SCR_EXT(4) = FILE_SCR_EXT(4)
-!     pool01%FILE_SCR_EXT(5) = FILE_SCR_EXT(5)
-!     pool01%FILE_SCR_EXT(6) = FILE_SCR_EXT(6)
-!     pool01%FILE_SCR_EXT(7) = FILE_SCR_EXT(7)
-!     pool01%FILE_SCR_EXT(8) = FILE_SCR_EXT(8)
-!     pool01%FILE_SCR_EXT(9) = FILE_SCR_EXT(9)
-!     pool01%FILE_SCR_EXT(10) = FILE_SCR_EXT(10)
-!     pool01%I_ABS(1) = I_ABS(1)
-!     pool01%I_ABS(2) = I_ABS(2)
-!     pool01%I_ABS(3) = I_ABS(3)
-!     pool01%I_ABS(4) = I_ABS(4)
-!     pool01%I_ABS(5) = I_ABS(5)
-!     pool01%I_ABS(6) = I_ABS(6)
-!     pool01%I_ABS(7) = I_ABS(7)
-!     pool01%I_ABS(8) = I_ABS(8)
-!     pool01%I_ABS(9) = I_ABS(9)
-!     pool01%I_ABS(10) = I_ABS(10)
-!     pool01%I_SCREEN(1) = I_SCREEN(1)
-!     pool01%I_SCREEN(2) = I_SCREEN(2)
-!     pool01%I_SCREEN(3) = I_SCREEN(3)
-!     pool01%I_SCREEN(4) = I_SCREEN(4)
-!     pool01%I_SCREEN(5) = I_SCREEN(5)
-!     pool01%I_SCREEN(6) = I_SCREEN(6)
-!     pool01%I_SCREEN(7) = I_SCREEN(7)
-!     pool01%I_SCREEN(8) = I_SCREEN(8)
-!     pool01%I_SCREEN(9) = I_SCREEN(9)
-!     pool01%I_SCREEN(10) = I_SCREEN(10)
-!     pool01%I_SLIT(1) = I_SLIT(1)
-!     pool01%I_SLIT(2) = I_SLIT(2)
-!     pool01%I_SLIT(3) = I_SLIT(3)
-!     pool01%I_SLIT(4) = I_SLIT(4)
-!     pool01%I_SLIT(5) = I_SLIT(5)
-!     pool01%I_SLIT(6) = I_SLIT(6)
-!     pool01%I_SLIT(7) = I_SLIT(7)
-!     pool01%I_SLIT(8) = I_SLIT(8)
-!     pool01%I_SLIT(9) = I_SLIT(9)
-!     pool01%I_SLIT(10) = I_SLIT(10)
-!     pool01%I_STOP(1) = I_STOP(1)
-!     pool01%I_STOP(2) = I_STOP(2)
-!     pool01%I_STOP(3) = I_STOP(3)
-!     pool01%I_STOP(4) = I_STOP(4)
-!     pool01%I_STOP(5) = I_STOP(5)
-!     pool01%I_STOP(6) = I_STOP(6)
-!     pool01%I_STOP(7) = I_STOP(7)
-!     pool01%I_STOP(8) = I_STOP(8)
-!     pool01%I_STOP(9) = I_STOP(9)
-!     pool01%I_STOP(10) = I_STOP(10)
-!     pool01%K_SLIT(1) = K_SLIT(1)
-!     pool01%K_SLIT(2) = K_SLIT(2)
-!     pool01%K_SLIT(3) = K_SLIT(3)
-!     pool01%K_SLIT(4) = K_SLIT(4)
-!     pool01%K_SLIT(5) = K_SLIT(5)
-!     pool01%K_SLIT(6) = K_SLIT(6)
-!     pool01%K_SLIT(7) = K_SLIT(7)
-!     pool01%K_SLIT(8) = K_SLIT(8)
-!     pool01%K_SLIT(9) = K_SLIT(9)
-!     pool01%K_SLIT(10) = K_SLIT(10)
-!     pool01%RX_SLIT(1) = RX_SLIT(1)
-!     pool01%RX_SLIT(2) = RX_SLIT(2)
-!     pool01%RX_SLIT(3) = RX_SLIT(3)
-!     pool01%RX_SLIT(4) = RX_SLIT(4)
-!     pool01%RX_SLIT(5) = RX_SLIT(5)
-!     pool01%RX_SLIT(6) = RX_SLIT(6)
-!     pool01%RX_SLIT(7) = RX_SLIT(7)
-!     pool01%RX_SLIT(8) = RX_SLIT(8)
-!     pool01%RX_SLIT(9) = RX_SLIT(9)
-!     pool01%RX_SLIT(10) = RX_SLIT(10)
-!     pool01%RZ_SLIT(1) = RZ_SLIT(1)
-!     pool01%RZ_SLIT(2) = RZ_SLIT(2)
-!     pool01%RZ_SLIT(3) = RZ_SLIT(3)
-!     pool01%RZ_SLIT(4) = RZ_SLIT(4)
-!     pool01%RZ_SLIT(5) = RZ_SLIT(5)
-!     pool01%RZ_SLIT(6) = RZ_SLIT(6)
-!     pool01%RZ_SLIT(7) = RZ_SLIT(7)
-!     pool01%RZ_SLIT(8) = RZ_SLIT(8)
-!     pool01%RZ_SLIT(9) = RZ_SLIT(9)
-!     pool01%RZ_SLIT(10) = RZ_SLIT(10)
-!     pool01%SCR_NUMBER(1) = SCR_NUMBER(1)
-!     pool01%SCR_NUMBER(2) = SCR_NUMBER(2)
-!     pool01%SCR_NUMBER(3) = SCR_NUMBER(3)
-!     pool01%SCR_NUMBER(4) = SCR_NUMBER(4)
-!     pool01%SCR_NUMBER(5) = SCR_NUMBER(5)
-!     pool01%SCR_NUMBER(6) = SCR_NUMBER(6)
-!     pool01%SCR_NUMBER(7) = SCR_NUMBER(7)
-!     pool01%SCR_NUMBER(8) = SCR_NUMBER(8)
-!     pool01%SCR_NUMBER(9) = SCR_NUMBER(9)
-!     pool01%SCR_NUMBER(10) = SCR_NUMBER(10)
-!     pool01%SL_DIS(1) = SL_DIS(1)
-!     pool01%SL_DIS(2) = SL_DIS(2)
-!     pool01%SL_DIS(3) = SL_DIS(3)
-!     pool01%SL_DIS(4) = SL_DIS(4)
-!     pool01%SL_DIS(5) = SL_DIS(5)
-!     pool01%SL_DIS(6) = SL_DIS(6)
-!     pool01%SL_DIS(7) = SL_DIS(7)
-!     pool01%SL_DIS(8) = SL_DIS(8)
-!     pool01%SL_DIS(9) = SL_DIS(9)
-!     pool01%SL_DIS(10) = SL_DIS(10)
-!     pool01%THICK(1) = THICK(1)
-!     pool01%THICK(2) = THICK(2)
-!     pool01%THICK(3) = THICK(3)
-!     pool01%THICK(4) = THICK(4)
-!     pool01%THICK(5) = THICK(5)
-!     pool01%THICK(6) = THICK(6)
-!     pool01%THICK(7) = THICK(7)
-!     pool01%THICK(8) = THICK(8)
-!     pool01%THICK(9) = THICK(9)
+!...
 !     pool01%THICK(10) = THICK(10)
-!     !! END CODE CREATED AUTOMATICALLY (makecode1.pro)
   End Subroutine GlobalToPoolOE
   
 
@@ -13430,13 +11022,6 @@ SUBROUTINE SCREEN18 (RAY18,NCOL1,NPOINT1, &
           RAY18(16:18,:) = AP
 	END IF
 
-!TODO: remove, this is reduntant (for test)
-!        RAY(:,:)   = RAY18(1:NCOL1,:)
-!        IF (NCOL1 == 18) THEN
-!          PHASE(:,:) = RAY18(13:15,:)
-!          AP(:,:)    = RAY18(16:18,:)
-!        END IF
-
 End Subroutine screen18
   
 
@@ -13498,13 +11083,6 @@ SUBROUTINE MIRROR18 (RAY18,NCOL1,NPOINT1, &
           RAY18(13:15,:) = PHASE
           RAY18(16:18,:) = AP
 	END IF
-
-!TODO: remove, this is reduntant (for test)
-!        RAY(:,:)   = RAY18(1:NCOL1,:)
-!        IF (NCOL1 == 18) THEN
-!          PHASE(:,:) = RAY18(13:15,:)
-!          AP(:,:)    = RAY18(16:18,:)
-!        END IF
 
 End Subroutine MIRROR18
   
@@ -13568,13 +11146,6 @@ SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, &
           RAY18(13:15,:) = PHASE
           RAY18(16:18,:) = AP
 	END IF
-
-!TODO: remove, this is reduntant (for test)
-!        RAY(:,:)   = RAY18(1:NCOL1,:)
-!        IF (NCOL1 == 18) THEN
-!          PHASE(:,:) = RAY18(13:15,:)
-!          AP(:,:)    = RAY18(16:18,:)
-!        END IF
 
 End Subroutine image18
 
@@ -13704,7 +11275,7 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
                 ! writes mirr.xxB (if wanted)
                 !CALL	FNAME	(FFILE, 'mirr', ICOUNT, itwo)
                 !IFLAG	= 0
-                !CALL WRITE_OFF18(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
+                !CALL beamWrite(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
                 !IF (IERR.NE.0) CALL LEAVE ('TRACE3','Error writing MIRR',IERR)
         END IF
 	! C
@@ -13728,7 +11299,7 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
 
        !CALL	FNAME (FFILE, 'star', ICOUNT, itwo)
        !IFLAG	= 0
-       !CALL WRITE_OFF18(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
+       !CALL beamWrite(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
        !IF (IERR.NE.0)	CALL LEAVE ('IMAGE','Error writing STAR',IERR)
 
 	! cp global variables in input/output type
@@ -13762,36 +11333,6 @@ SUBROUTINE Shadow3Trace
 
         real(kind=skr),dimension(:,:),allocatable :: ray,phase,ap
 	logical				          :: logicalFlag=.true.
-
-! C
-! C
-! C Get the command line of the program to find out what the mode is. The
-! C allowed modes are:
-! C 		MENU
-! C 		BATCH
-! C		PROMPT
-! C If no mode is specified, the default mode is PROMPT.
-! C
-!
-!
-!        numArg = COMMAND_ARGUMENT_COUNT()
-!
-!        SELECT CASE (numarg) 
-!          CASE (0)
-!              mode = 'menu'
-!          CASE (2)
-! 	    CALL GETARG (1, ARG)
-!            IF (ARG (1:2) .NE. '-m') THEN 
-!               print *,'Usage: trace [-m menu/prompt/batch]'
-!               call exit(1) 
-!            END IF
-! 	    CALL GETARG (2, ARG)
-!            mode = arg
-!          CASE DEFAULT
-!              PRINT *,'Usage: trace [-m menu/prompt/batch]'
-!              CALL EXIT(1) 
-!        END SELECT
-!
 
 	print *,''
 	print *,'Ray Tracing Selected. Begin procedure.'
@@ -13828,10 +11369,10 @@ SUBROUTINE Shadow3Trace
             .OR.   (.NOT. ALLOCATED(Ap)) &
             .OR.   (.NOT. ALLOCATED(Phase)) ) THEN
 
-        CALL RBeamAnalyze (file_source,ncol1,np,iflag,ierr)
+        CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
 
          IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
-            PRINT *,'TRACE: RBeamAnalyze: Error in file: '//TRIM(file_source)
+            PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
             STOP
          ELSE
  
@@ -13861,11 +11402,6 @@ SUBROUTINE Shadow3Trace
             END IF
 
 	    !read source file (nor here... it is done in msetup)
-	    !  print *,">> TRACE calling  RBEAM for reading "//trim(file_source)
-	    !  CALL    RBEAM(file_source,Ray,Phase,Ap,iErr)
-	    !  write(*,*) '>>>> TRACE Ray(1,5): ',Ray(1,5)
-	    !  write(*,*) '>>>> TRACE IERR: ',IERR
-	    !  print *,">>>> TRACE BACK FROM RBEAM"
 	    
             ! put dimensions in variable pool
             npoint=np

@@ -1,5 +1,6 @@
 !----
-!---- MODULE:  shadow_Post
+!----
+!---- MODULE:  shadow_post
 !----
 !---- Postprocessors for Shadow
 !---- Contains: 
@@ -31,20 +32,11 @@ Module Shadow_PostProcessors
 !
 ! the global variables here are only used for undulator and not for wiggler
  
-!     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-!     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
-!     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-!     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-!     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
-!	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-!	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
-
-
     !---- Everything is private unless explicitly made public ----!
     private 
 
     !---- List of public functions ----!
-!    public :: 
+    !    public :: 
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
@@ -77,41 +69,14 @@ Module Shadow_PostProcessors
 !C
 !C---
 SUBROUTINE SourcInfo
-!C
-!C This causes problems with F77 drivers, since can't use -I directive.
-!C so I'll use the standard cpp directive instead.
-!C
-!C	INCLUDE         './../../include/common.blk'
-!C	INCLUDE         './../../include/namelist.blk'
-!C
-!C
-!#	include		<common.blk>
-!#	include		<namelist.blk>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!     	INCLUDE		'SHADOW$INC:NAMELIST.BLK/LIST'
-!#endif
 	implicit none
 
 	type (poolSource)      ::  pool00
 
 	character(len=sklen) :: inFile1,file_Out,cd
 	character(len=80) :: comment,title
-!	character(len=63),parameter :: topLin= &
-!     '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 	character(len=79),parameter :: topLin= &
 '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-!     	CHARACTER *80	COMMENT,TITLE
-!     	DIMENSION	WAVE(10)
-!     	CHARACTER *71	TOPLIN
-!     	DATA	TOPLIN	/
-!     $'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'/
-!     	CHARACTER * 32 		FILE_OUT
-!     	CHARACTER * 60		FILETEXT
-!     	CHARACTER * 17		DATETEXT
-!     	CHARACTER *20		BREAK, TANG(12), TSPATIAL(12)
-!     	CHARACTER *12		TPOL (3), TPHOT(12), TDEPTH(12)
-!     	CHARACTER *80		INFILE
 	character(len=20),dimension(5) :: tSpatial,tDepth,tPhot
 	character(len=20),dimension(7) :: tAng
 	character(len=20),dimension(3) :: tPol
@@ -128,32 +93,6 @@ SUBROUTINE SourcInfo
 	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 	integer(kind=ski)        :: J
 
-!     	DATA	TSPATIAL(1)	/'POINT       '/
-!     	DATA	TSPATIAL(4)	/'GAUSSIAN    '/
-!     	DATA	TSPATIAL(2)	/'RECTANGULAR '/
-!     	DATA	TSPATIAL(3)	/'ELLIPTICAL  '/
-!	DATA	TSPATIAL(5)	/'PHASE SPACE ELLIPSE'/
-!     	DATA	TDEPTH(1)	/'DEPTH OFF   '/
-!     	DATA	TDEPTH(2)	/'DEPTH ON    '/
-!     	DATA	TDEPTH(3) 	/'RECTANGULAR '/
-!     	DATA	TDEPTH(4) 	/'GAUSSIAN    '/
-!     	DATA	TDEPTH(5)	/'SYNCHROTRON '/
-!     	DATA	TANG(1)		/'UNIFORM     '/
-!     	DATA	TANG(2)		/'LAMBERTIAN  '/
-!     	DATA	TANG(3)		/'GAUSSIAN    '/
-!     	DATA	TANG(4)		/'SYNCHROTRON '/
-!     	DATA	TANG(5)		/'CONICAL     '/
-!	DATA	TANG(6)		/'SYNCHROTRON (exact)'/
-!	DATA	TANG(7)		/'PHASE SPACE ELLIPSE'/
-!     	DATA	TPHOT(1)	/'PHOTON OFF  '/
-!     	DATA	TPHOT(2)	/'PHOTON ON   '/
-!     	DATA	TPHOT(3)	/'SINGLE LINE '/
-!     	DATA	TPHOT(4)	/'MULTI LINE  '/
-!     	DATA	TPHOT(5)	/'BOX DISTR.  '/
-!     	DATA	TPOL(1)		/'SR PARALLEL '/
-!     	DATA	TPOL(2)		/'SR PERPEND  '/
-!     	DATA	TPOL(3)		/'SR TOTAL    '/
-!     	DATA	BREAK	/'    ----------------'/
 
 TSPATIAL(1)	='POINT       '
 TSPATIAL(4)	='GAUSSIAN    '
@@ -182,26 +121,9 @@ TPOL(2)		='SR PERPEND  '
 TPOL(3)		='SR TOTAL    '
 BREAK	='    ----------------'
 
-!C#if vms
-!C     	CALL	LIB$ERASE_PAGE(1,1)
-!C#elif unix
-!C        CALL system('clear') 
-!C#endif
-!	CALL CLSCREEN
      	WRITE(6,*) &
       '------------------ S O U R C I N F O --------------------'
-!     	WRITE(6,*)  &
-!      '                  vs. 2.01   Feb 1989'
      	WRITE(6,*) ' '
-!     	GO TO 1
-!20	WRITE(6,*) 'Error reading the NAMELIST.'
-!     	STOP
-!10     	WRITE(6,*) 'Error opening: ',INFILE
-!1     	CALL ALINE ('INPUT> File containing source specs ?',INFILE)
-!     	CALL	ALINE ('INPUT> Title ? ',TITLE)
-!     	CALL	ALINE ('INPUT> Comment ? ',COMMENT)
-!     	CALL	ALINE ('INPUT> Output file-name ? ',FILE_OUT)
-!     	WRITE(6,*) 'SYSINF> Prepare output to file : ',FILE_OUT
 	inFile1 = RString('SourcInfo: File containing source specs ?')
 	title = RString('SourcInfo: Title ? ')
 	comment = RString('SourcInfo: Comment ?')
@@ -210,21 +132,11 @@ BREAK	='    ----------------'
 ! 
 ! read input file
 !
-!     	IDUMM = 1
-!     	CALL	RWNAME ( INFILE,'R_SOUR', IDUMM)
-!     	IF (IDUMM.EQ.-1) STOP 'Error opening file: '//trim(inFile)
-!     	IF (IDUMM.EQ.-2) STOP 'Error opening file: '//trim(inFile)
-!     	WRITE(6,*) 'SourcInfo: File ',INFILE,' read correctly.'
 	CALL PoolSourceLoad(pool00,inFile1)
 
 
-!     	WRITE(6,*) 'SYSINF> Prepare output to file : ',FILE_OUT
-!#ifdef vms
-!     	OPEN (30,FILE=FILE_OUT,STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN (30,FILE=FILE_OUT,STATUS='UNKNOWN')
 	REWIND (30)
-!#endif
      	WRITE (30,*) TOPLIN
      	WRITE (30,*) &
       '**************  S O U R C E       ', &
@@ -233,20 +145,8 @@ BREAK	='    ----------------'
      	WRITE (30,*) trim(COMMENT)
      	WRITE (30,*) TOPLIN
      	WRITE (30,*) 'Input file specified: '//trim(inFile1)
-!#ifdef vms
-!     	  CALL	FILEINFO  (INFILE)
-!     	  CALL	NEXTFILE  (FILETEXT,DATETEXT)
-!#else
-!	filetext = ' '
-!	call get_file_text(filetext,INFILE)
-!	DATETEXT = ' '
-!#endif
-!	  WRITE (30,1500)	FILETEXT
-!1500	FORMAT (1X,'Full file Specification :',A)
-!     	  WRITE (30,1501)	DATETEXT
 	CALL GETCWD(CD)
      	WRITE (30,*) 'Full file specification: '//trim(CD)//OS_DS//trim(inFile1)
-!1501	FORMAT (1X,'Creation Date           :',A)
 	call date_and_time(TIME=time,DATE=date,ZONE=zone)
      	WRITE (30,*) 'Creation date: '//date(1:4)//' '//date(5:6)//' '//& 
             date(7:8)//', '//time(1:2)//'h '//time(3:4)//'min '//time(5:6)//' s'
@@ -279,22 +179,6 @@ BREAK	='    ----------------'
      	END IF
 	WRITE (30,2006) pool00%NPOINT
 2006	FORMAT (1X,'Generated total ',I12,' rays.')
-!C
-!C SOURCE as of Nov. 1985 is independent of SHADOW and always generates a 
-!C new source.
-!C
-!C Old/New SOURCE
-!C
-!C     	IF (F_NEW.EQ.0) THEN
-!C     	WRITE (30,*) 'Used an OLD source file. Complete file specs
-!C     $ follow.'
-!C     	  CALL	FILEINFO  (FILE_SOURCE)
-!C     	  CALL	NEXTFILE  (FILETEXT,DATETEXT)
-!C	  WRITE (30,1500)	FILETEXT
-!C     	  WRITE (30,1501)	DATETEXT
-!C     	WRITE (30,*) TOPLIN
-!C     	CALL	EXIT
-!C     	END IF
 !C
 !C Spatial type and values
 !C
@@ -455,7 +339,6 @@ SUBROUTINE MirInfo
 	character(len=sklen) :: mirFil,file_Out,cd
 	character(len=80) :: comment,title
 	character(len=20),dimension(12) :: type1
-!	character(len=63),parameter :: topLin= &
 !     '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 	character(len=79),parameter :: topLin= &
 '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
@@ -471,39 +354,6 @@ SUBROUTINE MirInfo
 	real(kind=skr)           ::ECCENT,AFOCI
 	integer(kind=ski)        :: J
 
-!C
-!C This causes problems with F77 drivers, since can't use -I directive.
-!C so I'll use the standard cpp directive instead.
-!C
-!C	INCLUDE         './../../include/common.blk'
-!C	INCLUDE         './../../include/namelist.blk'
-!C
-!C
-!#	include		<common.blk>
-!#	include		<namelist.blk>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!     	INCLUDE		'SHADOW$INC:NAMELIST.BLK/LIST'
-!#endif
-!     	CHARACTER *40	MIRFIL
-!     	CHARACTER *80	COMMENT,TITLE
-!     	CHARACTER *71	TOPLIN
-!     	DATA	TOPLIN	/
-!     $'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'/
-!!     	CHARACTER * 32 		FILE_IN,FILE_OUT
-!     	CHARACTER * 60		FILETEXT
-!     	CHARACTER * 17		DATETEXT
-!     	CHARACTER *20		TYPE (12)
-!     	DATA	TYPE(1)	/'SPHERICAL   '/
-!     	DATA	TYPE(2)	/'ELLIPTICAL  '/
-!     	DATA	TYPE(3) /'TOROIDAL    '/
-!     	DATA	TYPE(4) /'PARABOLICAL '/
-!     	DATA	TYPE(5)	/'PLANE       '/
-!     	DATA	TYPE(6) /'CODLING sLIT'/
-!     	DATA	TYPE(7)	/'HYPERBOLICAL'/
-!     	DATA	TYPE(8)	/'CONICAL     '/
-!     	DATA	TYPE(9)	/'POLYNOMIAL  '/
-
 type1(1)	='SPHERICAL   ' 
 type1(2)	='ELLIPTICAL  ' 
 type1(3) ='TOROIDAL    ' 
@@ -517,32 +367,13 @@ type1(10)	='            '
 type1(11)	='            ' 
 type1(12)	='            ' 
 
-!     	GO TO 1
-!20	WRITE(6,*) 'Error reading the NAMELIST.'
-!     	STOP
-!10     	WRITE(6,*) 'Error opening: ',MIRFIL
-!1	CONTINUE
-!!C#if vms
-!!C     	CALL	LIB$ERASE_PAGE (1,1)
-!!C#endif 
-!	CALL CLSCREEN
     	WRITE(6,*)  &
       	'-------------------- M I R I N F O ----------------------'
-!     	WRITE(6,*) 
-!     $	'                  vs. 3.0 - May 1993 '
      	WRITE(6,*) ' '
      	WRITE(6,*)  &
       'MirInfo: Mirror descriptor file. It must be an end.xx type.'
      	WRITE(6,*) 'MirInfo: Please input filename: '
      	READ (5,'(A)')	MirFil
-!1000	FORMAT	(A)
-
-!     	IDUMM = 1
-!     	CALL	RWNAME ( MIRFIL,'R_OE', IDUMM)
-!     	IF (IDUMM.EQ.-1) GO TO 20
-!     	IF (IDUMM.EQ.-2) GO TO 10
-!     	IF (IDUMM.NE.0) STOP 'File non in standard format'
-!     	WRITE(6,*) 'MINFO> File read correctly.'
      	WRITE(6,*) 'MirInfo: Title ?'
      	READ (5,'(A)') TITLE
      	WRITE(6,*) 'MirInfo: Comment ?'
@@ -554,13 +385,8 @@ type1(12)	='            '
 !
 	CALL PoolOELoad(p1,mirFil)
 
-!     	WRITE(6,*) 'MINFO> Prepare output to file : ',FILE_OUT
-!#ifdef vms
-!     	OPEN (20,FILE=FILE_OUT,STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN (20,FILE=FILE_OUT,STATUS='UNKNOWN')
 	REWIND(20)
-!#endif
      	WRITE (20,*) TOPLIN
      	WRITE (20,*) '********************   MIRROR  DESCRIPTION   ',&
       '********************'
@@ -569,18 +395,6 @@ type1(12)	='            '
      	WRITE (20,*) trim(COMMENT)
      	WRITE (20,*) TOPLIN
      	WRITE (20,*) 'Input file specified: '//trim(MIRFIL)
-!#ifdef vms
-!     	CALL	FILEINFO  (MIRFIL)
-!     	CALL	NEXTFILE  (FILETEXT,DATETEXT)
-!#else
-!	filetext = ' '
-!	datetext = ' '
-!	call get_file_text(filetext,MIRFIL)
-!#endif 
-!	WRITE (20,1500)	FILETEXT
-!1500	FORMAT (1X,'Full file Specification :',A)
-!     	WRITE (20,1501)	DATETEXT
-!1501	FORMAT (1X,'Creation Date           :',A)
         CALL GETCWD(CD)
         WRITE (20,*) 'Full file specification: '//trim(CD)//OS_DS//trim(mirFil)
         call date_and_time(TIME=time,DATE=date,ZONE=zone)
@@ -591,7 +405,6 @@ type1(12)	='            '
      	WRITE (20,*)	TOPLIN
      	WRITE (20,2001) type1(p1%FMIRR)
 2001	FORMAT (/,1X,'Surface figure was defined as:',T40,A)
-!C      123456789 123456789 123456789 123456789 
 
      	IF (p1%FCYL.EQ.0) THEN
      	  WRITE (20,*) 'Cylindrical figure                      NO'
@@ -887,29 +700,6 @@ SUBROUTINE SysInfo
 ! todo: check that this is also defined in shadow_kernel...
      	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
 
-!#if defined(unix) || HAVE_F77_CPP
-!C
-!C This causes problems with F77 drivers, since can't use -I directive.
-!C so I'll use the standard cpp directive instead.
-!C
-!C	INCLUDE         './../../include/common.blk'
-!C	INCLUDE         './../../include/namelist.blk'
-!C
-!C
-!#	include		<common.blk>
-!#	include		<namelist.blk>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:COMMON.BLK/LIST'
-!     	INCLUDE		'SHADOW$INC:NAMELIST.BLK/LIST'
-!#endif
-!     	CHARACTER *40	MIRFIL
-!     	CHARACTER *80	COMMENT,TITLE
-!     	CHARACTER *71	TOPLIN
-!     	DATA	TOPLIN	/
-!     $'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'/
-!     	CHARACTER * 32 		FILE_OUT
-!     	CHARACTER * 60		FILETEXT
-!     	CHARACTER * 17		DATETEXT
 
 	character(len=20),dimension(12) :: type1
 	character(len=20),dimension(2)  :: tScr
@@ -917,11 +707,6 @@ SUBROUTINE SysInfo
 	character(len=20)               :: break
 	character(len=80)               :: text
 	character(len=sklen),dimension(20)  :: file_In
-!	CHARACTER *20		TYPE (12),BREAK, TSLIT(5) *11
-!     	CHARACTER *21		TSCR (2)
-!     	CHARACTER *80		FILE_IN(20),OPTFILE,TEXT,RSTRING
-!	SAVE OPTFILE
-
 
 TSLIT(1)='SLIT       ' 
 TSLIT(2)='STOP       ' 
@@ -946,45 +731,28 @@ TYPE1(11)='            '
 TYPE1(12)='            ' 
 BREAK	='    ----------------' 
 
-!	CALL CLSCREEN
      	WRITE(6,*)  &
         '-------------------- S Y S I N F O ----------------------'
-!     	WRITE(6,*) 
-!     $  '                  vs. 2.02  June 1989'
      	WRITE(6,*) ' '
-!     	GO TO 1
-!20	WRITE(6,*) 'Error reading the NAMELIST.'
-!     	STOP
-!10     	WRITE(6,*) 'Error opening: ',MIRFIL
-!1     	IDEF = IYES ('Default filenames [ Y/N ] ?')
       	IDEF = IYES ('SysInfo: Default filenames [ Y/N ] ?')
      	IF (IDEF.EQ.1) THEN
      	  NF	=   IRINT ('SysInfo: How many OE''s ? ')
      	  IF (NF.EQ.0) NF = 1
      	  DO J=1,NF
      	   WRITE (FILE_IN(J),999) 'end.',J
-!D	   write(6,*) file_in(j)
 	  END DO
      	  WRITE (OPTFILE,998)	'optax.',NF
 998	  FORMAT (A6,I2.2)
 999	  FORMAT (A4,I2.2)
-!D	write(6,*) opt_fil
      	ELSE
      	  WRITE(6,*) 'SysInfo: List of files describing the system. Use TT: ',&
       'for keyboard input.'
 	  MIRFIL = RSTRING ('SysInfo: File containing ERFs ? ')
-!     	 IF (MIRFIL(1:3).EQ.'TT:') WRITE(6,*)  &
-!      'SysInfo> Please enter filenames: ?'
-!#ifdef vms
-!     	  OPEN (20, FILE=MIRFIL, STATUS='OLD', READONLY, ERR=10)
-!#else
-     	  !OPEN (20, FILE=MIRFIL, STATUS='OLD', ERR=10)
      	  OPEN (20, FILE=MIRFIL, STATUS='OLD', IOSTAT=iERR)
 	  IF (iErr /= 0) THEN
             print *,'SysInfo: Error reading file: '//trim(mirFil)
             STOP  'Aborted'
 	  END IF
-!#endif
 	  I=1
 30     	  CONTINUE
      	  READ (20,'(A)',ERR=40,END=40)  FILE_IN(I)
@@ -995,23 +763,13 @@ BREAK	='    ----------------'
      	
      	  WRITE(6,*) 'SysInfo> Will use ',I-1,' ERF files.'
      	  NF	= I - 1
-     	  !CALL	ALINE ('INPUT> Optaxis file-name : ',OPTFILE)
      	  optFile=RString('SysInfo: Optaxis file-name : ')
-!1000	  FORMAT	(A)
      	END IF
-     	!CALL	ALINE ('INPUT> Title ? ',TITLE)
-     	!CALL	ALINE ('INPUT> Comment ? ',COMMENT)
-     	!CALL	ALINE ('INPUT> Output file-name ? ',FILE_OUT)
-     	!WRITE(6,*) 'SYSINF> Prepare output to file : ',FILE_OUT
 	title = RString('SysInfo: Title ?  ')
 	comment = RString('SysInfo: Comment ? ')
 	file_Out = RString('SysInfo: Output file : ')
-!#ifdef vms
-!     	OPEN (30,FILE=FILE_OUT,STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN (30,FILE=FILE_OUT,STATUS='UNKNOWN')
 	REWIND (30)
-!#endif
      	WRITE (30,*) ''
      	WRITE (30,*) TOPLIN
      	WRITE (30,*) '**************  S Y S T E M      ',&
@@ -1022,49 +780,17 @@ BREAK	='    ----------------'
      	WRITE (30,*) TOPLIN
 	IF (iDef /= 1) WRITE (30,*) 'Input file with end.xx files:'//trim(MIRFIL)
 
-!     	IF (MIRFIL(1:3).NE.'TT:'.AND.IDEF.NE.1) THEN
-!     	  CALL	FILEINFO  (MIRFIL)
-!     	  CALL	NEXTFILE  (FILETEXT,DATETEXT)
-!	  WRITE (30,1500)	FILETEXT
-!1500	FORMAT (1X,'Full file Specification :',A)
-!     	  WRITE (30,1501)	DATETEXT
-!1501	FORMAT (1X,'Creation Date           :',A)
-!     	END IF
-!     	IF (IDEF.NE.1) THEN
           CALL GETCWD(CD)
-!          WRITE (30,*) 'Full file specification: '// & 
-!                       trim(CD)//OS_DS//trim(mirFil)
-!          call date_and_time(TIME=time,DATE=date,ZONE=zone)
-!          WRITE (30,*) 'Creation date: '//date(1:4)//' '//date(5:6)//' '//&
-!            date(7:8)//' '//time(1:2)//'h '//time(2:3)//'min '//time(4:8)//' s'
-!	END IF
-
 
      	WRITE (30,*)	TOPLIN
-!     	WRITE (30,1502)
-!1502	FORMAT (1X,' #    Optical Element: ',T62,'Creation Time:')
      	WRITE (30,*) ' #    Optical Element: '
 
      	DO J=1,NF
-     	  !TEXT(1:80) = FILE_IN(J)(1:80)
-     	  !CALL DESPACE (TEXT,TEXT,ILEN)
-     	  !CALL	FILEINFO  (TEXT(1:ILEN))
-     	  !CALL	NEXTFILE  (FILETEXT,DATETEXT)
-	  !WRITE (30,1503)	J,FILETEXT,DATETEXT
 	  WRITE (30,*)	J,trim(cd)//OS_DS//trim(FILE_IN(J))
-!12      CONTINUE
 	END DO
-!1503	FORMAT (1X,I4,3X,A59,T63,A)
      	WRITE (30,*)	TOPLIN
      	
      	DO 13 J=1,NF
-     	!IDUMM = 0
-     	!CALL	RWNAME ( FILE_IN(J),'R_OE', IDUMM)
-	!WRITE(6,*) N_SCREEN
-     	!IF (IDUMM.EQ.-1) GO TO 20
-     	!IF (IDUMM.EQ.-2) GO TO 10
-     	!IF (IDUMM.NE. 0) STOP 'Fatal Error.'
-     	!WRITE(6,*) 'SYSINF> File ',FILE_IN(J),' read correctly.'
         CALL PoolOELoad(p2,file_in(j) )
      	WRITE (30,*) ' '
      	WRITE (30,*)	'Optical Element # ',J,'      System Number: '
@@ -1120,11 +846,7 @@ BREAK	='    ----------------'
      	  WRITE (30,*)	BREAK
      	END IF
 13     	CONTINUE
-!#ifdef vms
-!     	OPEN (20, FILE=OPTFILE, STATUS='OLD', READONLY)
-!#else
      	OPEN (20, FILE=OPTFILE, STATUS='OLD')
-!#endif
      	WRITE (30,3005)
 3005	FORMAT (1X,/,1X,T26,'OPTICAL SYSTEM CONFIGURATION')
      	WRITE (30,3000)
@@ -1170,9 +892,6 @@ SUBROUTINE Translate
     
 	implicit none 
 
-	!IMPLICIT REAL(KIND=KIND(1.0D0)) (A-E,G-H,O-Z)
-	!IMPLICIT INTEGER(KIND=4)        (F,I-N)
-
         CHARACTER(len=sklen)      :: FILEIN,FILEOUT
         real(kind=skr), dimension(:,:), allocatable  :: Ray
     	integer(kind=ski) :: IUNIT,OUTFLAG
@@ -1184,9 +903,9 @@ SUBROUTINE Translate
         ! allocate RAY and read binary file
         ! 
 
-        ! before calling rbeam18, we must allocate arrays
+        ! before calling beamLoad, we must allocate arrays
         ! get information on number of columns and rays from the header 
-        CALL    RBEAMANALYZE (FILEIN,nCol1,NPOINT1,IFLAG,IERR)
+        CALL    beamGetDim (FILEIN,nCol1,NPOINT1,IFLAG,IERR)
         IF ((IFLAG.ne.0).OR.(IERR.ne.0)) THEN
            print *,'TRANSLATE: Error accessing file: '//trim(FILEIN)
            STOP 'Aborted'
@@ -1201,12 +920,12 @@ SUBROUTINE Translate
                   call leave ('TRANSLATE','Error allocating array',IERR)
                end if
             end if
-            ! RBEAM18 must be calles once RAY is allocated
-            CALL RBeam18(ray,ierr,nCol1,npoint1,fileIn)
+            ! beamLoad must be calles once RAY is allocated
+            CALL beamLoad(ray,ierr,nCol1,npoint1,fileIn)
          END IF
 
 
-        ! CALL	RBEAM18	(FILEIN,RAY,nCol1,NPOINT1,IFLAG,IERR)
+        ! CALL	beamLoad	(FILEIN,RAY,nCol1,NPOINT1,IFLAG,IERR)
     
         WRITE(6,*)'Translate: Read         ',NPOINT1,' rays.'
     	WRITE(6,*)'Translate: Each ray has ',nCol1,' entries.'
@@ -1319,9 +1038,9 @@ SUBROUTINE Histo1
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (fileIn,ncol1,npoint1,iflag,ierr)
+        CALL    beamGetDim (fileIn,ncol1,npoint1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'HISTO1: RBeamAnalyze: Error in file: '//trim(fileIn)
+            print *,'HISTO1: beamGetDim: Error in file: '//trim(fileIn)
             stop
         END IF
 
@@ -1332,7 +1051,7 @@ SUBROUTINE Histo1
   	ALLOCATE( RAY(18,NPOINT1) )
   	ray=0.0d0
 
-	CALL RBeam18(ray,ierr,ncol1,npoint1,fileIn)
+	CALL beamLoad(ray,ierr,ncol1,npoint1,fileIn)
 
 !C
 !C Find the min and max (for the user)
@@ -1594,11 +1313,6 @@ SUBROUTINE histo1_calc(ray,     & ! in: ray
 	  Y1UPP = 1.2*YMAX
      	END IF
 
-        !   print *,'>>>>>>>>histo: '
-	!do i=1,nbin
-        !   print *,i,xarray(i),yarray(i)
-	!end do
-
 END SUBROUTINE histo1_calc
 
 
@@ -1753,96 +1467,46 @@ END SUBROUTINE Round
 !C
 !C	Link using GRA:GRALIB.LNK or GRA:TDSHARE.LNK
 !C----
+
+
 SUBROUTINE PlotXY
-	!IMPLICIT        REAL*8          (A-E,G-H,O-Z)
-
-
         implicit real(kind=skr) (a-e,g-h,o-z)
         implicit integer(kind=ski)        (f,i-n)
 
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!	INCLUDE		'SHADOW$INC:DIM.PAR/LIST'
 	real(kind=skr)   :: PLOT
-!#endif
 	integer,parameter  :: MAXGS=101
-     	!REAL*8		RAY(18,N_DIM),RAY2(18,N_DIM)
         real(kind=skr),dimension(:,:),allocatable :: ray,ray2
-	!REAL*8		A_SQUARE(N_DIM),A2_SQUARE(N_DIM)
-	!DIMENSION	XPLOT(N_DIM),YPLOT(N_DIM)
-	!DIMENSION	XLOSS(N_DIM),YLOSS(N_DIM)
         real(kind=skr),dimension(:),allocatable   :: A_SQUARE,A2_SQUARE
         real(kind=skr),dimension(:),allocatable   :: XPLOT,YPLOT,XLOSS,YLOSS,weightPlot
         logical :: lExists
-!C
-!C Save the large arrays so as not to overflow stack (eg., on DEC ALPHA)
-!C
-!	SAVE		RAY, RAY2, A_SQUARE, A2_SQUARE
-!     	DATA	TWOPI 	/  6.2831 85307 17958 64679 25287 D0 /
-!	DATA	TOCM	/  1.239 852	D-4		     /
-!	DATA	TOANGS 	/  1.239 852    D+4		     /
-!	DATA    TORAD   /  0.0174 53292 51994 32957 69237 D0 /
 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
 	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
      	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
-!     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-!     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
-!     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-
-!     	CHARACTER * 80 	FILE_IN
      	character(len=sklen) :: FILE_IN, FILE_I0, dataDir
-!     	CHARACTER * 60	FILETEXT
-!     	CHARACTER * 17	DATETEXT
-	!CHARACTER * 80	COMMENT
-     	!CHARACTER * 80	TEXT,TEXT1,TEXT2,TEXT3,TEXT4,TEXT5
-     	!CHARACTER * 80	RSTRING,FILE_I0,TEXT6,TEXT7,TEXT8
      	character(len=80) :: TEXT,TEXT1,TEXT2,TEXT3,TEXT4,TEXT5
      	character(len=80) :: TEXT6,TEXT7,TEXT8
-     	!CHARACTER * 20	TODAY
      	character(len=20) :: TODAY
      	character(len=80) :: COMMENT
-     	!DATA	COMMENT	/'   '/
-     	!DATA	TODAY	/'                    '/
-     	!DATA	COMMENT	/'   '/
-     	!DATA	TODAY	/'                    '/
         integer(kind=ski),parameter :: i_td=0
-	!data	i_td / 0 /
-     	!DIMENSION	TEST(30),R_LOW(30),R_UPP(30)
 	real(kind=skr),dimension(30) :: TEST,R_LOW,R_UPP
-     	!DIMENSION	X_ARRAY(100),Y_ARRAY(100),XYLIM(4)
 	real(kind=skr),dimension(100) :: X_ARRAY,Y_ARRAY
 	real(kind=skr),dimension(4)   :: XYLIM
-     	!DIMENSION	XMEAN(30),STDEV(30),VAR(30)
 	real(kind=skr),dimension(30)  :: XMEAN,STDEV,VAR
-	!DIMENSION	PIXEL(MAXGS,MAXGS),XSID(MAXGS)
-     	!DIMENSION	YSID(MAXGS), PIXNEW(MAXGS,MAXGS)
-     	!DIMENSION	ZDATA(MAXGS*MAXGS),CVALUE(20)
 	real(kind=skr),dimension(MAXGS)       :: XSID,YSID
 	real(kind=skr),dimension(MAXGS,MAXGS) :: PIXEL,PIXNEW
 	real(kind=skr),dimension(MAXGS*MAXGS) :: ZDATA
 	real(kind=skr),dimension(20)          :: CVALUE
 
 
-	!INTEGER		ICONT(10),IPLT(10)
-	!integer(kind=ski),dimension(10) :: ICONT !,IPLT
-
-
-!#ifndef vms
-!	CHARACTER*1024	PRIMVS
-!	CHARACTER*1024	PRIMVSPATH
-!#endif
-
 i22 =0 ! flag to file
-!1     	CALL	ALINE	('PLOT> Input file? ',FILE_IN)
 	FILE_IN = RSTRING('PLOT> Input file? ')
 
 if (trim(file_in) == "") file_in="begin.dat"
 
 
-!     	CALL	RBEAM18	(FILE_IN,RAY,NCOL,NPOINT,IFLAG,IERR)
+!     	CALL	beamLoad	(FILE_IN,RAY,NCOL,NPOINT,IFLAG,IERR)
 !	IF (IERR.NE.0)	STOP	'Error in reading ray file.'
 
 !
@@ -1852,9 +1516,9 @@ if (trim(file_in) == "") file_in="begin.dat"
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (file_In,ncol1,npoint1,iflag,ierr)
+        CALL    beamGetDim (file_In,ncol1,npoint1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'PLOTXY: RBeamAnalyze: Error in file: '//trim(file_in)
+            print *,'PLOTXY: beamGetDim: Error in file: '//trim(file_in)
             stop
         END IF
 
@@ -1869,14 +1533,11 @@ if (trim(file_in) == "") file_in="begin.dat"
   	ALLOCATE( YLOSS(NPOINT1) )
 
   	ray=0.0d0
-	CALL RBeam18(ray,ierr,ncol1,npoint1,file_In)
+	CALL beamLoad(ray,ierr,ncol1,npoint1,file_In)
 
 	npoint = npoint1
 	ncol = ncol1
 
-!C
-!    	CALL	FILEINFO  (FILE_IN)
-!    	CALL	NEXTFILE  (FILETEXT,DATETEXT)
 	WRITE(6,*) 'PLOT> Options --- Enter'
      	WRITE(6,*) 'PLOT>   0   for excluding the losses'
      	WRITE(6,*) 'PLOT>   1   for including only the losses'
@@ -1886,7 +1547,6 @@ if (trim(file_in) == "") file_in="begin.dat"
 	WRITE(6,*) '*******************/*******************/',&
       '*******************/*******************/'
      	READ (5,1000)	COMMENT
-!C1000	FORMAT (Q,A)
 1000	FORMAT (A)
 
 	NLOSS	=   0
@@ -1894,10 +1554,6 @@ if (trim(file_in) == "") file_in="begin.dat"
      	IF (RAY(10,I).LT.0.0) NLOSS = NLOSS + 1
 11      CONTINUE
 100     CONTINUE
-!C     	CALL	LIB$ERASE_PAGE(1,1)
-!     	WRITE(6,*) 'PLOT> File read OK. Full specifications:'
-!     	WRITE(6,*) '     ',FILETEXT
-!     	WRITE(6,*) '     ','Was created : ',DATETEXT
      	WRITE(6,*) ' '
      	NGOOD = NPOINT - NLOSS
 	WRITE(6,*) 'PLOT>  Found ',NGOOD, ' good points out of',NPOINT
@@ -2081,13 +1737,8 @@ if (trim(file_in) == "") file_in="begin.dat"
      	WRITE (6,2020) 23,'Intensity-s',             R_LOW(23),R_UPP(23)
      	WRITE (6,2020) 24,'Intensity-p',             R_LOW(24),R_UPP(24)
      	WRITE (6,2020) 25,'Intensity  ',             R_LOW(25),R_UPP(25)
-!#if defined (vms)
-!2000	FORMAT (//,T2,'Column',T5,' Par',T10,'Minimum:',T25,'Maximum:',
-!     $		T40,'Center:',T55,'St. Dev.:')
-!#else
 2000    FORMAT (//,T2,'Col',T5,' Par',T10,'Minimum:',T25,'Maximum:', &
                 T40,'Center:',T55,'St. Dev.:')
-!#endif
 
 2010	FORMAT (1X,T2,I2,T5,A3,T10,G12.5,T25,G12.5,T40,G12.5,T55,G12.5)
 2020	FORMAT (1X,T2,I2,T7,A,T30,G12.5,T45,G12.5)
@@ -2191,28 +1842,8 @@ IF (IY == 0) IY=3
 
 iGridFile=0
 IF (iGrid > 0) iGridFile=1
-!!;;         !C
-!!;;         !C We ALWAYS need A**2 later on then.
-!!;;         !C
-!!;; 	IF (NCOL.EQ.18) THEN
-!!;; 	     DO I = 1, NPOINT
-!!;; 	       A_SQUARE(I)= RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2 &
-!!;;       			+ RAY(16,I)**2 + RAY(17,I)**2 + RAY(18,I)**2
-!!;;              END DO
-!!;; 	ELSE
-!!;; 	     DO I = 1, NPOINT
-!!;; 	       A_SQUARE(I)= RAY(7,I)**2 + RAY(8,I)**2 + RAY(9,I)**2
-!!;;              END DO
-!!;; 	END IF
 
      	IF (IGRID.GE.1) THEN
-     	!IF (IGRID.EQ.1) THEN
-     	! WRITE(6,*) 'PLOT> Grid size [ Nx by Ny ].'
-     	! NGX	=   IRINT ('PLOT> Nx [Default=50]: ')
-     	! NGY	=   IRINT ('PLOT> Ny [Default=50]: ')
-        ! IF (ngx == 0) ngx=50
-        ! IF (ngy == 0) ngy=50
-	!ELSE IF (IGRID.EQ.2) THEN
      	 WRITE(6,*) 'PLOT> Number of bins [Nx by Ny] to prepare the grids.'
      	 NGX	=   IRINT ('PLOT> Nx [Default=101]: ')
      	 NGY	=   IRINT ('PLOT> Ny [Default=101]: ')
@@ -2222,137 +1853,18 @@ IF (iGrid > 0) iGridFile=1
 	   NCONT	=   IRINT ('PLOT> Number of contours [Default=10] : ')
            IF (nCont == 0) nCont=10
 	 END IF
-!	 IPLT(2) =  IRINT  &
-!      	 ('PLOT> Degree of polynomial used for joining [0=default] : ')
 	 K_REFL	=   IRINT ('PLOT> Included reflectivity ? ')
-!  k_act=0
   
   
 
 
-!!	 IF (K_REFL.EQ.1) THEN
-!!	   INORMAL 	= 0
-!!	   WRITE(6,*) 'PLOT> Options : '
-!!	   WRITE(6,*) '  0   Power density [J/area] reflected/' // &
-!!      		'transmitted'
-!!	   WRITE(6,*) '  1   Power density [J/area] absorbed'
-!!	   WRITE(6,*) '  2   Local reflectivity/transmission'
-!!	   K_ACT = IRINT('PLOT> Then ? ')
-
-
-!!--!!	   IF (K_ACT.EQ.1.OR.K_ACT.EQ.2) THEN
-!!--!!	     FILE_I0 	= RSTRING ('PLOT> File to use for Io : ')
-!!--!!
-!!--!!!	     CALL	RBEAM18
-!!--!!!     $		(FILE_I0,RAY2,NCOL2,NPOINT2,IFLAG,IERR)
-!!--!!!	     IF (IERR.NE.0)	STOP 'Error in reading Io file.'
-!!--!!
-!!--!!             CALL    RBeamAnalyze (FILE_I0,ncol2,npoint2,iflag,ierr)
-!!--!!             IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-!!--!!               print *,'TRACE3: RBeamAnalyze: Error in file: '//trim(FILE_I0)
-!!--!!                  stop 'Aborted'
-!!--!!             END IF
-!!--!!	     IF (NPOINT2.NE.NPOINT) STOP &
-!!--!!      'Io file does not have the same number of rays as the input file.'
-!!--!!
-!!--!!  	     ! already allocated! ALLOCATE( RAY(18,NPOINT1) )
-!!--!!  	     ray2=0.0d0
-!!--!!
-!!--!!	     CALL RBeam18(ray2,ierr,ncol2,npoint2,FILE_I0)
-!!--!!
-!!--!!
-!!--!!	    IF (NCOL2.EQ.18) THEN
-!!--!!	      DO 17 I = 1, NPOINT2
-!!--!!	       A2_SQUARE(I)= RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2 &
-!!--!!      			+ RAY2(16,I)**2 + RAY2(17,I)**2 + RAY2(18,I)**2
-!!--!!17	      CONTINUE
-!!--!!	    ELSE
-!!--!!	      DO 18 I = 1, NPOINT2
-!!--!!	       A2_SQUARE(I)= RAY2(7,I)**2 + RAY2(8,I)**2 + RAY2(9,I)**2
-!!--!!18	      CONTINUE
-!!--!!	    END IF
-!!--!!	   END IF
-
-
-
-!!++!!	   IF (K_ACT.EQ.0.OR.K_ACT.EQ.1) THEN
-!!++!!     	     WRITE(6,*) 'Scaling options: '
-!!++!!     	     WRITE(6,*) 'No scaling                           [ 0 ] '
-!!++!!     	     WRITE(6,*) 'Scaling with user-supplied number    [ 1 ] '
-!!++!!     	     WRITE(6,*) 'Auto-scaling for SR source           [ 2 ] '
-!!++!!     		ISCALE = IRINT ('PLOT> Then ? ')
-!!++!!     	   END IF
-!!++!!	   IF (ISCALE.EQ.1) THEN
-!!++!!!C     	     TPOWER	= RNUMBER ('PLOT> Scaling factor : ')
-!!++!!	     WRITE(6,*) 'PLOT> Scaling factor: '
-!!++!!	     READ(5,*) TPOWER
-!!++!!     	     WRITE(6,*)  &
-!!++!!      'We need the conversion factor from the units used in the ', &
-!!++!!      'calculations to CM. e.g., if mm were used, enter .1'
-!!++!!	     WRITE(6,*) 'Conversion factor: '
-!!++!!	     READ(5,*) PUNITS
-!!++!!!C     	     PUNITS	= RNUMBER ('Then ? ')
-!!++!!!C
-!!++!!!C compute beam energy
-!!++!!!C
-!!++!!     	     TENER = 0.0
-!!++!!     	    DO 19 I=1,NPOINT
-!!++!!     	      TENER = TENER + RAY(11,I)/TWOPI*TOCM*1.602D-19
-!!++!!19	    CONTINUE
-!!++!!     	     FACTOR = TPOWER/TENER
-!!++!!     	   ELSE IF (ISCALE.EQ.2) THEN
-!!++!!!C     	     ORBIT = RNUMBER ('Machine radius [ m ] ? ')
-!!++!!!C     	     ENER  = RNUMBER ('Machine energy [ GeV ] ? ')
-!!++!!!C     	     CURR  = RNUMBER ('Machine current[ A ] ? ')
-!!++!!!C     	     ACCEPTANCE = RNUMBER ('milliradians of orbit ? ')
-!!++!!	     WRITE(6,*) 'Machine radius [ m ] ?'
-!!++!!	     READ(5,*) ORBIT
-!!++!!	     WRITE(6,*) 'Machine energy [ GeV ] ? '
-!!++!!	     READ(5,*) ENER
-!!++!!	     WRITE(6,*) 'Machine current[ A ] ? '
-!!++!!	     READ(5,*) CURR
-!!++!!	     WRITE(6,*) 'Milliradians of orbit ? '
-!!++!!	     READ(5,*) ACCEPTANCE
-!!++!!     	     WRITE(6,*)  &
-!!++!!      'We need the conversion factor from the units used in the ', &
-!!++!!      'calculations to CM. e.g., if mm were used, enter .1'
-!!++!!	     WRITE(6,*) 'Conversion factor: '
-!!++!!	     READ(5,*) PUNITS
-!!++!!!C     	     PUNITS	= RNUMBER ('Then ? ')
-!!++!!!C
-!!++!!!C Following power is in KWH. It is the total power incoming on the
-!!++!!!C beamline. Notice that the power is given in Watts.
-!!++!!!C
-!!++!!     	     TPOWER = ENER**4/ORBIT*88.5*CURR*ACCEPTANCE/TWOPI
-!!++!!     	     WRITE(6,*) 'Total power accepted: ',TPOWER
-!!++!!!C
-!!++!!!C Each ray carries hv energy. The scaling factor is obtained 
-!!++!!!C by computing the total energy carried by the beam.
-!!++!!!C
-!!++!!!C compute beam energy
-!!++!!!C
-!!++!!     	     TENER = 0.0
-!!++!!     	    DO 3037 I=1,NPOINT
-!!++!!     	      TENER = TENER + RAY(11,I)/TWOPI*TOCM*1.602D-19
-!!++!!3037	    CONTINUE
-!!++!!     	     FACTOR = TPOWER/TENER
-!!++!!     	   END IF
-!!	 ELSE
-!!	   WRITE(6,*) 'PLOT> Data normalization : '
-!!	   WRITE(6,*) '        0   For no normalization'
-!!	   WRITE(6,*) '        1   For normalized to 1'
-!!	   WRITE(6,*) '        2   For normalized to total counts'
-!!	   INORMAL = IRINT ('PLOT> Then ? ')
-!!	 END IF
          INORMAL = 0
 
 
 
 
      	 ISMOOTH = IYES ('Smoothing [ Y/N ] ? ')
-!!     	 iGridFile	= IYES ('Save grid file [ Y/N ] ? ')
 	 iGridFile = 1
-!	   OPEN(22,FILE='test',STATUS='UNKNOWN')
 i22 =1
      	END IF
 
@@ -2360,8 +1872,6 @@ i22 =1
 
 
 
-!C
-!     	ICROSS = IRINT ('PLOT> Hairline at [ 0,0 ] ? ')
 iCross=0
      	IF (ICROSS.EQ.1) THEN
 	 EXT	= 0.4
@@ -2374,42 +1884,7 @@ iCross=0
      	X_C = (X_LOW + X_UPP)/2
      	XU_C = X_C + EXT*(X_UPP-X_C)
      	XL_C = X_C - EXT*(X_C-X_LOW)
-!C
-!     	IMIRR = IRINT ('PLOT> Overlay a mirror/slit ? ')
 iMirr=0
-!      	IF (IMIRR.EQ.1) THEN
-!      	 WRITE(6,*) 'PLOT> Mirror/Slit type: '
-!      	 WRITE(6,*) '      0 .... rectangular '
-!      	 WRITE(6,*) '      1 .... elliptical '
-!      	 ISLIT	=   IRINT ('Then ? ')
-!      	  IF (ISLIT.EQ.0) THEN
-! !C     	   XS_MIN =  RNUMBER ('PLOT > X min : ')
-!      	   WRITE(6,*) 'PLOT > X min : '
-! 	   READ(5,*) XS_MIN
-! !C     	   XS_MAX =  RNUMBER ('PLOT >   max : ')
-!      	   WRITE(6,*) 'PLOT >   max : '
-! 	   READ(5,*) XS_MAX
-! !C     	   YS_MIN =  RNUMBER ('PLOT > Y min : ')
-!      	   WRITE(6,*) 'PLOT > Y min : '
-! 	   READ(5,*) YS_MIN
-! !C     	   YS_MAX =  RNUMBER ('PLOT >   max : ')
-!      	   WRITE(6,*) 'PLOT >   max : '
-! 	   READ(5,*) YS_MAX
-!      	  ELSE
-! !C     	   AMAJ =  RNUMBER ('PLOT > Semi-axis along [ x ] : ')
-!      	   WRITE(6,*) 'PLOT > Semi-axis along [ x ] : '
-! 	   READ(5,*) AMAJ
-! !C     	   AMIN =  RNUMBER ('PLOT >                 [ y ] : ')
-!      	   WRITE(6,*) 'PLOT >                 [ y ] : '
-! 	   READ(5,*) AMIN
-! !C     	   ELLX	=  RNUMBER ('PLOT > center [ x ] : ')
-!      	   WRITE(6,*) 'PLOT > center [ x ] : '
-! 	   READ(5,*) ELLX
-! !C     	   ELLY	=  RNUMBER ('PLOT >        [ y ] : ')
-!      	   WRITE(6,*) 'PLOT >        [ y ] : '
-! 	   READ(5,*) ELLY
-!      	  END IF
-!      	END IF
 !C
 !C starts computing the histograms
 !C
@@ -2461,190 +1936,6 @@ iMirr=0
 	  !  N_BINY	= NGY
 	  !END IF
 	END IF
-!C
-!C User can save the TD.FIL to regenerate the plot at a later time.
-!C
-!#if defined(vms)
-!	I_TD  = IRINT 
-!     $		('PLOT> Do you want to save the TD command file ? ')
-!	IF (I_TD.EQ.1) OPEN (27,FILE='TD.FIL',STATUS='NEW')
-!C
-!C Set up the terminal for plotting.
-!C  
-!	CALL	SET_SCREEN	('PLOT>',0,ITERM)
-!	CALL 	TDNEWP
-!	TEXT	= 'MODE NOECHO ;'
-!     	CALL 	TDSET	(%REF(TEXT))
-!	TEXT	= 'TICKS SIZE 0.05 ;'
-!     	CALL	TDSET	(%REF(TEXT))
-!	TEXT	= 'LABELS ALL OFF ;'
-!     	CALL	TDSET	(%REF(TEXT))
-!#else
-!C
-!C Check unix display and start creating primvs command file
-!C
-!	ITD = 0
-!C	WRITE(6,*)'This will create PRIMVS input files'
-!	WRITE(6,*) 'Display type:'
-!#if HAVE_XWINDOWS
-!	WRITE(6,*) '  [ 0 ] Xwindow'
-!#endif
-!	WRITE(6,*) '  [ 1 ] Tektronix'
-!	WRITE(6,*) '  [ 2 ] Postscript file'
-!	ITERM = IRINT ('Terminal type:  ')
-!iterm = 0
-!C now write out primvs command file
-! 	OPEN (35,FILE='plotxy1.gnu',STATUS='UNKNOWN', FORM='FORMATTED')
-! 	!WRITE(35,*) '#Primvs command file for PLOTXY'
-! 	! 
-! 	WRITE(35,*) '#GnuPlot command file for PLOTXY'
-! 
-!         WRITE(35,*) 'set xtic font "FreeSans,8" '
-!         WRITE(35,*) 'set ytic font "FreeSans,8" '
-!         WRITE(35,*) 'set size 1,1 '
-!         WRITE(35,*) 'set origin 0,0 '
-!         WRITE(35,*) 'set lmargin 5 '
-!         WRITE(35,*) 'set rmargin 3 '
-!         WRITE(35,*) 'set tmargin 1 '
-!         WRITE(35,*) 'set bmargin 2.5 '
-!         WRITE(35,*) ' '
-!         WRITE(35,*) ' '
-!         WRITE(35,*) 'set multiplot'
-
-
-!#endif
-!#if !HAVE_XWINDOWS
-!	IF (ITERM.EQ.0) THEN
-!	    WRITE (*,*) 'No X Windows support. Using Postscript file'
-!	    ITERM=2
-!	ENDIF
-!#endif
-!	IF (ITERM.LT.0 .OR. ITERM.GT.2) THEN
-!	    WRITE (*,*) 'Invalid device Id. Using Postscript file'
-!	    ITERM=2
-!	ENDIF
-!	IF (IANSW.EQ.-1) THEN
-!#if !defined(vms)
-!	  IF      (ITERM.EQ.0) THEN
-!	     WRITE (35,*) '# Initialize Xwindow display'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'initpage(xwin)'
-!	    ELSE IF (ITERM.EQ.1) THEN
-!	     WRITE (35,*) '# Initialize Tektronix display'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'initpage(tekt)'
-!	  ELSE IF (ITERM.EQ.2) THEN
-!	     WRITE (35,*) '# Initialize Postscript file (plotxy.ps)'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'setcolor(0)'
-!	     WRITE (35,*) 'initpage(ps,"plotxy.ps")'
-!	  END IF
-!#endif
-!	  TEXT	= 'WINDOW X 0 9.2 Y 0 9.2 ;'
-!	ELSE
-!#if !defined(vms)
-!	  IF      (ITERM.EQ.0) THEN
-!	     WRITE (35,*) '# Initialize Xwindow display'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'initpage(xwin)'
-!	  ELSE IF (ITERM.EQ.1) THEN
-!	     WRITE (35,*) '# Initialize Tektronix display'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'initpage(tekt)'
-!	  ELSE IF (ITERM.EQ.2) THEN
-!	     WRITE (35,*) '# Initialize Postscript file'
-!	     WRITE (35,*) '#'
-!	     WRITE (35,*) 'setcolor(0)'
-!	     WRITE (35,*) 'initpage(ps,"plotxy.ps")'
-!	  END IF
-!#endif
-!	  TEXT	= 'WINDOW X 0 7 Y 0 7 ;'
-!	END IF
-!#if defined(vms)
-!     	CALL	TDSET	(%REF(TEXT))
-!	WRITE	(TEXT,1010) 	X_LOW,X_UPP,Y_LOW,Y_UPP
-!1010	FORMAT	('LIMITS X ',G13.6,' ',G13.6,' Y ',G13.6,' ',G13.6,' ;')
-!     	CALL 	TDSET	(%REF(TEXT))
-!	IF (I_TD.EQ.1) THEN
-!	  WRITE (27,*)	'MODE NOECHO'
-!	  WRITE (27,*)	'TICKS SIZE 0.05'
-!	  WRITE (27,*)	'LABELS ALL OFF'
-!	  IF (IANSW.EQ.-1) THEN
-!	    WRITE (27,*) 'WINDOW X 0 9.2 Y 0 9.2'
-!	  ELSE
-!	    WRITE (27,*) 'WINDOW X 0 7 Y 0 7'
-!	  END IF
-!	  WRITE (27,*)	TEXT(1:66)
-!	END IF
-!#else
-! 	IF (IANSW.EQ.-1) THEN
-! 	  WRITE (35,*) ' '
-! 	  WRITE (35,*) '# Set page and plot limits'
-! !	  WRITE (35,*) '#1 regionr(0.05,0.05,0.727,0.857,1.0)'
-! 	  WRITE (35,*) 'set size 0.75 0.75'
-! 	  WRITE (35,*) 'set origin 0,0'
-! !	  WRITE(35,3030) '#1 ',X_LOW,X_UPP,Y_LOW,Y_UPP
-! !	  WRITE (35,*) '#1 scalechr(0.5)'
-! !	  WRITE(35,*) '#1 color(green)'
-! 	ELSE
-! 	  WRITE (35,*) ' '
-! 	  WRITE (35,*) '# Set page and plot limits'
-! !	  WRITE(35,*) '#1 regionr(0.05,0.05,0.55,0.7,1.0)'
-! 	  WRITE (35,*) 'set size 0.75,0.75'
-! 	  WRITE (35,*) 'set origin 0,0'
-! !	  WRITE(35,3030) '#1 ',X_LOW,X_UPP,Y_LOW,Y_UPP
-! !	  WRITE (35,*) '#1 scalechr(0.5)'
-! !	  WRITE(35,*) '#1 color(green)'
-! 	ENDIF
-!3030    FORMAT ('#1 xyrange(',SP,G15.8,',',G15.8,',',G15.8,',',G15.8,')')
-!#endif
-
-!C
-!C Mark the origin.
-!C
-!	  XPLOT (1)	= 0.0
-!	  XPLOT (2)	= 0.0
-!	  YPLOT (1)	= Y_UPP
-!	  YPLOT (2)	= YU_C
-!#if defined(vms)
-!	  CALL	JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!#else
-!	  WRITE(35,*) ' '
-!	  WRITE(35,*) '# Mark the origin '
-!	  WRITE(35,4040) XPLOT(1),YPLOT(1),XPLOT(2),YPLOT(2)
-!4040	  FORMAT ('#line(',G15.8,',',G15.8,',',G15.8,',',G15.8,')')
-!#endif
-!	  XPLOT (1)	= 0.0
-!	  XPLOT (2)	= 0.0
-!	  YPLOT (1)	= YL_C
-!	  YPLOT (2)	= Y_LOW
-!#if defined(vms)
-!	  CALL  JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!#else
-!	  WRITE(35,4040) XPLOT(1),YPLOT(1),XPLOT(2),YPLOT(2)
-!#endif
-!	  XPLOT (1)	= X_LOW
-!	  XPLOT (2)	= XL_C
-!	  YPLOT (1)	= 0.0
-!	  YPLOT (2)	= 0.0
-!#if defined(vms)
-!	  CALL  JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!#else
-!	  WRITE(35,4040) XPLOT(1),YPLOT(1),XPLOT(2),YPLOT(2)
-!#endif
-!	  XPLOT (1)	= XU_C
-!	  XPLOT (2)	= X_UPP
-!	  YPLOT (1)	= 0.0
-!	  YPLOT (2)	= 0.0
-!#if defined(vms)
-!	  CALL  JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!#else
-!	  WRITE(35,4040) XPLOT(1),YPLOT(1),XPLOT(2),YPLOT(2)
-!#endif
-!C
-!C Before plotting, set up the contour first.
-!C
-!	IF (IGRID.EQ.2) THEN
 	IF (IGRID.GT.0) THEN
 !C
 !C Prepare the side of the grid.
@@ -2667,23 +1958,10 @@ iMirr=0
 	  DO 22 J = 1,NGY
 	    YSID(J)	= Y_LOW + Y_STEP*(J-1) + Y_STEP/2
 22	  CONTINUE
-!#if defined(vms)
-!	  TEXT	= 'SET ORDER X Y DUMM ;'
-!	  CALL	TDSET	(%REF(TEXT))
-!	  IF (I_TD.EQ.1)	WRITE (27,*) 'SET ORDER X Y DUMM'
-!#else
-!	  WRITE(35,*) '#1 format(x:1,y:2)'
-!
-!#endif
 	END IF
 !C
 !C Loop thru all the rays.
 !C
-!	WRITE(35,*) 'plot "plotxy_scatter.dat" u 1:2 w d lt -1 notitle'
-!	IF (IGRID.EQ.1) THEN
-!	  OPEN(36,FILE='plotxy_scatter.dat',STATUS='UNKNOWN')
-!	ENDIF
-
      	IPASS = 0
 ! starts loop
 9999	KX = 0
@@ -2800,166 +2078,12 @@ iMirr=0
 	   J_BIN	= INT(ARG_Y) + 1
 	   IF (I_BIN.GT.MAXGS.OR.I_BIN.LT.1) GO TO 8989
 	   IF (J_BIN.GT.MAXGS.OR.J_BIN.LT.1) GO TO 8989
-!	   IF (K_REFL.EQ.1) THEN
 	   if (k_refl.eq.1) then
-!	     IF (K_ACT.EQ.0) THEN
 	       ARG	= A_SQUARE(I)
-!	       ARG	= ARG*FACTOR*TOCM/TWOPI*1.602D-19*RAY(11,I)
-!	     ELSE
-!	       ARG1	= A_SQUARE(I)
-!	       ARG2	= A2_SQUARE(I)
-!	       IF (K_ACT.EQ.1) THEN
-!	         ARG	= ARG2 - ARG1
-!!C
-!!C the following, r_ener, is the energy carried by each ray
-!!C
-!     		 R_ENER = TOCM/TWOPI*1.602D-19*RAY(11,I)
-!!C
-!!C after scaling and taking in account the decrease in |A|, we obtain
-!!C
-!	         ARG	= ARG*FACTOR*R_ENER
-!	       ELSE IF (K_ACT.EQ.2) THEN
-!	         ARG	= ARG1/ARG2
-!	       END IF
-!	     END IF
            ELSE
 	     ARG	= 1.0D0
 	   END IF
 	   PIXEL(I_BIN,J_BIN)	= PIXEL(I_BIN,J_BIN) + ARG
-!	   WRITE(22,*) XWRI,YWRI,ARG
-!!!   !C	
-!!!   !C Connected plot :
-!!!   !C
-!!!        	 ELSE IF (IGRID.EQ.1.AND.IPASS.EQ.1) THEN  ! connected, initial
-!!!        	  KX = KX + 1
-!!!        	  IF (IX.NE.20) XWRI	=  RAY(IX,I)
-!!!        	  IF (IY.NE.20) YWRI	=  RAY(IY,I)
-!!!        	  IF (IX.EQ.20) THEN
-!!!        	    XWRI = ABS( SQRT( RAY(4,I)**2 + RAY(6,I)**2 )/RAY(5,I) )
-!!!        	  ELSE IF (IY.EQ.20) THEN
-!!!        	    YWRI = ABS( SQRT( RAY(4,I)**2 + RAY(6,I)**2 )/RAY(5,I) )
-!!!        	  END IF
-!!!        	  IF (IX.EQ.13) THEN
-!!!        	    XWRI = XWRI - P_CENT
-!!!        	  ELSE IF (IY.EQ.13) THEN
-!!!        	    YWRI = YWRI - P_CENT
-!!!        	  END IF
-!!!             IF (ILOST.EQ.0) THEN
-!!!              IF (RAY(10,I).GE.0.0D0) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	     ITST = 0
-!!!        	   ELSE IF (RAY(10,I).LT.0.0D0.AND.ITST.EQ.0) THEN
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!        	       ITST = 1
-!!!   	     END IF
-!!!        	   END IF
-!!!        	  ELSE IF (ILOST.EQ.1) THEN
-!!!       	   IF (RAY(10,I).LT.0.0D0) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	     ITST = 0
-!!!        	   ELSE IF (RAY(10,I).GE.0.0D0.AND.ITST.EQ.0) THEN
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!        	       ITST = 1
-!!!   	     END IF
-!!!        	   END IF
-!!!        	  ELSE IF (ILOST.EQ.2) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	  END IF
-!!!        	  IF (KX.EQ.NGX) THEN
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!   	     END IF
-!!!   	     KX	= 0
-!!!        	  END IF
-!!!        	 ELSE IF (IGRID.EQ.1.AND.IPASS.EQ.2) THEN !connected  (more)
-!!!        	  KY = KY + 1
-!!!        	  INDEX = NGX*(KY-1)+KX+1
-!!!        	  IF (IX.NE.20) XWRI	=  RAY(IX,INDEX)
-!!!        	  IF (IY.NE.20) YWRI	=  RAY(IY,INDEX)
-!!!        	  IF (IX.EQ.20) THEN
-!!!        	    XWRI = ABS( SQRT( RAY(4,I)**2 + RAY(6,I)**2 )/RAY(5,I) )
-!!!        	  ELSE IF (IY.EQ.20) THEN
-!!!        	    YWRI = ABS( SQRT( RAY(4,I)**2 + RAY(6,I)**2 )/RAY(5,I) )
-!!!        	  END IF
-!!!        	  IF (IX.EQ.13) THEN
-!!!        	    XWRI = XWRI - P_CENT
-!!!        	  ELSE IF (IY.EQ.13) THEN
-!!!        	    YWRI = YWRI - P_CENT
-!!!        	  END IF
-!!!             IF (ILOST.EQ.0) THEN
-!!!              IF (RAY(10,INDEX).GE.0.0D0) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	     ITST = 0
-!!!        	   ELSE IF (RAY(10,INDEX).LT.0.0D0.AND.ITST.EQ.0) THEN
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!        	       ITST = 1
-!!!   	     END IF
-!!!        	   END IF
-!!!        	  ELSE IF (ILOST.EQ.1) THEN
-!!!       	   IF (RAY(10,INDEX).LT.0.0D0) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	     ITST = 0
-!!!        	   ELSE IF (RAY(10,INDEX).GE.0.0D0.AND.ITST.EQ.0) THEN
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!        	       ITST = 1
-!!!   	     END IF
-!!!        	   END IF
-!!!        	  ELSE IF (ILOST.EQ.2) THEN
-!!!   	     KPLOT		= KPLOT + 1
-!!!   	     XPLOT (KPLOT)	= XWRI
-!!!   	     YPLOT (KPLOT)	= YWRI	
-!!!        	  END IF
-!!!        	  IF (KY.EQ.NGY) THEN
-!!!        	     KX = KX + 1
-!!!   	     IF (KPLOT.NE.0) THEN
-!!!   !#if defined(vms)
-!!!   !	       CALL JOIN	(KPLOT,XPLOT,YPLOT,I_TD,0)
-!!!   !#else
-!!!   !	       WRITE(36,*) XPLOT,YPLOT
-!!!   !#endif
-!!!    	       KPLOT	= 0
-!!!   	     END IF
-!!!      	     KY = 0
-!!!        	  END IF
      	 END IF  ! end scatter OR connected OR contour
 8989   	CONTINUE
      	IF (IGRID.EQ.1.AND.IPASS.EQ.1) GO TO 9999
@@ -2970,20 +2094,6 @@ iMirr=0
 
 
 	IF (IGRID.EQ.0)	THEN
-!#if defined(vms)
-!	  IF (ITERM.EQ.3) 	CALL SET_COLOR (9)
-!	  IF (KPLOT.NE.0) CALL TDPLOT (KPLOT,XPLOT,YPLOT)
-!#else
-!	  WRITE(35,*) ' '
-!	  WRITE(35,*) '# Draw axes and plot scatter plot '
-!	  WRITE(35,*) '#1 symbol(1)'
-!	  WRITE(35,*) '#1 box("bcnst",0,0,"bcnstv",0,0)'
-!	  WRITE(35,*) '#1 Good rays are shown in green'
-!	  WRITE(35,*) '#1 color(green)'
-!	  WRITE(35,*) '#1 plotp("scatter.dat")'
-!!	  WRITE(35,*) 'plot "plotxy_scatter.dat" u 1:2 w d lt -1 notitle'
-!	  WRITE(35,*) '#1 color(green)'
-
 !
 ! write file with scatter points
 !
@@ -2997,41 +2107,14 @@ iMirr=0
 	  END IF
 	  CLOSE(36)
 	  print *,'File written to disk: plotxy_scatter.dat'
-!#endif
-!	  IF (I_TD.EQ.1) THEN
-!	    DO I = 1, KPLOT
-!	      IF (MOD(I,1000).EQ.0)	WRITE	(27,*)	'PLOT'
-!	      WRITE 	(27,*)	XPLOT(I),YPLOT(I)
-!	    END DO
-!	    WRITE	(27,*)	'PLOT'
-!	  END IF
 	  IF (ILOST.EQ.2) THEN
-!#if defined(vms)
-!	   IF (ITERM.EQ.3) 	CALL SET_COLOR (6)
-!	   IF (KLOSS.GT.0)	CALL TDPLOT (KLOSS,XLOSS,YLOSS)
-!#else
 	   IF (KLOSS.GT.0) THEN
 	     OPEN(40,FILE='plotxy_lost.dat',STATUS='UNKNOWN')
-!	     WRITE(35,*) '# Lost rays are shown in red'
-!	     WRITE(35,*) 'color(red)'
-!	     WRITE(35,*) 'plotp("lost.dat")'
-!	     WRITE(35,*) 'color(green)'
 	     DO 3032 I = 1,KLOSS
 	       WRITE(40,*) XLOSS(I),YLOSS(I)
 3032	     CONTINUE
 	   END IF
-!#endif
-!	   IF (I_TD.EQ.1) THEN
-!	    DO I = 1, KLOSS
-!	      IF (MOD(I,1000).EQ.0)	WRITE	(27,*)	'PLOT'
-!	      WRITE 	(27,*)	XLOSS(I),YLOSS(I)
-!	    END DO
-!	    WRITE	(27,*)	'PLOT'
-!	   END IF
 	  END IF !iLost
-!#if defined(vms)
-!	  IF (ITERM.EQ.3) 	CALL SET_COLOR (1)
-!#endif
 	ELSE !IF (IGRID.EQ.2) THEN
 !C
 !C Smooths the picture for contour plots
@@ -3096,9 +2179,7 @@ iMirr=0
 !C
 !C save grid file
 !C
-!print *,'<><><> iGridFile: ',iGridFile
      	IF (iGridFile.EQ.1) THEN
-!print *,'<><><> opening plotxy_grid.dat'
      	  OPEN (21, FILE='plotxy_grid.dat', STATUS='UNKNOWN')
      	  WRITE (21,*) '# plotxy grid data for plotxy.gpl'
      	  WRITE (21,*) '# Xbin Ybin Weight'
@@ -3160,67 +2241,7 @@ iMirr=0
 	  XYLIM(2)	= X_UPP
 	  XYLIM(3)  	= Y_LOW
 	  XYLIM(4)	= Y_UPP
-!! THIS IS TOPDRAWER???? srio!
-	  !!CALL	CONTOUR(XSID,YSID,ZDATA,XYLIM,NGX,NGY,ICONT,CVALUE,IPLT)
-!#ifndef vms
-!	  WRITE(35,*) '#1 color(green)'
-
-!! 	ELSE IF (IGRID.EQ.1) THEN
-!! 	  WRITE(35,*) ' '
-!! 	  WRITE(35,*) '# Draw axes and connected plot '
-!! !          WRITE(35,*) '#1 symbol(1)'
-!! !	  WRITE(35,*) '#1 box("bcnst",0,0,"bcnstv",0,0)'
-!! !	  WRITE(35,*) '#1 plotl("scatter.dat")'
-!! !#endif
 	END IF
-!C
-!C Overlay the slit or mirror.
-!C
-!	IF (IMIRR.EQ.1) THEN
-!     	  IF (ISLIT.EQ.0) THEN
-!	   XPLOT(1)	= XS_MIN
-!	   YPLOT(1)	= YS_MIN
-!	   XPLOT(2)	= XS_MIN
-!	   YPLOT(2)	= YS_MAX
-!	   XPLOT(3)	= XS_MAX
-!	   YPLOT(3)	= YS_MAX
-!	   XPLOT(4)	= XS_MAX
-!	   YPLOT(4)	= YS_MIN
-!	   XPLOT(5)	= XS_MIN
-!	   YPLOT(5)	= YS_MIN
-!!#if defined(vms)
-!!	   CALL		JOIN	(5,XPLOT,YPLOT,I_TD,1)
-!!#else
-!	   WRITE(35,*) ' '
-!	   WRITE(35,*) '# Overlay the slit or mirror.'
-!!	   WRITE(35,4040) '#1 ',XS_MIN,YS_MIN,XS_MIN,YS_MAX
-!!	   WRITE(35,4040) '#1 ',XS_MIN,YS_MAX,XS_MAX,YS_MAX
-!!	   WRITE(35,4040) '#1 ',XS_MAX,YS_MAX,XS_MAX,YS_MIN
-!!	   WRITE(35,4040) '#1 ',XS_MAX,YS_MIN,XS_MIN,YS_MIN
-!!#endif
-!     	  ELSE
-!!#if !defined(vms)
-!!	    OPEN(39,FILE='ellipse',STATUS='UNKNOWN')
-!!	    WRITE(35,*) ' '
-!!	    WRITE(35,*) '# Overlay the slit or mirror.'
-!!	    WRITE(35,*) 'plotl("ellipse")'
-!!#endif
-!     	    DO 46 I=1,61
-!     	    ARG = 6*(I-1)
-!     	    XPLOT(I) = ELLX + AMAJ*COS(TORAD*ARG)
-!     	    YPLOT(I) = ELLY + AMIN*SIN(TORAD*ARG)
-!!#if !defined(vms)
-!!	    WRITE(39,*) XPLOT(I),YPLOT(I)
-!!#endif
-!46	    CONTINUE
-!!#if defined(vms)
-!!	   CALL	JOIN	(61,XPLOT,YPLOT,I_TD,0)
-!!#endif
-!     	  END IF
-!     	END IF
-
-
-
 !C
 !C Now the histogram.
 !C
@@ -3304,23 +2325,7 @@ yplot=0
 ! srio inverted the order
 998	continue
      	IF (KKK.EQ.1) THEN
-!#if defined(vms)
-!     	  CALL TDSET	(%REF('WINDOW X 0 7 Y 7.2 9.2; '))
-!	  WRITE	(TEXT,1020)	X_LOW,X_UPP
-!1020	  FORMAT ('LIMITS X ',G13.6,' ',G13.6,'; ')
-!	  CALL TDSET	(%REF(TEXT))
-!#else
-!	  WRITE(35,*) ' '
-!	  WRITE(35,*) '# Define plotting area for top histogram '
-!	  WRITE(35,*) '#1 regionr(0.05,0.70,0.55,0.927,0.3077)'
-!	  WRITE(35,*) 'set size 0.75,0.25'
-!	  WRITE(35,*) 'set origin 0,0.75'
-!	  WRITE(35,*) 'set noxtics'
-!	  WRITE(35,*) 'set bmargin 0'
-
-!print *,'<><> opening : plotxy_histtop.dat'
 	  OPEN(37,FILE='plotxy_histtop.dat',STATUS='UNKNOWN')
-!#endif
 	X1UPP = -1.0D20
      	DO 56 I=1,N_BIN
      	  XPLOT(I) = X_ARRAY(I)
@@ -3328,80 +2333,26 @@ yplot=0
 	  X1UPP = MAX(X1UPP,Y_ARRAY(I))
 56	CONTINUE
 	X1UPP = X1UPP*1.1
-!#if defined(vms)
-!	  CALL	TDHIST  (N_BIN,XPLOT,YPLOT)
-!#else
 	  X1LOW = 0.0D0
-!	  WRITE(35,3030) X_LOW,X_UPP,X1LOW,X1UPP
-!	  WRITE(35,*) 'plot "plotxy_histtop.dat" u 1:2 with lines lt -1 notitle'
-!	  WRITE(35,*) '#1 plotl("plotxy_histtop.dat")'
-!	  WRITE(35,*) '#1 box("bcst",0,0,"bcnstv",0,0)'
-!	  WRITE(35,*) '#1 label("","","',FILETEXT,'")'
 	  WRITE(37,*) XSTART,0.0
 	  DO 3035 I = 1,N_BIN
 	    WRITE(37,*) X_ARRAY(I)-STEP/2, Y_ARRAY(I)
 	    WRITE(37,*) X_ARRAY(I)+STEP/2, Y_ARRAY(I)
 3035	  CONTINUE
 	  WRITE(37,*) X_ARRAY(N_BIN)+STEP/2, 0.0
-!#endif
-!	  IF (I_TD.EQ.1) THEN
-!	    WRITE	(27,*)	'WINDOW X 0 7 Y 7.2 9.2'
-!	    WRITE	(27,*)	TEXT(1:36)
-!	      DO 3042 I = 1, N_BIN
-!		WRITE	(27,*)	XPLOT(I),YPLOT(I)
-!3042	      CONTINUE
-!	    WRITE	(27,*)	'HIST'
-!	  END IF
-     	ELSE
-!#if defined(vms)
-!     	  CALL TDSET	(%REF('WINDOW X 7.2 9.2 Y 0 7; '))
-!	  WRITE	(TEXT,1030)	Y_LOW,Y_UPP
-!1030	  FORMAT ('LIMITS Y ',G13.6,' ',G13.6,'; ')
-!	  CALL TDSET	(%REF(TEXT))
-!#else
-!	  WRITE(35,*) ' '
-!	  WRITE(35,*) '# Define plotting area for side histogram'
-!!	  WRITE(35,*) '#1 regionr(0.55,0.05,0.727,0.7,3.25)'
-!	  WRITE(35,*) 'set size 0.25,0.75'
-!	  WRITE(35,*) 'set origin 0.75,0'
-!	  WRITE(35,*) 'set noytics'
-!	  WRITE(35,*) 'set xtics font "FreeSans,8" mirror rotate by -90'
-!	  WRITE(35,*) 'set bmargin 2.5'
-!	  WRITE(35,*) 'set lmargin 0'
-!#endif
 	XMAX	= 0
 	DO 3041 I=1,N_BIN
 	  XMAX	= MAX(XMAX,Y_ARRAY(I))
 3041	CONTINUE
-!#if defined(vms)
-!	WRITE	(TEXT1,1031)	XMAX*1.1
-!1031	FORMAT	('LIMIT X 0 ',G13.6,'; ')
-!	CALL TDSET	(%REF(TEXT1))
-!#else
 	Y1LOW = 0.0
 	Y1UPP = XMAX*1.1
-!	WRITE(35,3030) Y1LOW,Y1UPP,Y_LOW,Y_UPP
-!	WRITE(35,*) 'plot "plotxy_histside.dat" u 1:2 with lines lt -1 notitle'
-!	WRITE(35,*) '#1 plotl("histside.dat")'
-!	WRITE(35,*) '#1 box("bcnst",0,0,"bcst",0,0)'
-!print *,'<><> opening : plotxy_histside.dat'
 	OPEN(38,FILE='plotxy_histside.dat',STATUS='UNKNOWN')
-!#endif
-!	IF (I_TD.EQ.1)	THEN
-!	  WRITE	(27,*)	'WINDOW X 7.2 9.2 Y 0 7'
-!	  WRITE (27,*)	TEXT(1:36)
-!	  WRITE (27,*)	TEXT1(1:23)
-!	END IF
 	XPLOT(1)	= X_ARRAY(1) - STEP/2
 	YPLOT(1)	= 0.0
 	XPLOT(2)	= X_ARRAY(1) - STEP/2
 	YPLOT(2)	= Y_ARRAY(1)
-!#if defined(vms)
-!	CALL JOIN	(2,YPLOT,XPLOT,I_TD,1)
-!#else
 	WRITE(38,*) YPLOT(1),XPLOT(1)
 	WRITE(38,*) YPLOT(2),XPLOT(2)
-!#endif
 	Y_ARRAY(N_BIN+1)	= 0.0
      	DO 59 I=1,N_BIN
      	  XWRI_L = X_ARRAY(I)-STEP/2
@@ -3421,132 +2372,14 @@ yplot=0
 	 YPLOT (2)	= Y_ARRAY(I)
 	 XPLOT (3)	= XWRI_U
 	 YPLOT (3)	= Y_ARRAY(I+1)
-!#if defined(vms)
-!	 CALL	JOIN	(3,YPLOT,XPLOT,I_TD,1)
-!#else
 	 WRITE(38,*) YPLOT(1),XPLOT(1)
 	 WRITE(38,*) YPLOT(2),XPLOT(2)
 	 WRITE(38,*) YPLOT(3),XPLOT(3)
-!#endif
 59	CONTINUE
      	END IF
 47	CONTINUE
 
 5001	CONTINUE
-!#if defined(vms)
-!	CALL TDSET	(%REF('WINDOW X 0 13 Y 0 10; '))
-!	TEXT	= FILETEXT//'; '
-!	CALL TDTSET	(2.0,0,0,0)
-!     	CALL TDTITL	(%REF(TEXT),0.2,9.6)
-!	TEXT	= DATETEXT//'; '
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT),9.5,9.6)
-!	TEXT	= COMMENT(1:20)//'; '
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT),9.5,8.9)
-!     	IF (LCOMM.GT.20) THEN
-!	  TEXT	= COMMENT(21:40)//'; '
-!	  CALL TDTSET	(2.0,0,0,0)
-!	  CALL TDTITL	(%REF(TEXT),9.5,8.4)
-!	  IF (LCOMM.GT.40) THEN
-!	    TEXT	= COMMENT(41:60)//'; '
-!	    CALL TDTSET	(2.0,0,0,0)
-!	    CALL TDTITL	(%REF(TEXT),9.5,7.9)
-!	    IF (LCOMM.GT.60) THEN
-!	      TEXT	= COMMENT(61:80)//'; '
-!	      CALL TDTSET	(2.0,0,0,0)
-!	      CALL TDTITL (%REF(TEXT),9.5,7.4)
-!	    END IF
-!	  END IF
-!     	END IF
-!     	CALL	DATE	(TODAY(1:9))
-!     	CALL	TIME	(TODAY(12:20))
-!	CALL TDSET	(%REF('ORDER X Y ; '))
-!	CALL TDSET	(%REF('AXES ALL OFF; '))
-!     	CALL TDSET	(%REF('LIMITS X 0 13 Y 0 10; '))
-!	IF (I_TD.EQ.1) THEN
-!	  WRITE	(27,*)  'WINDOW X 0 13 Y 0 10'
-!	  WRITE	(27,*)  'SET TITLE SIZE -2'
-!	  WRITE	(27,*)  'TITLE 0.2 9.6 '''//FILETEXT//''''
-!	  WRITE	(27,*)  'TITLE 9.5 9.6 '''//DATETEXT//''''
-!	  WRITE	(27,*)  'TITLE 9.5 8.9 '''//COMMENT(1:20)//''''
-!	  IF (LCOMM.GT.20) THEN
-!	    WRITE	(27,*)  'TITLE 9.5 8.4 '''//COMMENT(21:40)//''''
-!	    IF (LCOMM.GT.40)
-!     $	    WRITE	(27,*)  'TITLE 9.5 7.9 '''//COMMENT(41:60)//''''
-!	    IF (LCOMM.GT.60)
-!     $	    WRITE	(27,*)  'TITLE 9.5 7.4 '''//COMMENT(61:80)//''''
-!	  END IF
-!	  WRITE	(27,*)  'ORDER X Y'
-!	  WRITE	(27,*)  'AXIS ALL OFF'
-!	  WRITE	(27,*)  'LIMITS X 0 13 Y 0 10'
-!	END IF
-!     	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 0
-!     	XPLOT(2)	= 9.3
-!	YPLOT(2)	= 7
-!     	XPLOT(3)	= 13
-!	YPLOT(3)	= 7
-!     	XPLOT(4)	= 13
-!	YPLOT(4)	= 0
-!     	XPLOT(5)	= 9.3
-!	YPLOT(5)	= 0
-!	CALL JOIN	(5,XPLOT,YPLOT,I_TD,1)
-!     	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 6.4
-!     	XPLOT(2)	= 13
-!	YPLOT(2)	= 6.4
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!	TEXT		= TODAY//'; '
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT),9.5,6.7)
-!     	WHAT	=   X_UPP-X_LOW
-!	WRITE (TEXT,1050) WHAT
-!1050	FORMAT	('H Length ',G12.5,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT),9.5,6.1)
-!     	WHAT	=   (X_UPP+X_LOW)/2
-!	WRITE (TEXT1,1060) WHAT
-!1060	FORMAT	('H center ',G12.5,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT1),9.5,5.7)
-!     	WHAT	=   (Y_UPP-Y_LOW)
-!	WRITE (TEXT2,1070) WHAT
-!1070	FORMAT	('V Length ',G12.5,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT2),9.5,5.3)
-!     	WHAT	=   (Y_UPP+Y_LOW)/2
-!	WRITE (TEXT3,1080) WHAT
-!1080	FORMAT	('V center ',G12.5,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT3),9.5,4.9)
-!	IF (I_TD.EQ.1) THEN
-!	  WRITE	(27,*)	'TITLE 9.5 6.7 '''//TODAY//''''
-!	  WRITE (27,*)	'SET TITLE SIZE 2'
-!	  WRITE (27,*)	'TITLE 9.5 6.1 '''//TEXT(1:21)//''''
-!	  WRITE (27,*)	'TITLE 9.5 5.7 '''//TEXT1(1:21)//''''
-!	  WRITE (27,*)	'TITLE 9.5 5.3 '''//TEXT2(1:21)//''''
-!	  WRITE (27,*)	'TITLE 9.5 4.9 '''//TEXT3(1:21)//''''
-!	END IF
-!	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 4.5
-!	XPLOT(2)	= 13
-!	YPLOT(2)	= 4.5
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!     	IF (IPLOT.EQ.0) THEN
-!	  TEXT(1:14)	= 'AUTOSCALING ; '
-!     	ELSE IF (IPLOT.EQ.1) THEN
-!	  TEXT(1:14)	= 'CARTESIAN   ; '
-!     	ELSE
-!	  TEXT(1:14)	= 'EXTERNAL    ; '
-!     	END IF
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT),9.5,4.2)
-!	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 3.9
-!	XPLOT(2)	= 13
-!	YPLOT(2)	= 3.9
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
      	IF (ILOST.EQ.0) THEN
 	  TEXT1	= '--GOOD ONLY'
      	ELSE IF (ILOST.EQ.1) THEN
@@ -3554,17 +2387,8 @@ yplot=0
      	ELSE
 	  TEXT1	= '--ALL RAYS'
      	END IF
-!	CALL TDTSET	(2.0,0,0,0)
-!	CALL TDTITL	(%REF(TEXT1),9.5,3.6)
-!	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 3.3
-!	XPLOT(2)	= 13
-!	YPLOT(2)	= 3.3
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
 	WRITE (TEXT2,11001)	NPOINT
 11001	FORMAT	('TOT  = ',I7.1)
-!	CALL TDTSET	(2.0,0,0,0)
-!     	CALL TDTITL	(%REF(TEXT2),9.5,3.0)
 	WRITE (TEXT3,11102)	NLOSS
 11102	FORMAT	('LOST = ',I7.1)
 
@@ -3580,82 +2404,6 @@ yplot=0
            TEXT8='WEIGHT: INTENSITY'
         ENDIF
 
-!	CALL TDTSET	(2.0,0,0,0)
-!     	CALL TDTITL	(%REF(TEXT3),9.5,2.6)
-!	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 2.3
-!	XPLOT(2)	= 13
-!	YPLOT(2)	= 2.3
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!	WRITE (TEXT4,1120)	IX
-!1120	FORMAT	('Horizontal: ',I7.1,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!     	CALL TDTITL	(%REF(TEXT4),9.5,2.0)
-!	WRITE (TEXT5,1130)	IY
-!1130	FORMAT	('Vertical:   ',I7.1,'; ')
-!	CALL TDTSET	(2.0,0,0,0)
-!     	CALL TDTITL	(%REF(TEXT5),9.5,1.6)
-!	XPLOT(1)	= 9.3
-!	YPLOT(1)	= 1.3
-!	XPLOT(2)	= 13
-!	YPLOT(2)	= 1.3
-!	CALL JOIN	(2,XPLOT,YPLOT,I_TD,1)
-!	IF (IGRID.EQ.2) THEN
-!	  TEXT6	= 'Contour Values : ; '
-!	  CALL	TDTSET	(2.0,0,0,0)
-!	  CALL	TDTITL	(%REF(TEXT6),9.5,1.0)
-!	  WRITE	(TEXT7,1140)	NCONT,CVALUE(NCONT)
-!1140	  FORMAT	('  ',I2,' -- ',G12.5,'; ')
-!	  CALL	TDTSET	(2.0,0,0,0)
-!	  CALL	TDTITL	(%REF(TEXT7),9.5,0.65)
-!	  WRITE	(TEXT8,1140)	1,CVALUE(1)
-!	  CALL	TDTSET	(2.0,0,0,0)
-!	  CALL	TDTITL	(%REF(TEXT8),9.5,0.3)
-!	END IF
-!	CALL TDEND
-!	CALL	SET_SCREEN	(' ',1,ITERM)
-!	IF (I_TD.EQ.1) THEN
-!	  WRITE (27,*)	'TITLE 9.5 4.2 '''//TEXT(1:11)//''''
-!	  WRITE (27,*)	'TITLE 9.5 3.6 '''//TEXT1(1:11)//''''
-!	  WRITE (27,*)	'TITLE 9.5 3.0 '''//TEXT2(1:14)//''''
-!	  WRITE (27,*)	'TITLE 9.5 2.6 '''//TEXT3(1:14)//''''
-!	  WRITE (27,*)	'TITLE 9.5 2.0 '''//TEXT4(1:19)//''''
-!	  WRITE (27,*)	'TITLE 9.5 1.6 '''//TEXT5(1:19)//''''
-!	  IF (IGRID.EQ.2) THEN
-!	    WRITE (27,*)	'TITLE 9.5 1.0 '''//TEXT6(1:15)//''''
-!	    WRITE (27,*)	'TITLE 9.5 0.65 '''//TEXT7(1:20)//''''
-!	    WRITE (27,*)	'TITLE 9.5 0.3 '''//TEXT8(1:20)//''''
-!	  END IF
-!	  WRITE (27,*)  'END'
-!	END IF
-!#else
-!	WRITE(35,*) ' '
-!	WRITE(35,*) '# Fill in some useful information '
-!	WRITE(35,*) '#1 regionp(0.73,0.05,1.0,0.7)'
-!	WRITE(35,*) '#1 xyrange(0.6,1.0,0.1,1.0)'
-!	WRITE(35,*) '#1 scalechr(0.7)'
-!	WRITE(35,*) '#1 box("bc",0,0,"bc",0,0)'
-!	WRITE(35,*) '#1 line(0.6,0.93,1.0,0.93)'
-!	WRITE(35,*) '#1 line(0.6,0.72,1.0,0.72)'
-!	WRITE(35,*) '#1 line(0.6,0.65,1.0,0.65)'
-!	WRITE(35,*) '#1 line(0.6,0.55,1.0,0.55)'
-!	WRITE(35,*) '#1 line(0.6,0.40,1.0,0.40)'
-!	WRITE(35,*) '#1 line(0.6,0.28,1.0,0.28)'
-!#if !defined rs6000 && !defined(F2C) && !defined(G77)
-!	CALL DATE(TODAY(1:9))
-!#endif
-!#if !defined(F2C) && !defined(G77)
-!	CALL TIME(TODAY(12:20))
-!#endif
-!	WRITE(35,*) '#1 text("t",-1.5,0.05,0,"',TODAY(1:16),'")'
-!	WRITE(35,3050) X_UPP-X_LOW
-!3050	FORMAT	('#1 gtext(0.61,0.90,0,0,0,"H Length ',G10.5,'")')
-!	WRITE(35,3060) (X_UPP+X_LOW)/2
-!3060	FORMAT	('#1 gtext(0.61,0.85,0,0,0,"H Center ',G10.5,'")')
-!	WRITE(35,3070) Y_UPP-Y_LOW
-!3070	FORMAT	('#1 gtext(0.61,0.80,0,0,0,"V Length ',G10.5,'")')
-!	WRITE(35,3080) (Y_UPP+Y_LOW)/2
-!3080	FORMAT	('#1 gtext(0.61,0.75,0,0,0,"V Center ',G10.5,'")')
 	IF (IPLOT.EQ.0) THEN
 	  TEXT(1:19) = 'AUTOSCALING         '
 	ELSE IF (IPLOT.EQ.1) THEN
@@ -3663,7 +2411,6 @@ yplot=0
 	ELSE
 	  TEXT(1:19) = 'EXTERNAL            '
 	END IF
-!	WRITE(35,*) '#1 gtext(0.61,0.68,0,0,0,"',TEXT(1:19),'")'
 	IF (ILOST.EQ.0) THEN
 	  TEXT(1:19) = '- good only         '
 	ELSE IF (ILOST.EQ.1) THEN
@@ -3671,69 +2418,19 @@ yplot=0
 	ELSE
 	  TEXT(1:19) = '- all rays          '
 	END IF
-!	WRITE(35,*) '#1 gtext(0.61,0.58,0,0,0,"',TEXT(1:19),'")'
-!	WRITE(35,3090) NPOINT
-!3090	FORMAT ('#1 gtext(0.61,0.48,0,0,0,"Total = ',I7.1,'")')
-!	IF (ILOST.EQ.2) WRITE(35,*) '#1 color(red)'
-!	WRITE(35,3110) NLOSS
-!3110	FORMAT ('#1 gtext(0.61,0.43,0,0,0,"Lost = ',I7.1,'")')
-!	IF (ILOST.EQ.2) WRITE(35,*) '#1 color(green)'
-!	WRITE(35,3120) IX
-!3120	FORMAT ('#1 gtext(0.61,0.35,0,0,0,"Horizontal = ',I7.1,'")')
-!	WRITE(35,3130) IY
-!3130	FORMAT ('#1 gtext(0.61,0.30,0,0,0,"Vertical = ',I7.1,'")')
 	IF (IGRID.EQ.2) THEN
-!	  WRITE(35,*) '#1 gtext(0.61,0.25,0,0,0,"Contour Values :")'
-!	  WRITE(35,3140) NCONT,CVALUE(NCONT)
-!3140	  FORMAT ('#1 gtext(0.61,0.20,0,0,0,"',I2,' -- ',G15.8,'")')
-!	  WRITE(35,3150) 1,CVALUE(1)
-!3150	  FORMAT ('#1 gtext(0.61,0.15,0,0,0,"',I2,' -- ',G15.8,'")')
 	END IF
-!C       IF (IANSW.EQ.-1) THEN
-!	  WRITE(35,*) '#1 regionp(0.727,0.7,1,1)'
-!	  WRITE(35,*) '#1 text("t",-4,0,0,"',COMMENT(1:20),'")'
-!	  WRITE(35,*) '#1 text("t",-6,0,0,"',COMMENT(21:40),'")'
-!	  WRITE(35,*) '#1 text("t",-8,0,0,"',COMMENT(41:60),'")'
-!	  WRITE(35,*) '#1 text("t",-10,0,0,"',COMMENT(61:80),'")'
-!	  WRITE(35,*) '#1 text("b",-1.0,0,0,"Prepared:")'
-!C  WRITE(35,*) 'regionp(0.11,0.72,0.65,1)'
-!C  WRITE(35,*) 'text("t",-1,0,0,"',FILETEXT,'")'
-!CELSE
-!C  WRITE(35,*) 'subpage(2)'
-!C  WRITE(35,*) 'regionp(0.55,0,1,0.5)'
-!C  WRITE(35,*) 'text("t",-1,0,0,"',COMMENT(1:20),'")'
-!C  WRITE(35,*) 'text("t",-3,0,0,"',COMMENT(21:40),'")'
-!C  WRITE(35,*) 'text("t",-5,0,0,"',COMMENT(41:60),'")'
-!C  WRITE(35,*) 'text("t",-7,0,0,"',COMMENT(61:80),'")'
-!C  WRITE(35,*) 'text("b",-1.0,0,0,"Prepared:")'
-!CEND IF
-
 
 	IF (IANSW.EQ.-1) THEN
-!	  WRITE(35,*) '#1 regionp(0.11,0.72,0.65,1)'
-!	  WRITE(35,*) '#1 text("t",-2,0,0,"',FILETEXT,'")'
 	END IF
-!	WRITE(35,*) '#1 closepage'
-!	WRITE(35,*) '#1 exit'
-!	WRITE(35,*) 'unset multiplot'
-!	WRITE(35,*) "pause -1 'Press <Enter> to end graphic ' "
-!	CLOSE(35)
-!	print *,'File written to disk: plotxy.gnu'
 	CLOSE(37)
 	print *,'File written to disk: plotxy_histtop.dat'
 	CLOSE(38)
 	print *,'File written to disk: plotxy_histside.dat'
-!	CLOSE(39)
-!	print *,'File written to disk: 39'
         IF (KLOSS.GT.0) THEN
 	  CLOSE(40)
 	  print *,'File written to disk: plotxy_lost.dat'
         END IF
-!	IF (i22 == 1) THEN
-!	  CLOSE(22)
-!	  print *,'File written to disk: test (22)'
-!        END IF
-
 
 ! 
 ! write gnuplot file
@@ -3894,67 +2591,30 @@ ENDIF
     WRITE(35,'(A)')  '#                                             '
     WRITE(35,'(A)')  'set obj 10 rect from graph 1.20, graph 1 to graph 1.61, graph 0 '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.9" at graph 1.21, graph 0.9         '
         CALL GET_ENVIRONMENT_VARIABLE ('USER', TEXT6, nStr)
         CALL GET_ENVIRONMENT_VARIABLE ('HOST', TEXT7, nStr)
         WRITE(35,'(A)')  'set label "'//trim(text6)//'@'//trim(text7)//'" at graph 1.21, graph 0.9         '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.8" at graph 1.21, graph 0.8         '
-    !WRITE(35,'(A)')  'set label "comment here Y=0.7" at graph 1.21, graph 0.7         '
-    !WRITE(35,'(A)')  'set label "comment here Y=0.6" at graph 1.21, graph 0.6         '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.5" at graph 1.21, graph 0.5         '
       WRITE(35,'(A)')  'set label "'//trim(TEXT1)//'" at graph 1.21, graph 0.5         '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.4" at graph 1.21, graph 0.4         '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.3" at graph 1.21, graph 0.3         '
       WRITE(35,'(A)')  'set label "'//trim(TEXT2)//'" at graph 1.21, graph 0.30         '
       WRITE(35,'(A)')  'set label "'//trim(TEXT3)//'" at graph 1.21, graph 0.25        '
       WRITE(35,'(A)')  'set label "'//trim(TEXT4)//'" at graph 1.21, graph 0.20        '
       WRITE(35,'(A)')  'set label "'//trim(TEXT5)//'" at graph 1.21, graph 0.15        '
       WRITE(35,'(A)')  'set label "'//trim(TEXT8)//'" at graph 1.21, graph 0.10        '
 
-    !WRITE(35,'(A)')  'set label "comment here Y=0.2" at graph 1.21, graph 0.2         '
-    !WRITE(35,'(A)')  'set label "comment here Y=0.1" at graph 1.21, graph 0.1         '
 
     WRITE(35,'(A)')  'replot                                        '
     WRITE(35,'(A)')  '                                              '
     WRITE(35,'(A)')  'unset multiplot                               '
     WRITE(35,'(A)')  '                                              '
     WRITE (35,*)  "pause -1 'Press <Enter> to end graphic '"
-    !WRITE(35,'(A)')  'pause -1                                      '
     CLOSE(35) 
     print *,'File written to disk: plotxy.gpl'
 
-!print *,'<><><> TEXT1: **'//trim(text1)//'**'
-!print *,'<><><> TEXT2: **'//trim(text2)//'**'
-!print *,'<><><> TEXT3: **'//trim(text3)//'**'
-!print *,'<><><> TEXT4: **'//trim(text4)//'**'
-!print *,'<><><> TEXT5: **'//trim(text5)//'**'
-!print *,'<><><> TEXT6: **'//trim(text6)//'**'
-!print *,'<><><> TEXT7: **'//trim(text7)//'**'
-!print *,'<><><> TEXT8: **'//trim(text8)//'**'
-
-
-!C
-!C Get the program name relative to SHADOW_ROOT/bin.
-!C
 	IFLAG = 0
-!	CALL PROGPATH ('primvs', PRIMVS, IFLAG)
-!	PRIMVSPATH = PRIMVS(1:IBLANK(PRIMVS)) // ' -i plotxy.prm'
-!	WRITE(*,*) 'Executing program: ' // 
-!     $		PRIMVSPATH(1:IBLANK(PRIMVSPATH))
-!#if !defined(_WIN32)
-!	CALL SYSTEM (PRIMVSPATH)
-!#else
-!	IFLAG = 0
-!	CALL RUNPRIMVS (PRIMVS(1:IBLANK(PRIMVS)),'plotxy.prm',iflag)
-!#endif
-
-!#endif
-
-
 
   	IF(ALLOCATED( RAY ))       DEALLOCATE(RAY)
   	IF(ALLOCATED( RAY2 ))      DEALLOCATE(RAY2)
@@ -3967,8 +2627,6 @@ ENDIF
   	IF(ALLOCATED( YLOSS ))     DEALLOCATE(YLOSS)
 
 END SUBROUTINE PlotXY
-
-
 !
 !
 !
@@ -3983,18 +2641,8 @@ END SUBROUTINE PlotXY
 !     	PROGRAM		FFRESNEL
 SUBROUTINE FFresnel
 
-!        implicit real(kind=skr) (a-h,o-z)
-!        implicit integer(kind=ski)        (i-n)
         implicit none
 
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!        INCLUDE	        'SHADOW$INC:DIM.PAR/LIST'
-!#endif
-!C     	IMPLICIT	REAL*8	(A-H,O-Z)
-!     	CHARACTER*80	INFILE1,RSTRING
 	character(len=sklen) :: inFile1
 	real(kind=skr),dimension(:,:),allocatable :: ray
 	real(kind=skr),dimension(1001)            :: rDis
@@ -4003,24 +2651,11 @@ SUBROUTINE FFresnel
 	real(kind=skr)      :: rMin,rMax,step,dist,wave,qNew,factor,qvec
 	real(kind=skr)      :: rr_x,rr_z,vec1,vec2,rr,r,factor_inc,factor_nor
 	real(kind=skr)      :: rImag,alpha
-     	!DIMENSION	RAY(18,N_DIM)
-     	!DIMENSION	RDIS(1001)
-!     	COMPLEX*16	ARG_S,ARG_P,JEI,
-!     $			STOREX(1001),STOREY(1001),STOREZ(1001)
         complex(kind=skr)                  :: ARG_S,ARG_P,JEI
         complex(kind=skr),dimension(1001)  :: STOREX,STOREY,STOREZ
 
-        !REAL*8      	TWOPI, TORAD
-     	!DATA	TWOPI 	/  6.2831 85307 17958 64769 25287 D0 /
-	!DATA    TORAD   /  0.0174 53292 51994 32957 69237 D0 /
-
-     	!real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-     	!real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-     	!real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
      	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
-	!real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-	!real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 !C
      	JEI	=   (0.0D0,1.0D0)
      	
@@ -4044,25 +2679,19 @@ SUBROUTINE FFresnel
 ! 
 ! read input file 
 !
-!	CALL	RBEAM18	(INFILE1,RAY,NCOL,NP1,IFLAG,IERR)
-!	IF (IERR.NE.0)	STOP 'Error in reading ray file.'
-!	IF (NCOL.NE.18)	STOP 'The ray file doesnt contain polarization and phase information.'
-!
-
-
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (inFile1,ncol,np1,iflag,ierr)
+        CALL    beamGetDim (inFile1,ncol,np1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'FFresnel: RBeamAnalyze: Error in file: '//trim(inFile1)
+            print *,'FFresnel: beamGetDim: Error in file: '//trim(inFile1)
             stop
         END IF
 
   	ALLOCATE( RAY(18,NP1) )
   	ray=0.0d0
 
-	CALL RBeam18(ray,ierr,ncol,np1,inFile1)
+	CALL beamLoad(ray,ierr,ncol,np1,inFile1)
 
 !
 
@@ -4131,12 +2760,8 @@ SUBROUTINE FFresnel
      	 END DO
 100	CONTINUE
 	END DO
-!#ifdef vms
-!	OPEN	(20, FILE='FFPAR',STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN	(20, FILE='FFPAR', STATUS='UNKNOWN')
 	REWIND (20)
-!#endif
      	  WRITE (20,*) 'From ',RMIN,' to ',RMAX
 	  WRITE (20,*) '     Step ',STEP
      	  WRITE (20,*) 'Wavelength ',WAVE,' angs.'
@@ -4155,12 +2780,8 @@ SUBROUTINE FFresnel
 	 END IF
      	  WRITE (20,*) 'Files used: ',INFILE1
      	CLOSE   (20)
-!#ifdef vms
-!     	OPEN	(20, FILE='FFRESNEL', STATUS='NEW')
-!#else
      	OPEN	(20, FILE='FFRESNEL', STATUS='UNKNOWN')
 	REWIND (20)
-!#endif
      	DO K=1,NP
      	  RIMAG = (ABS(STOREX(K)))**2 + (ABS(STOREY(K)))**2  &
       		  + (ABS(STOREZ(K)))**2
@@ -4267,14 +2888,6 @@ end subroutine FFresnel2D
 !C---
 SUBROUTINE ReColor
 	implicit none
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
-     	!DATA	PI     	/  3.1415 92653 58979 32384 62643 D0 /
-     	!DATA	PIHALF 	/  1.5707 96326 79489 66192 31322 D0 /
-     	!DATA	TWOPI 	/  6.2831 85307 17958 64679 25287 D0 /
-     	!DATA	TODEG 	/ 57.2957 79513 08232 08767 98155 D0 /
-     	!DATA	TORAD	/  0.0174 53292 51994 32957 69237 D0 /
-	!DATA	TOCM	/  1.239 852	D-4		     /
-	!DATA	TOANGS 	/  1.239 852    D+4		     /
 
      	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
      	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
@@ -4284,14 +2897,6 @@ SUBROUTINE ReColor
 	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
 	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!        INCLUDE	        'SHADOW$INC:DIM.PAR/LIST'
-!#endif
-!     	DIMENSION	RAY(12,N_DIM),AP(3,N_DIM),PHASE(3,N_DIM),
-!     $			WAVE (10)
-!     	CHARACTER*60	INFILE,OUTFILE
 	character(len=sklen) :: inFile,outFile
 	integer(kind=ski)   :: iErr,iFlag,npoint,ncol,iWhat,nLines,i,iSeed
 	integer(kind=ski)   :: nn,iForm
@@ -4300,28 +2905,24 @@ SUBROUTINE ReColor
 	real(kind=skr),dimension(:,:),allocatable :: ray
 
 10     	WRITE(6,*)'File for input ?'
-     	!READ (5,1000)	INFILE
      	READ (5,'(a)')	INFILE
      	WRITE(6,*)'and for output ?'
-     	!READ (5,1000)	OUTFILE
      	READ (5,'(a)')	OUTFILE
 
-
-!	CALL	RBEAM	(INFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,IERR)
 
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (inFile,ncol,npoint,iflag,ierr)
+        CALL    beamGetDim (inFile,ncol,npoint,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'ReColor: RBeamAnalyze: Error in file: '//trim(inFile)
+            print *,'ReColor: beamGetDim: Error in file: '//trim(inFile)
             stop
         END IF
 
   	ALLOCATE( RAY(18,NPOINT) )
   	ray=0.0d0
 
-	CALL RBeam18(ray,ierr,ncol,npoint,inFile)
+	CALL beamLoad(ray,ierr,ncol,npoint,inFile)
 
 
 
@@ -4376,21 +2977,15 @@ SUBROUTINE ReColor
      	  RAY(11,I) = CVAL
      	 END IF
 30     	CONTINUE
-!C       IFORM = 0 FOR BINARY OUTPUT AND 1 FOR FORMATTED OUTPUT
         IFORM = 0
 
-!	CALL	WRITE_OFF(OUTFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,
-!     $	IFORM,IERR)
-!	IF (IERR.NE.0)	STOP	'Error in writting output file.'
-	CALL Write_off18(ray,ierr,ncol,npoint,outFile)
+	CALL beamWrite(ray,ierr,ncol,npoint,outFile)
 	IF (IERR.NE.0)	STOP	'Error in writting output file.'
 
 
         IF (allocated(ray)) deallocate(ray)
 
      	WRITE(6,*)'All done.'
-!     	STOP
-!1000	FORMAT (A)
 END SUBROUTINE ReColor
 
 !
@@ -4439,16 +3034,16 @@ SUBROUTINE Intens
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (file1,ncol1,np,iflag,ierr)
+        CALL    beamGetDim (file1,ncol1,np,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'Intens: RBeamAnalyze: Error in file: '//trim(file1)
+            print *,'Intens: beamGetDim: Error in file: '//trim(file1)
             stop
         END IF
 
   	ALLOCATE( RAY1(18,NP) )
   	ray1=0.0d0
 
-	CALL RBeam18(ray1,ierr,ncol1,np,file1)
+	CALL beamLoad(ray1,ierr,ncol1,np,file1)
 
 !C
 !C Also calculate the number of lost rays.
@@ -4507,18 +3102,18 @@ SUBROUTINE Intens
      	END IF
      	IF (kind1.NE.0) THEN
      	  FILE2 = RSTRING ('Input I0 file : ' )
-     	  !CALL RBEAM18 (FILE2,RAY2,NCOL2,NP,IFLAG,IERR)
+     	  !CALL beamLoad (FILE2,RAY2,NCOL2,NP,IFLAG,IERR)
 	  !
 	  ! it is necessary to allocate ray array here, at the main level. 
 	  ! 
-          CALL    RBeamAnalyze (file2,ncol2,np,iflag,ierr)
+          CALL    beamGetDim (file2,ncol2,np,iflag,ierr)
           IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-              print *,'Intens: RBeamAnalyze: Error in file: '//trim(file2)
+              print *,'Intens: beamGetDim: Error in file: '//trim(file2)
               stop
           END IF
   	  ALLOCATE( RAY2(18,NP) )
   	  ray2=0.0d0
-	  CALL RBeam18(ray2,ierr,ncol2,np,file2)
+	  CALL beamLoad(ray2,ierr,ncol2,np,file2)
      	  !IF (IERR.NE.0) STOP	'Error reading ray file.'
      	END IF
 20     	  FILE2 =  RSTRING ('File-name  for [x,y] file ? ')
@@ -4711,13 +3306,6 @@ END SUBROUTINE Intens_calc
 SUBROUTINE FindOut (KOL,NT,A1,A2,A3,A4,A5,A6,RAY,NPOINT)
 
 	implicit none
-!	IMPLICIT	REAL*8	(A-H,O-Z)
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!        INCLUDE	        'SHADOW$INC:DIM.PAR/LIST'
-!#endif
-     	!REAL*8		RAY(12,N_DIM)
      	integer(kind=ski) :: kOl,NPOINT,nt,k,i
      	real(kind=skr),dimension(18,NPOINT) :: RAY
      	real(kind=skr)    :: a1,a2,a3,a4,a5,a6,dVector
@@ -4780,20 +3368,8 @@ END SUBROUTINE FindOut
 
 SUBROUTINE FocNew
 
-        !implicit none  
-
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-	!IMPLICIT	REAL*8	(A-H,O-Z)
-!#if defined(unix) || HAVE_F77_CPP
-!#       include	        <dim.par>
-!#elif defined(vms)
-!        INCLUDE	        'SHADOW$INC:DIM.PAR/LIST'
-!#endif
-     	!REAL*8		RAY (12,N_DIM),AP(3,N_DIM),PHASE(3,N_DIM)
-     	!DIMENSION	X(N_DIM),Y(N_DIM)
-
-     	!DIMENSION	TEST(6),RLOW(12),RUPP(12)
 	real(kind=skr),dimension(6) :: xmean,stDev,var
 	real(kind=skr)              :: xExter, zExter
 	real(kind=skr),dimension(:,:),allocatable :: ray
@@ -4806,20 +3382,7 @@ SUBROUTINE FocNew
 	character(len=60)   :: fileText
 	character(len=17)   :: dateText
 	character(len=10),dimension(3)   :: nMode
-     	!REAL*8		XMEAN(6),STDEV(6),VAR(6),XEXTER,ZEXTER
-     	!CHARACTER *80	IFILE,RSTRING
-     	!EXTERNAL	RSTRING
-     	!CHARACTER *7	ROOT
-     	!CHARACTER *9	FILOUT
-     	!CHARACTER *2	HEADER
-     	!CHARACTER * 60		FILETEXT
-     	!CHARACTER * 17		DATETEXT
-     	!CHARACTER * 10		NMODE (3)
-    	!DATA	NMODE(1)	/'Origin'/
-    	!DATA	NMODE(2)	/'Baricenter'/
-    	!DATA	NMODE(3)	/'External'/
 	integer(kind=ski) :: kLost
-	!real(kind=skr)    :: 
 
     	NMODE(1)='Origin'
     	NMODE(2)='Baricenter'
@@ -4831,30 +3394,23 @@ SUBROUTINE FocNew
 !C
 	KLOSS = 0
 
-	!CALL CLSCREEN
 102    	IFILE	=   RSTRING ('Input file ? ')
-!#ifdef vms
-!     	CALL	FILEINFO  (IFILE)
-!     	CALL	NEXTFILE  (FILETEXT,DATETEXT)
-!#else
 	filetext = ' '
 	datetext = ' '
-!	call get_file_text(filetext,IFILE)
-!#endif
 
 	!
 	! it is necessary to allocate ray array here, at the main level. 
 	! 
-        CALL    RBeamAnalyze (iFile,ncol,nn,iflag,ierr)
+        CALL    beamGetDim (iFile,ncol,nn,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'FocNew: RBeamAnalyze: Error in file: '//trim(iFile)
+            print *,'FocNew: beamGetDim: Error in file: '//trim(iFile)
             stop
         END IF
 
   	ALLOCATE( RAY(18,nn) )
   	ray=0.0d0
 
-	CALL RBeam18(ray,ierr,ncol,nn,iFile)
+	CALL beamLoad(ray,ierr,ncol,nn,iFile)
 
      	!CALL	RBEAM (IFILE,RAY,PHASE,AP,NCOL,NN,IFLAG,IERR)
      	IF (IERR.NE.0) STOP	'Error reading ray file.'
@@ -4955,7 +3511,6 @@ SUBROUTINE FocNew
      	   RAY(3,JJ) = RAY(3,JJ) - ZEXTER
 13     	 CONTINUE
      	END IF
-     	!CALL FINDOUT (3,NN,AZ1,AZ2,AZ3,AZ4,AZ5,AZ6,RAY,nn)
         iTmp=3
      	CALL FINDOUT (iTmp,NN,AZ1,AZ2,AZ3,AZ4,AZ5,AZ6,RAY,nn)
 	ZBAR	=  AZ4
@@ -4970,7 +3525,6 @@ SUBROUTINE FocNew
 	ELSE
 	  TPARZ	=  0.0D0
 	END IF
-     	!CALL FINDOUT (1,NN,AX1,AX2,AX3,AX4,AX5,AX6,RAY,nn)
         iTmp=1
      	CALL FINDOUT (iTmp,NN,AX1,AX2,AX3,AX4,AX5,AX6,RAY,nn)
 	XBAR	=  AX4
@@ -5033,12 +3587,8 @@ SUBROUTINE FocNew
 	WRITE (6,1015)	SIGT
      	WRITE (6,1060)	SIGT0
      	WRITE(6,*)'All done. File out data.'
-!#ifdef vms
-!     	OPEN (23,FILE='FOCUS',STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN (23,FILE='focus',STATUS='UNKNOWN')
 	REWIND (23)
-!#endif
 	WRITE (23,1035)
 	WRITE (23,*) 'Searching file : ',IFILE
 	WRITE (23,1055) FILETEXT,DATETEXT
@@ -5119,19 +3669,11 @@ SUBROUTINE FocNew
      	 IF (KOUNT.EQ.1)	FILOUT	= 'FX'//ROOT
      	 IF (KOUNT.EQ.2)	FILOUT	= 'FZ'//ROOT
      	 IF (KOUNT.EQ.3) 	FILOUT	= 'FT'//ROOT
-!#ifdef vms
-!     	 OPEN (23,FILE=FILOUT,STATUS='NEW')
-!#else
      	 OPEN (23,FILE=FILOUT,STATUS='UNKNOWN')
 	 REWIND (23)
-!#endif
      	ELSE
-!#ifdef vms
-!     	 OPEN (23,FILE=IFILE,STATUS='NEW')
-!#else
      	 OPEN (23,FILE=IFILE,STATUS='UNKNOWN')
 	 REWIND (23)
-!#endif
      	END IF
      	DO 14 I=1,NPL
      	WRITE (23,*)	X(I),Y(I)
@@ -5148,14 +3690,6 @@ SUBROUTINE FocNew
 	KGO = IYES('Another plot? ')
 	IF (KGO == 1) GO TO 102
         
-     	!WRITE(6,*)'Enter :'
-     	!WRITE(6,*)'0	for another plot'
-     	!WRITE(6,*)'1	to restart'
-     	!WRITE(6,*)'2	to exit'
-     	!KGO = IRINT (' Then ? ')
-     	!GO TO (101,102,103)	KGO+1
-!103	STOP
-
         IF (allocated(ray)) deallocate(ray)
 	RETURN
 END SUBROUTINE FocNew

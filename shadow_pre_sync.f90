@@ -1,4 +1,5 @@
 !----
+!----
 !---- MODULE:  shadow_Pre_Sync
 !----
 !---- Preprocessors for synchrotron insertion devices
@@ -16,8 +17,6 @@ Module shadow_Pre_Sync
     use stringio
     use shadow_math
     use shadow_globaldefinitions
-!use shadow_variables
-!use shadow_kernel
     use shadow_synchrotron, only : srcdf ! needed by nphoton only
 
     !---- Variables ----!
@@ -34,43 +33,21 @@ Module shadow_Pre_Sync
 
 !todo: check physical constants
 
-	!CHARACTER*80		FOUT,FIN,FTRAJ,FINT
 	character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
 
-!	COMMON	/PARA1/		N0,NPOINT,RLAU,ENERGY1,RLA1,RK,GA0,
-!     $				BETA0,BETAX0,BETAY0,BETAZ0,B0,ER,RLEN,
-!     $				PHI_E,THE_E,TAU,Z0,ZSTEP,ETAU,EZ0,
-!     $				EZSTEP
 	integer(kind=ski)  :: N0,NPointId
 	real(kind=skr)     :: RLAU,ENERGY1,RLA1,RK,GA0
 	real(kind=skr)     :: BETA0,BETAX0,BETAY0,BETAZ0,B0,ER,RLEN
 	real(kind=skr)     :: PHI_E,THE_E,TAU,Z0,ZSTEP,ETAU,EZ0
 	real(kind=skr)     :: EZSTEP
-!
-!	COMMON	/PARA2/		NCOMP,ICOMP,RCURR,BPASS,BDEL,
-!     $				IANGLE,IAPERTURE,IEXTERNAL,IOPT,FOUT,
-!     $				FIN,FTRAJ,FINT,IPASS,ITER,IINT,
-!     $				I_EDIV,EDIVX,EDIVY
 	integer(kind=ski)  :: NCOMP,ICOMP,IANGLE,IAPERTURE,IEXTERNAL,IOPT
 	integer(kind=ski)  :: IPASS,ITER,IINT,I_EDIV
 	real(kind=skr)     :: RCURR,BPASS,BDEL
 	real(kind=skr)     :: EDIVX,EDIVY
-!
-!	COMMON	/PARA3/		NE,NT,NP,NCHECK
 	integer(kind=ski)  :: NE,NT,NP,NCHECK
-!
-!	COMMON	/ARRAY1/	XOFZ(1001),TOFZ(1001),Z(1001),
-!     $				BETAX(1001),BETAZ(1001),
-!     $				XOFZ1(1001),TOFZ1(1001),Z1(1001),
-!     $				BETAX1(1001),BETAZ1(1001),
-!     $				XOFZ2(1001),TOFZ2(1001),Z2(1001),
-!     $				BETAX2(1001),BETAZ2(1001)
 	real(kind=skr),dimension(1001) :: XOFZ,TOFZ,Z,BETAX,BETAZ
 	real(kind=skr),dimension(1001) :: XOFZ1,TOFZ1,Z1,BETAX1,BETAZ1
 	real(kind=skr),dimension(1001) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
-!
-!	common	/extra/		emin,emax,estep,phimin,phimax,phistep,
-!     $				themin,themax,thestep,TOTPOWER
 	real(kind=skr) :: emin,emax,estep,phimin,phimax,phistep
 	real(kind=skr) :: themin,themax,thestep,TOTPOWER
 !
@@ -122,18 +99,14 @@ Module shadow_Pre_Sync
 !C
 !C--
 SUBROUTINE EPath(i_device)
-	!IMPLICIT REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
-	!CHARACTER *sklen 	RSTRING,OUTFILE,UNOUTFILE,PARFILE,TRAJFILE
 	CHARACTER(len=sklen) :: OUTFILE,UNOUTFILE,PARFILE,TRAJFILE
      	CHARACTER(len=sklen) :: UNEXAM
 	DIMENSION 	XOFZ(1001),Z(1001),TOFZ(1001),YOFZ(1001)
 	DIMENSION 	BETAX(1001), BETAZ(1001),BETAY(1001)
 	DIMENSION	YX(1001),YT(1001),CURV(1001),YY(1001)
-!C	DIMENSION	TZ(1001),TBETAX(1001),TBETAZ(1001)
-!C	DIMENSION	TYT(1001),TTOFZ(1001)
 	DIMENSION	EXOFZ(1001),EZ(1001),ETOFZ(1001)
 	DIMENSION	EBETAX(1001),EBETAZ(1001)
         DIMENSION       VEL(3),ACC(3)
@@ -158,11 +131,6 @@ SUBROUTINE EPath(i_device)
 !C this program is called. This is usually set in the driver script that
 !C calls this program.
 !C
-!#ifndef vms
-!TODO CHECK THIS
-!	CHARACTER*133	ENV_FILE
-!#endif
-!C
 
 !TODO: change this with latest NIST data
 	c  = 2.998D8		!speed of light, m/s
@@ -175,8 +143,6 @@ SUBROUTINE EPath(i_device)
 !!c
 !!c	Specify Undulator
 !!c
-!     	WRITE(6,*) ' '
-!     	!WRITE(6,*) '----------------------------------------------------------------------'
 	IF ((I_DEVICE /= 1) .and. (I_DEVICE /= 2)) THEN
      	WRITE(6,*) ' '
      	WRITE(6,*) 'Type of Insertion Device.'
@@ -185,42 +151,6 @@ SUBROUTINE EPath(i_device)
      	WRITE(6,*) 'for undulator (small K)      [ 2 ]'
      	I_DEVICE = IRINT ('Then ? ')
         END IF
-!C
-!C Set the symbol DEVICE for communicating to the command procedure.
-!C	
-!#ifdef vms
-!	IF (I_DEVICE.EQ.1) THEN
-!	  IRET	= LIB$SET_SYMBOL	('DEVICE','WIGGLER')
-!	ELSE IF (I_DEVICE.EQ.2) THEN
-!	  IRET	= LIB$SET_SYMBOL	('DEVICE','UNDULATOR')
-!	END IF
-!#else
-!C
-!C Write the environment strings to a file, so the driver script can source
-!C it. If tset can use this kludge, so can I.
-!C                **GROSS HACK ALERT**
-!C
-!	CALL	GETENV ('SHADOW_ENV_FILE', ENV_FILE)
-!	IF (ENV_FILE(1:10).EQ.'          ') THEN
-!	    WRITE (*,*) 'Must set SHADOW_ENV_FILE environment string'
-!	    CALL EXIT (1)
-!	ENDIF
-!	OPEN (11, FILE=ENV_FILE, STATUS='UNKNOWN')
-!	REWIND (11)
-!#if !defined(_WIN32)
-!	call chmod (ENV_FILE, '666')
-!#endif
-!	IF (I_DEVICE.EQ.1) THEN
-!	  WRITE (11,*) 'setenv SHADOW_ID_DEV  WIGGLER'
-!	ELSE IF (I_DEVICE.EQ.2) THEN
-!	  WRITE (11,*) 'setenv SHADOW_ID_DEV  UNDULATOR'
-!	ELSE
-!	  WRITE (*,*) 'Illegal device chosen: ', I_DEVICE
-!	  CALL EXIT (I_DEVICE)
-!	END IF
-!	CLOSE (11)
-!#endif
-!C
      	WRITE(6,*) ' '
      	!WRITE(6,*) '----------------------------------------------------------------------'
      	!WRITE(6,*) ' '
@@ -257,7 +187,6 @@ SUBROUTINE EPath(i_device)
 !c	Electron Trajectory Parameters
 !c
      	WRITE(6,*) ' '
-     	!WRITE(6,*) '----------------------------------------------------------------------'
      	WRITE(6,*) ' '
 	WRITE(6,*) 'Two files will be created. One will contain a ', &
       ' record of the parameters used in the calculation, the other', &
@@ -275,8 +204,6 @@ SUBROUTINE EPath(i_device)
 	  nfile     = IYES('      Do you want a plottable file [ Y/N ] ? ')
      	 if (nfile.eq.1) unexam = rstring ('      Name for plottable file: ')
 	END IF
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) '----------------------------------------------------------------------'
      	WRITE(6,*) ' '
 !c
 !c
@@ -329,12 +256,8 @@ SUBROUTINE EPath(i_device)
 !C
 !C Write out parameter file
 !C
-!#ifdef vms
-!     	OPEN	(20, FILE=PARFILE, STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
      	OPEN	(20, FILE=PARFILE, STATUS='UNKNOWN')
 	REWIND  (20)
-!#endif
      	 WRITE (20,*) 'Parameters used for run creating'
      	IF (I_DEVICE.EQ.1) THEN
      	 WRITE (20,*) 'WIGGLER case. Trajectory stored in:'
@@ -517,19 +440,8 @@ SUBROUTINE EPath(i_device)
 	WRITE(6,*) ' '
      	WRITE(6,*) 'Calculation Completed. File out results.'     	
 	WRITE(6,*) ' '
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) '----------------------------------------------------------------------'
-     	!WRITE(6,*) ' '
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'Files:'
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) TRAJFILE
-!#ifdef vms
-!	   OPEN	(40,FILE=TRAJFILE,STATUS='NEW')
-!#else
 	   OPEN	(40,FILE=TRAJFILE,STATUS='UNKNOWN')
 	   REWIND (40)
-!#endif
 	   DO 49 J = 1, N0
 	     START_LEN	= ((J-1)-N0*0.5D0)*RLAU
 	     DO 59 I = 1, NP-1
@@ -554,27 +466,16 @@ SUBROUTINE EPath(i_device)
       		-BETAX(NP),BETAZ(NP),0.0d0,CURV(NP)
           ENDIF
 	   CLOSE	(40)
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'Written to disk.'
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'All Done. Trajectory computed and stored on Disk.'
-     	!WRITE(6,*) '----------------------------------------------------------------------'
-     	!WRITE(6,*) ' '
 	print *,'File written to disk: '//trim(trajFile)
 
-	!STOP
 	RETURN
 !C
 		else if (i_device.eq.2) then		!Undulator
 !C
 !C	write to file for use in ERAD
 !C
-!#ifdef vms
-!	 OPEN (32,FILE=UNOUTFILE,STATUS='NEW',FORM='UNFORMATTED')
-!#else
 	 OPEN (32,FILE=UNOUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
 	 REWIND (32)
-!#endif
 	 WRITE(32) N0,RLAU,ENERGY1
 	 WRITE(32) RLA1,RK,GA0,BETA0
 	 WRITE(32) BETAX0,BETAY0,BETAZ0
@@ -650,16 +551,6 @@ SUBROUTINE EPath(i_device)
 	   NC	= (NP+1)/2.0D0
 	   XMAX = EXOFZ(NC)		! maximum fluctuation in X.
 !C
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'Calculation Completed. File out results.'     	
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) '----------------------------------------------------------------------'
-     	!WRITE(6,*) ' '
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'Files:'
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) UNOUTFILE
 	   WRITE(32) TAU,Z0,ZSTEP
 	  DO 69 I = 1, NP
 	   WRITE(32) XOFZ(I)+XMAX,0.0d0,Z(I)
@@ -691,24 +582,14 @@ SUBROUTINE EPath(i_device)
 !C
 	  IF (NFILE.EQ.1) THEN
      	 WRITE(6,*) unexam
-!#ifdef vms
-!    	    open (33, file=unexam, status='new')
-!#else
      	    open (33, file=unexam, status='unknown')
 	    rewind(33)
-!#endif
 		DO 79 I = 1, NP
      	      TTT = ETOFZ(I)/C
      	      BBB = 1.0D0 - EBETAZ(I)
 	      WRITE(33,1010) EXOFZ(I), EBETAX(I), EZ(I), BBB, TTT
 79	        CONTINUE
 	  END IF
-	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'Written to disk.'
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) 'All Done. Trajectory computed and stored on Disk.'
-     	!WRITE(6,*) '----------------------------------------------------------------------'
-     	!WRITE(6,*) ' '
          print *,'File written to disk: '//trim(unExam)
      	END IF
 	CLOSE(33)
@@ -719,7 +600,6 @@ SUBROUTINE EPath(i_device)
 1090    FORMAT (9(1X,G19.12))
 
 	RETURN
-	!CALL EXIT (0)
 END SUBROUTINE EPath
 
 !
@@ -751,23 +631,13 @@ END SUBROUTINE EPath
 !C                       everything is all right; if (IFLAG.NE.0), error status.
 !C---
 SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
      	REAL(kind=skr) 	PHOT_INV(5,1010),Y(1010)
 	REAL(kind=skr)	EMAX,EMIN,CMAX,CMIN,CDIFF
      	
-!     	DATA	PI     	/3.141592653589793238462643D0/
-!     	DATA	TWOPI 	/6.283185307179586476925287D0/
-!     	DATA	PIHALF 	/1.570796326794896619231322D0/
-!     	DATA	TODEG 	/57.295779513082320876798155D0/
-!     	DATA	TORAD	/0.017453292519943295769237D0/
-!	DATA	TOCM	/1.239852D-4/
-!	DATA	TOANGS 	/1.239852D+4/
-!	COMMON	/LOCALNP/  NP
 	CHARACTER(len=sklen) :: SRDISTR
-	!SAVE	PHOT_INV
 	SAVE	PHOT_INV,NP
 !C
 !C Define the useful parameters
@@ -790,17 +660,7 @@ SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
             call srcdf
 	    SRDISTR = "SRDISTR"
 	  ENDIF
-!#ifndef vms
      	  OPEN	(20, FILE=SRDISTR, STATUS='OLD',FORM='UNFORMATTED')
-!#else /* vms */
-!C
-!C Under VMS, there used to be individuals logicals for SR* files, and
-!C that is stupid. Now all common/shared data files are pointed to by
-!C SHADOW$DATA logical as in Ultrix version.
-!C
-!	  OPEN	(20, FILE=SRDISTR, STATUS='OLD', READONLY,
-!     $		 FORM='UNFORMATTED')
-!#endif
 	  READ 	(20)	ICOL,NP
 !C
 !C Reads in the total flux distribution
@@ -881,15 +741,7 @@ SUBROUTINE NPhoton
         DIMENSION       TAUX(1001),TAUY(1001),TAUZ(1001)
         DIMENSION       BX(1001),BY(1001),BZ(1001)
         DIMENSION       ENX(1001),ENY(1001),ENZ(1001)
-	!CHARACTER*sklen	INFILE,OUTFILE,RSTRING
 	CHARACTER(len=sklen) :: INFILE,OUTFILE
-!     	DATA	PI     	/3.141592653589793238462643D0/
-!     	DATA	PIHALF 	/1.570796326794896619231322D0/
-!     	DATA	TWOPI 	/6.283185307179586476925287D0/
-!     	DATA	TODEG 	/57.295779513082320876798155D0/
-!     	DATA	TORAD	/0.017453292519943295769237D0/
-!	DATA	TOCM	/1.239852D-4		     /
-!	DATA	TOANGS 	/1.239852D+4		     /
 !C
 !C Read in the CDF of G0, and generated the spline coefficients.
 !C
@@ -911,12 +763,7 @@ SUBROUTINE NPhoton
         WRITE(6,*) 'for normal wiggler   [1]'
         WRITE(6,*) 'for elliptical wiggler [2]'
         I_WIG=IRINT('Then? ')
-!C
-!#ifdef vms
-!	OPEN	(20,FILE=INFILE,STATUS='OLD',READONLY)
-!#else
 	OPEN	(20,FILE=INFILE,STATUS='OLD')
-!#endif
 !C
 	DO 99 I = 1, N_DIM+1
 	  READ	(20,*,END=101)	X(I),Y(I),Z(I),BETAX(I),BETAY(I), &
@@ -970,7 +817,6 @@ SUBROUTINE NPhoton
 	  PHOT_NUM(I) =  &
             ANG_NUM*ABS(CURV(I))*SQRT(1+(BETAX(I)/BETAY(I))**2+ &
           (BETAZ(I)/BETAY(I))**2)*1.0D3
-!C       WRITE(6,*) PHOT_NUM(I)
 299     CONTINUE
 !C
 !C Computes CDF of the no. of photon along the trajectory S.
@@ -999,12 +845,8 @@ SUBROUTINE NPhoton
 !C
 !C Creates the binary file that serves as input to SHADOW.
 !C
-!#ifdef vms
-!	 OPEN	(21,FILE=OUTFILE,STATUS='NEW',FORM='UNFORMATTED')
-!#else
 	 OPEN	(21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
 	 REWIND	(21)
-!#endif
 	 WRITE	(21) NP,STEP,BENER,1.0D0/CURV_MAX, &
       		1.0D0/CURV_MIN,EMIN,EMAX
 	 DO 499 I = 1, NP
@@ -1043,24 +885,8 @@ END SUBROUTINE NPhoton
 !C---
 	SUBROUTINE 		UNDUL_SHADOW_IO
 
-	!IMPLICIT REAL*8		(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-	!CHARACTER *80 		RSTRING
-!C
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
-!C
-!	DATA	PI	/  3.141592653589793238462643D0 /
-!	DATA	PIHALF	/  1.570796326794896619231322D0 /
-!	DATA	TWOPI	/  6.283185307179586476925287D0 /
-!	DATA	TODEG	/ 57.295779513082320876798155D0 /
-!	DATA	TORAD	/  0.017453292519943295769237D0 /
-!	DATA	TOCM	/  1.239852D-4		     /
-!	DATA	TOANGS	/  1.239852D+4		     /
 !C
 	c     = 2.998D8		!M/SEC
 	e     = 1.602D-19	!COULOMB
@@ -1186,26 +1012,13 @@ END SUBROUTINE Undul_Shadow_Io
 !C
 !C---
 SUBROUTINE URead 
-	!IMPLICIT REAL*8		(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
 
 !C
 !C  read file generated from EPATH
 !C
-!#if vms
-!	OPEN (21,FILE=FTRAJ,STATUS='OLD',FORM='UNFORMATTED',READONLY)
-!#elif unix
 	OPEN (21,FILE=FTRAJ,STATUS='OLD',FORM='UNFORMATTED')
-!C	OPEN (21,FILE=FTRAJ,STATUS='OLD',FORM='FORMATTED')
-!C	OPEN (41,FILE='TEST',STATUS='UNKNOWN',FORM='FORMATTED')
-!#endif
 	READ (21) N0,RLAU,ENERGY1
 	READ (21) RLA1,RK,GA0,BETA0
 	READ (21) BETAX0,BETAY0,BETAZ0
@@ -1216,13 +1029,9 @@ SUBROUTINE URead
 !C
 	READ (21) TAU,Z0,ZSTEP
 	DO 19 I = 1,NPointId
-!C	   WRITE(41,*) I
 	   READ (21) XOFZ(I),YOFZ,Z(I)
-!C	   WRITE(41,*) XOFZ(I),YOFZ,Z(I)
 	   READ (21) BETAX(I),BETAY,BETAZ(I)
-!C	   WRITE(41,*) BETAX(I),BETAY,BETAZ(I)
 	   READ (21) TOFZ(I),BETAZPRIME
-!C	   WRITE(41,*) TOFZ(I),BETAZPRIME
 19	CONTINUE	
 !C
 !C  Now the part for the two ends of the undulator.
@@ -1263,33 +1072,15 @@ END SUBROUTINE URead
 !C
 !C---
 SUBROUTINE Undul_Set
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-!C
-!C For unix, we cannot set symbol for the parent process to communicate
-!C as in VMS, so we pull the classic BSD kludge of writing the environment
-!C strings to a temporary file and then source'ing the file in the driver
-!C to script to export to the parent environment. The temporary file is
-!C given by SHADOW_ENV_FILE environment variable, and must be set before
-!C this program is called. This is usually set in the driver script that
-!C calls this program.
-!C
-!C
 
 	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
 	DIMENSION	TSTART(10),TEND(10)
 	LOGICAL		FLAG1,FLAG2
 
-	!CHARACTER*80	RSTRING,FNAME
 	CHARACTER(len=sklen) :: FNAME
 
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
-!
 	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS, &
       					IANGLE,IAPERTURE,IEXTERNAL, &
       					FOUT,FIN,FTRAJ,EMIN,EMAX, &
@@ -1325,36 +1116,6 @@ SUBROUTINE Undul_Set
 !C
      	WRITE(6,*) 'How often do you want a report on calculations ?'
      	NCHECK	= IRINT ('E.G., 20, 50,... ? ')
-!C
-!C Set the symbol F_EXTERNAL to communicate with VMS command procedure.
-!C
-!#ifdef vms
-!	IF (IEXTERNAL.EQ.0) THEN
-!	  IRET	= LIB$SET_SYMBOL	('F_EXTERNAL','INTERNAL')
-!	ELSE
-!	  IRET	= LIB$SET_SYMBOL	('F_EXTERNAL','EXTERNAL')
-!	END IF
-!#else
-!!C
-!!C Write the environment strings to a file, so the driver script can source
-!!C it. If tset can use this kludge, so can I.
-!!C                 **GROSS HACK ALERT**
-!!C
-!	CALL GETENV ('SHADOW_ENV_FILE', ENV_FILE)
-!	IF (ENV_FILE(1:10).EQ.'          ') THEN
-!	    WRITE (*,*) 
-!     $      'UNDUL_SET: Must set SHADOW_ENV_FILE environment string'
-!	    CALL EXIT (1)
-!	ENDIF
-!	OPEN (11, FILE=ENV_FILE, STATUS='UNKNOWN')
-!	REWIND (11)
-!	IF (IEXTERNAL.EQ.0) THEN
-!	  WRITE (11,*) 'setenv F_EXTERNAL INTERNAL'
-!	ELSE
-!	  WRITE (11,*) 'setenv F_EXTERNAL EXTERNAL'
-!	END IF
-!	CLOSE (11)
-!#endif
 !C
 !C Set the counters
 !C
@@ -1494,12 +1255,8 @@ SUBROUTINE Undul_Set
 !C phi) array; otherwise, it already exists.
 !C
 	IF (ITER.EQ.0) THEN
-!#ifdef vms
-!	  OPEN	(20, FILE='UPHOT.DAT',STATUS='NEW',FORM='UNFORMATTED')
-!#else
 	  OPEN	(20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
 	  REWIND (20)
-!#endif
 	  WRITE	(20)	NE, NT, NP
 	  DO 15 K = 1,NE
 	     WRITE	(20)	UENER(K)
@@ -1522,12 +1279,8 @@ SUBROUTINE Undul_Set
 !C
 !C Finally the namelist file
 !C
-!#ifdef vms
-!	OPEN	(21, FILE='UPHOT.PAR', STATUS='NEW')
-!#else
 	OPEN	(21, FILE='uphot.nml', STATUS='UNKNOWN')
 	REWIND	(21)
-!#endif
 	WRITE	(21, NML=PARAIN)
 	CLOSE	(21)
         PRINT *,'File writtem to disk: uphot.nml'
@@ -1550,20 +1303,10 @@ SUBROUTINE Report (E,T,P,TT,PERC,IVAL)
 
      	IF (IVAL.LT.0) THEN
 !C
-!#ifdef vms
-!     	  CALL LIB$ERASE_PAGE (1,1)
-!#elif defined(unix) || defined(_WIN32)
-!	  CALL SYSTEM ('clear')
-!#else
-!!C # error report.F: Define system("clear") for this system
-!#endif
 !C
      	  WRITE (6,1010) 'Phi / Horz: ', 'Theta / Vert : ', &
       'Energy: ','CPU Time: ','% Completed: '
      	ELSE
-!#ifdef vms
-!     	  CALL LIB$SET_CURSOR (2,1)
-!#endif
      	  WRITE (6,1000)	P, T, E, TT, PERC
      	END IF
 1000	FORMAT	(1X,G10.3,T15,G10.3,T30,G10.3,T45,G10.3,T60,F9.2)
@@ -1590,28 +1333,15 @@ END SUBROUTINE Report
 !C---
 SUBROUTINE UPhoton (ENER,THETA,PHI,PHOT,POL_DEG)
 	
-	!IMPLICIT		REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
 !C
 	DIMENSION		AXR(1001),AXI(1001)
 	DIMENSION		AYR(1001),AYI(1001)
 	DIMENSION		AZR(1001),AZI(1001)
 	DIMENSION		N(3),P_PI(3),EP(3)
 
-!	DATA	PI	/  3.141592653589793238462643D0 /
-!	DATA	PIHALF	/  1.570796326794896619231322D0 /
-!	DATA	TWOPI	/  6.283185307179586476925287D0 /
-!	DATA	TODEG	/ 57.295779513082320876798155D0 /
-!	DATA	TORAD	/  0.017453292519943295769237D0 /
-!	DATA	TOCM	/  1.239852D-4		     /
-!	DATA	TOANGS	/  1.239852D+4		     /
 !C
 	c     = 2.998D8		!M/SEC
 	e     = 1.602D-19	!COULOMB
@@ -1924,7 +1654,6 @@ SUBROUTINE UPhoton (ENER,THETA,PHI,PHOT,POL_DEG)
 !C PHOT is either in photon/sec/rad^2/eV or photon/sec/rad^2/bandpass.
 !C
 	PHOT = R_NPH_T
-!C	WRITE (26,*) PHOT,ENER
 !C
 	RETURN
 END SUBROUTINE UPhoton
@@ -1951,7 +1680,6 @@ END SUBROUTINE UPhoton
 !C---
 !TODO: Move to math?
 SUBROUTINE Simpson(H,Y,Z,NDIM)
-	!IMPLICIT REAL*8		(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
         real(kind=skr) :: sum
@@ -1981,20 +1709,10 @@ END SUBROUTINE Simpson
 !C
 !C---
 SUBROUTINE Undul_Phot
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
 	real :: ttime,time0
-
-!	EXTERNAL	CPUTIM
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
-
 
 	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS,&
       					IANGLE,IAPERTURE,IEXTERNAL,&
@@ -2010,22 +1728,13 @@ SUBROUTINE Undul_Phot
 !C
 !C Read in the parameters from namelist file
 !C
-!#ifdef vms
-!	OPEN	(21, FILE='UPHOT.PAR', STATUS='OLD', READONLY)
-!#else
 	OPEN	(21, FILE='uphot.nml', STATUS='OLD')
-!#endif
 	READ	(21, NML=PARAIN)
 	CLOSE	(21)
 !C
 !C Read in the (energy, theta, phi) array
 !C
-!#ifdef vms
-!	OPEN	(40, FILE='UPHOT.DAT', STATUS='OLD', FORM='UNFORMATTED',
-!     $		READONLY)
-!#else
 	OPEN	(40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-!#endif
 	READ	(40)	NE, NT, NP
 	DO 99 K = 1, NE
  99	    READ (40)	UENER(K)
@@ -2040,10 +1749,6 @@ SUBROUTINE Undul_Phot
  299		    READ (40) UPHI(I,J,K)
 
   
-!D	READ	(40)	(UENER(K), K = 1, NE)
-!D	READ	(40)	((UTHETA(J,K), J = 1, NT), K = 1, NE)
-!D	READ	(40)	(((UPHI(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
-
 !C
 !C Read in the trajectory file
 !C
@@ -2111,11 +1816,6 @@ SUBROUTINE Undul_Phot
      	  write(6,*) ' '
      	  write(6,*) 'Spectra Computations completed.'
      	  write(6,*) ' '
-!#ifdef vms
-!     	  ttime = cputim() - time0
-!     	  write(6,*) 'Total CPU time used so far: ',TTIME
-!     	  write(6,*) 'CPU time per point: ',TTIME/TOTPOINTS
-!#endif
      	  write(6,*) ' '
      	  write(6,*) '----------------------------',&
       '-----------------------------------------------'
@@ -2124,9 +1824,6 @@ SUBROUTINE Undul_Phot
 !C
 !C Write out all arrays.
 !C
-!D	WRITE	(40)	(((RN0(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
-!D	WRITE	(40)	(((POL_DEG(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
-!
 	DO 399 K = 1, NE
 	    DO 399 J = 1, NT
 		DO 399 I = 1, NP
@@ -2160,22 +1857,14 @@ END SUBROUTINE Undul_Phot
 !C			RN2(ener)
 !C---
 SUBROUTINE Rns(RN0,RN1,RN2,UPHI,UTHETA,UENER)
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-
-!#if vms
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#elif unix
-!#include		"pre_rad.blk"
-!#endif
 
 	DIMENSION	RN0(31,31,51),RN1(31,51),RN2(51)
 	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
 
 	DIMENSION	YRN0(1001),YRNN0(1001)
 	DIMENSION	YRN1(1001),YRNN1(1001)
-!	DATA	PI	/  3.141592653589793238462643D0 /
          
 	real(kind=skr),parameter :: PI=3.141592653589793238462643D0
 
@@ -2334,9 +2023,6 @@ SUBROUTINE Rns(RN0,RN1,RN2,UPHI,UTHETA,UENER)
      	WRITE(6,*)' '
      	WRITE(6,*)'Preliminary calculations completed.'
      	WRITE(6,*)' '
-!d     	WRITE(6,*)'Total CPU time used so far: '
-!d     	ttime = cputim() - time0
-!d     	WRITE(6,*) ttime
      	WRITE(6,*)' '
 !C
 	RETURN
@@ -2358,16 +2044,8 @@ END SUBROUTINE Rns
 !C---
 SUBROUTINE UCDF(RN0,RN1,RN2,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
 
-	!IMPLICIT		REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-
-
-!#if defined(unix) || HAVE_F77_CPP
-!#	include			"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE			'PRE_RAD.BLK/LIST'
-!#endif
 
 	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51) 
 	DIMENSION		RN0(31,31,51),RN1(31,51),RN2(51) 
@@ -2442,21 +2120,14 @@ END SUBROUTINE Ucdf
 !C---
 SUBROUTINE UWrite (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
 	
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
 
 	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
 	DIMENSION	RN0(31,31,51),RN1(31,51),RN2(51)
 	DIMENSION	CDF0(31,31,51),CDF1(31,51),CDF2(51)
 	DIMENSION	POL_DEG(31,31,51)
 
-	!CHARACTER*80	RSTRING,FNAME1,FNAME2,SPECFILE
 	CHARACTER(len=sklen) :: FNAME1,FNAME2,SPECFILE
 	CHARACTER*60	NAME
 	CHARACTER*17	DATE
@@ -2512,12 +2183,8 @@ SUBROUTINE UWrite (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
 !C Create and write a log file.
 !C
 30      SPECFILE	= RSTRING('File name for parameter info : ')
-!#ifdef vms
-!      	OPEN  (29,FILE=SPECFILE,STATUS='NEW',CARRIAGECONTROL='LIST')
-!#else
       	OPEN  (29,FILE=SPECFILE,STATUS='UNKNOWN')
 	REWIND (29)
-!#endif
       	WRITE (29,99)
       	WRITE (29,*) 'Trajectory computed by EPATH with following ', &
       	   'parameters:'
@@ -2591,18 +2258,6 @@ SUBROUTINE UWrite (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
     	WRITE (29,99)
 	CLOSE (29)
         PRINT *,'File written to disk: '//trim(specFile)
-!C
-!     	write(6,*) '----------------------------', &
-!      '-----------------------------------------------'
-!     	write(6,*) ' '
-!     	write(6,*) 'Files:'
-!     	write(6,*) specfile
-!     	write(6,*) fname1
-!	write(6,*) fname2
-!     	WRITE(6,*) 'written to disk.'
-!     	write(6,*) '----------------------------', &
-!      '-----------------------------------------------'
-!     	write(6,*) ' '
 99	FORMAT (1X,/,'---------------------------------------------',/)
 1000	FORMAT	(1X, 3(1X,G12.5), 1X, G15.8)
 1010	FORMAT	(1X, 3(1X,G12.5), 3(1X, G15.8) )
@@ -2629,22 +2284,16 @@ END SUBROUTINE UWrite
 SUBROUTINE RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
                       ZERO, ONE, TWO, POL_DEG, FNAME, ITYPE, IANGLE)
 
-	!IMPLICIT REAL*8		(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
 	DIMENSION		ZERO(31,31,51),ONE(31,51),TWO(51)
 	DIMENSION		POL_DEG(31,31,51)
 	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	!CHARACTER*80		FNAME
 	CHARACTER(len=sklen) :: FNAME
 
-!#if vms
-!	   OPEN (31,FILE=FNAME,STATUS='NEW', FORM='UNFORMATTED')
-!#else
 	   OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='UNFORMATTED')
 	   REWIND (31)
-!#endif
 !C		IF (ITYPE.EQ.2) THEN		!cartesian for SHADOW
 	   	  WRITE(31) NE,NT,NP,IANGLE
 
@@ -2716,14 +2365,8 @@ END SUBROUTINE RW_Undul
 !C---
 SUBROUTINE UInvert (CDF0,CDF1,CDF2,UPHI,UTHETA, UENER,APHI,ATHETA,AENER)
 	
-	!IMPLICIT		REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 		"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE			'PRE_RAD.BLK/LIST'
-!#endif
 
 	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51)
 	DIMENSION		CDF0(31,31,51),CDF1(31,51),CDF2(51)
@@ -2853,7 +2496,6 @@ END SUBROUTINE UInvert
 !C---
 SUBROUTINE Inv_Linear (XY,NE,X_NEW,ADJUST)
 	
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 	DIMENSION	XY(2,201),X_NEW(201)
@@ -2920,29 +2562,8 @@ END SUBROUTINE Inv_Linear
 !C
 !C---
 SUBROUTINE Undul_Cdf
-	!IMPLICIT	REAL*8	(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
-!C
-!#if defined(unix) || HAVE_F77_CPP
-!#	include 	"pre_rad.blk"
-!#elif defined(vms)
-!	INCLUDE		'PRE_RAD.BLK/LIST'
-!#endif
-
-!C
-!C For unix, we cannot set symbol for the parent process to communicate
-!C as in VMS, so we pull the classic BSD kludge of writing the environment
-!C strings to a temporary file and then source'ing the file in the driver
-!C to script to export to the parent environment. The temporary file is
-!C given by SHADOW_ENV_FILE environment variable, and must be set before
-!C this program is called. This is usually set in the driver script that
-!C calls this program.
-!C
-!#ifndef vms
-!	CHARACTER*133	ENV_FILE
-!#endif
-!C
 	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS, &
       					IANGLE,IAPERTURE,IEXTERNAL, &
       					FOUT,FIN,FTRAJ,EMIN,EMAX, &
@@ -2959,22 +2580,13 @@ SUBROUTINE Undul_Cdf
 !C
 !C Read in the parameters from namelist file
 !C
-!#ifdef vms
-!	OPEN	(21, FILE='UPHOT.PAR', STATUS='OLD', READONLY)
-!#else
 	OPEN	(21, FILE='uphot.nml', STATUS='OLD')
-!#endif
 	READ	(21, NML=PARAIN)
 	CLOSE	(21)
 !C
 !C Read in the arrays
 !C
-!#ifdef vms
-!	OPEN	(40, FILE='UPHOT.DAT', STATUS='OLD', FORM='UNFORMATTED',
-!     $		READONLY)
-!#else
 	OPEN	(40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-!#endif
 	READ	(40)	NE, NT, NP
 
 	DO 99 K = 1, NE
@@ -2990,23 +2602,17 @@ SUBROUTINE Undul_Cdf
  299		    READ (40) UPHI(I,J,K)
 
   
-!D	READ	(40)	(UENER(K), K = 1, NE)
-!D	READ	(40)	((UTHETA(J,K), J = 1, NT), K = 1, NE)
-!D	READ	(40)	(((UPHI(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
-
 	DO 399 K = 1, NE
 	    DO 399 J = 1, NT
 		DO 399 I = 1, NP
  399		    READ (40) RN0(I,J,K)
 
-!D	READ	(40)	(((RN0(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
 
 	DO 499 K = 1, NE
 	    DO 499 J = 1, NT
 		DO 499 I = 1, NP
  499		    READ (40) POL_DEG(I,J,K)
 
-!D	READ	(40)	(((POL_DEG(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
 	CLOSE	(40)
 !C
 !C Integrate RN0 to get RN1 and RN2
@@ -3025,26 +2631,6 @@ SUBROUTINE Undul_Cdf
 !C See if the no. of times of optimization is finished
 !C
 	  IF (ITER.EQ.IOPT)	THEN
-!#ifdef vms
-!	    IRET	= LIB$SET_SYMBOL ('FINISH','YES')
-!#else
-!C
-!C Write the environment strings to a file, so the driver script can source
-!C it. If tset can use this kludge, so can I. 
-!C                       **GROSS HACK ALERT**
-!C
-!	    CALL GETENV ('SHADOW_ENV_FILE', ENV_FILE)
-!	    IF (ENV_FILE(1:10).EQ.'          ') THEN
-!		WRITE (*,*) 
-!     $         'UNDUL_CDF: Must set SHADOW_ENV_FILE environment string'
-!		CALL EXIT (1)
-!	    ENDIF
-!	    OPEN (11, FILE=ENV_FILE, STATUS='UNKNOWN')
-!	    REWIND (11)
-!	    WRITE (11,*) 'setenv FINISH YES'
-!	    CLOSE (11)
-!#endif
-	
 	    !CALL EXIT (0)
 	    RETURN
 	  END IF
@@ -3084,17 +2670,9 @@ SUBROUTINE Undul_Cdf
 !C
 !C Write the new (energy, theta, phi) array
 !C
-!#ifdef vms
-!	OPEN	(45, FILE='UPHOT.DAT', STATUS='NEW', 
-!     $		FORM='UNFORMATTED')
-!#else
 	OPEN	(45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
 	REWIND	(45)
-!#endif
 	WRITE	(45)	NE, NT, NP
-!D	WRITE	(45)	(UENER(K), K = 1, NE)
-!D	WRITE	(45)	((UTHETA(J,K), J = 1, NT), K = 1, NE)
-!D	WRITE	(45)	(((UPHI(I,J,K), I = 1, NP), J = 1, NT), K = 1, NE)
 
 	DO 599 K = 1, NE
  599	    WRITE (45)	UENER(K)
@@ -3113,12 +2691,8 @@ SUBROUTINE Undul_Cdf
 !C
 !C Write out the parameters to namelist file
 !C
-!#ifdef vms
-!	OPEN	(31, FILE='UPHOT.PAR', STATUS='NEW')
-!#else
 	OPEN	(31, FILE='uphot.nml', STATUS='UNKNOWN')
 	REWIND	(31)
-!#endif
 	WRITE	(31, NML=PARAIN)
 	CLOSE	(31)
         PRINT *,'File (namelist) written to disk: uphot.nml'

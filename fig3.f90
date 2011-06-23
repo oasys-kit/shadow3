@@ -30,7 +30,7 @@ CALL  SourceSync (pool00,ray,pool00%npoint)
 
 !! ! write file begin.dat
 !! file = "begin.dat"
-!! CALL Write_off18(ray,ierr,18,pool00%npoint,file)
+!! CALL beamWrite(ray,ierr,18,pool00%npoint,file)
 !! ! write end.00 file
 !! CALL GlobalToPoolSource(pool00)
 !! file = "end.00"
@@ -44,7 +44,7 @@ call TraceOE(pool0i,ray,pool00%npoint,1)
 
 ! write file star.01
 file = "star.01"
-CALL Write_off18(ray,ierr,18,pool00%npoint,file)
+CALL beamWrite(ray,ierr,18,pool00%npoint,file)
 !! ! write end.01
 !! file = "end.01"
 !! CALL PoolOEWrite(pool0i,file)

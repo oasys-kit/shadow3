@@ -12,7 +12,7 @@ Program	Trace3
 
   use shadow_globaldefinitions
   use stringio,                   only: fname
-  use shadow_beamio,              only: RBeamAnalyze, RBeam18
+  use shadow_beamio,              only: beamGetDim, beamLoad
   use shadow_variables
   use shadow_kernel
 
@@ -54,17 +54,17 @@ Program	Trace3
   if(use_src) then   
     call PoolSourceLoad(src,"start.00")
     allocate( ray18(18,src%nPoint) )
-    call SourceG(src,ray18,src%nPoint)        
-    call write_off18(ray18, iErr, src%nCol, src%nPoint, "begin.dat")
+    call sourceGeom(src,ray18,src%nPoint)        
+    call beamWrite(ray18, iErr, src%nCol, src%nPoint, "begin.dat")
     nCol1 = src%nCol
     nPoint1 = src%nPoint
   end if
   
   if(use_trc.and.(.not.use_src)) then
-    call RBeamAnalyze ('begin.dat',nCol1,nPoint1,iFlag,iErr)
+    call beamGetDim ('begin.dat',nCol1,nPoint1,iFlag,iErr)
     allocate( ray18(18,nPoint1) )
     ray18=0.0d0
-    call RBeam18(ray18, iErr, nCol1, nPoint1, 'begin.dat')
+    call beamLoad(ray18, iErr, nCol1, nPoint1, 'begin.dat')
     nCol = nCol1
     nPoint = nPoint1
   end if

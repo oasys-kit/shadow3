@@ -10,12 +10,16 @@
 ! C
 ! C	COMMAND LINE	gen_source [start_file_name]
 ! C
+! C     NOTE: This program mimics the gen_source program in shadow2
+! C           It is maintained for compatibility reasons. 
+! C           The same functionality is also in shadow3.f90
+!
 ! C---
 PROGRAM  Gen_Source
 
   use shadow_globaldefinitions    ! Global definitions
   use stringio, only : RString
-  use shadow_beamio,   only : Write_off18
+  use shadow_beamio,   only : beamWrite
   use shadow_variables
   use shadow_kernel
   use shadow_synchrotron
@@ -64,8 +68,6 @@ PROGRAM  Gen_Source
 ! load variables from start.00
 !
   CALL PoolSourceLoad(pool00,infile) 
-  !CALL PoolSourceToGlobal(pool00)
-  !CALL RWname(infile,"R_SOUR",ierr)
 
 ! 
 ! allocate ray 
@@ -82,23 +84,23 @@ PROGRAM  Gen_Source
   IF (iSynchrotron .eq. 1) THEN 
     CALL  SourceSync (pool00,ray,pool00%npoint)
   ELSE 
-    ! Note that the routine SourceG (geometrical source) in 
+    ! Note that the routine sourceGeom (geometrical source) in 
     ! shadow_kernel is a subset of SourceSync (in shadow_sourcesync)
     ! therefore this call is unnecessary because the same work can be
     ! done by SourceSync.
     ! The reason for keeping the two functions is for simplicity and 
-    ! to structurate better the shadow3 code: SourceG uses a relatively
+    ! to structurate better the shadow3 code: sourceGeom uses a relatively
     ! small number of subroutines and functions, all available in the
     ! kernel, whereas SourceSync is much more complex and is included in
     ! a separated synchrotron module. 
     ! Therefore, users that do not want synchrotron, they just comment 
     ! the "USE shadow_sourcesync" and "CALL SourceSync"
-    CALL  SourceG(pool00, ray,pool00%npoint)
+    CALL  sourceGeom(pool00, ray,pool00%npoint)
   ENDIF 
   
   ! write file begin.dat
-  CALL Write_off18(ray,ierr,ncol,npoint,bgnfile)
-  IF (ierr.NE.0) PRINT *, "GEN_SOURCE: Write_off18 failed to write file: "//TRIM(bgnfile)
+  CALL beamWrite(ray,ierr,ncol,npoint,bgnfile)
+  IF (ierr.NE.0) PRINT *, "GEN_SOURCE: beamWrite failed to write file: "//TRIM(bgnfile)
 
   ! write end.00 file
   CALL GlobalToPoolSource(pool00)

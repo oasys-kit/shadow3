@@ -1,12 +1,16 @@
 
 ! C+++
-! C	PROGRAM		SHADOW3
 ! C
-! C	PURPOSE		Run Shadow3 
+! C	PROGRAM		shadow3
 ! C
-! C	INPUT		
+! C	PURPOSE		Run shadow3 
+! C                     This is the main command interface to shadow3
+! C                     All tools (pre,post-processorrs, tools, kernel)
+! C                     are available here. 
 ! C
-! C	OUTPUT		
+! C	INPUT           command line
+! C
+! C	OUTPUT          shadow files
 ! C
 ! C
 ! C---

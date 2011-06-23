@@ -36,7 +36,7 @@ FMODULES = \
 	shadow_pre_sync.f90 \
 	shadow_preprocessors.f90 \
 	shadow_postprocessors.f90 \
-	shadow_bind.f90
+	shadow_bind_f.f90
 #	cdf_z.f
 
 
@@ -82,11 +82,10 @@ examples:
 	$(CC) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadowc++
 
 
-lib: $(OBJFMODULES) ShadowMask_c.o ShadowMask_cpp.o
+lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(FC) $(LIBFLAGS) -o libshadow.so $(OBJFMODULES)
-	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow ShadowMask_c.o
-	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc ShadowMask_cpp.o
-#ShadowMask_c.o ShadowMask_cpp.o
+	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow shadow_bind_c.o
+	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc shadow_bind_cpp.o
 
 idl: 
 	$(CC) $(CFLAGS) -c IDL_ShadowLoader.c
@@ -113,11 +112,11 @@ shadow_kernel.f90: shadow_kernel_precpp.F90
 	./Makefile_use_precompiler shadow_kernel
 
 
-ShadowMask_c.o: ShadowMask.c
-	$(CC) -I. $(CFLAGS) -c ShadowMask.c -o ShadowMask_c.o
+shadow_bind_c.o: shadow_bind_c.c
+	$(CC) -I. $(CFLAGS) -c shadow_bind_c.c -o shadow_bind_c.o
 
-ShadowMask_cpp.o: ShadowMask.cpp
-	$(CCP) -I. $(CFLAGS) -c ShadowMask.cpp -o ShadowMask_cpp.o
+shadow_bind_cpp.o: shadow_bind_cpp.cpp
+	$(CCP) -I. $(CFLAGS) -c shadow_bind_cpp.cpp -o shadow_bind_cpp.o
 
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $<

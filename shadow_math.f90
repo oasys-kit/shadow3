@@ -1,10 +1,11 @@
 !----
+!----
 !---- MODULE:  shadow_math
 !----
 !---- Contains the mathematical routines in Shadow
 !----
 !---- 
-!---- TODO: Much of the functionality of these routines is now in 
+!---- todo: Much of the functionality of these routines is now in 
 !----       fortran 95. It should be desirable to use then the intrinsic
 !----       f95 routines, but this is left for the future.
 !---- 
@@ -32,6 +33,9 @@ Module shadow_math
     public :: scalar, dot, cross, norm, vector, versor, proj, sum, vdist
     public :: gnorfunc, rotvector, mfp
     public :: qsf,cubspl
+    ! used in shadow_preprocessors: ibcccu, ibcdcu
+    public :: ibcccu, ibcdcu
+
     private :: gcf,gser
     private :: erfc,gammp,gammq,gammln
 
@@ -126,7 +130,7 @@ Contains
 !! This part produces the same results than Shadow 2.x
 !!
 
-!! TODO: MUST BE COMMENTED IN WINDOWS
+!! todo: MUST BE COMMENTED IN WINDOWS
 !!      WRAN = WRANC(ISEED)
 !!
 
@@ -142,11 +146,8 @@ END FUNCTION WRAN
 ! C
 ! C----
 	SUBROUTINE ROTATE (VIN,PSI,THETA,PHI,VOUT)
-          ! IMPLICIT  REAL*8 (A-H,O-Z)
-          ! IMPLICIT INTEGER(KIND=SKI) (I-N)
-
-		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
-	  	IMPLICIT INTEGER(KIND=SKI) 	(I-N)
+	IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+	IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
         DIMENSION 				VIN(3), VOUT(3)
 !C
@@ -188,10 +189,7 @@ END FUNCTION WRAN
 ! C
 ! C---              
 	SUBROUTINE SPL_INT(G,N,X,Y,IER)
-      ! IMPLICIT	REAL*8	(A-H,O-Z)
-      ! IMPLICIT INTEGER(KIND=SKI) (I-N)
-
- 		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+ 	IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
       	IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
       	REAL(KIND=SKR)   		G(5,N), X, Y, Z
@@ -225,10 +223,8 @@ END FUNCTION WRAN
 !C ----
 	SUBROUTINE SCALAR( V1,ARG,V2)
 
-     	! IMPLICIT	REAL*8		(A-H,O-Z)
-
-		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
-		IMPLICIT INTEGER(KIND=SKI)	(I-N)
+        IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+        IMPLICIT INTEGER(KIND=SKI)	(I-N)
 
      	DIMENSION				V1(3),V2(3)
 
@@ -253,8 +249,6 @@ END FUNCTION WRAN
 ! C ----
 	SUBROUTINE DOT (V1,V2,RES)
 
-	! IMPLICIT 	REAL*8 		(A-H,O-Z)
-
 		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
 		IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
@@ -277,15 +271,12 @@ END FUNCTION WRAN
 ! C ----
 	SUBROUTINE CROSS (V1,V2,VRES)
 
-	! IMPLICIT 	REAL*8 		(A-H,O-Z)
-
-		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
-		IMPLICIT INTEGER(KIND=SKI)	(I-N)
+	IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+	IMPLICIT INTEGER(KIND=SKI)	(I-N)
 
         integer(KIND=SKI)     	m_flag
         character(len=sklen)   	m_warning
-!     	COMMON	/ERRFLAG	/IFLAG
-		DIMENSION 				V1(3),V2(3),VRES (3)
+	DIMENSION 		V1(3),V2(3),VRES (3)
      	M_FLAG	= 0
 		VRES(1) = V1(2)*V2(3) - V1(3)*V2(2)
 		VRES(2) = - ( V1(1)*V2(3) - V1(3)*V2(1) )
@@ -348,8 +339,8 @@ END FUNCTION WRAN
 		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
 		IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
-        integer(KIND=SKI)		i
-		DIMENSION 				P1(3),P2(3),VRES(3)
+                integer(KIND=SKI) :: i
+		DIMENSION 	     P1(3),P2(3),VRES(3)
 		DO 100 I=1,3
 	    	VRES(I)  =   P2(I) - P1(I)
 !C
@@ -372,7 +363,7 @@ END FUNCTION WRAN
 		IMPLICIT REAL(KIND=SKR) 		(A-H,O-Z)
 		IMPLICIT INTEGER(KIND=SKI)   	(I-N)
 
-        integer(KIND=SKI)		I
+                integer(KIND=SKI) :: I
 		DIMENSION 				P1(3),P2(3),VRES(3)
 !C
 !C **** CHECK FOR RNORM.EQ.0 SOMEBODY ******
@@ -396,7 +387,7 @@ END FUNCTION WRAN
 		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
 		IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
-        DIMENSION 				V1(3),V2(3),VRES(3)
+        	DIMENSION   V1(3),V2(3),VRES(3)
 
 		RNORM = V2(1)**2 + V2(2)**2 + V2(3)**2
 
@@ -430,7 +421,7 @@ END FUNCTION WRAN
         IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
         IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
-		DIMENSION 				P1(3),P2(3),RES(3)
+	DIMENSION   P1(3),P2(3),RES(3)
 
 		RES(1) = P1(1) + P2(1)
 		RES(2) = P1(2) + P2(2)
@@ -460,10 +451,8 @@ END FUNCTION WRAN
 ! C This subroutine returns the value of the arctangent between 0-2*PI
 ! C ----
      SUBROUTINE	ATAN_2	(SINE,COSINE,ANGLE)
-     	! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
-     	! IMPLICIT	INTEGER*4	(F)
-		IMPLICIT REAL(KIND=SKR) 	(A-E,G-H,O-Z)
-		IMPLICIT INTEGER(KIND=SKI) 	(F,I-N)
+	IMPLICIT REAL(KIND=SKR) 	(A-E,G-H,O-Z)
+	IMPLICIT INTEGER(KIND=SKI) 	(F,I-N)
      	DATA PI /3.141592653589793238462643D0/
      	IF (COSINE.EQ.0.0D0.AND.SINE.EQ.0.0D0)	THEN
      		ANGLE = 0.0D0
@@ -533,10 +522,10 @@ END FUNCTION WRAN
 ! C ---
 	SUBROUTINE GAUSS (S,SPRIM,DD,X,XPRIM,IS)
 
-		IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
-		IMPLICIT INTEGER(KIND=SKI) 	(I-N)
-        integer(KIND=SKI) 		is
-     	DATA 					TWOPI /6.283185307179586467925287D0/
+	IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
+	IMPLICIT INTEGER(KIND=SKI) 	(I-N)
+        integer(KIND=SKI) :: is
+     	DATA 	TWOPI /6.283185307179586467925287D0/
 !C 
 !C  Initialize by computing the covariance matrix
 !C 
@@ -577,7 +566,7 @@ END FUNCTION WRAN
         real(KIND=SKR),intent(in)  		:: y
         real(KIND=SKR),intent(out) 		:: p
 
-        real(KIND=SKR)          y0
+        real(KIND=SKR)                          :: y0
 
 		Y0 =-Y/DSQRT(2.0D0)
 		P  = 0.5D0*ERFC(Y0)
@@ -592,7 +581,7 @@ END FUNCTION WRAN
 ! C ----
 	REAL(KIND=SKR)  FUNCTION ERFC(X)
 
-    	real(KIND=SKR),intent(in)  		:: x
+    	real(KIND=SKR),intent(in)  :: x
 
       	IF(X.LT.0D0) THEN
         	ERFC=1.0D0+GAMMP(0.5D0,X**2)
@@ -607,15 +596,15 @@ END FUNCTION WRAN
 ! C
    	REAL(KIND=SKR) FUNCTION GAMMP(A,X)
 
-  		real(KIND=SKR),intent(in)  		:: a,x
-  		real(KIND=SKR)          gamser,gln,gammcf
+  		real(KIND=SKR),intent(in) :: a,x
+  		real(KIND=SKR)            :: gamser,gln,gammcf
       
 
-  		IF(X.LT.0.0D0.OR.A.LE.0.0D0) THEN 
+  	IF(X.LT.0.0D0.OR.A.LE.0.0D0) THEN 
                   !PAUSE
                   print *,"PAUSE statement executed.  Hit Return to continue"
                   read (*,*) 
-                END IF
+        END IF
       	IF(X.LT.A+1.0D0) THEN
         	CALL GSER(GAMSER,A,X,GLN)
         	GAMMP=GAMSER
@@ -631,8 +620,8 @@ END FUNCTION WRAN
 ! C
 	REAL(KIND=SKR) FUNCTION GAMMQ (A,X)
 
-   		real(KIND=SKR),intent(in)    	:: a,x
-      	real(KIND=SKR)         	gamser,gln,gammcf
+   	real(KIND=SKR),intent(in)    	:: a,x
+      	real(KIND=SKR)         	        :: gamser,gln,gammcf
 
       	IF(X.LT.0.0D0.OR.A.LE.0.0D0) THEN 
           !PAUSE
@@ -692,8 +681,8 @@ END FUNCTION WRAN
 ! C
 	SUBROUTINE GSER (GAMSER,A,X,GLN)
 
-		implicit real(KIND=SKR) 	(a-h,o-z)
-		implicit integer(KIND=SKI) 	(i-n)
+	implicit real(KIND=SKR) 	(a-h,o-z)
+	implicit integer(KIND=SKI) 	(i-n)
 
       	PARAMETER (ITMAX=100,EPS=3.D-7)
       	GLN=GAMMLN(A)
@@ -726,14 +715,14 @@ END FUNCTION WRAN
 ! C
 	REAL(KIND=SKR) FUNCTION GAMMLN(XX)
 
-   		real(KIND=SKR),intent(in)   	:: XX
-      	real(KIND=SKR) 			COF(6)
-      	real(KIND=SKR)         	STP,HALF,ONE,FPF,X,TMP,SER
-      	integer(KIND=SKI)      	J
+   	real(KIND=SKR),intent(in)   	:: XX
+      	real(KIND=SKR),dimension(6)     :: COF
+      	real(KIND=SKR)         	        :: STP,HALF,ONE,FPF,X,TMP,SER
+      	integer(KIND=SKI)      	        :: J
       
-      	DATA 					COF,STP/76.18009173D0,-86.50532033D0,24.01409822D0, &
-        						-1.231739516D0,.120858003D-2,-.536382D-5,2.50662827465D0/
-      	DATA 					HALF,ONE,FPF/0.5D0,1.0D0,5.5D0/
+      	DATA COF,STP/76.18009173D0,-86.50532033D0,24.01409822D0, &
+        -1.231739516D0,.120858003D-2,-.536382D-5,2.50662827465D0/
+      	DATA HALF,ONE,FPF/0.5D0,1.0D0,5.5D0/
 
       	X=XX-ONE
       	TMP=X+FPF
@@ -753,11 +742,11 @@ END FUNCTION WRAN
 ! C ----
 	SUBROUTINE ROTVECTOR (VIN,AXIS,ALPHA,VOUT)
 
-		implicit real(KIND=SKR) 	(a-h,o-z)
-		implicit integer(KIND=SKI) 	(i-n)
+	implicit real(KIND=SKR) 	(a-h,o-z)
+	implicit integer(KIND=SKI) 	(i-n)
 
-     	DIMENSION				VIN(3),AXIS(3),VOUT(3)
-     	DIMENSION				VCTR0(3),VCTR1(3),VCTR2(3),VCTR3(3)
+     	DIMENSION	VIN(3),AXIS(3),VOUT(3)
+     	DIMENSION	VCTR0(3),VCTR1(3),VCTR2(3),VCTR3(3)
 
 		CALL DOT(AXIS,AXIS,AXIS_MOD2)
 		CALL DOT(VIN,AXIS,ETA)
@@ -788,11 +777,13 @@ END FUNCTION WRAN
 ! C ----
 	SUBROUTINE MFP (ARG,ISEED,IFLAG)
 
-    	real(KIND=SKR)   		arg
-      	integer(KIND=SKI)   	iflag, iseed
+    	real(KIND=SKR)   	:: arg
+      	integer(KIND=SKI)   	:: iflag, iseed
 
-      	real(KIND=SKR)  		ymin,ymax, aa0, yval
-		SAVE YMIN, YMAX
+      	real(KIND=SKR)          :: ymin,ymax, aa0, yval
+
+        !todo check this save
+        SAVE YMIN, YMAX
 
 		IF (IFLAG.LT.0) THEN
 	 		IF (IFLAG.EQ.-2)  YMIN = 1.0D0 - DEXP(-ARG)
@@ -849,9 +840,7 @@ END FUNCTION WRAN
 !C
 !C     ..................................................................
 !C---
-!TODO: mv to math
 SUBROUTINE QSF(H,Y,Z,NDIM)
-	!IMPLICIT REAL*8		(A-H,O-Z)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
@@ -942,7 +931,6 @@ SUBROUTINE SORT_SPL	(XVEC,YVEC,ICOUNT)
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!	IMPLICIT	REAL*8	(A-H,O-Z)
 	DIMENSION	XVEC(ICOUNT),YVEC(ICOUNT)
 	DO 11 I = 1, ICOUNT
 	  IMIN	= I
@@ -962,19 +950,9 @@ SUBROUTINE SORT_SPL	(XVEC,YVEC,ICOUNT)
 11	CONTINUE
 	RETURN
 End Subroutine sort_spl 
-    !
-    !
-    !
-    !
-    !
-    !
 
-!#if defined(unix) || HAVE_F77_CPP
-!#	include		<header.txt>
-!#elif defined(vms)
-!     	INCLUDE		'SHADOW$INC:HEADER.TXT/LIST'
-!#endif
-!
+
+
 !C+++
 !C     PROGRAM    CUBSPL
 !C
@@ -1001,21 +979,14 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-!      IMPLICIT	REAL*8	(A-H,O-Z)
-!#if defined(unix) || HAVE_F77_CPP
-!#     include	<dim.par>
-!#elif defined(vms)
-!      INCLUDE	'SHADOW$INC:DIM.PAR/LIST'
-!srio      INTEGER	MPURGE(2)
       integer(kind=ski),dimension(2)   :: mpurge
-!#endif
 
 !srio danger
 !      REAL*8	G(5,N), Y(N), E1(NPOINT), E2(NPOINT), R
       integer(kind=ski)                        :: I,IER,N
       real(kind=skr),dimension(5,N)  :: G
       real(kind=skr),dimension(N)         :: Y
-!!!DANGER      real(kind=kind(1.0d0)),dimension(NPOINT)    :: E1, E2
+!danger      real(kind=kind(1.0d0)),dimension(NPOINT)    :: E1, E2
 
       real(kind=skr),dimension(N)    :: E1, E2
 
@@ -1162,14 +1133,6 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
 	  G(5,I)	= 0.0D0
 121	CONTINUE
       IER = 0
-!#if defined(vms)
-!	MPURGE(1)	= %LOC(E1(1))
-!	MPURGE(2)	= %LOC(E1(N_DIM))
-!	CALL	SYS$PURGWS	(MPURGE)
-!	MPURGE(1)	= %LOC(E2(1))
-!	MPURGE(2)	= %LOC(E2(N_DIM))
-!	CALL	SYS$PURGWS	(MPURGE)
-!#endif
       RETURN
 End Subroutine cubspl
 
@@ -2781,5 +2744,243 @@ END FUNCTION RAND_PENELOPE
 4     	CONTINUE
       	RETURN
 	END SUBROUTINE PNPOLY
+
+!
+! ibcccu and ibcdcu used by shadow_preprocessors
+!
+
+!C   IMSL ROUTINE NAME   - IBCCCU                                        
+!C                                                                       
+!C-----------------------------------------------------------------------
+!C                                                                       
+!C   COMPUTER            - VAX/DOUBLE                                    
+!C                                                                       
+!C   LATEST REVISION     - JUNE 1, 1982                                  
+!C                                                                       
+!C   PURPOSE             - BICUBIC SPLINE TWO-DIMENSIONAL COEFFICIENT    
+!C                           CALCULATOR                                  
+!C                                                                       
+!C   USAGE               - CALL IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)         
+!C                                                                       
+!C   ARGUMENTS    F      - NX BY NY MATRIX CONTAINING THE FUNCTION       
+!C                           VALUES. (INPUT) F(I,J) IS THE FUNCTION VALUE
+!C                           AT THE POINT (X(I),Y(J)) FOR I=1,...,NX AND 
+!C                           J=1,...,NY.                                 
+!C                X      - VECTOR OF LENGTH NX. (INPUT) X MUST BE        
+!C                           ORDERED SO THAT X(I) .LT. X(I+1) FOR        
+!C                           I=1,...,NX-1.                               
+!C                NX     - NUMBER OF ELEMENTS IN X. (INPUT) NX MUST BE   
+!C                           .GE. 4.                                     
+!C                Y      - VECTOR OF LENGTH NY. (INPUT) Y MUST BE        
+!C                           ORDERED SO THAT Y(J) .LT. Y(J+1) FOR        
+!C                           J=1,...,NY-1.                               
+!C                NY     - NUMBER OF ELEMENTS IN Y. (INPUT) NY MUST BE   
+!C                           .GE. 4.                                     
+!C                         NOTE - THE COORDINATE PAIRS (X(I),Y(J)), FOR  
+!C                           I=1,...,NX AND J=1,...,NY, GIVE THE POINTS  
+!C                           WHERE THE FUNCTION VALUES F(I,J) ARE        
+!C                           DEFINED.                                    
+!C                C      - ARRAY OF SPLINE COEFFICIENTS. (OUTPUT)        
+!C                           C IS OF DIMENSION 2 BY NX BY 2 BY NY.       
+!C                           AT THE POINT (X(I),Y(J))                    
+!C                             C(1,I,1,J) = S                            
+!C                             C(2,I,1,J) = DS/DX                        
+!C                             C(1,I,2,J) = DS/DY                        
+!C                             C(2,I,2,J) = D(DS/DX)/DY                  
+!C                           WHERE S(X,Y) IS THE SPLINE APPROXIMATION.   
+!C                           (NOTE - C IS TREATED INTERNALLY AS A        
+!C                             2 BY NX BY 2*NY ARRAY BECAUSE CERTAIN     
+!C                             ENVIRONMENTS DO NOT PERMIT QUADRUPLY-     
+!C                             DIMENSIONED ARRAYS.  IN THESE             
+!C                             ENVIRONMENTS THE CALLING PROGRAM MAY      
+!C                             DIMENSION C IN THE SAME MANNER.)          
+!C                IC     - ROW DIMENSION OF MATRIX F AND SECOND          
+!C                           DIMENSION OF ARRAY C EXACTLY AS             
+!C                           SPECIFIED IN THE DIMENSION STATEMENT.       
+!C                           (INPUT). IC MUST BE .GE. NX.                
+!C                WK     - WORK VECTOR OF LENGTH                         
+!C                           2*NX*NY+2*MAX(NX,NY)                        
+!C                IER    - ERROR PARAMETER. (OUTPUT)                     
+!C                         TERMINAL ERROR                                
+!C                           IER = 129, IC IS LESS THAN NX               
+!C                           IER = 130, NX IS LESS THAN 4                
+!C                           IER = 131, NY IS LESS THAN 4                
+!C                           IER = 132, X OR Y ARE NOT ORDERED SO THAT   
+!C                             X(I) .LT. X(I+1) AND                      
+!C                             Y(I) .LT. Y(I+1)                          
+!C                                                                       
+!C   PRECISION/HARDWARE  - SINGLE AND DOUBLE/H32                         
+!C                       - SINGLE/H36,H48,H60                            
+!C                                                                       
+!C   REQD. IMSL ROUTINES - IBCDCU,UERTST,UGETIO                          
+!C                                                                       
+!C   NOTATION            - INFORMATION ON SPECIAL NOTATION AND           
+!C                           CONVENTIONS IS AVAILABLE IN THE MANUAL      
+!C                           INTRODUCTION OR THROUGH IMSL ROUTINE UHELP  
+!C                                                                       
+!C   COPYRIGHT           - 1982 BY IMSL, INC. ALL RIGHTS RESERVED.       
+!C                                                                       
+!C   WARRANTY            - IMSL WARRANTS ONLY THAT IMSL TESTING HAS BEEN 
+!C                           APPLIED TO THIS CODE. NO OTHER WARRANTY,    
+!C                           EXPRESSED OR IMPLIED, IS APPLICABLE.        
+!C                                                                       
+!C-----------------------------------------------------------------------
+!C                                                                       
+SUBROUTINE IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)                       
+      integer(kind=ski) :: NX,NY,IC,IER,iTmp,iTmp2
+      real(kind=skr),dimension(1)      :: X,Y,WK
+      real(kind=skr),dimension(IC,1)   :: F
+      real(kind=skr),dimension(2,IC,1) :: C
+!C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
+      integer(kind=ski) :: IWK
+!C                                  FIRST EXECUTABLE STATEMENT           
+      IER = 129                                                         
+      IF (IC .LT. NX) GO TO 9000                                        
+      IER = 130                                                         
+      IF (NX .LT. 4) GO TO 9000                                         
+      IER = 131                                                         
+      IF (NY .LT. 4) GO TO 9000                                         
+      IWK = 2*NY*NX                                                     
+      CALL IBCDCU(X,F,NX,NY,WK(IWK+1),WK,IC,NY,IER)                     
+      IF (IER .GT. 0) GO TO 9000                                        
+      !CALL IBCDCU(Y,WK,NY,2*NX,WK(IWK+1),C,NY,2*IC,IER)                 
+      iTmp = 2*NX
+      iTmp2 = 2*IC
+      CALL IBCDCU(Y,WK,NY,iTmp,WK(IWK+1),C,NY,iTmp2,IER)                 
+      IF (IER .EQ. 0) GO TO 9005                                        
+ 9000 CONTINUE                                                          
+      !CALL UERTST(IER,6HIBCCCU)                                         
+      PRINT *,'IBCCCU Error'
+      STOP 'Aborted'
+ 9005 RETURN                                                            
+END SUBROUTINE IBCCCU                                                              
+!C   IMSL ROUTINE NAME   - IBCDCU                                        
+!C                                                                       
+!C-----------------------------------------------------------------------
+!C                                                                       
+!C   COMPUTER            - VAX/DOUBLE                                    
+!C                                                                       
+!C   LATEST REVISION     - JUNE 1, 1982                                  
+!C                                                                       
+!C   PURPOSE             - NUCLEUS CALLED ONLY BY IMSL SUBROUTINE IBCCCU 
+!C                                                                       
+!C   PRECISION/HARDWARE  - SINGLE AND DOUBLE/H32                         
+!C                       - SINGLE/H36,H48,H60                            
+!C                                                                       
+!C   REQD. IMSL ROUTINES - NONE REQUIRED                                 
+!C                                                                       
+!C   NOTATION            - INFORMATION ON SPECIAL NOTATION AND           
+!C                           CONVENTIONS IS AVAILABLE IN THE MANUAL      
+!C                           INTRODUCTION OR THROUGH IMSL ROUTINE UHELP  
+!C                                                                       
+!C   COPYRIGHT           - 1982 BY IMSL, INC. ALL RIGHTS RESERVED.       
+!C                                                                       
+!C   WARRANTY            - IMSL WARRANTS ONLY THAT IMSL TESTING HAS BEEN 
+!C                           APPLIED TO THIS CODE. NO OTHER WARRANTY,    
+!C                           EXPRESSED OR IMPLIED, IS APPLICABLE.        
+!C                                                                       
+!C-----------------------------------------------------------------------
+!C                                                                       
+SUBROUTINE IBCDCU (TAU,GTAU,N,M,W,VS,IC1,IC2,IER)                 
+!C                                  SPECIFICATIONS FOR ARGUMENTS         
+      integer(kind=ski) :: N,M,IC1,IC2,IER                                
+      real(kind=skr),dimension(N)      :: TAU
+      real(kind=skr),dimension(IC1,1)  :: GTAU
+      real(kind=skr),dimension(N,2)    :: W
+      real(kind=skr),dimension(IC2,2,2):: VS
+!C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
+      integer(kind=ski) :: I,JJ,JM1,JP1,J,K,LIM,LL,LP1,NM1
+      real(kind=skr) :: AA,BB,C1,C2,CC,DD,DTAU,G,H,RATIO,U,XILIM       
+!C                                  FIRST EXECUTABLE STATEMENT           
+      LIM = N-3                                                         
+      NM1 = N-1                                                         
+      LP1 = LIM+1                                                       
+      IER = 132                                                         
+      W(2,1) = TAU(3)-TAU(1)                                            
+      IF (W(2,1).LE.0.0D0) RETURN                                       
+      DO 5 K=1,M                                                        
+         VS(K,1,1) = GTAU(1,K)                                          
+    5 CONTINUE                                                          
+      XILIM = TAU(1)                                                    
+      IF (LIM.LT.2) GO TO 20                                            
+      XILIM = TAU(N-2)                                                  
+      DO 15 I=2,LIM                                                     
+         J = I+1                                                        
+         W(J,1) = TAU(I+2)-TAU(J)                                       
+         IF (W(J,1).LE.0.0D0) RETURN                                    
+         DO 10 K=1,M                                                    
+   10    VS(K,1,I) = GTAU(J,K)                                          
+   15 CONTINUE                                                          
+   20 W(LP1,1) = TAU(N)-XILIM                                           
+      IF (W(LP1,1).LE.0.0D0) RETURN                                     
+      DO 25 K=1,M                                                       
+   25 VS(K,1,LP1) = GTAU(N,K)                                           
+      DO 35 I=2,LP1                                                     
+         DO 30 K=1,M                                                    
+   30    VS(K,2,I) = (VS(K,1,I)-VS(K,1,I-1))/W(I,1)                     
+   35 CONTINUE                                                          
+      DTAU = TAU(2)-TAU(1)                                              
+      RATIO = DTAU/W(2,1)                                               
+      W(1,2) = (RATIO-1.D0)**2                                          
+      W(1,1) = RATIO*(RATIO-1.D0)                                       
+      C1 = RATIO*(2.D0*RATIO-3.D0)                                      
+      DO 40 K=1,M                                                       
+   40 VS(K,2,1) = (GTAU(2,K)-GTAU(1,K))/DTAU+VS(K,2,2)*C1               
+      IF (LIM.LT.2) GO TO 55                                            
+      DO 50 I=2,LIM                                                     
+         J = I+1                                                        
+         JJ = I-1                                                       
+         G = -W(J,1)/W(JJ,2)                                            
+         C1 = 3.D0*W(I,1)                                               
+         C2 = 3.D0*W(J,1)                                               
+         DO 45 K=1,M                                                    
+   45    VS(K,2,I) = G*VS(K,2,JJ)+C1*VS(K,2,J)+C2*VS(K,2,I)             
+         W(I,2) = G*W(JJ,1)+2.D0*(W(I,1)+W(J,1))                        
+   50 CONTINUE                                                          
+   55 DTAU = TAU(N-1)-XILIM                                             
+      RATIO = DTAU/W(LP1,1)                                             
+      G = -(RATIO-1.D0)**2/W(LIM,2)                                     
+      W(LP1,2) = RATIO*(RATIO-1.D0)                                     
+      C1 = RATIO*(2.D0*RATIO-3.D0)                                      
+      DO 60 K=1,M                                                       
+   60 VS(K,2,LP1) = (GTAU(N-1,K)-VS(K,1,LIM))/DTAU+VS(K,2,LP1)*C1       
+      W(LP1,2) = G*W(LIM,1)+W(LP1,2)                                    
+      DO 65 K=1,M                                                       
+   65 VS(K,2,LP1) = (G*VS(K,2,LIM)+VS(K,2,LP1))/W(LP1,2)                
+      J = LIM                                                           
+   70 DO 75 K=1,M                                                       
+   75 VS(K,2,J) = (VS(K,2,J)-W(J,1)*VS(K,2,J+1))/W(J,2)                 
+      J = J-1                                                           
+      IF (J.GT.0) GO TO 70                                              
+      DO 95 K=1,M                                                       
+         DO 85 JJ=1,N                                                   
+            J = N+1-JJ                                                  
+            JM1 = J-1                                                   
+            IF (J.EQ.N) JM1 = J-2                                       
+            IF (J.EQ.1) JM1 = J                                         
+            DO 80 LL=1,2                                                
+               VS(K,LL,J) = VS(K,LL,JM1)                                
+   80       CONTINUE                                                    
+   85    CONTINUE                                                       
+         DO 90 J=2,NM1,LIM                                              
+            JM1 = J-1                                                   
+            JP1 = J+1                                                   
+            IF (JM1.EQ.2) JM1 = 1                                       
+            IF (JP1.EQ.NM1) JP1 = N                                     
+            H = TAU(JP1)-TAU(JM1)                                       
+            U = TAU(J)-TAU(JM1)                                         
+            AA = VS(K,1,JM1)                                            
+            BB = VS(K,2,JM1)                                            
+            CC = (3.D0*(VS(K,1,JP1)-VS(K,1,JM1))/H-(VS(K,2,JP1)+ &
+            2.D0*VS(K,2,JM1)))/H                                        
+            DD = (2.D0*(VS(K,1,JM1)-VS(K,1,JP1))/H+(VS(K,2,JP1)+ &
+            VS(K,2,JM1)))/H**2                                          
+            VS(K,1,J) = AA+U*(BB+U*(CC+DD*U))                           
+            VS(K,2,J) = BB+U*(2.D0*CC+3.D0*DD*U)                        
+   90    CONTINUE                                                       
+   95 CONTINUE                                                          
+      IER = 0                                                           
+      RETURN                                                            
+END SUBROUTINE IBCDCU
 
 End Module shadow_math

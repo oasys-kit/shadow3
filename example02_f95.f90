@@ -82,7 +82,7 @@ DO i=1,nMaxRuns
   !write(ci,'(I1)') i
   !file="star.01-"//trim(adjustl(ci))
   !print *,'>>>>>>>>>>>>>>>>>>>'//trim(file)//'<<<<<<<<<<<<<<<'
-  !CALL Write_off18(ray,ierr,18,src%npoint,file )
+  !CALL beamWrite(ray,ierr,18,src%npoint,file )
   
   !compute histogram
   !

@@ -23,14 +23,14 @@ PROGRAM example01
 
 	! calculate source
 	CALL SourceSync(src,ray,src%npoint)
-    call write_off18(ray,ierr,18,src%npoint,"begin.dat")
+        call beamWrite(ray,ierr,18,src%npoint,"begin.dat")
 	! reads start.01 into oe1
 	call PoolOELoad(oe1,"start.01")
 	! traces OE1
 	call TraceOE(oe1,ray,src%npoint,1)
 
 	! write file star.01
-	CALL Write_off18(ray,ierr,18,src%npoint,"star.01")
+	CALL beamWrite(ray,ierr,18,src%npoint,"star.01")
     DEALLOCATE(ray)
 
 END PROGRAM example01

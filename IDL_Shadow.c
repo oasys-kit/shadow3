@@ -4,7 +4,7 @@
 #include <string.h>
 #include "idl_export.h"
 #include "IDL_ShadowLoader.h"
-#include "ShadowMask.h"
+#include "shadow_bind_c.h"
 
 #define STRLEN 1024
 #define IDL_IS_LONG(v)   ((v)->type==IDL_TYP_LONG)
@@ -81,7 +81,7 @@ void PassPoolSourceFromIDL ( poolSource *src, void *ptr_in, void *ptr_def ) {
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
   offset = IDL_StructTagInfoByName(ptr_def, #name, IDL_MSG_LONGJMP, &var); \
   strncpy(src->name, IDL_STRING_STR( (IDL_STRING*) (ptr_in + offset) ), len);
-#include "ShadowMaskSource.def"
+#include "shadow_source.def"
 }
 
 void PassPoolOEFromIDL ( poolOE *oe, void *ptr_in, void *ptr_def ) {
@@ -111,7 +111,7 @@ void PassPoolOEFromIDL ( poolOE *oe, void *ptr_in, void *ptr_def ) {
     } \
     else{ strncpy(oe->name[i], "", len); } \
   }
-#include "ShadowMaskOE.def"
+#include "shadow_oe.def"
 }
 
 
@@ -223,7 +223,7 @@ IDL_VPTR IDL_CDECL IDL_ShadowTrace ( int argc, IDL_VPTR argv[], char *argk )
   ray = ( double* ) argv[1]->value.arr->data; // or (IDL_DOUBLE*) !!!!!
 
 
-  CShadowTrace ( oe1, ray, ivray->value.arr->dim[1],iCount );
+  CShadowTraceOE ( oe1, ray, ivray->value.arr->dim[1],iCount );
   free ( oe1 );
   return ivray;
 }

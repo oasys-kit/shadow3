@@ -1,4 +1,14 @@
-module shadow_inter
+module shadow_bind_f
+!
+!
+! This module define the Fortran Routines that will be seen by C and other
+! bindings, plus other C<->Fortran compatibility tools.
+!
+! 
+!
+! Author: N. Canestrari
+!
+!
     use ISO_C_BINDING
     use shadow_globaldefinitions
     use shadow_beamio
@@ -9,8 +19,6 @@ module shadow_inter
 
     implicit none
 
-
-
     type, public, bind(C) :: pixel
         integer(kind=C_INT)   :: np
         real(kind=C_DOUBLE)   :: dn
@@ -19,9 +27,10 @@ module shadow_inter
 
     private :: CstringToFstring
 
-    public  :: BindShadowPoolSourceLoad, BindShadowPoolSourceWrite, BindShadowPoolOELoad, BindShadowPoolOEWrite
+    public  :: BindShadowPoolSourceLoad, BindShadowPoolSourceWrite
+    public  :: BindShadowPoolOELoad, BindShadowPoolOEWrite
     public  :: BindShadowSourceGeom, BindShadowSourceSync, BindShadowTraceOE
-    public  :: BindShadowWriteRay, BindShadowGetDimRay, BindShadowReadRay
+    public  :: BindShadowBeamWrite, BindShadowBeamgetDim, BindShadowBeamLoad
     public  :: BindShadowFFresnel2d
 
 contains
@@ -91,7 +100,7 @@ contains
         integer(kind=C_INT), intent(in)                       :: nPoint
         real(kind=C_DOUBLE), dimension(18,nPoint), intent(out)   :: ray
 
-        call SourceG(src, ray, nPoint)
+        call sourceGeom(src, ray, nPoint)
 	end subroutine BindShadowSourceGeom
 
 
@@ -113,7 +122,7 @@ contains
 	end subroutine BindShadowTraceOE
 
 
-	subroutine BindShadowWriteRay(ray, nPoint, nCol, file, length) bind (C,name="BindShadowWriteRay")
+	subroutine BindShadowBeamWrite(ray, nPoint, nCol, file, length) bind (C,name="BindShadowBeamWrite")
         integer(kind=C_INT), intent(in)                       :: nPoint, nCol
         real(kind=C_DOUBLE), dimension(18,nPoint), intent(inout) :: ray
         character(kind=C_CHAR), intent(in)                     :: file(*)
@@ -123,11 +132,11 @@ contains
         integer(kind=C_INT)                                   :: i, iErr
 
         call CstringToFstring(file,fname, length)
-        call write_off18(ray, iErr, nCol, nPoint, fname)
-	end subroutine BindShadowWriteRay
+        call beamWrite(ray, iErr, nCol, nPoint, fname)
+	end subroutine BindShadowBeamWrite
 
 
-	subroutine BindShadowGetDimRay(file, length, nPoint, nCol) bind (C,name="BindShadowGetDimRay")
+	subroutine BindShadowBeamgetDim(file, length, nPoint, nCol) bind (C,name="BindShadowBeamgetDim")
         character(kind=C_CHAR), intent(in)                     :: file(*)
         integer(kind=C_INT), intent(out)                      :: nPoint, nCol
         integer(kind=C_INT), value, intent(in)                :: length
@@ -136,11 +145,11 @@ contains
         integer(kind=C_INT)                                   :: i, iErr, iFlag
 
         call CstringToFstring(file,fname, length)
-        call rbeamanalyze(fname, nCol, nPoint, iFlag, iErr)
-	end subroutine BindShadowGetDimRay
+        call beamGetDim(fname, nCol, nPoint, iFlag, iErr)
+	end subroutine BindShadowBeamgetDim
 
 
-	subroutine BindShadowReadRay(ray, nPoint1, nCol1, file, length) bind (C,name="BindShadowReadRay")
+	subroutine BindShadowBeamLoad(ray, nPoint1, nCol1, file, length) bind (C,name="BindShadowBeamLoad")
         character(kind=C_CHAR), intent(in)                     :: file(*)
         integer(kind=C_INT), intent(inout)                    :: nPoint1, nCol1
 !	type(C_PTR), intent(in)                                :: ray
@@ -155,8 +164,8 @@ contains
 	!call c_f_pointer(ray,f_ray,[18,npoint1])
 
         call CstringToFstring(file,fname, length)
-        call rbeam18(ray, iErr, nCol1, nPoint1, fname)
-	end subroutine BindShadowReadRay
+        call beamLoad(ray, iErr, nCol1, nPoint1, fname)
+	end subroutine BindShadowBeamLoad
 
 
 	subroutine BindShadowFFresnel2D(ray, nPoint, dist, EField, px, pz) bind (C,name="BindShadowFFresnel2D")
@@ -169,4 +178,4 @@ contains
         call FFresnel2D(ray,nPoint,dist,EField,px%np,px%up,px%dn,pz%np,pz%up,pz%dn)
 	end subroutine BindShadowFFresnel2D
 
-end module shadow_inter
+end module shadow_bind_f
