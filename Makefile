@@ -15,7 +15,9 @@
 #FC = g95
 FC = gfortran
 CC = gcc
+#CC = gcc-mp-4.4
 CCP = g++
+#CCP = g++-mp-4.4
 FFLAGS = -fPIC 
 #-fopenmp -g
 CFLAGS = -fPIC  
@@ -78,8 +80,8 @@ examples:
 	$(CC) -I. $(CFLAGS) -c example01_c.c -o example01_c.o
 	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadowc
 
-	$(CC) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
-	$(CC) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadowc++
+	$(CCP) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
+	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadowc++
 
 
 lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
@@ -95,7 +97,8 @@ idl:
 python: setup.py 
 	python setup.py build
 #cp library to main level
-	/bin/cp build/lib.linux-x86_64-2.6/Shadow.so .
+#	/bin/cp build/lib.linux-x86_64-2.6/Shadow.so .
+	/bin/cp build/lib.macosx-10.5-i386-2.6/Shadow.so .
 
 
 
