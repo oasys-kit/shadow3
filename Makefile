@@ -89,16 +89,17 @@ lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow shadow_bind_c.o
 	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc shadow_bind_cpp.o
 
-idl: 
-	$(CC) $(CFLAGS) -c IDL_ShadowLoader.c
-	$(CC) $(CFLAGS) -c IDL_Shadow.c
-	$(CC) $(LIBFLAGS) -o libIDL_Shadow.so -L. -lshadowc IDL_ShadowLoader.o IDL_Shadow.o
+idl: shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
+	$(CC) $(CFLAGS) -c shadow_bind_idl_loader.c
+	$(CC) $(CFLAGS) -c shadow_bind_idl.c
+	$(CC) $(LIBFLAGS) -o shadow_bind_idl.so -L. -lshadowc shadow_bind_idl_loader.o shadow_bind_idl.o
 
 python: setup.py 
 	python setup.py build
 #cp library to main level
 #	/bin/cp build/lib.linux-x86_64-2.6/Shadow.so .
-	/bin/cp build/lib.macosx-10.5-i386-2.6/Shadow.so .
+#	/bin/cp build/lib.macosx-10.5-i386-2.6/Shadow.so .
+	/bin/cp build/*/Shadow.so .
 
 
 
@@ -147,6 +148,7 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
+	/bin/rm -f plotxy* histo1* shadow3.inp
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3

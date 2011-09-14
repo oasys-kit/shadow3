@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "idl_export.h"
-#include "IDL_ShadowLoader.h"
+#include "shadow_bind_idl_loader.h"
 
 /*
  * Define message codes and their corresponding printf(3) format

@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "idl_export.h"
-#include "IDL_ShadowLoader.h"
+#include "shadow_bind_idl_loader.h"
 #include "shadow_bind_c.h"
 
 #define STRLEN 1024
@@ -27,9 +27,9 @@ extern void IDL_CDECL IDL_ShadowPrintOE ( int argc, IDL_VPTR argv[], char *argk 
 /* define the functions */
 static IDL_SYSFUN_DEF2 IDL_ShadowFunctions[] =
 {
-  {IDL_ShadowSourceGeometric, "GENSOURCEGEOMETRIC", 1, 1, 0, 0},
-  {IDL_ShadowSourceSynchrotron, "GENSOURCESYNCHROTRON", 1, 1, 0, 0},
-  {IDL_ShadowTrace, "TRACE", 3, 3, 0, 0},
+  {IDL_ShadowSourceGeometric, "GENSOURCEGEOM", 1, 1, 0, 0},
+  {IDL_ShadowSourceSynchrotron, "GENSOURCESYNC", 1, 1, 0, 0},
+  {IDL_ShadowTrace, "TRACEOE", 3, 3, 0, 0},
   /*
    * here the others functions we want to share
    */

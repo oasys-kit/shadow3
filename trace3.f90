@@ -7,6 +7,7 @@
 ! C			begin.dat for source
 ! C			systemfile.dat for system 
 ! C
+! C    LIMITATIONS      Only work for Geometrical Sources
 ! C---
 Program	Trace3
 
@@ -22,7 +23,7 @@ Program	Trace3
   type (poolSource)                         :: src
   type (poolOE)                             :: oei
   integer(kind=ski)                         :: iCount, numarg
-  integer(kind=ski)                         :: eof,noe, lun
+  integer(kind=ski)                         :: eof,noe, lun=37
   integer(kind=ski)                         :: nCol1,nPoint1,iFlag,iErr
   character(len=sklen),dimension(100)       :: infile
   real(kind=skr),dimension(:,:),allocatable :: ray18
@@ -76,7 +77,8 @@ Program	Trace3
   if(use_trc) then
     open (unit=lun, file='systemfile.dat', status='old', iostat=eof)
     if (eof /= 0 ) then
-      print *,"TRACE3: File not found: systemfile.dat "
+      print *,'eof=',eof
+      print *,"trace3: Problems reading file: systemfile.dat "
       stop
     else
     !
