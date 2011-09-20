@@ -148,7 +148,7 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
-	/bin/rm -f plotxy* histo1* shadow3.inp
+	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
