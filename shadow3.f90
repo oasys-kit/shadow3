@@ -223,6 +223,9 @@ SELECT CASE (inCommandLow)
 !  CASE ("srcdf")
 !     CALL SrCdf
 !     inCommand=""
+!  CASE ("genlib")
+!     CALL genlib
+!     inCommand=""
   CASE ("exit")
      !STOP "GO ended."
      EXIT

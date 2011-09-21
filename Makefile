@@ -12,8 +12,8 @@
 #    setenv LD_LIBRARY_PATH .
 #    use  FC=g95
 
-#FC = g95
-FC = gfortran
+FC = g95
+#FC = gfortran
 CC = gcc
 #CC = gcc-mp-4.4
 CCP = g++

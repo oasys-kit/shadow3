@@ -772,9 +772,15 @@ Module stringIO
 !C Author: Mumit Khan <khan@xraylith.wisc.edu>
 !C Copyright(c) 1996 Mumit Khan
 !c             completely rewritten by srio@esrf.eu   2010
-!c             file must exists, otherwise exits
+!c             file must exists, otherwise exits with error (stop)
 !C
-!C
+!   The file is searched in the following directory path (in order): 
+!      .                    !current directory
+!      $SHADOW3_HOME        ! env variable for user shadow3 installation
+!      $XOP_HOME/extensions/shadowvui/shadow3/  
+!                           !standard shadow3 for xop/shadowvui
+!      $SHADOW_DATA_FILE    ! data folder for shadow2
+!      $SHADOW_ROOT/data    ! standard location for data folder for shadow2
 !C 
 !C ---
 !
@@ -801,7 +807,6 @@ subroutine datapath (file, path, iflag)
 	character(len=*),intent(in)       ::  file
 	integer(kind=ski),   intent(in out) ::  iFlag
 	character(len=1024),intent(out)    ::  path
-	character(len=1024)                ::  path1
 	character(len=1024)                ::  dataDir
 	! ATTENTION: this is the DEFAULT integer, thus
 	!            platform dependent!!!!
@@ -821,16 +826,30 @@ subroutine datapath (file, path, iflag)
            RETURN
         END IF
 
+        ! checks if file is in $SHADOW3_HOME
+	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW3_HOME', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//TRIM(file)
+	  INQUIRE (file = path, exist = lExists)
+	  IF (lExists) RETURN
+        END IF
+        
+        ! checks if file is in $XOP_HOME/extensions/shadowvui/shadow3
+	CALL GET_ENVIRONMENT_VARIABLE ('XOP_HOME', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//'extensions'//OS_DS//'shadowvui'//OS_DS//'shadow3'//OS_DS//TRIM(file)
+	  INQUIRE (file = path, exist = lExists)
+	  IF (lExists) RETURN
+        END IF
+
         ! checks if file is in $SHADOW_DATA_DIR
 	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_DATA_DIR', datadir, nStr)
         IF (nStr .gt. 0) THEN
           path = TRIM(datadir)//OS_DS//TRIM(file)
 	  INQUIRE (file = path, exist = lExists)
 	  IF (lExists) RETURN
-          path1 = path
         END IF
         
-
         ! checks if file is in $SHADOW_ROOT/data
 	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_ROOT', datadir, nStr)
         IF (nStr .gt. 0) THEN

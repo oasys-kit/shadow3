@@ -37,6 +37,7 @@ Module shadow_PreProcessors
     !---- List of public subroutines ----!
     public ::  presurface   
     public ::  prerefl,pre_mlayer,grade_mlayer,bragg
+!    public ::  genlib
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -421,6 +422,161 @@ END SUBROUTINE WriteF12LibIndex
 !
 !
 
+!C+++
+!C	SUBROUTINE	GENLIB
+!C
+!C	PURPOSE		To generate an indexed library of f1 and f2, using
+!C			CXRO table for lower energy (10eV-10KeV) and 
+!C			Cromer's for higher energy (10-100KeV).
+!C
+!C      INPUT           PRELIB1.DAT and PRELIB2.DAT files
+!C      OUTPUT          F12LIB.FULL binary file
+!C
+!C---
+SUBROUTINE genlib
+	implicit none
+	integer(kind=ski) ::  AT_NUMBER1,AT_NUMBER2
+	integer(kind=ski) ::  i,k,j,iErr,iOne=1,nStep
+!C
+!C REALBUF = at_number + at_wt + rmu + emf + f1(420) + f2(420) = 844 elements
+!C
+
+!warning: note that these values are stored in single precision!!!
+	!REAL*4 REALBUF(844), ENG(420), F1(420), F2(420)
+	real(kind=4),dimension(844) ::  REALBUF
+	real(kind=4),dimension(420) ::  ENG, F1, F2
+	real(kind=4)                ::  at_wt,rmu,emf
+!C
+!C  4bytes*REALBUF(844) = 3376bytes
+!C
+        CHARACTER(len=1),dimension(2) ::  ELEMENT
+	CHARACTER(len=2)              :: ELE1,ELE2
+        integer(kind=ski) :: iflag
+	character(len=sklen) :: filePre1,filePre2
+!C
+!C  Open the low energy file.
+!C
+
+!
+! find files in path
+!
+!datapath
+	IFLAG = 1
+	CALL DATAPATH ('PRELIB1.DAT', filePre1, IFLAG)
+	IF (IFLAG .NE. 0) THEN
+            print *,'File PRELIB1.DAT not found. Aborted.'
+	    CALL LEAVE ('GENLIB', 'PRELIB1.DAT not found',iOne)
+	ENDIF
+
+	IFLAG = 1
+	CALL DATAPATH ('PRELIB2.DAT', filePre2, IFLAG)
+	IF (IFLAG .NE. 0) THEN
+            print *,'File PRELIB2.DAT not found. Aborted.'
+	    CALL LEAVE ('GENLIB', 'PRELIB2.DAT not found',iOne)
+	ENDIF
+
+
+!
+! low energy file
+!
+	print *,'genlib: Using file: '//trim(filePre1)
+	OPEN (UNIT=21,FILE=filePre1,STATUS='OLD',IOSTAT=iErr)
+        IF (iErr /= 0) THEN
+             CALL LEAVE ('genlib', 'Cannot find PRELIB1.DAT', iOne)
+        ENDIF
+
+
+!C
+!C  Open the high energy file.
+!C
+	print *,'genlib: Using file: '//trim(filePre2)
+	OPEN (UNIT=22,FILE=filePre2,STATUS='OLD',IOSTAT=iErr)
+IF (iErr /= 0) THEN
+     CALL LEAVE ('genlib', 'Cannot find PRELIB2.DAT', iOne)
+ENDIF
+!C
+!C  OPEN THE FILE TO HOLD THE KEYED ACCESS LIBRARY
+!C
+	OPEN(UNIT=23,FILE='F12LIB.FULL',STATUS = 'UNKNOWN', ACCESS='DIRECT',RECL=3376, IOSTAT=iErr)
+IF (iErr /= 0) THEN
+     CALL LEAVE ('genlib', 'Cannot write F12LIB.FULL', iOne)
+ENDIF
+!C
+!C Read the energy scale, then write it out to the library with index '99'.
+!C
+	READ	(21,*)	(ENG(I), I = 1, 301)
+	READ	(22,*)	(ENG(I), I = 301, 420)
+	DO 11 I = 1, 420
+	  REALBUF(I)	= ENG(I)
+11 	CONTINUE
+	WRITE	(23, REC=1)	REALBUF
+!C
+!C  READ IN A SET OF DATA FOR AN ELEMENT FROM THE SOURCE LIBRARY
+!C  AND PUT IT INTO ARRAY REALBUF, THEN TO BUFFER.
+!C
+print *,'genlib: creating optical library file F12LIB.FULL'
+	DO 100 I=1,100
+	READ(21,111,END=999)	ELE1
+111	FORMAT (1X,A2)
+	READ(21,*,ERR=1000) 	AT_NUMBER1,NSTEP,AT_WT,RMU,EMF
+
+	READ(22,112,END=999)	ELE2
+112	FORMAT	(1X,A2)
+	READ(22,*,ERR=1000) 	AT_NUMBER2,NSTEP
+	IF (ELE1.NE.ELE2) WRITE(6,*) 'Error ! Unequal atomic symbol.'
+	IF (AT_NUMBER1.NE.AT_NUMBER2) WRITE(6,*) 'Error ! Unequal atomic number.'
+!C
+!C  PUT THIS DATA INTO BUFFER AND REALBUF
+!C
+        READ (ELE1,113) 	ELEMENT(1),ELEMENT(2)
+113     FORMAT(2A1)
+	REALBUF(1) = AT_NUMBER1
+	REALBUF(2) = AT_WT
+	REALBUF(3) = RMU
+	REALBUF(4) = EMF
+!C
+!C  READ IN THE F1 ARRAY
+!C
+	READ(22,*) (F1(K),K=301,420)
+	READ(21,*) (F1(K),K=1,301)
+!C
+!C  READ IN THE F2 ARRAY
+!C
+	READ(22,*) (F2(K),K=301,420)
+	READ(21,*) (F2(K),K=1,301)
+!C
+!C  TRANSPOSE THE F1, F2 DATA INTO REALBUF
+!C
+	DO 12 K=1,420
+	REALBUF(K+4) = F1(K)
+12	CONTINUE
+	DO 13 K=1,420
+	REALBUF(K+424) = F2(K)
+13 	CONTINUE
+!C
+!C  WRITE THE DATA FOR THE ELEMENT INTO THE SINGLE ACCESS FILE
+!C
+	WRITE (23, REC=I+1) REALBUF
+!C
+!C INDICATE ON THE TERMINAL ENTRY HAS BEEN MADE
+!C
+	WRITE(6,10)(ELEMENT(J),J=1,2),AT_NUMBER1
+10	FORMAT(3X,'COMPLETED ENTRY FOR:',2A1,1X,'AT_NUMBER:',I2)
+100	CONTINUE
+	GO TO 999
+1000	WRITE (6,1001)
+1001	FORMAT(3X,'ERROR READING SOURCE FILE')
+	GO TO 999
+99	WRITE (6,101)(ELEMENT(J),J=1,2)
+101	FORMAT(3X,'ERROR AT:',2A1)
+999	CLOSE(21)
+	CLOSE(23)
+	CLOSE (22)
+END SUBROUTINE genlib 	
+!
+!
+!
+
 
 !C+++
 !C	SUBROUTINE	READLIB
@@ -485,7 +641,7 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 	IFLAG = 1
 	CALL DATAPATH ('F12LIB.INDEX', INDEXF, IFLAG)
 	IF (IFLAG .NE. 0) THEN
-            print *,'File F12LIB.INDEX not fount. I create it!'
+            print *,'File F12LIB.INDEX not found. I create it!'
             CALL WriteF12LibIndex
 	    !CALL LEAVE ('READLIB', 'F12LIB.INDEX not found', 1)
 	ENDIF
@@ -493,11 +649,9 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
 	CALL DATAPATH ('F12LIB.FULL', F12LIB, IFLAG)
 	IF (IFLAG .NE. 0) THEN
             print *,' '
-            print *,'File F12LIB.FULL not fount. I CANNOT create it!'
-            print *,'Please copy this file from old SHADOW distribution (data dir)'
-            print *,'or download it from the SHADOW distribution website. '
-            print *,' '
-	    CALL LEAVE ('READLIB', 'F12LIB.FULL not found', iOne)
+            print *,'File F12LIB.FULL not found. I try to create it from PRELIB?.DAT!'
+            call GENLIB
+	    !CALL LEAVE ('READLIB', 'F12LIB.FULL not found', iOne)
 	ENDIF
 
 !C OPEN AND READ THE FILE STORING CHEMICAL SYMBOLS OF ELEMENTS

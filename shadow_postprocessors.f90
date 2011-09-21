@@ -1499,6 +1499,8 @@ SUBROUTINE PlotXY
 	real(kind=skr),dimension(MAXGS*MAXGS) :: ZDATA
 	real(kind=skr),dimension(20)          :: CVALUE
 
+        !attention to this: it must be the default integer
+	integer  nStr
 
 i22 =0 ! flag to file
 	FILE_IN = RSTRING('PLOT> Input file? ')
