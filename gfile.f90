@@ -215,9 +215,10 @@ contains
        iOut = GfIsDefined(g1,variableName,j)
 
        if (iOut) then
-	 !  WARNING: The format may give problems!!!!
+	 ! todo:  WARNING: The format may give problems!!!!
          ! write(g1%variableValues(j),fmt="(f20.5)") variable
-         write(g1%variableValues(j),fmt="(g20.5)") variable
+         ! write(g1%variableValues(j),fmt="(g20.5)") variable
+         write(g1%variableValues(j),fmt="(g30.15)") variable
        endif
 
 

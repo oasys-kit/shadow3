@@ -185,6 +185,7 @@ EXPAND_OE_ARRAYS(double,real,skr,T_DOUBLE,RZ_SLIT,"%lf",'(F)',ADIM,0.0)
 EXPAND_OE_ARRAYS(int,integer,ski,T_INT,SCR_NUMBER,"%d",'(I)',ADIM,0)
 EXPAND_OE_ARRAYS(double,real,skr,T_DOUBLE,SL_DIS,"%lf",'(F)',ADIM,0.0)
 EXPAND_OE_ARRAYS(double,real,skr,T_DOUBLE,THICK,"%lf",'(F)',ADIM,0.0)
+EXPAND_OE_ARRAYS(double,real,skr,T_DOUBLE,CCC,"%lf",'(F)',ADIM,0.0)
 
 #undef EXPAND_OE_SCALAR
 #undef EXPAND_OE_ARRAYS

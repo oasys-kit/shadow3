@@ -262,7 +262,7 @@ Module shadow_kernel
     !!--     	COMMON	/MIRROR	/	RLEN,RLEN1,RLEN2,CCC(10),RMIRR,CONE_A, &
     !!--     				AXMAJ,AXMIN,AFOCI,ECCENT,R_MAJ,R_MIN, &
     !!--     				RWIDX,RWIDX1,RWIDX2,PARAM, &
-    real(kind=skr),dimension(10) :: ccc
+!!ccc    real(kind=skr),dimension(10) :: ccc
     !!--     				PCOEFF(0:4,0:4,0:4),CIL_ANG,ELL_THE
     real(kind=skr),dimension(0:4,0:4,0:4) :: pcoeff
     !!--     	COMMON	/GRATING/	RULING,ORDER,BETA,PHOT_CENT,R_LAMBDA, &
@@ -3325,14 +3325,16 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C
 ! C clear array
 ! C
-     	DO 100 I=1,10
- 100	CCC(I)	= 0.0D0
+!     	DO 100 I=1,10
+! 100	CCC(I)	= 0.0D0
+IF (FMIRR.NE.10) CCC=0.0D0
+
 ! C
 ! C Computes the mirror parameters for all cases
 ! C
-! C              1 2 3 4 5 6 7 8 9
+! C              1 2 3 4 5 6 7 8 9 10
 ! C
-	GO TO (1,2,3,4,5,5,7,8,9) FMIRR
+	GO TO (1,2,3,4,5,5,7,8,9,10) FMIRR
 
  1	CONTINUE
 ! C
@@ -3589,19 +3591,26 @@ SUBROUTINE READPOLY (INFILE, IERR)
        	CALL	READPOLY (FILE_MIR, IERR)
        	IF (IERR.NE.0) CALL LEAVE  &
      		('MSETUP','Return error from READPOLY',IERR)
+! C
+! C Conic coefficients defined externally (therefore do nothing here)
+! C
+ 10	CONTINUE
+!!         print *,">>Using FMIRR=10"
+!!         OPEN (25,FILE="ccc.inp",STATUS='OLD',IOSTAT=IOSTAT)
+!!         IF (IOSTAT.EQ.0) THEN
+!! 	write(*,*) ">>Using conic coefficients from file ccc.inp"
+!!         DO I=1,10  
+!!           read(25,*) TMP
+!!           CCC(I)=TMP
+!!         END DO
+!! 	CLOSE(25)
+!!         ELSE
+!!           print *,'>>File not found: ccc.inp'
+!!         END IF
+ 
+       	GO TO 3000
 3000	CONTINUE
 
-!srio 
-!srio         OPEN (25,FILE="ccc.inp",STATUS='OLD',IOSTAT=IOSTAT)
-!srio         IF (IOSTAT.EQ.0) THEN
-!srio 	write(*,*) ">>Using conic coefficients from file ccc.inp"
-!srio         DO I=1,10  
-!srio           read(25,*) TMP
-!srio           CCC(I)=TMP
-!srio         END DO
-!srio 	CLOSE(25)
-!srio 
-!srio         END IF
 
 ! C
 ! C Set to zero the coeff. involving X for the cylinder case, after 
@@ -3611,6 +3620,8 @@ SUBROUTINE READPOLY (INFILE, IERR)
      	  COS_CIL = COS(CIL_ANG)
      	  SIN_CIL = SIN(CIL_ANG)
      	IF (FCYL.EQ.1) THEN
+          if (fmirr.eq.10) &
+          print *,'MSETUP: warning: using cylindrical shape (FCYL=1) with external coefficients (FMIRR=10)'
      	  A_1	=   CCC(1)
      	  A_2	=   CCC(2)
      	  A_3	=   CCC(3)
@@ -3640,6 +3651,8 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C Set the correct mirror convexity. 
 ! C
      	IF (F_CONVEX.NE.0) THEN
+          if (fmirr.eq.10) &
+          print *,'MSETUP: warning: inverting convexity (F_CONVEX=1) with external coefficients (FMIRR=10)'
      	  CCC(5)  = - CCC(5)
      	  CCC(6)  = - CCC(6)
      	  CCC(9)  = - CCC(9)
@@ -3652,11 +3665,13 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C variables are reset to zero here, leaving the START.xx file unchanged.
 ! C 
 ! C
-! Csrio	write(*,*) ">>>>>>>>>>> FINAL: <<<<<<<<<<<<<"
-! Csrio        DO I=1,10  
-! Csrio          write(*,*) "CCC[",i,"]=",CCC(I)
-! Csrio        END DO
-! Csrio	write(*,*) ">>>>>>>>>>> END FINAL: <<<<<<<<<<<<<"
+!!	write(*,*) ">>>>>>>>>>> FINAL: <<<<<<<<<<<<<"
+!!        DO I=1,10  
+!!          write(*,*) "CCC[",i,"]=",CCC(I)
+!!          write(27,*) CCC(I)
+!!        END DO
+!!        write(*,*) "CCC coeff copied to unit 27"
+!!	write(*,*) ">>>>>>>>>>> END FINAL: <<<<<<<<<<<<<"
      	IF (F_MOVE.EQ.0) THEN
      	  X_ROT = 0.0D0
      	  Y_ROT = 0.0D0
@@ -3842,7 +3857,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
      	WRITE(6,*) 'Exit from MSETUP'
 
 ! D	WRITE (17,*)	'--------------------------------------------'
-! D	WRITE (17,*)	'MSETUP INPUT'
+! D	WRITE (17,*)	'!MSETUP INPUT'
 ! D	WRITE (17,*)	IWHICH,FDIM,FMIRR,FCYL,F_MOVE
 ! D	WRITE (17,*)	COSDEL,SINDEL,COSTHE,SINTHE
 ! D	WRITE (17,*)	SSOUR,SIMAG
@@ -7248,7 +7263,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 !srio            ANGLE_OUT = DACOSD(TEMP1)
             ANGLE_IN = TODEG*ACOS(TEMP)
             ANGLE_OUT = TODEG*ACOS(TEMP1)
-write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
+!write(*,*) ">>>> in mirror: angle_in,angle_out: ",ANGLE_IN,ANGLE_OUT
           END IF
 
 	CALL    FA_ROTBACK (PF_OUT,PPOUT,PF_CENT,PF_BNOR,PF_TAU,PF_NOR)

@@ -346,6 +346,7 @@ SUBROUTINE MirInfo
 	character(len=8)  :: date
 	character(len=10) :: time
 	character(len=5)  :: zone
+	character(len=2)  :: stmp
 	integer,dimension(8) :: values
 
 ! todo: check that this is also defined in shadow_kernel...
@@ -363,7 +364,7 @@ type1(6) ='CODLING SLIT'
 type1(7)	='HYPERBOLICAL' 
 type1(8)	='CONICAL     ' 
 type1(9)	='POLYNOMIAL  ' 
-type1(10)	='            ' 
+type1(10)	='CONIC EXTNAL' 
 type1(11)	='            ' 
 type1(12)	='            ' 
 
@@ -661,6 +662,28 @@ type1(12)	='            '
      	WRITE (20,*) '                Y:   ',p1%Y_ROT*TODEG
      	WRITE (20,*) '                Z:   ',p1%Z_ROT*TODEG
      	END IF
+
+!
+! write conic coefficients
+!
+       IF ((p1%FMIRR.EQ.1).OR.(p1%FMIRR.EQ.2).OR.(p1%FMIRR.EQ.4).OR. &
+           (p1%FMIRR.EQ.5).OR.(p1%FMIRR.EQ.7).OR.(p1%FMIRR.EQ.8).OR. &
+           (p1%FMIRR.EQ.9).OR.(p1%FMIRR.EQ.10)) THEN
+        
+     	WRITE (20,*) ' '
+     	WRITE (20,*) TOPLIN
+     	WRITE (20,*) 'OE surface in form of conic equation: '
+        WRITE (20,*) '    c[1]*X^2 + c[2]*Y^2 + c[3]*Z^2 + '
+        WRITE (20,*) '    c[4]*X*Y + c[5]*Y*Z + c[6]*X*Z  + '
+        WRITE (20,*) '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  '
+     	WRITE (20,*) ' with '
+        DO j=1,10  
+           Write( stmp, '(i2)' ) j
+           stmp = adjustl(stmp)
+     	   WRITE (20,*) ' c['//trim(stmp)//'] =',p1%ccc(j)
+        END DO
+       END IF
+
      	WRITE (20,*) TOPLIN
      	WRITE (20,*) '***************                 E N', &
       ' D                  ***************'
