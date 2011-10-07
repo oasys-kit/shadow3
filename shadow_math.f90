@@ -89,7 +89,8 @@ Contains
 		!IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
 		!IMPLICIT INTEGER(KIND=SKI) 	(I-N)
 
-		INTEGER(KIND=SKI)	:: ISEED
+		INTEGER(KIND=SKI)	:: ISEED,K
+		INTEGER(KIND=SKI),dimension(1) 	:: iseed2
 		INTEGER(KIND=SKI)	:: first=1,wran_counter=0
                 real(kind=skr)          :: XX
 
@@ -102,21 +103,12 @@ Contains
      !write(*,*) " "
      !write(*,*) "WRAN: first: ",first
      !write(*,*) "WRAN: wran_counter: ",wran_counter
-!todo this initializes ONLY if first=1!!!!!!!!!!!!!!!
 
          if (first.eq.1) then
- 	   		XX = dble(ISEED)
-       		XX = XX/(10**int(1+log10(XX)))
-     !write(*,*) " "
-     !write(*,*) "WRAN: Initializing generator with ISEED: ", ISEED
-     !write(*,*) "                                     XX: ",XX
-       		CALL RANDOM_NUMBER(HARVEST=XX)
-       		first = 0
-                CALL RANDOM_NUMBER(WRAN)
-     !write(*,*) "                                     WRAN: ",WRAN
-         else 
-                CALL RANDOM_NUMBER(WRAN)
+                first = 0
+                CALL init_random_seed(iseed)
          end if
+         CALL RANDOM_NUMBER(WRAN)
 
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment for Penelope random number generator
@@ -137,6 +129,35 @@ Contains
       wran_counter=wran_counter+1
       RETURN
 END FUNCTION WRAN
+
+
+
+SUBROUTINE init_random_seed(iseed)
+            INTEGER(kind=ski),intent(in) :: iseed
+            INTEGER(kind=ski) :: i, n, clock
+            INTEGER(kind=ski), DIMENSION(:), ALLOCATABLE :: seed
+
+            CALL RANDOM_SEED(size = n)
+            !print *,"n=",n
+            ALLOCATE(seed(n))
+
+            !CALL RANDOM_SEED(GET = oldseed)
+            !print *,"INIT: old seed=",seed
+
+
+            IF (iseed.eq.0) then
+              CALL SYSTEM_CLOCK(COUNT=clock)
+              seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+              print *,"INIT_RANDOM_SEED: random seed initialised using system clock"
+            ELSE 
+              seed = iseed
+            END IF
+            !print *,"INIT: seed=",seed
+            CALL RANDOM_SEED(PUT = seed)
+
+            DEALLOCATE(seed)
+END SUBROUTINE
+
 
 ! C+++
 ! C SUBROUTINE ROTATE

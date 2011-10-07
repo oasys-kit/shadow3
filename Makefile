@@ -14,10 +14,13 @@
 
 #FC = g95
 FC = gfortran
+MPIFC = mpif90
 CC = gcc
 #CC = gcc-mp-4.4
 CCP = g++
 #CCP = g++-mp-4.4
+PY = python
+
 FFLAGS = -fPIC 
 #-fopenmp -g
 CFLAGS = -fPIC  
@@ -25,6 +28,10 @@ CFLAGS = -fPIC
 
 LIBFLAGS = -shared -lm 
 #-lpthread
+
+#do not change this. Meant to be command line argument
+MPI=
+
 
 FMODULES = \
 	shadow_globaldefinitions.f90 \
@@ -83,6 +90,10 @@ examples:
 	$(CCP) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
 	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadowc++
 
+ifeq ($(MPI),1)
+	$(MPIFC) $(FFLAGS) -c trace3mpi.f90
+	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow -lmpi_f90
+endif
 
 lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(FC) $(LIBFLAGS) -o libshadow.so $(OBJFMODULES)
@@ -94,8 +105,10 @@ idl: shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_exp
 	$(CC) $(CFLAGS) -c shadow_bind_idl.c
 	$(CC) $(LIBFLAGS) -o shadow_bind_idl.so -L. -lshadowc shadow_bind_idl_loader.o shadow_bind_idl.o
 
+
 python: setup.py 
-	python setup.py build
+	$(PY) setup.py build
+
 #cp library to main level
 #	/bin/cp build/lib.linux-x86_64-2.6/Shadow.so .
 #	/bin/cp build/lib.macosx-10.5-i386-2.6/Shadow.so .
@@ -131,7 +144,7 @@ clean:
 	/bin/rm -f ../lib/*
 
 # binaries
-	/bin/rm -f gen_source trace trace3 trace3_c trace3_cpp shadow3 fig3
+	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp shadow3 fig3
 	/bin/rm -f example01_f95 example01_c example01_cpp
 	/bin/rm -f ../bin/*
 
