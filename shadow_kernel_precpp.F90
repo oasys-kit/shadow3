@@ -2275,13 +2275,19 @@ Contains
        END IF
     END IF
     
-    IF (ANSWER.GT.0.0D0.AND.ANSWER.LT.1.0D+20) THEN
-       I_RES = 1
-       RETURN
-    ELSE
-       I_RES	= - 1
-       RETURN
-    END IF
+    !srio@esrf.eu 2011-10-12 fixed a bug with toroidal mirrors 
+    !set at a distance zero from previous star.xx file
+    ! WHY ANSWER SHOULD BE POSITIVE?
+    ! if the distance from source to torus is zero, it can be negative
+    i_res=1
+    return
+    !IF (ANSWER.GT.0.0D0.AND.ANSWER.LT.1.0D+20) THEN
+    !   I_RES = 1
+    !   RETURN
+    !ELSE
+    !   I_RES	= - 1
+    !   RETURN
+    !END IF
   End Subroutine quartic
   
   
