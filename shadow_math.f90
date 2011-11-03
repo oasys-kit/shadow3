@@ -134,8 +134,11 @@ END FUNCTION WRAN
 
 SUBROUTINE init_random_seed(iseed)
             INTEGER(kind=ski),intent(in) :: iseed
-            INTEGER(kind=ski) :: i, n, clock
-            INTEGER(kind=ski), DIMENSION(:), ALLOCATABLE :: seed
+            INTEGER(kind=ski) :: i, clock
+
+            !watch out the kind here !
+            INTEGER           :: n
+            INTEGER, DIMENSION(:), ALLOCATABLE :: seed
 
             CALL RANDOM_SEED(size = n)
             !print *,"n=",n
@@ -219,6 +222,8 @@ END SUBROUTINE
       	GMAX = MAX(G(1,1),G(1,N))
       	GMIN = MIN(G(1,1),G(1,N))
       	IF ((X .LT. GMIN) .OR. (X .GT. GMAX)) THEN
+! please note that an error here for BM or WIGGLER may be due
+! to the use of an not-updated SRSPEC SRANG and SRDISTR
         	WRITE(6,*) 'SPL_INT: x is outside the interpolation range.'
         	WRITE(6,*) 'X, GMIN, GMAX: ',X,GMIN,GMAX
         	IER = 1
@@ -1068,7 +1073,7 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
 ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
 
          if (e1(i).eq.0.0) then
-           e1(i) = 1.0e-12
+           e1(i) = 1.0d-12
          endif
 !
 	  E2(I) = (Y(I+1) - Y(I)) / E1(I)

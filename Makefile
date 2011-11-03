@@ -12,8 +12,8 @@
 #    setenv LD_LIBRARY_PATH .
 #    use  FC=g95
 
-#FC = g95
-FC = gfortran
+FC = g95
+#FC = gfortran
 MPIFC = mpif90
 CC = gcc
 #CC = gcc-mp-4.4
@@ -162,6 +162,7 @@ purge: clean
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.*
 	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
+	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
