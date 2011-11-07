@@ -17,6 +17,7 @@
 PROGRAM  Shadow3
   use shadow_globaldefinitions
   use stringio
+  use shadow_version
   use shadow_beamio
   use shadow_variables
   use shadow_kernel
@@ -208,6 +209,11 @@ SELECT CASE (inCommandLow)
   CASE ("undul_cdf")
      CALL undul_cdf
      inCommand=""
+  CASE ("mkdatafiles")
+     CALL genlib
+     CALL WriteF12LibIndex
+     CALL srcdf
+     inCommand=""
   CASE ("input_source")
      CALL input_source1
      CALL RWNAME('start.00','W_SOUR',iErr)
@@ -230,7 +236,7 @@ SELECT CASE (inCommandLow)
      !STOP "GO ended."
      EXIT
   CASE ("citation")
-     print *,'                                                           '
+     print *,' 1)                                                          '
      print *,' F. Cerrina and M. Sanchez del Rio                         '
      print *,' "Ray Tracing of X-Ray Optical Systems"                    '
      print *,' Ch. 35 in Handbook of Optics (volume  V, 3rd edition),    '
@@ -238,6 +244,12 @@ SELECT CASE (inCommandLow)
      print *,'                                                           '
      print *,' ISBN: 0071633138 / 9780071633130                          '
      print *,' http://www.mhprofessional.com/handbookofoptics/vol5.php   '
+     print *,'                                                           '
+     print *,' 2)                                                          '
+     print *,' M. Sanchez del Rio, N. Canestrari, F. Jiang and F. Cerrina'
+     print *,' "SHADOW3: a new version of the synchrotron X-ray optics modelling package" '
+     print *,' J. Synchrotron Rad. (2011). 18, 708-716                   '
+     print *,' http://dx.doi.org/10.1107/S0909049511026306               '
      print *,'                                                           '
      inCommand="" 
   CASE ("license")
@@ -271,14 +283,18 @@ SELECT CASE (inCommandLow)
      print *,'  [PRE-PROCESSORS]  : prerefl bragg presurface'
      print *,'                    : input_source pre_mlayer grade_mlayer'
      print *,'                    : make_id epath nphoton undul_set undul_phot undul_cdf' 
+     print *,'                    : mkdatafiles' 
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel'
-     print *,'  [OTHER]           : exit help ? license citation'
+     print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
      print *,''
      inCommand=""
+  CASE ("version")
+     call shadow_version_info
+     inCommand="?"
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 
         CALL SYSTEM( inCommand(2:sklen) )

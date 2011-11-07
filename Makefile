@@ -13,7 +13,11 @@
 #    use  FC=g95
 
 FC = g95
+FFLAGS = -fPIC -ffree-line-length-huge
+
 #FC = gfortran
+#FFLAGS = -fPIC -ffree-line-length-0
+
 MPIFC = mpif90
 CC = gcc
 #CC = gcc-mp-4.4
@@ -21,7 +25,6 @@ CCP = g++
 #CCP = g++-mp-4.4
 PY = python
 
-FFLAGS = -fPIC 
 #-fopenmp -g
 CFLAGS = -fPIC  
 #-fopenmp -g
@@ -34,6 +37,7 @@ MPI=
 
 
 FMODULES = \
+	shadow_version.f90 \
 	shadow_globaldefinitions.f90 \
 	stringio.f90 \
 	gfile.f90 \
@@ -58,7 +62,7 @@ OBJTESTS   =  ${FTESTS:.f90=.o}
 #
 
 
-shadow3:  $(OBJFMODULES) shadow3.o
+shadow3:  $(OBJFMODULES) shadow3.o 
 	$(FC) $(FFLAGS) -o shadow3 shadow3.o $(OBJFMODULES) 
 
 
@@ -100,6 +104,7 @@ lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow shadow_bind_c.o
 	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc shadow_bind_cpp.o
 
+
 idl: shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
 	$(CC) $(CFLAGS) -c shadow_bind_idl_loader.c
 	$(CC) $(CFLAGS) -c shadow_bind_idl.c
@@ -117,6 +122,14 @@ python: setup.py
 
 
 all: shadow3 lib examples python idl
+
+shadow_version.f90: shadow_version_precpp.F90 
+# shadow_version.sh creates shadow_version.h
+	./shadow_version.sh $(FC)
+	./Makefile_use_precompiler shadow_version
+#	cpp -w -C -I. tmp2.h > tmp3.f90
+#	sed -e 's/^#/^!#/' < tmp3.f90 > shadow_variables.f90
+#	/bin/rm -f tmp1.h tmp2.h tmp3.f90
 
 shadow_variables.f90: shadow_variables_precpp.F90
 # The sed commands have been put into a separate script because
@@ -142,6 +155,7 @@ clean:
 #objects and libraries
 	/bin/rm -f *.o *.mod *.so
 	/bin/rm -f ../lib/*
+	/bin/rm -f version.txt
 
 # binaries
 	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp shadow3 fig3
@@ -152,7 +166,9 @@ clean:
 #	/bin/rm -f tmp1.f90 tmp2.f90 tmp3.f90 tmp4.f90
 	/bin/rm -f tmp1_shadow_variables.f90 tmp2_shadow_variables.f90 
 	/bin/rm -f tmp1_shadow_kernel.f90 tmp2_shadow_kernel.f90 
-	/bin/rm -f shadow_variables.f90 shadow_kernel.f90
+	/bin/rm -f tmp1_shadow_version.f90 tmp2_shadow_version.f90 
+	/bin/rm -f shadow_version.h
+	/bin/rm -f shadow_variables.f90 shadow_kernel.f90 shadow_version.f90
 
 # files created by python
 	/bin/rm -rf build
@@ -163,16 +179,13 @@ purge: clean
                    systemfile.* effic.* angle.* optax.*
 	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
+	/bin/rm -f F12LIB.INDEX F12LIB.FULL
 
 install:
-	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
-	#mv *.o ../obj
-	#/bin/cp  shadow3 ../DISTR/
-	#/bin/cp  gen_source ../DISTR/
-	#/bin/cp  trace3 ../DISTR/
-	#/bin/cp  trace ../DISTR/
-	#/bin/cp libshado*.so ../lib/
-	#/bin/cp build/lib.linux-x86_64-2.6/Shadow.so ../lib
-	#/bin/cp  shadow3 ../bin/
+	/bin/cp shadow3 /opt/scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	$(PY) setup.py install
+	/bin/cp libshado*.so /usr/lib/
+
+	
 
 

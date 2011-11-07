@@ -37,7 +37,8 @@ Module shadow_PreProcessors
     !---- List of public subroutines ----!
     public ::  presurface   
     public ::  prerefl,pre_mlayer,grade_mlayer,bragg
-!    public ::  genlib
+! to create optical library files
+    public ::  genlib, WriteF12LibIndex
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
