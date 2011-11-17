@@ -12,12 +12,8 @@
 #    setenv LD_LIBRARY_PATH .
 #    use  FC=g95
 
-FC = g95
-FFLAGS = -fPIC -ffree-line-length-huge
-
-#FC = gfortran
-#FFLAGS = -fPIC -ffree-line-length-0
-
+#FC = g95
+FC = gfortran
 MPIFC = mpif90
 CC = gcc
 #CC = gcc-mp-4.4
@@ -25,6 +21,7 @@ CCP = g++
 #CCP = g++-mp-4.4
 PY = python
 
+FFLAGS = -fPIC -ffree-line-length-0
 #-fopenmp -g
 CFLAGS = -fPIC  
 #-fopenmp -g
@@ -78,6 +75,8 @@ examples:
 
 	$(CC) $(CFLAGS) -c trace3_c.c
 	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow -lshadowc
+
+	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.c
 
 	$(CCP) $(CFLAGS) -c trace3_cpp.cpp
 	$(CCP) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow -lshadowc -lshadowc++
@@ -167,8 +166,8 @@ clean:
 	/bin/rm -f tmp1_shadow_variables.f90 tmp2_shadow_variables.f90 
 	/bin/rm -f tmp1_shadow_kernel.f90 tmp2_shadow_kernel.f90 
 	/bin/rm -f tmp1_shadow_version.f90 tmp2_shadow_version.f90 
-	/bin/rm -f shadow_version.h
 	/bin/rm -f shadow_variables.f90 shadow_kernel.f90 shadow_version.f90
+	/bin/rm -f shadow_version.h
 
 # files created by python
 	/bin/rm -rf build
@@ -180,6 +179,8 @@ purge: clean
 	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 	/bin/rm -f F12LIB.INDEX F12LIB.FULL
+#examples runs
+	/bin/rm -f testio.00
 
 install:
 	/bin/cp shadow3 /opt/scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
