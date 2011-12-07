@@ -156,6 +156,9 @@ SELECT CASE (inCommandLow)
   CASE ("ffresnel")
      CALL ffresnel
      inCommand=""
+  CASE ("ffresnel2d")
+     CALL ffresnel2d_interface
+     inCommand=""
   CASE ("plotxy")
      CALL plotxy
      inCommand=""

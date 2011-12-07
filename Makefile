@@ -157,7 +157,8 @@ clean:
 	/bin/rm -f version.txt
 
 # binaries
-	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp shadow3 fig3
+	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp
+	/bin/rm -f shadow3 fig3 example_shadow_format
 	/bin/rm -f example01_f95 example01_c example01_cpp
 	/bin/rm -f ../bin/*
 
@@ -184,8 +185,10 @@ purge: clean
 
 install:
 	/bin/cp shadow3 /opt/scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	/bin/cp shadow3 /users/srio/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
 	$(PY) setup.py install
 	/bin/cp libshado*.so /usr/lib/
+	/bin/cp shadow3 /usr/bin/
 
 	
 

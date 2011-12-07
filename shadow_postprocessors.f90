@@ -41,7 +41,7 @@ Module Shadow_PostProcessors
     !---- List of public subroutines ----!
     public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
     public :: histo1,histo1_calc, histo1_calc_easy, intens_calc
-    public :: FFresnel,FFresnel2D,ReColor,Intens,FocNew
+    public :: FFresnel,FFresnel2D,FFresnel2D_Interface,ReColor,Intens,FocNew
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -2670,15 +2670,16 @@ SUBROUTINE FFresnel
 
 	character(len=sklen) :: inFile1
 	real(kind=skr),dimension(:,:),allocatable :: ray
-	real(kind=skr),dimension(1001)            :: rDis
+	real(kind=skr),dimension(2048)            :: rDis
         integer(kind=ski)   :: iErr,iFlag,ncol,np1,np,kLoss,iOver
         integer(kind=ski)   :: f_inc,kount,i,j,k
 	real(kind=skr)      :: rMin,rMax,step,dist,wave,qNew,factor,qvec
 	real(kind=skr)      :: rr_x,rr_z,vec1,vec2,rr,r,factor_inc,factor_nor
-	real(kind=skr)      :: rImag,alpha
+	real(kind=skr)      :: rImag,alpha,err
         complex(kind=skr)                  :: ARG_S,ARG_P,JEI
-        complex(kind=skr),dimension(1001)  :: STOREX,STOREY,STOREZ
-
+        complex(kind=skr),dimension(2048)  :: STOREX,STOREY,STOREZ
+        complex(kind=skr),dimension(2048)  :: STOREX2,STOREY2,STOREZ2
+        complex(kind=skr)                  :: errX, errY, errZ
      	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
      	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
 !C
@@ -2688,9 +2689,9 @@ SUBROUTINE FFresnel
      	WRITE(6,*) 'Define integration limits [ cm ].'
 1     	RMIN	=   RNUMBER	('From               ')
      	RMAX	=   RNUMBER	(' to                ')
-	NP	=   IRINT	('No. of points      ')
+	NP	=   IRINT	('No. of points (max 2048) ')
 	STEP	=   ABS(RMAX-RMIN)/(NP-1)
-     	IF (NP.GT.1001) THEN
+     	IF (NP.GT.2048) THEN
      	  STEP = (RMAX-RMIN)/1000
      	  WRITE(6,*) 'Too small a step. Smallest allowed is ',STEP
      	  GO TO 1
@@ -2740,6 +2741,9 @@ SUBROUTINE FFresnel
 	  STOREX(I)	= (0.0D0,0.0D0)
 	  STOREY(I)	= (0.0D0,0.0D0)
 	  STOREZ(I)	= (0.0D0,0.0D0)
+	  STOREX2(I)	= (0.0D0,0.0D0)
+	  STOREY2(I)	= (0.0D0,0.0D0)
+	  STOREZ2(I)	= (0.0D0,0.0D0)
 	END DO
 
      	DO J=1,NP1
@@ -2761,6 +2765,10 @@ SUBROUTINE FFresnel
      	   VEC2 =   RR_Z - RAY(3,J)*FACTOR
      	   RR	=   SQRT(VEC1**2 + DIST**2 + VEC2**2)
      	   R 	=   RAY (13,J)*FACTOR
+           ! 
+           ! added srio@esrf.eu 2011-12-07 to avoid crashing when 
+           ! using begin.dat as source (optical path zero)
+           if (abs(R).lt.1d-10) R=1 
 !** Common factor in front of the exponential :
 	   FACTOR_INC	= RAY(5,J) + DIST/RR
 	   FACTOR_NOR	= FACTOR_INC*QVEC/TWOPI/R/RR
@@ -2781,6 +2789,11 @@ SUBROUTINE FFresnel
      	   STOREX(K) = STOREX(K) + (ARG_S*RAY(7,J) + ARG_P*RAY(16,J))
      	   STOREY(K) = STOREY(K) + (ARG_S*RAY(8,J) + ARG_P*RAY(17,J))
      	   STOREZ(K) = STOREZ(K) + (ARG_S*RAY(9,J) + ARG_P*RAY(18,J))
+
+           ! to compute errors
+     	   STOREX2(K) = STOREX2(K) + (ARG_S*RAY(7,J) + ARG_P*RAY(16,J))**2
+     	   STOREY2(K) = STOREY2(K) + (ARG_S*RAY(8,J) + ARG_P*RAY(17,J))**2
+     	   STOREZ2(K) = STOREZ2(K) + (ARG_S*RAY(9,J) + ARG_P*RAY(18,J))**2
 
      	 END DO
 100	CONTINUE
@@ -2805,19 +2818,34 @@ SUBROUTINE FFresnel
 	 END IF
      	  WRITE (20,*) 'Files used: ',INFILE1
      	CLOSE   (20)
+        print *,'File FFPAR written to disk.'
      	OPEN	(20, FILE='FFRESNEL', STATUS='UNKNOWN')
 	REWIND (20)
+     	WRITE (20,*) "#S 1  File written by shadow3 ffresnel"
+     	WRITE (20,*) "#N 3"
+     	WRITE (20,*) "#L  X   Intensity  Error(3sigma)"
      	DO K=1,NP
      	  RIMAG = (ABS(STOREX(K)))**2 + (ABS(STOREY(K)))**2  &
       		  + (ABS(STOREZ(K)))**2
-     	  WRITE (20,*) RDIS(K),RIMAG/KOUNT
+          ! storex = storex +/- errX
+          errX  =  sqrt( storex2(k) - (STOREX(K)**2)/KOUNT )
+          errY  =  sqrt( storey2(k) - (STOREY(K)**2)/KOUNT )
+          errZ  =  sqrt( storez2(k) - (STOREZ(K)**2)/KOUNT )
+     	  !err  = (ABS(errX))**2 + (ABS(errY))**2  + (ABS(errZ))**2
+          ! a=s**2 -> da = 2*s*ds
+     	  err  = &
+            2*ABS(STOREX(K))*ABS(errX) + &
+            2*ABS(STOREY(K))*ABS(errY) + &
+            2*ABS(STOREZ(K))*ABS(errZ)
+
+     	  WRITE (20,*) RDIS(K),RIMAG/KOUNT,3*err/KOUNT
      	END DO
      	CLOSE(20)
+        print *,'File FFRESNEL written to disk.'
 
         IF (allocated(ray)) deallocate(ray)
 
 END SUBROUTINE FFresnel
-
 
 
 
@@ -2876,6 +2904,11 @@ subroutine FFresnel2D(ray,npt,dist,image,nxpixel,xmax,xmin,nzpixel,zmax,zmin)
            vec2 = rr_z - ray(3,i)
            rr   = sqrt( vec1*vec1 + vec2*vec2 + dist1*dist1 )
            r    = ray(13,i)
+           ! 
+           ! added srio@esrf.eu 2011-12-07 to avoid crashing when 
+           ! using begin.dat as source (optical path zero)
+           if (abs(r).lt.1d-10) r=1 
+
            factor_inc = ray(5,i) + dist/rr
            factor_nor = factor_inc*qvec/twopi/r/rr
 
@@ -2896,6 +2929,125 @@ subroutine FFresnel2D(ray,npt,dist,image,nxpixel,xmax,xmin,nzpixel,zmax,zmin)
 
 end subroutine FFresnel2D
 
+
+
+!C+++
+!C	PROGRAM		FFRESNEL2D_INTERFACE
+!C
+!C	PURPOSE		To prepare inputs for ffresnel2d()
+!C
+!C---
+SUBROUTINE FFresnel2D_INTERFACE
+
+implicit none
+
+character(len=sklen) :: inFile1
+real(kind=skr),dimension(:,:),allocatable :: ray
+real(kind=skr),dimension(:,:),allocatable :: imageIntensity
+complex(kind=skr),dimension(:,:,:),allocatable :: image
+integer(kind=ski)  ::  ncol,np1,iflag,ierr, iover
+integer(kind=ski)  ::  i,j,npx,npz,stot
+real(kind=skr)     ::  wave,qnew
+real(kind=skr)     ::  dist,xmin,xmax,zmin,zmax
+           
+      WRITE(6,*) 'Define integration limits [ cm ].'
+      XMIN      =   RNUMBER      ('X From               ')
+      XMAX      =   RNUMBER      ('  to                 ')
+      ZMIN      =   RNUMBER      ('Z From               ')
+      ZMAX      =   RNUMBER      ('  to                 ')
+      NPX      =   IRINT      ('No. of pixels in X ')
+      NPZ      =   IRINT      ('No. of pixels in Z')
+      DIST      =  RNUMBER('Distance from plane [ cm ] ? ')
+      INFILE1 =  RSTRING('Ray input file ? ')
+
+! 
+! read input file 
+!
+      !
+      ! it is necessary to allocate ray array here, at the main level. 
+      ! 
+        CALL    beamGetDim (inFile1,ncol,np1,iflag,ierr)
+        IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+            print *,'FFresnel_Interface: beamGetDim: Error in file: '//trim(inFile1)
+            return
+        END IF
+
+        ALLOCATE( RAY(18,NP1) )
+        ray=0.0d0
+        ALLOCATE( imageIntensity(npx,npz) )
+        imageIntensity=0.0d0
+        ALLOCATE( image(3,npx,npz) )
+        image=(0.0d0,0.0d0)
+
+      CALL beamLoad(ray,ierr,ncol,np1,inFile1)
+
+!
+
+      IOVER = IYES('Do you want to override the wavelength in the file ? ')
+      IF (IOVER.EQ.1) THEN
+             WAVE      =  RNUMBER      ('New wavelength [ Angs ]  ? ')
+             QNEW      =   WAVE*1.0D-8
+             QNEW      =   TWOPI/QNEW
+             ray(11,:) =  QNEW
+      END IF
+
+      print *,'Calling FFresnel2D (please be patient...)'
+      CALL FFresnel2D(ray,np1,dist,image,npx,xmax,xmin,npz,zmax,zmin)
+      do i=1,npx
+        do j=1,npz
+        imageIntensity(i,j) = (ABS(image(1,i,j)))**2 + & 
+                              (ABS(image(2,i,j)))**2 + &
+                              (ABS(image(3,i,j)))**2
+        imageIntensity(i,j) = imageIntensity(i,j) / np1
+ 
+        end do
+      end do
+
+
+! write file
+
+stot = skr*npx*npz
+
+!print *,'type: ',skr
+!print *,'size1: ',npx
+!print *,'size2: ',npz
+!print *,'full size: ',stot
+
+open(unit=11,file='ffresnel2d.edf',status='unknown',form='formatted')
+
+!print *,'File opened.'
+
+write(11,'(A)') '{'
+write(11,'(A)') 'HeaderID = EH:000001:000000:000000;'
+write(11,'(A)') 'Image = 1 ;'
+write(11,'(A)') 'ByteOrder = LowByteFirst ;'
+write(11,'(A)') 'DataType = DoubleValue ;'
+write(11,'(A,I15,A)') 'Dim_1 = ',npx,' ; '
+write(11,'(A,I15,A)') 'Dim_2 = ',npz,' ; '
+write(11,'(A,I30,A)') 'Size = ',stot,' ; '
+write(11,'(A)') 'Title = EDF file written by shadow3/ffresnel2d;'
+write(11,'(A)') '}'
+close(11)
+
+! watch the access='stream' to avoid fortran control records
+open(unit=11,file='ffresnel2d.edf',status='unknown',form='unformatted', &
+      position='append',access='stream')
+
+write(11,err=20) imageIntensity
+
+close(11)
+print *,'File written to disk: ffresnel2d.edf'
+
+
+IF (allocated(ray)) deallocate(ray)
+IF (allocated(image)) deallocate(image)
+IF (allocated(imageIntensity)) deallocate(imageIntensity)
+
+RETURN
+
+20 print *,'FFRESNEL2D_INTERFACE: Error'
+
+END SUBROUTINE FFresnel2d_Interface
 
 
 
