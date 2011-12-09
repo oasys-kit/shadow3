@@ -826,6 +826,18 @@ subroutine datapath (file, path, iflag)
            RETURN
         END IF
 
+        !
+        ! if file exists in the directory where the "shadow3" binary is
+        ! sitting, use it.
+
+        call get_command_argument(0,dataDir)
+        nStr = 7 ! number of characters in shadow3
+        dataDir = dataDir(1:len(trim(dataDir))-nStr)
+        path = TRIM(datadir)//OS_DS//TRIM(file)
+        INQUIRE (file = path, exist = lExists)
+        IF (lExists) RETURN
+
+
         ! checks if file is in $SHADOW3_HOME
 	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW3_HOME', datadir, nStr)
         IF (nStr .gt. 0) THEN
