@@ -12,8 +12,11 @@
 #    setenv LD_LIBRARY_PATH .
 #    use  FC=g95
 
-#FC = g95
 FC = gfortran
+FFLAGS = -fPIC -ffree-line-length-none
+#FC = g95
+#FFLAGS = -fPIC -ffree-line-length-0
+
 MPIFC = mpif90
 CC = gcc
 #CC = gcc-mp-4.4
@@ -21,7 +24,6 @@ CCP = g++
 #CCP = g++-mp-4.4
 PY = python
 
-FFLAGS = -fPIC -ffree-line-length-0
 #-fopenmp -g
 CFLAGS = -fPIC  
 #-fopenmp -g
@@ -187,9 +189,9 @@ purge: clean
 install:
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow3/shadow3
 	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
-	$(PY) setup.py install
-	/bin/cp libshado*.so /usr/lib/
-	/bin/cp shadow3 /usr/bin/
+#	$(PY) setup.py install
+#	/bin/cp libshado*.so /usr/lib/
+#	/bin/cp shadow3 /usr/bin/
 
 	
 

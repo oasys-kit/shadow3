@@ -42,6 +42,7 @@ Module Shadow_PostProcessors
     public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
     public :: histo1,histo1_calc, histo1_calc_easy, intens_calc
     public :: FFresnel,FFresnel2D,FFresnel2D_Interface,ReColor,Intens,FocNew
+    public :: sysplot
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -3872,4 +3873,352 @@ SUBROUTINE FocNew
 END SUBROUTINE FocNew
 
 
+!***********************************************************************
+!* This program will plot the whole optical system, in a suitable scale*
+!* The inputs consist of a source starting point, in the standard format
+!* of a BEGIN.DAT or STAR.xx file. Also, OPTAXIS.xx is used to deter.*
+!* the physical location of the elements in the lab. reference frame.  *
+!* 
+!* Adapted to shadow3 srio@esrf.eu 2011-11-24. Output to gnuplot.
+!* 
+!***********************************************************************
+
+subroutine sysplot
+
+  implicit none 
+
+  real(kind=skr),dimension(20.24) :: AXIS (20,24)
+  real(kind=skr),dimension(3)     :: UVEC,VVEC,WVEC
+
+  !DATA (12,N_DIM),PHASE(3,N_DIM),AP(3,N_DIM)
+  real(kind=skr),dimension(:,:),allocatable :: data1
+
+  real(kind=skr)       :: VERSOR(20,3,3),RAY(20,500,4),OLD (20,500,4)
+  character(len=sklen) :: FILESOUR,FILEIMAGE,FILEAXIS,TEMP
+  character(len=sklen),dimension(25)  :: FILES
+
+  integer(kind=ski) :: imode, kdim, nmirr, npoint, i, j
+  integer(kind=ski) :: iflag, kx, ky, kz=0, ifl, ierr, np
+  integer(kind=ski) :: i1, icheck, itest, last, ncol
+  real(kind=skr)    :: xp,xpp,yp,ypp,zp
+
+!
+! input mode
+!
+             WRITE(6,*)'Input from : '
+             WRITE(6,*)'     0 File: sysplot.inp'
+             WRITE(6,*)'     1 Terminal'
+             !READ(5,*)IMODE
+             IMODE = irint(' <?> ')
+
+!
+! terminal mode
+!
+IF (IMODE.EQ.1) THEN
+             WRITE(6,*)'Bidimensional [ 0 ] or 3d plot [ 1 ] ?'
+             READ(5,*)KDIM
+             WRITE(6,*)'How many mirrors ?'
+             READ(5,*)NMIRR
+             WRITE(6,*) 'How many rays [ suggest no more than 200 (500 max) ] ?'
+             READ(5,*)  NPOINT
+             WRITE(6,*)'Optaxis file ?'
+             READ (5,1000) FILEAXIS
+             WRITE(6,*)'Source file and (final) image file ?'
+             READ (5,1000) FILESOUR,FILEIMAGE
+             DO I=1,NMIRR
+               WRITE(6,*)'Mirror N. ',I,' ?'
+               READ (5,1000)        FILES(I)
+             END DO
+             IFLAG        =  IYES ('Plot all the losses too [ Y/N ] ? ' )
+             IF (KDIM.EQ.0) THEN
+               WRITE(6,*)'Columns to plot out (first is horizontal) ?'
+               READ(5,*)KX,KY
+             ELSE
+               KX        =  1
+               KY        =  2
+               KZ        =  3
+             END IF
+ELSE
+             OPEN        (20, FILE='sysplot.inp', STATUS='OLD')
+             READ (20,*) KDIM
+             READ (20,*) NMIRR
+             READ (20,*) NPOINT,IFLAG
+             READ (20,1000) FILEAXIS
+!C  DELETE 1 LEADING BLANK SPACE FROM FILENAME
+         TEMP = FILEAXIS
+         FILEAXIS = TEMP(2: )
+         READ (20,1000) FILESOUR
+         TEMP = FILESOUR
+         FILESOUR = TEMP(2: )
+         READ (20,1000) FILEIMAGE
+         TEMP = FILEIMAGE
+         FILEIMAGE = TEMP(2: )
+         DO I=1,NMIRR
+            READ (20,1000) FILES(I)
+            TEMP = FILES(I)
+            FILES(I) = TEMP(2: )
+         END DO
+         IF (KDIM.EQ.1) THEN
+                READ (20,*) KX,KY,KZ
+         ELSE
+                READ (20,*) KX,KY
+         END IF
+         CLOSE (20)
+END IF
+
+IF (NPOINT.GT.500) NPOINT = 500
+         OPEN (20,FILE=FILEAXIS,STATUS='OLD')
+         DO I=1,NMIRR
+             READ (20,*)        I1
+             READ (20,*)        (AXIS (I,J),J=1,3)
+             READ (20,*)        (AXIS (I,J),J=4,6)
+             READ (20,*)        (AXIS (I,J),J=7,9)
+             READ (20,*)        (AXIS (I,J),J=10,12)
+5            READ (20,*)        (AXIS (I,J),J=13,15)
+             READ (20,*)        (AXIS (I,J),J=16,18)
+             READ (20,*)        (AXIS (I,J),J=19,21)
+             READ (20,*)        (AXIS (I,J),J=22,24)
+         END DO
+         CLOSE (20)
+
+      !
+      ! it is necessary to allocate ray array here, at the main level. 
+      ! 
+        CALL    beamGetDim (filesour,ncol,np,ifl,ierr)
+        IF ((ifl.ne.0).OR.(ierr.ne.0)) THEN
+            print *,'Sysplot: beamGetDim: Error in file: '//trim(filesour)
+            stop
+        END IF
+
+        ALLOCATE( data1(18,NP) )
+        data1=0.0d0
+
+      CALL beamLoad(data1,ierr,ncol,np,filesour)
+
+       DO I=1,NPOINT
+             OLD (1,I,1)        =   data1 (1,I)
+             OLD (1,I,2)        =   data1 (2,I)
+             OLD (1,I,3)        =   data1 (3,I)
+             OLD (1,I,4)        =   1.0D0
+       END DO
+
+        data1=0.0d0
+        CALL beamLoad(data1,ierr,ncol,np,fileimage)
+        IF (ierr.ne.0) THEN
+            print *,'Sysplot: beamLoad: Error in file: '//trim(fileimage)
+            return
+        END IF
+
+        LAST        =   NMIRR + 2
+
+        DO I=1,NPOINT
+             OLD (LAST,I,1)        =   data1 (1,I)
+             OLD (LAST,I,2)        =   data1 (2,I)
+             OLD (LAST,I,3)        =   data1 (3,I)
+             IF (IFLAG.EQ.0) THEN
+               OLD (LAST,I,4)        =   data1 (10,I)
+             ELSE
+              IF (data1(10,I).GT.-1000000) THEN
+               OLD (LAST,I,4)        =   1
+              END IF
+             END IF
+        END DO
+
+       DO J=1,NMIRR
+        data1=0.0d0
+        CALL beamLoad(data1,ierr,ncol,np,files(j))
+        IF (IERR.NE.0) THEN 
+            print *,'Sysplot: beamLoad: Error in reading intermediate ray file.'
+            stop
+        END IF
+
+        DO I=1,NPOINT
+             OLD (J+1,I,1)        =   data1 (1,I)
+             OLD (J+1,I,2)        =   data1 (2,I)
+             OLD (J+1,I,3)        =   data1 (3,I)
+             IF (IFLAG.EQ.0) THEN
+               OLD (J+1,I,4)        =   data1 (10,I)
+             ELSE
+              IF (data1(10,I).GT.-1000000) THEN
+               OLD (J+1,I,4)  =  1
+              END IF
+             END IF
+        END DO 
+       END DO 
+
+!** Computes now the set of versor to describe the ray in real space
+
+      DO I=1,NMIRR
+
+             VERSOR (I,1,1)        =   AXIS (I,10)        ! UVECT
+             VERSOR (I,1,2)        =   AXIS (I,11)
+             VERSOR (I,1,3)        =   AXIS (I,12)
+             VERSOR (I,2,1)        =   AXIS (I,13)        ! VVEC
+             VERSOR (I,2,2)        =   AXIS (I,14)
+             VERSOR (I,2,3)        =   AXIS (I,15)
+             VERSOR (I,3,1)        =   AXIS (I,16)        ! WVEC
+             VERSOR (I,3,2)        =   AXIS (I,17)
+             VERSOR (I,3,3)        =   AXIS (I,18)
+      END DO 
+
+!** Generates now the set of plotting points, from the source to each
+!** mirror.
+
+      DO I=1,NPOINT
+             RAY (1,I,1)        =   OLD (1,I,1)
+             RAY (1,I,2)        =   OLD (1,I,2)
+             RAY (1,I,3)        =   OLD (1,I,3)
+             RAY (1,I,4)        =   OLD (1,I,4)
+        DO J=1,NMIRR
+             ITEST        =   -11000*J
+             RAY (J+1,I,1)        =   AXIS (J,4) + & 
+                      OLD (J+1,I,1)*VERSOR (J,1,1) +  & 
+                      OLD (J+1,I,2)*VERSOR (J,2,1) + & 
+                      OLD (J+1,I,3)*VERSOR (J,3,1)
+
+             RAY (J+1,I,2)        =   AXIS (J,5) + & 
+                      OLD (J+1,I,1)*VERSOR (J,1,2) + & 
+                      OLD (J+1,I,2)*VERSOR (J,2,2) + & 
+                      OLD (J+1,I,3)*VERSOR (J,3,2)
+
+             RAY (J+1,I,3)        =   AXIS (J,6) + & 
+                      OLD (J+1,I,1)*VERSOR (J,1,3) + & 
+                      OLD (J+1,I,2)*VERSOR (J,2,3) + & 
+                      OLD (J+1,I,3)*VERSOR (J,3,3)
+
+             ICHECK        =   OLD(J+1,I,4)
+              IF (IFLAG.EQ.0) THEN
+                IF (ICHECK.GE.0) THEN
+                  RAY (J+1,I,4)        =  1.0D0
+                ELSE IF (ICHECK.LT.-1000000) THEN
+                 IF (RAY (J,I,4).GT.0.0) THEN
+                   RAY (J+1,I,4)        = - 1.0D0
+                 ELSE
+                   RAY (J+1,I,4)        = - 2.0D0
+                 END IF
+                ELSE IF (ITEST.EQ.ICHECK) THEN
+                   RAY (J+1,I,4)        = - 1.0D0
+                ELSE IF (ITEST.GT.ICHECK.AND.ITEST.LT.0) THEN
+                   RAY (J+1,I,4)        = -2.0D0
+                END IF
+              ELSE
+                IF (ICHECK.GT.-1000000) THEN
+                  RAY (J+1,I,4)        =  1.0D0
+                ELSE
+                  RAY(J+1,I,4) = -1.0D0
+                END IF
+              END IF
+        END DO !J
+      END DO !I
+
+!** Computes the last set of rays, to the final image point.
+             UVEC (1)        =   AXIS (NMIRR,10)        ! UVEC >> X
+             UVEC (2)        =   AXIS (NMIRR,11)
+             UVEC (3)        =   AXIS (NMIRR,12)
+             VVEC (1)        =   AXIS (NMIRR,19)        ! VREF >> Y
+             VVEC (2)        =   AXIS (NMIRR,20)
+             VVEC (3)        =   AXIS (NMIRR,21)
+             WVEC (1)        =   AXIS (NMIRR,22)        ! WREF >> Z
+             WVEC (2)        =   AXIS (NMIRR,23)
+             WVEC (3)        =   AXIS (NMIRR,24)
+
+     DO I=1,NPOINT
+             RAY (LAST,I,1)        =   AXIS (NMIRR,7) + &
+                      OLD (LAST,I,1)*UVEC(1) + &
+                      OLD (LAST,I,2)*VVEC(1) + &
+                      OLD (LAST,I,3)*WVEC(1)
+             RAY (LAST,I,2)        =   AXIS (NMIRR,8) + &
+                      OLD (LAST,I,1)*UVEC(2) + &
+                      OLD (LAST,I,2)*VVEC(2) + &
+                      OLD (LAST,I,3)*WVEC(2) 
+             RAY (LAST,I,3)        =   AXIS (NMIRR,9) + &
+                      OLD (LAST,I,1)*UVEC(3) + &
+                      OLD (LAST,I,2)*VVEC(3) + &
+                      OLD (LAST,I,3)*WVEC(3)
+             RAY (LAST,I,4)        =   OLD (LAST,I,4)
+     END DO 
+
+!** The array is now ready for plotting.
+        OPEN (34,FILE='sysplot.dat',STATUS='UNKNOWN')
+        REWIND (34)
+        DO I=1,NPOINT
+          DO J=1,NMIRR + 2
+             XP        =   RAY (J,I,KX)
+             YP        =   RAY (J,I,KY)
+             ZP        =   RAY (J,I,KZ)
+             IF (ABS(XP).LT.1.0E-10)        XP        =  0.0D0
+             IF (ABS(YP).LT.1.0E-10)        YP        =  0.0D0
+             IF (ABS(ZP).LT.1.0E-10)        ZP        =  0.0D0
+             IF (KDIM.EQ.0) THEN
+              IF (RAY (J,I,4).GE.0.0)  THEN
+                IF (J.EQ.1) THEN
+                  !WRITE (34,*) 'line(',XP,',',YP,',',XP,',',YP,')'
+                  WRITE (34,*) XP,YP,XP,YP
+                  XPP = XP
+                  YPP = YP
+                ELSE
+                  !WRITE (34,*) 'line(',XPP,',',YPP,',',XP,',',YP,')'
+                  WRITE (34,*) XPP,YPP,XP,YP
+                  XPP = XP
+                  YPP = YP
+                ENDIF
+              ELSE 
+                 GO TO 400
+              END IF
+             ELSE
+              IF (RAY (J,I,4).GE.0.0)  THEN
+                 WRITE (34,*)        XP,YP,ZP
+              ELSE
+                 GO TO 400
+              END IF
+             END IF
+          END DO !J
+          WRITE (34,*) ' '
+400     CONTINUE
+        END DO !I
+        CLOSE (34)
+        print *,'File writen to disk: sysplot.dat'
+
+
+        OPEN (35,FILE='sysplot.gpl',STATUS='UNKNOWN')
+           write(35,1000) '# '
+           write(35,1000) '# Gnuplot script for shadow3 '
+           write(35,1000) '# Created by histo1 '
+           write(35,1000) '# '
+           write(35,1000) 'set terminal x11  '
+           write(35,1000) 'set pointsize 3.0 '
+           write(35,1000) 'plot "sysplot.dat" using 3:4 with lines notitle linecolor rgb "green" '
+           write(35,1000) '  '
+           write(35,1000) "pause -1 'Press <Enter> to end graphic ' "
+        CLOSE (35)
+        print *,'File writen to disk: sysplot.gpl'
+
+
+        IF (IMODE.EQ.1) THEN
+          OPEN        (20, FILE='sysplot.inp', STATUS='UNKNOWN')
+          REWIND  (20)
+              WRITE (20,*) KDIM
+              WRITE (20,*) NMIRR
+              WRITE (20,*) NPOINT,IFLAG
+              WRITE (20,1010) trim(FILEAXIS)
+              WRITE (20,1010) trim(FILESOUR)
+              WRITE (20,1010) trim(FILEIMAGE)
+              DO I=1,NMIRR
+                 WRITE (20,1010) trim(FILES(I))
+              END DO 
+              IF (KDIM.EQ.1) THEN
+                WRITE (20,*) KX,KY,KZ
+              ELSE
+                WRITE (20,*) KX,KY
+              END IF
+             CLOSE (20)
+             print *,'File writen to disk: sysplot.inp'
+        END IF
+
+        IF (allocated(data1)) deallocate(data1)
+        return
+
+1000        FORMAT (A)
+1010        FORMAT (1X,A)
+END Subroutine sysplot
 End Module Shadow_PostProcessors

@@ -235,6 +235,9 @@ SELECT CASE (inCommandLow)
 !  CASE ("genlib")
 !     CALL genlib
 !     inCommand=""
+  CASE ("sysplot")
+     CALL sysplot
+     inCommand=""
   CASE ("exit")
      !STOP "GO ended."
      EXIT
