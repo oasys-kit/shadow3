@@ -2042,7 +2042,7 @@ Contains
           GO TO 100
        ELSE
           WRITE(6,*)'Intercept error. All coefficients were zero'
-          !sriosrio
+          
           STOP
           GO TO 200
        END IF
@@ -7062,10 +7062,40 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	  CALL SUM	(VTEMP,K_PAR,Q_OUT)
 	  CALL DOT	(Q_OUT,Q_OUT,TTEMP)
 	  CALL NORM	(Q_OUT,VTEMP)
- 	  IF (RAY(11,ITIK).NE.0.0D0)  RAY(11,ITIK)  =   SQRT (TTEMP)
-     	  RAY(4,ITIK)	=   VTEMP(1)
-     	  RAY(5,ITIK)	=   VTEMP(2)
-     	  RAY(6,ITIK)	=   VTEMP(3)
+
+! 	  IF (RAY(11,ITIK).NE.0.0D0)  RAY(11,ITIK)  =   SQRT (TTEMP)
+!     	  RAY(4,ITIK)	=   VTEMP(1)
+!     	  RAY(5,ITIK)	=   VTEMP(2)
+!     	  RAY(6,ITIK)	=   VTEMP(3)
+
+          ! check for no solution (total reflectivity regime)
+          ! added srio@esrf.eu 2011-12-08
+          if (isnan(SQRT (TTEMP)) ) then
+             RAY (10, ITIK) = -123456  !flag for imaginary solution
+          else 
+            IF (RAY(11,ITIK).NE.0.0D0)  RAY(11,ITIK)  =   SQRT (TTEMP)
+          end if
+          if (isnan(vtemp(1)) ) then
+!print *,'itik,ttemp: ',itik,ttemp,vtemp
+            RAY (10, ITIK) = -123456  !flag for imaginary solution
+            RAY(4,ITIK) =   0.0D0 ! imaginary solution, arbitrary direction
+          else 
+            RAY(4,ITIK) =   VTEMP(1)
+          end if
+          if (isnan(vtemp(2)) ) then
+            RAY (10, ITIK) = -123456  !flag for imaginary solution
+            RAY(5,ITIK) =   1.0D0 ! imaginary solution, arbitrary direction
+          else
+            RAY(5,ITIK) =   VTEMP(2)
+          end if
+          if (isnan(vtemp(3)) ) then
+            RAY (10, ITIK) = -123456  !flag for imaginary solution
+            RAY(6,ITIK) =   0.0D0 ! imaginary solution, arbitrary direction
+          else
+            RAY(6,ITIK) =   VTEMP(3)
+          end if
+
+
      	END IF
 	  end if
 ! C
@@ -7134,7 +7164,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	PF_CENT(3)=0.0D0
 
 ! C
-! C Seperate the Torudial baselin case from
+! C Seperate the Torodial baselin case from
 ! C the other baseline
 ! C
 
@@ -8217,7 +8247,6 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C
 ! C This cannot be a MENU case
 ! C
-!sriosrio 
 
 	IF (IFLAG.GT.1) THEN
           print *,''

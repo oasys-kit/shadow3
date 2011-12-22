@@ -21,6 +21,7 @@ PROGRAM  Shadow3
   use shadow_beamio
   use shadow_variables
   use shadow_kernel
+  use shadow_crl
   use shadow_synchrotron
   use shadow_pre_sync    ! undulator preprocessors
   use shadow_preprocessors       ! general preprocessors
@@ -76,7 +77,7 @@ inCommandLow = ""
         print *,'                                                                           '
         print *,'                                                                           '
         print *,'                                                                           '
-        print *,'SHADOW v3.0Beta                                                            '
+        print *,'SHADOW v3.0                                                                '
         print *,'                                                                           '
 
   END IF 
@@ -226,6 +227,16 @@ SELECT CASE (inCommandLow)
      END IF
      inCommand=""
 
+  ! CRL beta 2011-12-22 srio@esrf.eu - NOT YET LISTED UNDER ?
+  ! TODO: list and clean 
+  CASE ("precrl")
+     CALL precrl()
+     inCommand=""
+  CASE ("runcrl")
+     CALL runcrl()
+     inCommand=""
+
+
 !  CASE ("srfunc")
 !     CALL SrFunc
 !     inCommand=""
@@ -236,7 +247,7 @@ SELECT CASE (inCommandLow)
 !     CALL genlib
 !     inCommand=""
   CASE ("sysplot")
-     CALL sysplot
+     CALL sysplot()
      inCommand=""
   CASE ("exit")
      !STOP "GO ended."

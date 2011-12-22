@@ -48,7 +48,8 @@ FMODULES = \
 	shadow_pre_sync.f90 \
 	shadow_preprocessors.f90 \
 	shadow_postprocessors.f90 \
-	shadow_bind_f.f90
+	shadow_bind_f.f90 \
+	shadow_crl.f90
 #	cdf_z.f
 
 

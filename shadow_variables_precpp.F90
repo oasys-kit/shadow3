@@ -80,6 +80,7 @@ Module shadow_variables
 
 
     public  :: PoolOELoad,PoolOEWrite,PoolSourceLoad,PoolSourceWrite
+    public  :: PoolOEDefault
     private :: PoolSourceToGf,PoolOEToGf,GfToPoolSource,GfToPoolOE
 
 Contains
@@ -300,6 +301,26 @@ Contains
     return
   end subroutine PoolOEWrite
   
+!
+!
+!
+    
+  subroutine PoolOEDefault(oe)
+    type (poolOE), intent(inout) :: oe
+    integer(kind=ski) :: i
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe%name=defvalue
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) oe%name=defvalue
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+    do i=1,arrdim newline \
+      oe%name(i) = defvalue newline \
+    end do
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+    do i=1,arrdim newline \
+      oe%name(i) = defvalue newline \
+    end do
+#include "shadow_oe.def"    
+  end subroutine PoolOEDefault
+
 !
 !
 !
