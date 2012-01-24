@@ -36,7 +36,7 @@ Module shadow_kernel
   	implicit none
   
 
-  	integer (kind=ski) :: ione, izero, itwo, ithree, ifour, i_one, i_two, i101, i201
+  	integer (kind=ski) :: ione, izero, itwo, ithree, ifour, i_one, i_two, i101, i201, i501
   	parameter (izero=0)
   	parameter (ione=1)
   	parameter (itwo=2)
@@ -46,6 +46,7 @@ Module shadow_kernel
   	parameter (i_two=-2)
   	parameter (i101=101)
   	parameter (i201=201)
+  	parameter (i501=501)
   
   	!---- Variables ----!
 
@@ -6318,7 +6319,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
 	implicit integer(kind=ski)        (f,i-n)
 
      	!DIMENSION	CSPL (2,201,2,201),X(201),Y(201),PDS(6)
-     	DIMENSION	X(201),PDS(6)
+     	DIMENSION	X(501),PDS(6)
 	real(kind=skr),dimension(:),allocatable :: Y
      	real(kind=skr),dimension(:,:,:,:),allocatable ::  CSPL
 
@@ -6354,7 +6355,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
      	  READ  (20) NX, NY
 
 	  allocate( Y(NY) )
-	  allocate( CSPL(2,201,2,NY) )
+	  allocate( CSPL(2,501,2,NY) )
      	  READ  (20) X,Y
      	  READ  (20) CSPL
      	  CLOSE (20)
@@ -6371,12 +6372,12 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
      	ELSE 
 ! C
 ! C Compute the spline and derivatives at {x,y}. 
-! C Use 201 points maximum instead of 101 as earlier.
+! C Use 501 points maximum instead of 101 as earlier.
 ! C If there is an error in this calculation, set the SERR variable
 ! C to -9 to indicate this fact.
 ! C
 ! C      	CALL	DBCEVL (X,NX,Y,NY,CSPL,101,XIN,YIN,PDS,IER)
-     	CALL	DBCEVL (X,NX,Y,NY,CSPL,i201,XIN,YIN,PDS,IER)
+     	CALL	DBCEVL (X,NX,Y,NY,CSPL,i501,XIN,YIN,PDS,IER)
 ! C
      	IF (IER.NE.0) THEN
     	  IER = -9
@@ -10446,8 +10447,10 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
        MM	=   0
        DO 10000 ITIK=1,NTOTAL
           KK	=  KK + 1
-          IF (KK.EQ.250) THEN
-             ITOTRAY = KK + MM*250
+          !IF (KK.EQ.250) THEN
+          IF (KK.EQ.NTOTAL/20) THEN
+             !ITOTRAY = KK + MM*250
+             ITOTRAY = KK + MM*(NTOTAL/20)
              IF (MM.EQ.0) THEN
                 WRITE(6,*)'Generated ',ITOTRAY,' rays out of ',NTOTAL
              ELSE

@@ -81,7 +81,7 @@ SUBROUTINE PRESURFACE
 
 !C The dimensions of WK should be 2*NX*NY + 2*MAX(NX,NY).  If so, the
 !C size of WK for NX=101, NY=101 should be 20604 *not* 20602 as above.
-!C Below I have used the correct formula and have dimensioned WK for 201
+!C Below I have used the correct formula and have dimensioned WK for 501
 !C points, as I have CSPL, X, Y, and Z.
 
 	real(kind=skr),dimension(:),allocatable       :: WK
@@ -90,7 +90,7 @@ SUBROUTINE PRESURFACE
 
 ! todo: by now, only allocatable in Y direction. To continue with X
 !       (problema in calling imsl stuff...)
-        real(kind=skr),dimension(201)     :: X
+        real(kind=skr),dimension(501)     :: X
      	real(kind=skr),dimension(:,:),allocatable :: Z
         !real(kind=skr),dimension(:),allocatable   :: X,Y
         real(kind=skr),dimension(:),allocatable   :: Y
@@ -114,18 +114,18 @@ SUBROUTINE PRESURFACE
      	  STOP 'Please retry with larger arrays.'
      	END IF
 
-     	IF (NX.GT.201) THEN
+     	IF (NX.GT.501) THEN
      	  WRITE(6,*)'Arrays X too large: '
-     	  WRITE(6,*)'Maximum allowed is 201 points in X, unlimited in Y.'
+     	  WRITE(6,*)'Maximum allowed is 501 points in X, unlimited in Y.'
      	  STOP 'Please retry with smaller arrays.'
      	END IF
 
-        nw = 2*201*ny+2*max(201,ny)
-        allocate(Z(201,NY))	
+        nw = 2*501*ny+2*max(501,ny)
+        allocate(Z(501,NY))	
         allocate(Y(NY))
-	allocate(CSPL(2,201,2,NY))
+	allocate(CSPL(2,501,2,NY))
 	allocate(WK(nw))
-	ic = 1+max(201,ny)
+	ic = 1+max(501,ny)
 
      	WRITE(6,*)'Setting up ',NX,' by ',NY,' array.'
 !C
@@ -140,9 +140,9 @@ SUBROUTINE PRESURFACE
 10    	CONTINUE
      	WRITE(6,*)'Array read correctly. Compute spline.'
 !C
-!C Call IMSL routine to compute spline. Now use 201 points instead of 101.
+!C Call IMSL routine to compute spline. Now use 501 points instead of 101.
 !C
-        iTmp = 201
+        iTmp = 501
      	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
      	
 	IF (IER.EQ.132) THEN

@@ -179,7 +179,7 @@ clean:
 purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
-                   systemfile.* effic.* angle.* optax.*
+                   systemfile.* effic.* angle.* optax.* focus focnew*
 	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 	/bin/rm -f F12LIB.INDEX F12LIB.FULL

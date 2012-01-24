@@ -3552,10 +3552,10 @@ SUBROUTINE FocNew
 	real(kind=skr)              :: xExter, zExter
 	real(kind=skr),dimension(:,:),allocatable :: ray
 	real(kind=skr),dimension(6)               :: rLow,rUpp,test
-	real(kind=skr),dimension(1000)            :: x,y
+	!real(kind=skr),dimension(1000)            :: x,y
+	real(kind=skr),dimension(:),allocatable   :: x,y
 	character(len=sklen)         :: iFile
-	character(len=7)   :: root
-	character(len=9)   :: filOut
+	character(len=sklen)   :: filOut
 	character(len=2)   :: header
 	character(len=60)   :: fileText
 	character(len=17)   :: dateText
@@ -3597,6 +3597,7 @@ SUBROUTINE FocNew
      	DO 99 I=1,NN
      	IF (RAY(10,I).LT.0.0) 	KK = KK + 1
 99     	CONTINUE
+
 200	CONTINUE
      	NN = I-1
      	KK = NN - KK
@@ -3739,8 +3740,9 @@ SUBROUTINE FocNew
      	SIGX0	=   DSQRT(DABS(AX3 - AX4))
      	SIGZ0	=   DSQRT(DABS(AZ3 - AZ4))
      	SIGT0	=   DSQRT(DABS(AT3 - AT4))
+     	WRITE (6,*)' '
 	WRITE (6,1035)
-	WRITE (6,*) 'Searching file : ',IFILE
+	WRITE (6,*) 'Searching file : '//trim(IFILE)
 	WRITE (6,1055) FILETEXT,DATETEXT
 	WRITE (6,1035)
      	WRITE (6,*) 'Center at :', NMODE(ICENTER+1)
@@ -3765,10 +3767,12 @@ SUBROUTINE FocNew
 	WRITE (6,1015)	SIGT
      	WRITE (6,1060)	SIGT0
      	WRITE(6,*)'All done. File out data.'
-     	OPEN (23,FILE='focus',STATUS='UNKNOWN')
+     	WRITE(6,*)' '
+
+     	OPEN (23,FILE='focnew.txt',STATUS='UNKNOWN')
 	REWIND (23)
 	WRITE (23,1035)
-	WRITE (23,*) 'Searching file : ',IFILE
+	WRITE (23,*) 'Searching file : '//trim(IFILE)
 	WRITE (23,1055) FILETEXT,DATETEXT
 	WRITE (23,1035)
      	WRITE (23,*) 'Center at :', NMODE(ICENTER+1)
@@ -3794,6 +3798,8 @@ SUBROUTINE FocNew
 	WRITE (23,1015) SIGT
      	WRITE (23,1060)	SIGT0
      	CLOSE (23)
+	print *,'File written to disk: focnew.txt'
+
 1000	FORMAT	(1X,'X coefficients : ',3(1X,G17.10))
 1012	FORMAT  (1X,'Center :',G17.10,T30,'Average versor :',G17.10)
 1010	FORMAT (1X,'Sagittal   focus at       : ',G17.10)
@@ -3821,16 +3827,23 @@ SUBROUTINE FocNew
      	YMAX 	= RNUMBER ('Ymax ? ')
      	YSTEP 	= RNUMBER ('Ystep ? ')
      	NPL	=   (YMAX-YMIN)/YSTEP + 1
-     	IOLD	=  0
      	IF (IPLOT.NE.4) THEN
-     	 IFILE = RSTRING ('File-name ? ')
+     	 IOLD	=  0
+         KOUNT = IPLOT
      	ELSE
-     	 ROOT = RSTRING (' File root [ 7 letters max ] ? ')
      	 IOLD	=  4
      	 IPLOT	=  1
      	 KOUNT	=  1
      	END IF
-105	DO 16 I=1,NPL
+
+
+  	ALLOCATE( X(NPL) )
+  	X=0.0d0
+  	ALLOCATE( Y(NPL) )
+  	Y=0.0d0
+
+105	CONTINUE
+        DO 16 I=1,NPL
      	 X(I) = YMIN + (I-1)*YSTEP
      	 IF (IPLOT.EQ.1) THEN
      	  Y(I) = SQRT(ABS( AX1*X(I)**2 + 2.0D0*AX2*X(I) + AX3  &
@@ -3843,32 +3856,74 @@ SUBROUTINE FocNew
       			-(AT4 + 2.0D0*AT5*X(I) + AT6*X(I)**2))) 
      	 END IF
 16     	CONTINUE
-     	IF (IOLD.EQ.4) THEN
-     	 IF (KOUNT.EQ.1)	FILOUT	= 'FX'//ROOT
-     	 IF (KOUNT.EQ.2)	FILOUT	= 'FZ'//ROOT
-     	 IF (KOUNT.EQ.3) 	FILOUT	= 'FT'//ROOT
+     	!IF (IOLD.EQ.4) THEN
+     	 !IF (KOUNT.EQ.1)	FILOUT	= 'FX'//ROOT
+     	 !IF (KOUNT.EQ.2)	FILOUT	= 'FZ'//ROOT
+     	 !IF (KOUNT.EQ.3) 	FILOUT	= 'FT'//ROOT
+     	 IF (KOUNT.EQ.1)	FILOUT	= 'focnew_X.dat'
+     	 IF (KOUNT.EQ.2)	FILOUT	= 'focnew_Z.dat'
+     	 IF (KOUNT.EQ.3) 	FILOUT	= 'focnew_T.dat'
      	 OPEN (23,FILE=FILOUT,STATUS='UNKNOWN')
 	 REWIND (23)
-     	ELSE
-     	 OPEN (23,FILE=IFILE,STATUS='UNKNOWN')
-	 REWIND (23)
-     	END IF
+     	!ELSE
+     	! OPEN (23,FILE=IFILE,STATUS='UNKNOWN')
+	! REWIND (23)
+     	!END IF
      	DO 14 I=1,NPL
      	WRITE (23,*)	X(I),Y(I)
 14     	CONTINUE
      	CLOSE (23)
-	print *,'File written to disk: '//trim(iFile)
+     	!IF (IOLD.EQ.4) THEN
+	  print *,'File written to disk: '//trim(FilOut)
+        !ELSE
+	!  print *,'File written to disk: '//trim(iFile)
+        !END IF
      	IF (IOLD.EQ.4.AND.KOUNT.LT.3) THEN
-     	KOUNT = KOUNT + 1
-     	IPLOT = IPLOT + 1
-     	GO TO 105
+     	  KOUNT = KOUNT + 1
+     	  IPLOT = IPLOT + 1
+     	  GO TO 105
      	END IF
      	END IF
 
-	KGO = IYES('Another plot? ')
-	IF (KGO == 1) GO TO 102
+!write gnuplot files
+        IF (IANSW == 1) THEN
+        OPEN (35,FILE='focnew.gpl',STATUS='UNKNOWN')
+           write(35,'(A)') '# '
+           write(35,'(A)') '# Gnuplot script for shadow3 '
+           write(35,'(A)') '# Created by focnew '
+           write(35,'(A)') '# '
+
+           IF (trim(OS_NAME) == "Windows") THEN
+             write(35,'(A)') 'set terminal win  '
+           ELSE
+             write(35,'(A)') 'set terminal x11  '
+           END IF
+
+
+           write(35,'(A)') 'set style line 1 lt 1 lw 3 pt 3 linecolor rgb "red"'
+           write(35,'(A)') 'set style line 2 lt 1 lw 3 pt 3 linecolor rgb "blue"'
+           write(35,'(A)') 'set style line 3 lt 1 lw 3 pt 3 linecolor rgb "black"'
+
+           IF (IOLD == 4) THEN
+             write(35,'(A)') "plot 'focnew_X.dat' using 1:2 with line ls 1,\"
+             write(35,'(A)') "     'focnew_Z.dat' using 1:2 with line ls 2,\"
+             write(35,'(A)') "     'focnew_T.dat' using 1:2 with line ls 3"
+           ELSE 
+             write(35,'(A)') "plot '"//trim(filout)//"' using 1:2 with line ls 1"
+           ENDIF
+  
+           write(35,'(A)') '  '
+           write(35,'(A)') "pause -1 'Press <Enter> to end graphic '"
+        CLOSE (35)
+        print *,'File writen to disk: focnew.gpl'
+        END IF
+
+	!KGO = IYES('Another plot? ')
+	!IF (KGO == 1) GO TO 102
         
         IF (allocated(ray)) deallocate(ray)
+        IF (allocated(X)) deallocate(X)
+        IF (allocated(Y)) deallocate(Y)
 	RETURN
 END SUBROUTINE FocNew
 
@@ -4185,7 +4240,13 @@ IF (NPOINT.GT.500) NPOINT = 500
            write(35,1000) '# Gnuplot script for shadow3 '
            write(35,1000) '# Created by histo1 '
            write(35,1000) '# '
-           write(35,1000) 'set terminal x11  '
+
+           IF (trim(OS_NAME) == "Windows") THEN
+             write(35,1000) 'set terminal win  '
+           ELSE
+             write(35,1000) 'set terminal x11  '
+           END IF
+           !write(35,1000) 'set terminal x11  '
            write(35,1000) 'set pointsize 3.0 '
            write(35,1000) 'plot "sysplot.dat" using 3:4 with lines notitle linecolor rgb "green" '
            write(35,1000) '  '
