@@ -310,7 +310,11 @@ Module shadow_kernel
     real(kind=skr),dimension(3) :: rimcen,vnimag, uxim, vzim, c_star, &
                                            c_plate, ux_pl, vz_pl, wy_pl
     !!--     	COMMON	/AXIS	/	CENTRAL(20,24),T_INCIDENCE,T_SOURCE, &
-    real(kind=skr),dimension(20,24) :: central
+    !real(kind=skr),dimension(20,24) :: central
+    ! redimensionate !
+    !real(kind=skr),dimension(200,24) :: central
+    !srio@esrf.eu removes the history, central contains only the current oe
+    real(kind=skr),dimension(24) :: central
     !!--     				T_IMAGE,T_REFLECTION
     !!--     	COMMON	/RIPPLE	/	X_RIP_AMP,X_RIP_WAV,X_PHASE, &
     !!--     				Y_RIP_AMP,Y_RIP_WAV,Y_PHASE, &
@@ -1510,7 +1514,7 @@ Contains
        ! C Write out file if flag is enabled
        ! C
     IF	((FWRITE.EQ.0).OR.(FWRITE.EQ.2)) THEN
-       CALL	FNAME (FFILE, 'star', I_WHAT, itwo)
+       CALL	FNAME (FFILE, 'star', I_WHAT, izero)
        IFLAG	= 0
        CALL	WRITE_OFF (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
        IF (IERR.NE.0)	 &
@@ -1747,14 +1751,14 @@ Contains
     
     ! ** This Subroutine keeps the accounting of the optycal system in the
     ! ** source reference frame. This is done by means of the array OPTAXIS
-    ! **	CENTRAL (I,1:3)   Source coordinates for the 'I' mirror
-    ! **	CENTRAL (I,4:6)   Mirror optical center coordinates
-    ! **	CENTRAL (I,7:9)   Image position.
-    ! **	CENTRAL (I,10:12) Binormal vector 	>> U_VEC
-    ! **	CENTRAL (I,13:15) Tangent vector  	>> V_VEC
-    ! **	CENTRAL (I,16:18) Mirror normal   	>> W_VEC
-    ! **	CENTRAL (I,19:21) Reflected versor 	>> V_REF
-    ! **	CENTRAL (I,22:24) Normal to reflec.	>> V_PERP
+    ! **	CENTRAL (1:3)   Source coordinates for the 'I' mirror
+    ! **	CENTRAL (4:6)   Mirror optical center coordinates
+    ! **	CENTRAL (7:9)   Image position.
+    ! **	CENTRAL (10:12) Binormal vector 	>> U_VEC
+    ! **	CENTRAL (13:15) Tangent vector  	>> V_VEC
+    ! **	CENTRAL (16:18) Mirror normal   	>> W_VEC
+    ! **	CENTRAL (19:21) Reflected versor 	>> V_REF
+    ! **	CENTRAL (22:24) Normal to reflec.	>> V_PERP
     ! ** The outputs are in the source reference frame.
     ! ** We use T_REFLECTION to take in account the case of the grating.
     
@@ -1767,12 +1771,14 @@ Contains
     real(kind=skr),dimension(3)  :: V_PERP,U_OLD,V_OLD,W_OLD,R_OLD
     real(kind=skr),dimension(3)  :: RP_OLD
     real(kind=skr)               :: deflection
-    integer(kind=ski)                    :: kount,iwhich,i_write,j
+    integer(kind=ski)            :: kount,iwhich,i_write,j
 
-
+    character(len=sklen)         :: stmp
+    integer(kind=ski)            :: eof,itmp
+    real(kind=skr),dimension(24) :: central_old
 
     WRITE(6,*)'Call to OPTAXIS'
-    CALL	FNAME (FFILE,'optax',I_MIRROR,itwo)
+    CALL	FNAME (FFILE,'optax',I_MIRROR,izero)
     DEFLECTION	=   T_INCIDENCE + T_REFLECTION
     IF (I_MIRROR.EQ.1) THEN
        U_VEC (1)	=   COSAL
@@ -1791,53 +1797,56 @@ Contains
        V_PERP (2)     =   COS(3*PIHALF - DEFLECTION)
        V_PERP (3)    =   SIN(3*PIHALF - DEFLECTION)*COSAL
        
-       CENTRAL(1,1)  	=   .0D0
-       CENTRAL(1,2)  	=   .0D0
-       CENTRAL(1,3)  	=   .0D0
-       CENTRAL(1,4)  	=   .0D0
-       CENTRAL(1,5)  	=   T_SOURCE
-       CENTRAL(1,6)  	=   .0D0
-       CENTRAL(1,7) 	=   T_IMAGE*V_REF(1)
-       CENTRAL(1,8) 	=   T_IMAGE*V_REF(2) + T_SOURCE
-       CENTRAL(1,9) 	=   T_IMAGE*V_REF(3)
-       CENTRAL(1,10)	=   U_VEC(1)
-       CENTRAL(1,11)	=    U_VEC(2)
-       CENTRAL(1,12)	=     U_VEC(3)
-       CENTRAL(1,13)	=   V_VEC(1)
-       CENTRAL(1,14)	=    V_VEC(2)
-       CENTRAL(1,15)	=     V_VEC(3)
-       CENTRAL(1,16)	=   W_VEC(1)
-       CENTRAL(1,17)	=    W_VEC(2)
-       CENTRAL(1,18)	=     W_VEC(3)
-       CENTRAL(1,19)	=   V_REF(1)
-       CENTRAL(1,20)	=    V_REF(2)
-       CENTRAL(1,21)	=     V_REF(3)
-       CENTRAL(1,22) 	=   V_PERP(1)
-       CENTRAL(1,23) 	=    V_PERP(2)
-       CENTRAL(1,24) 	=     V_PERP(3)
+       CENTRAL(1)  	=   .0D0
+       CENTRAL(2)  	=   .0D0
+       CENTRAL(3)  	=   .0D0
+       CENTRAL(4)  	=   .0D0
+       CENTRAL(5)  	=   T_SOURCE
+       CENTRAL(6)  	=   .0D0
+       CENTRAL(7) 	=   T_IMAGE*V_REF(1)
+       CENTRAL(8) 	=   T_IMAGE*V_REF(2) + T_SOURCE
+       CENTRAL(9) 	=   T_IMAGE*V_REF(3)
+       CENTRAL(10)	=   U_VEC(1)
+       CENTRAL(11)	=    U_VEC(2)
+       CENTRAL(12)	=     U_VEC(3)
+       CENTRAL(13)	=   V_VEC(1)
+       CENTRAL(14)	=    V_VEC(2)
+       CENTRAL(15)	=     V_VEC(3)
+       CENTRAL(16)	=   W_VEC(1)
+       CENTRAL(17)	=    W_VEC(2)
+       CENTRAL(18)	=     W_VEC(3)
+       CENTRAL(19)	=   V_REF(1)
+       CENTRAL(20)	=    V_REF(2)
+       CENTRAL(21)	=     V_REF(3)
+       CENTRAL(22) 	=   V_PERP(1)
+       CENTRAL(23) 	=    V_PERP(2)
+       CENTRAL(24) 	=     V_PERP(3)
     ELSE
-       KOUNT	=   I_MIRROR
-       IWHICH  =   I_MIRROR - 1
+       !KOUNT	=   I_MIRROR
+       !IWHICH  =   I_MIRROR - 1
+       iwhich = 1
+       kount = 1
+       central_old(:) = central(:)
        ! ** Computes now the OLD mirror reference frame in the lab. coordinates
        ! ** system. The rotation angle ALPHA of the current mirror is defined in
        ! ** this reference frame, as ALPHA measure the angle between the two
        ! ** incidence planes (not necessarily the same).
        
-       U_OLD (1)	=   CENTRAL (IWHICH,10)
-       U_OLD (2)	=   CENTRAL (IWHICH,11)
-       U_OLD (3)	=   CENTRAL (IWHICH,12)
+       U_OLD (1)	=   CENTRAL (10)
+       U_OLD (2)	=   CENTRAL (11)
+       U_OLD (3)	=   CENTRAL (12)
        ! *     	V_OLD (1)	=   CENTRAL (IWHICH,13)
        ! *     	 V_OLD (2)	=   CENTRAL (IWHICH,14)
        ! *     	  V_OLD (3)	=   CENTRAL (IWHICH,15)
        ! *     	W_OLD (1)	=   CENTRAL (IWHICH,16)
        ! *     	 W_OLD (2)	=   CENTRAL (IWHICH,17)
        ! *     	  W_OLD (3)	=   CENTRAL (IWHICH,18)
-       R_OLD (1)     	=   CENTRAL (IWHICH,19)
-       R_OLD (2)     	=   CENTRAL (IWHICH,20)
-       R_OLD (3)    	=   CENTRAL (IWHICH,21)
-       RP_OLD (1)     	=   CENTRAL (IWHICH,22)
-       RP_OLD (2)    	=   CENTRAL (IWHICH,23)
-       RP_OLD (3)   	=   CENTRAL (IWHICH,24)
+       R_OLD (1)     	=   CENTRAL (19)
+       R_OLD (2)     	=   CENTRAL (20)
+       R_OLD (3)    	=   CENTRAL (21)
+       RP_OLD (1)     	=   CENTRAL (22)
+       RP_OLD (2)    	=   CENTRAL (23)
+       RP_OLD (3)   	=   CENTRAL (24)
        ! ** This vector is the NORMAL of the new mirror in the OMRF (U,R_OLD,RP_OLD) **
        V_TEMP (1)	= - SIN(PI - T_INCIDENCE)*SINAL
        V_TEMP (2)	=   COS(PI - T_INCIDENCE)
@@ -1910,49 +1919,78 @@ Contains
             V_TEMP(3)*RP_OLD(3)
        ! ** All done. Write to the array and leave.
        
-       CENTRAL (KOUNT,1)   =   CENTRAL (IWHICH,7)
-       CENTRAL (KOUNT,2)   =   CENTRAL (IWHICH,8)
-       CENTRAL (KOUNT,3)   =   CENTRAL (IWHICH,9)
-       CENTRAL (KOUNT,4)   =  T_SOURCE*R_OLD(1) + CENTRAL(KOUNT,1)
-       CENTRAL (KOUNT,5)   =  T_SOURCE*R_OLD(2) + CENTRAL(KOUNT,2)
-       CENTRAL (KOUNT,6)   =  T_SOURCE*R_OLD(3) + CENTRAL(KOUNT,3)
-       CENTRAL (KOUNT,7)   =   T_IMAGE*V_REF(1) + CENTRAL(KOUNT,4)
-       CENTRAL (KOUNT,8)   =   T_IMAGE*V_REF(2) + CENTRAL(KOUNT,5)
-       CENTRAL (KOUNT,9)   =   T_IMAGE*V_REF(3) + CENTRAL(KOUNT,6)
-       CENTRAL (KOUNT,10)  =   U_VEC(1)
-       CENTRAL (KOUNT,11)  =    U_VEC(2)
-       CENTRAL (KOUNT,12)  =     U_VEC(3)
-       CENTRAL (KOUNT,13)  =   V_VEC(1)
-       CENTRAL (KOUNT,14)  =    V_VEC(2)
-       CENTRAL (KOUNT,15)  =     V_VEC(3)
-       CENTRAL (KOUNT,16)  =   W_VEC(1)
-       CENTRAL (KOUNT,17)  =    W_VEC(2)
-       CENTRAL (KOUNT,18)  =     W_VEC(3)
-       CENTRAL (KOUNT,19)  =   V_REF(1)
-       CENTRAL (KOUNT,20)  =    V_REF(2)
-       CENTRAL (KOUNT,21)  =     V_REF(3)
-       CENTRAL (KOUNT,22)  =   V_PERP(1)
-       CENTRAL (KOUNT,23)  =    V_PERP(2)
-       CENTRAL (KOUNT,24)  =     V_PERP(3)
+       CENTRAL (1)   =   CENTRAL_old (7)
+       CENTRAL (2)   =   CENTRAL_old (8)
+       CENTRAL (3)   =   CENTRAL_old (9)
+       CENTRAL (4)   =  T_SOURCE*R_OLD(1) + CENTRAL(1)
+       CENTRAL (5)   =  T_SOURCE*R_OLD(2) + CENTRAL(2)
+       CENTRAL (6)   =  T_SOURCE*R_OLD(3) + CENTRAL(3)
+       CENTRAL (7)   =   T_IMAGE*V_REF(1) + CENTRAL(4)
+       CENTRAL (8)   =   T_IMAGE*V_REF(2) + CENTRAL(5)
+       CENTRAL (9)   =   T_IMAGE*V_REF(3) + CENTRAL(6)
+       CENTRAL (10)  =   U_VEC(1)
+       CENTRAL (11)  =    U_VEC(2)
+       CENTRAL (12)  =     U_VEC(3)
+       CENTRAL (13)  =   V_VEC(1)
+       CENTRAL (14)  =    V_VEC(2)
+       CENTRAL (15)  =     V_VEC(3)
+       CENTRAL (16)  =   W_VEC(1)
+       CENTRAL (17)  =    W_VEC(2)
+       CENTRAL (18)  =     W_VEC(3)
+       CENTRAL (19)  =   V_REF(1)
+       CENTRAL (20)  =    V_REF(2)
+       CENTRAL (21)  =     V_REF(3)
+       CENTRAL (22)  =   V_PERP(1)
+       CENTRAL (23)  =    V_PERP(2)
+       CENTRAL (24)  =     V_PERP(3)
        
     END IF
     
 
     ! srio@esrf.eu 20110412 avoid writing optax.xx if FWRITE=3
     IF (FWRITE.NE.3) THEN 
+
     OPEN (UNIT=23,FILE= FFILE,STATUS='UNKNOWN')
     REWIND (23)
-    DO I_WRITE=1,I_MIRROR
-       WRITE (23,*) I_WRITE
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  1,3)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  4,6)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  7,9)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =10,12)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =13,15)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =16,18)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =19,21)
-       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =22,24)
-    END DO
+
+!    ! method 1
+!    DO I_WRITE=1,I_MIRROR
+!       WRITE (23,*) I_WRITE
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  1,3)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  4,6)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =  7,9)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =10,12)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =13,15)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =16,18)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =19,21)
+!       WRITE (23,*) ( CENTRAL(I_WRITE,J), J =22,24)
+!    END DO
+
+    ! method 2
+       ! if I_MIRROR > 1 copy last file
+       IF (I_MIRROR.GT.1) THEN 
+         itmp = I_MIRROR-1
+         CALL  FNAME (FFILE,'optax',itmp,izero)
+         OPEN (UNIT=24,FILE= FFILE,STATUS='UNKNOWN',IOSTAT=eof)
+         REWIND (24)
+         DO WHILE (eof == 0)
+            read(24,'(a)', IOSTAT=eof) stmp
+            write(23,'(a)') trim(stmp)
+         END DO
+         CLOSE(24)
+       END IF
+       !I_WRITE=I_MIRROR
+       WRITE (23,*) I_MIRROR
+       WRITE (23,*) ( CENTRAL(J), J =  1,3)
+       WRITE (23,*) ( CENTRAL(J), J =  4,6)
+       WRITE (23,*) ( CENTRAL(J), J =  7,9)
+       WRITE (23,*) ( CENTRAL(J), J =10,12)
+       WRITE (23,*) ( CENTRAL(J), J =13,15)
+       WRITE (23,*) ( CENTRAL(J), J =16,18)
+       WRITE (23,*) ( CENTRAL(J), J =19,21)
+       WRITE (23,*) ( CENTRAL(J), J =22,24)
+
+
     CLOSE (23)
     END IF
     WRITE(6,*)'Exit from OPTAXIS'
@@ -3306,7 +3344,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 	INTEGER(KIND=ski)	SERR
 ! C
      	WRITE(6,*) 'Call to MSETUP'
-     	CALL	FNAME	(FFILE,'mset',IWHICH,itwo)
+     	CALL	FNAME	(FFILE,'mset',IWHICH,izero)
 	VIN(1)	 = 0.0D0
 	VIN(2)	 = COSDEL
 	VIN(3)	 = -SINDEL
@@ -4062,34 +4100,39 @@ End Subroutine gnormal
 ! C---
 SUBROUTINE READ_AXIS (I_MIRROR)
 
-	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-	IMPLICIT INTEGER(kind=ski)        (F,I-N)
+   integer(kind=ski), intent(in) :: i_mirror
+   integer(kind=ski)             :: i, j, i_dumm
  
 ! C
 ! C Find out the name
 ! C
-     	CALL	FNAME (FFILE,'optax',I_MIRROR,itwo)
+    CALL FNAME (FFILE,'optax',I_MIRROR,izero)
 ! C
 ! C Open and read the file
 ! C
-! #if defined(vms)
-!      	OPEN (UNIT=20, FILE= FFILE, STATUS='OLD', READONLY)
-! #else
-     	OPEN (UNIT=20, FILE= FFILE, STATUS='OLD')
-! #endif
+    OPEN (UNIT=20, FILE= FFILE, STATUS='OLD')
 
-     	DO 100 I=1,I_MIRROR
-     	  READ (20,*) I_DUMM
-     	  READ (20,*) ( CENTRAL(I,J), J =  1,3)
-     	  READ (20,*) ( CENTRAL(I,J), J =  4,6)
-     	  READ (20,*) ( CENTRAL(I,J), J =  7,9)
-     	  READ (20,*) ( CENTRAL(I,J), J =10,12)
-     	  READ (20,*) ( CENTRAL(I,J), J =13,15)
-     	  READ (20,*) ( CENTRAL(I,J), J =16,18)
-     	  READ (20,*) ( CENTRAL(I,J), J =19,21)
-     	  READ (20,*) ( CENTRAL(I,J), J =22,24)
-100	CONTINUE
-     	CLOSE (20)
+    DO I=1,I_MIRROR
+       READ (20,*) I_DUMM
+       !READ (20,*) ( CENTRAL(I,J), J =  1,3)
+       !READ (20,*) ( CENTRAL(I,J), J =  4,6)
+       !READ (20,*) ( CENTRAL(I,J), J =  7,9)
+       !READ (20,*) ( CENTRAL(I,J), J =10,12)
+       !READ (20,*) ( CENTRAL(I,J), J =13,15)
+       !READ (20,*) ( CENTRAL(I,J), J =16,18)
+       !READ (20,*) ( CENTRAL(I,J), J =19,21)
+       !READ (20,*) ( CENTRAL(I,J), J =22,24)
+       READ (20,*) ( CENTRAL(J), J =  1,3)
+       READ (20,*) ( CENTRAL(J), J =  4,6)
+       READ (20,*) ( CENTRAL(J), J =  7,9)
+       READ (20,*) ( CENTRAL(J), J =10,12)
+       READ (20,*) ( CENTRAL(J), J =13,15)
+       READ (20,*) ( CENTRAL(J), J =16,18)
+       READ (20,*) ( CENTRAL(J), J =19,21)
+       READ (20,*) ( CENTRAL(J), J =22,24)
+    END DO
+!100 CONTINUE
+     CLOSE (20)
 End Subroutine read_axis
     !
     !
@@ -5573,7 +5616,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 ! ** This will compute the transmission coefficient.
      	IF (I_ABS(I_WHAT).EQ.1) THEN
      	 CALL	REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
-     			 DUM,ATTEN,itwo)
+     			 DUM,ATTEN,izero)
      	END IF
 ! ** Saves the results
      	OUT(1,J)  =   UX_1
@@ -8013,7 +8056,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! C* Insert also an 'end of file' marker for external processor *
 ! C
      	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
-     	  CALL	FNAME	(FFILE, 'mirr', I_WHICH, itwo)
+     	  CALL	FNAME	(FFILE, 'mirr', I_WHICH, izero)
 	  IFLAG	= 0
 	  CALL  WRITE_OFF   (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
           IF    (IERR.NE.0) CALL LEAVE  &
@@ -8027,7 +8070,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! C If codling slit, write out
 ! C
      	IF (FMIRR.EQ.6) THEN
-     	  CALL	FNAME	(FFILE, 'codl', I_WHICH, itwo)
+     	  CALL	FNAME	(FFILE, 'codl', I_WHICH, izero)
 	  IFLAG	= 0
      	  CALL	WRITE_OFF (FFILE,CODLING,PHASE,AP,NCOL,NPOINT,IFLAG,izero, IERR)
      	  IF	(IERR.NE.0) CALL LEAVE &
@@ -8059,7 +8102,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
      	END IF
         ! srio@esrf.eu 20110412 avoid writing effic.xx if FWRITE=3
         IF (FWRITE.NE.3) THEN
-     	CALL	FNAME	(FFILE, 'effic', I_WHICH, itwo)
+     	CALL	FNAME	(FFILE, 'effic', I_WHICH, izero)
 	OPEN (UNIT=20,FILE=FFILE,STATUS='UNKNOWN')
 	REWIND (20)
      	IF (K_2.EQ.0)	WRITE (20,3000)
@@ -8094,7 +8137,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	IF (F_ANGLE.EQ.1) THEN
 ! C write incidence and reflection information to file
  
-        CALL FNAME (FFILE, 'angle', I_WHICH, itwo)
+        CALL FNAME (FFILE, 'angle', I_WHICH, izero)
         OPEN (UNIT=55,FILE=FFILE,STATUS='UNKNOWN')
         REWIND (55)
  
@@ -8106,7 +8149,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
 
      	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
-     	  CALL	FNAME	(FFILE, 'rmir', I_WHICH, itwo)
+     	  CALL	FNAME	(FFILE, 'rmir', I_WHICH, izero)
      	 IF (F_MOVE.EQ.1)   THEN
      	   CALL ROT_BACK (RAY,AP)
 	   IFLAG	= 0
@@ -8477,7 +8520,7 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
 	CALL DEALLOC
 
 
-     	CALL	FNAME	(FFILE, 'end', ICOUNT, itwo)
+     	CALL	FNAME	(FFILE, 'end', ICOUNT, izero)
      	IDUMM = 0
      	CALL	RWNAME  ( FFILE, 'W_OE', IDUMM)
      	IF (IDUMM.NE.0) CALL LEAVE &
@@ -9424,7 +9467,7 @@ print *,'parameters yourself.                                                   
 !c                  SAVE     FILE
 !c
 !c
-     	CALL	FNAME	(FFILE, 'start', I_OENUM, itwo)
+     	CALL	FNAME	(FFILE, 'start', I_OENUM, izero)
      	IDUMM = 0
      	CALL	RWNAME	(FFILE, 'W_OE', IDUMM)
      	IF (IDUMM.NE.0) CALL LEAVE ('INPUT_OE','Error writing NAMELIST',IDUMM)
@@ -11326,7 +11369,7 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
 		!!CALL MIRROR1 (RAY,AP,PHASE,ICOUNT)
 		CALL MIRROR18(RAY18,NCOL1,NPOINT1,ICOUNT)
                 ! writes mirr.xxB (if wanted)
-                !CALL	FNAME	(FFILE, 'mirr', ICOUNT, itwo)
+                !CALL	FNAME	(FFILE, 'mirr', ICOUNT, izero)
                 !IFLAG	= 0
                 !CALL beamWrite(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
                 !IF (IERR.NE.0) CALL LEAVE ('TRACE3','Error writing MIRR',IERR)
@@ -11350,7 +11393,7 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
        !
        CALL DEALLOC
 
-       !CALL	FNAME (FFILE, 'star', ICOUNT, itwo)
+       !CALL	FNAME (FFILE, 'star', ICOUNT, izero)
        !IFLAG	= 0
        !CALL beamWrite(RAY18,iErr,NCOL,NPOINT,trim(ffile)//'B')
        !IF (IERR.NE.0)	CALL LEAVE ('IMAGE','Error writing STAR',IERR)

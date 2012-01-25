@@ -10,7 +10,7 @@ PROGRAM example01
 	type (poolSource)   :: src
 	type (poolOE)       :: oe1
 	real(kind=skr), allocatable, dimension(:,:) :: ray
-	integer(kind=ski)   :: ierr
+	integer(kind=ski)   :: ierr,itmp
 
 	! load variables from start.00
 	CALL PoolSourceLoad(src,"start.00")
@@ -19,18 +19,21 @@ PROGRAM example01
 	print *,'Number of rays (modified): ',src%npoint
 
 	! allocate ray
-	ALLOCATE( ray(18,src%npoint) )
+        itmp=18
+	ALLOCATE( ray(itmp,src%npoint) )
 
 	! calculate source
 	CALL SourceSync(src,ray,src%npoint)
-        call beamWrite(ray,ierr,18,src%npoint,"begin.dat")
+        call beamWrite(ray,ierr,itmp,src%npoint,"begin.dat")
 	! reads start.01 into oe1
 	call PoolOELoad(oe1,"start.01")
 	! traces OE1
-	call TraceOE(oe1,ray,src%npoint,1)
+        itmp=1
+	call TraceOE(oe1,ray,src%npoint,itmp)
 
 	! write file star.01
-	CALL beamWrite(ray,ierr,18,src%npoint,"star.01")
+        itmp=18
+	CALL beamWrite(ray,ierr,itmp,src%npoint,"star.01")
     DEALLOCATE(ray)
 
 END PROGRAM example01

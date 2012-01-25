@@ -180,7 +180,7 @@ Program	trace3mpi
 
       ! write end.xx
 
-      call fName(ffile, 'end', iCount, itwo)
+      call fName(ffile, 'end', iCount, izero)
       write(mpinames,'(I2)') mpiid
       ffile = trim(adjustl(ffile)) // "-" // trim(adjustl(mpinames))
       write(*,*) mpiid,' Store Pool'

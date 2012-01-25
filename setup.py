@@ -13,7 +13,7 @@ setup (	name = "Shadow",
 	ext_modules = [Extension('Shadow', 
 				['shadow_bind_python.c',], 
 				library_dirs  = ['.'],
-				libraries     = ['shadowc'],
+				libraries     = ['shadow3c'],
 				include_dirs  = ['.',numpy.get_include()],
 				),
 			]

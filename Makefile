@@ -1,21 +1,42 @@
 #
-# makefile for shadow3
+# Makefile for shadow3
+#
+#
+#
+# Usage:
+#       make  (or make shadow3): builds shadow3 binary 
+#       make lib        : bulds libraries libshadow3*
+#       make examples   : compiles examples and tools using libshadow3*
+#       make python     : creates python bind
+#       make idl        : creates idl bind
+#       make all        : make shadow3 lib examples python idl
+#
+#       make clean      : cleans files created when running make
+#       make purge      : clean + removes files created by shadow3
+#
 #
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
 #
-#in ESRF/NICE: 
-#   source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
-#   use  FC=gfortran
+# HINTS:
 #
-#in ESRF/kukulcan: 
-#    setenv LD_LIBRARY_PATH .
-#    use  FC=g95
+#   Recommended compiler: gfortran
+#
+#   in ESRF/NICE: 
+#     source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
+#     use  FC=gfortran
+#
+#   in ESRF/kukulcan: 
+#     setenv LD_LIBRARY_PATH .
+#     use  FC=g95
+#
 
+#-------------------------------------------------------------------------------
+# customize compiler and flags
 FC = gfortran
 FFLAGS = -fPIC -ffree-line-length-none
 #FC = g95
-#FFLAGS = -fPIC -ffree-line-length-0
+#FFLAGS = -fPIC -ffree-line-length-huge
 
 MPIFC = mpif90
 CC = gcc
@@ -30,6 +51,7 @@ CFLAGS = -fPIC
 
 LIBFLAGS = -shared -lm 
 #-lpthread
+#-------------------------------------------------------------------------------
 
 #do not change this. Meant to be command line argument
 MPI=
@@ -68,49 +90,49 @@ shadow3:  $(OBJFMODULES) shadow3.o
 
 examples: 
 	$(FC) $(FFLAGS) -c gen_source.f90 
-	$(FC) $(FFLAGS) -o gen_source gen_source.o -L. -lshadow
+	$(FC) $(FFLAGS) -o gen_source gen_source.o -L. -lshadow3
 
 	$(FC) $(FFLAGS) -c trace.f90
-	$(FC) $(FFLAGS) -o trace trace.o -L. -lshadow
+	$(FC) $(FFLAGS) -o trace trace.o -L. -lshadow3
 
 	$(FC) $(FFLAGS) -c trace3.f90
-	$(FC) $(FFLAGS) -o trace3 trace3.o -L. -lshadow
+	$(FC) $(FFLAGS) -o trace3 trace3.o -L. -lshadow3
 
 	$(CC) $(CFLAGS) -c trace3_c.c
-	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow -lshadowc
+	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3 -lshadow3c
 
 	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.c
 
 	$(CCP) $(CFLAGS) -c trace3_cpp.cpp
-	$(CCP) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow -lshadowc -lshadowc++
+	$(CCP) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3 -lshadow3c -lshadow3c++
 
 	$(FC) $(FFLAGS) -c fig3.f90
-	$(FC) $(FFLAGS) -o fig3 fig3.o -L. -lshadow
+	$(FC) $(FFLAGS) -o fig3 fig3.o -L. -lshadow3
 
 	$(FC) $(FFLAGS) -c example01_f95.f90 -o example01_f95.o
-	$(FC) $(FFLAGS) -o example01_f95 example01_f95.o -L. -lshadow
+	$(FC) $(FFLAGS) -o example01_f95 example01_f95.o -L. -lshadow3
 
 	$(CC) -I. $(CFLAGS) -c example01_c.c -o example01_c.o
-	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadowc
+	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadow3c
 
 	$(CCP) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
-	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadowc++
+	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++
 
 ifeq ($(MPI),1)
 	$(MPIFC) $(FFLAGS) -c trace3mpi.f90
-	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow -lmpi_f90
+	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow3 -lmpi_f90
 endif
 
 lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
-	$(FC) $(LIBFLAGS) -o libshadow.so $(OBJFMODULES)
-	$(CC) $(LIBFLAGS) -o libshadowc.so -L. -lshadow shadow_bind_c.o
-	$(CCP) $(LIBFLAGS) -o libshadowc++.so -L. -lshadow -lshadowc shadow_bind_cpp.o
+	$(FC) $(LIBFLAGS) -o libshadow3.so $(OBJFMODULES)
+	$(CC) $(LIBFLAGS) -o libshadow3c.so -L. -lshadow3 shadow_bind_c.o
+	$(CCP) $(LIBFLAGS) -o libshadow3c++.so -L. -lshadow3 -lshadow3c shadow_bind_cpp.o
 
 
 idl: shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
 	$(CC) $(CFLAGS) -c shadow_bind_idl_loader.c
 	$(CC) $(CFLAGS) -c shadow_bind_idl.c
-	$(CC) $(LIBFLAGS) -o shadow_bind_idl.so -L. -lshadowc shadow_bind_idl_loader.o shadow_bind_idl.o
+	$(CC) $(LIBFLAGS) -o shadow_bind_idl.so -L. -lshadow3c shadow_bind_idl_loader.o shadow_bind_idl.o
 
 
 python: setup.py 
@@ -129,9 +151,6 @@ shadow_version.f90: shadow_version_precpp.F90
 # shadow_version.sh creates shadow_version.h
 	./shadow_version.sh $(FC)
 	./Makefile_use_precompiler shadow_version
-#	cpp -w -C -I. tmp2.h > tmp3.f90
-#	sed -e 's/^#/^!#/' < tmp3.f90 > shadow_variables.f90
-#	/bin/rm -f tmp1.h tmp2.h tmp3.f90
 
 shadow_variables.f90: shadow_variables_precpp.F90
 # The sed commands have been put into a separate script because

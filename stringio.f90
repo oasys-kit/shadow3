@@ -358,51 +358,70 @@ Module stringIO
     !
 
     ! C+++
-    ! C	SUBROUTINE	FNAME
+    ! C   SUBROUTINE   FNAME
     ! C
-    ! C	PURPOSE		To append an integer number to a string. This
-    ! C			will be used as a file-name to discriminate 
-    ! C			between the element of SHADOW
+    ! C   PURPOSE      To append an integer number to a string. This
+    ! C         will be used as a file-name to discriminate 
+    ! C         between the element of SHADOW
     ! C
-    ! C	INPUT		ALPHA    String
-    ! C			INDEX	 Numeric value
+    ! C   INPUT      ALPHA    String (file root)
+    ! C              INDEX    Numeric value for the extension index
+    ! C              LENGTH   Numeric value for the number of digits in the
+    ! C                       extension. 
+    ! C                       if LENGTH=0, the program calculates automatically
+    ! C                       the number of characters in the extention (allways
+    ! C                       even, e.g., root.02, root.99, root.0101, root.9999 )
     ! C
-    ! C	OUTPUT		NAME
+    ! C   OUTPUT     NAME     (e.g.,  root.0101)
     ! C
     ! C---
-     	SUBROUTINE	FNAME	(NAME, ALPHA, INDEX, LENGTH)
-     	! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
-     	! IMPLICIT	INTEGER*4	(F,I-N)
-     	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-     	IMPLICIT INTEGER(kind=ski)        (F,I-N)
-     	CHARACTER *(*)  NAME, ALPHA
-     	CHARACTER*80	TEMP
-     	DO  10 I=1,LEN(NAME)
-     	  NAME (I:I) = ' '
-    10   	CONTINUE
-     	CALL	DESPACE (ALPHA, TEMP, IWORD)
-     	NAME (:IWORD) = TEMP (:IWORD)
-	IWORD	= IWORD + 1
-	NAME (IWORD:IWORD) = '.'
-     	ITOT	=  IWORD + LENGTH
-	IF (LENGTH.EQ.2) THEN
-		IFORMAT = 1002
-		WRITE (NAME(IWORD+1:ITOT),1002,ERR=100) INDEX
-	ELSE IF (LENGTH.EQ.4) THEN
-		IFORMAT = 1004
-		WRITE (NAME(IWORD+1:ITOT),1004,ERR=100) INDEX
-	ELSE
-		WRITE (*,*) 'INTERNAL ERROR IN FNAME:LENGTH=',LENGTH
-		STOP 1
-	ENDIF
-    ! C     	WRITE (NAME(IWORD+1:ITOT),IFORMAT,ERR=100) INDEX
-    ! C1000	FORMAT (I<LENGTH>.<LENGTH>)
-    1002	FORMAT (I2.2)
-    1004	FORMAT (I4.4)
-     	RETURN
-    100	NAME	=   'NAMERR'
-     	RETURN
-    END SUBROUTINE FNAME
+SUBROUTINE FNAME (NAME1, ALPHA, INDEX1, LENGTH)
+
+   implicit none
+   character(len=*), intent(in)  :: alpha
+   integer(kind=ski), intent(in) :: INDEX1,length
+   character(len=*), intent(out) :: NAME1
+
+   integer(kind=ski)  :: iword,i,itot,iformat,length2,itmp
+   character(len=80)  :: TEMP,MYFORMAT,SLENGTH
+
+   ! empty strings, just in case...
+   DO I=1,LEN(NAME1)
+          NAME1 (I:I) = ' '
+   END DO
+   DO I=1,LEN(SLENGTH)
+          SLENGTH (I:I) = ' '
+   END DO
+   DO I=1,LEN(MYFORMAT)
+          MYFORMAT (I:I) = ' '
+   END DO
+
+   LENGTH2 = LENGTH
+   IF (LENGTH2.EQ.0) THEN
+     length2 = 1+int(log10(real(index1)))
+     IF (index1.LE.0) length2=1 
+     itmp=2
+     IF (MOD(length2,itmp).NE.0) length2=length2+1
+   END IF
+
+   CALL   DESPACE (ALPHA, TEMP, IWORD)
+   NAME1 (:IWORD) = TEMP (:IWORD)
+   IWORD   = IWORD + 1
+   NAME1 (IWORD:IWORD) = '.'
+   ITOT   =  IWORD + LENGTH2
+
+   write(slength,fmt=*) length2
+   !print *,'>>>>>>> length: '//trim(adjustl(slength))//'<<<<'
+   MYFORMAT='(I'//trim(adjustl(slength))//'.'//trim(adjustl(slength))//')'
+   !print *,'>>>>>>> format: '//trim(myformat)//'<<<<'
+   !print *,'>>>>>>> iword+1: ',iword+1
+   !print *,'>>>>>>> itot: ',itot
+   !print *,'>>>>>>> index1: ',index1
+   WRITE (NAME1(IWORD+1:ITOT),MYFORMAT,ERR=100) INDEX1
+   RETURN
+100   NAME1   =   'NAMERR'
+   RETURN
+END SUBROUTINE FNAME
 
 
     !

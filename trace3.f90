@@ -106,7 +106,7 @@ Program	Trace3
       call TraceOE(oei,ray18,nPoint1,iCount)
 
       ! write end.xx
-      call fName(ffile, 'end', iCount, itwo)
+      call fName(ffile, 'end', iCount, izero)
       call PoolOEWrite(oei,ffile)
 
     end do

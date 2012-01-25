@@ -12,7 +12,7 @@ implicit none
 type (poolSource)  :: pool00
 type (poolOE)      :: pool0i
 real(kind=skr), allocatable, dimension(:,:) :: ray
-integer(kind=ski) :: ierr
+integer(kind=ski) :: ierr,itmp
 character(len=sklen) :: file
 
 ! load variables from start.00
@@ -23,7 +23,8 @@ pool00%npoint=10000
 print *,'Number of rays (modified): ',pool00%npoint
 
 ! allocate ray 
-ALLOCATE( ray(18,pool00%npoint) )
+itmp = 18
+ALLOCATE( ray(itmp,pool00%npoint) )
 
 ! calculate source
 CALL  SourceSync (pool00,ray,pool00%npoint)
@@ -40,11 +41,13 @@ CALL  SourceSync (pool00,ray,pool00%npoint)
 file = "start.01"
 call PoolOELoad(pool0i,file)
 ! traces OE1
-call TraceOE(pool0i,ray,pool00%npoint,1)
+itmp=1
+call TraceOE(pool0i,ray,pool00%npoint,itmp)
 
 ! write file star.01
 file = "star.01"
-CALL beamWrite(ray,ierr,18,pool00%npoint,file)
+itmp=18
+CALL beamWrite(ray,ierr,itmp,pool00%npoint,file)
 !! ! write end.01
 !! file = "end.01"
 !! CALL PoolOEWrite(pool0i,file)

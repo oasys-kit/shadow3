@@ -3,9 +3,9 @@ Module shadow_crl !compound refractive lenses
   Use, intrinsic :: ISO_C_BINDING
 
   Use shadow_globaldefinitions
+  Use gfile
   Use shadow_variables
   Use shadow_kernel
-  Use gfile
 
   Implicit None
 
@@ -34,7 +34,7 @@ Subroutine precrl
     implicit none
 
     Type(GfType)           :: g1
-    integer(kind=ski)      :: ns,i,j,iShape,fCyl,changeConvexity
+    integer(kind=ski)      :: ns,i,j,iShape,fCyl,changeConvexity,itmp
     real(kind=skr)         :: r0,ref0,ref1,pp,qq,pp0,qq0,ddIn,ddV
     character(len=sklen)   :: fileName
     character(len=3)       :: stmp,stmp2
@@ -104,8 +104,10 @@ Subroutine precrl
     DO i=1,ns
       Write( stmp, '(i3)' ) i
       stmp = adjustl(stmp)
-      iOut = GfForceSetValue(g1,"FMIRR("//trim(stmp)//")",10)
-      IF (mod(i,2).EQ.0) THEN
+      itmp=10
+      iOut = GfForceSetValue(g1,"FMIRR("//trim(stmp)//")",itmp)
+      itmp=2
+      IF (mod(i,itmp).EQ.0) THEN
       ! even surfaces
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref0)
