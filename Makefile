@@ -203,7 +203,7 @@ purge: clean
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 	/bin/rm -f F12LIB.INDEX F12LIB.FULL
 #examples runs
-	/bin/rm -f testio.00
+	/bin/rm -f testio.00 crl.01 final.01
 
 # customize depending on where you want to install
 install:

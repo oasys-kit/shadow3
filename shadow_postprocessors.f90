@@ -1596,33 +1596,38 @@ if (trim(file_in) == "") file_in="begin.dat"
 	  END IF
 	END IF
 !C
-     	R_LOW(1) =   1.0D+20
-     	R_UPP(1) = - 1.0D+20
-     	R_LOW(2) =   1.0D+20
-     	R_UPP(2) = - 1.0D+20
-     	R_LOW(3) =   1.0D+20
-     	R_UPP(3) = - 1.0D+20
+     DO j=1,30
+       R_LOW(j) =   1.0D+20
+       R_UPP(j) = - 1.0D+20
+     END DO
 
-     	R_LOW(4) =   1.0D+20
-     	R_UPP(4) = - 1.0D+20
-     	R_LOW(5) =   1.0D+20
-     	R_UPP(5) = - 1.0D+20
-     	R_LOW(6) =   1.0D+20
-     	R_UPP(6) = - 1.0D+20
-
-     	R_LOW(11) =   1.0D+20
-     	R_UPP(11) = - 1.0D+20
-
-     	R_LOW(13) =   1.0D+20
-     	R_UPP(13) = - 1.0D+20
-
-     	R_LOW(20) =   1.0D+20
-	R_UPP(20) = - 1.0D+20
-     	! new columns
-	DO I=21,30
-     	  R_LOW(I) =   1.0D+20
-	  R_UPP(I) = - 1.0D+20
-	END DO
+!     	R_LOW(1) =   1.0D+20
+!     	R_UPP(1) = - 1.0D+20
+!     	R_LOW(2) =   1.0D+20
+!     	R_UPP(2) = - 1.0D+20
+!     	R_LOW(3) =   1.0D+20
+!     	R_UPP(3) = - 1.0D+20
+!
+!     	R_LOW(4) =   1.0D+20
+!     	R_UPP(4) = - 1.0D+20
+!     	R_LOW(5) =   1.0D+20
+!     	R_UPP(5) = - 1.0D+20
+!     	R_LOW(6) =   1.0D+20
+!     	R_UPP(6) = - 1.0D+20
+!
+!     	R_LOW(11) =   1.0D+20
+!     	R_UPP(11) = - 1.0D+20
+!
+!     	R_LOW(13) =   1.0D+20
+!     	R_UPP(13) = - 1.0D+20
+!
+!     	R_LOW(20) =   1.0D+20
+!	R_UPP(20) = - 1.0D+20
+!     	! new columns
+!	DO I=21,30
+!     	  R_LOW(I) =   1.0D+20
+!	  R_UPP(I) = - 1.0D+20
+!	END DO
 
 !initialize test
 	TEST = 0.0D0
@@ -1634,14 +1639,18 @@ if (trim(file_in) == "") file_in="begin.dat"
      	   IF (RAY(10,I).GE.0.0D0)   GO TO 300
      	 ELSE
      	 END IF
-     	TEST(1)	=   RAY(1,I)
-     	TEST(2)	=   RAY(2,I)
-     	TEST(3)	=   RAY(3,I)
-     	TEST(4)	=   RAY(4,I)
-     	TEST(5)	=   RAY(5,I)
-     	TEST(6)	=   RAY(6,I)
-     	TEST(11) =   RAY(11,I)
-     	TEST(13) =   RAY(13,I)
+         DO j=1,18
+           TEST(j)= RAY(j,I)
+         END DO
+!     	TEST(1)	=   RAY(1,I)
+!     	TEST(2)	=   RAY(2,I)
+!     	TEST(3)	=   RAY(3,I)
+!     	TEST(4)	=   RAY(4,I)
+!     	TEST(5)	=   RAY(5,I)
+!     	TEST(6)	=   RAY(6,I)
+!     	TEST(11) =   RAY(11,I)
+!     	TEST(13) =   RAY(13,I)
+
      	TEST(20) =   RAY(4,I)**2 + RAY(6,I)**2
      	TEST(20) =   ABS( SQRT(TEST(20))/RAY(5,I) )
 !new columns
@@ -1659,32 +1668,33 @@ if (trim(file_in) == "") file_in="begin.dat"
 
 
 
-     	R_LOW(1)= MIN(R_LOW(1),TEST(1))
-     	R_UPP(1)= MAX(R_UPP(1),TEST(1))
-     	R_LOW(2)= MIN(R_LOW(2),TEST(2))
-     	R_UPP(2)= MAX(R_UPP(2),TEST(2))
-     	R_LOW(3)= MIN(R_LOW(3),TEST(3))
-        R_UPP(3)= MAX(R_UPP(3),TEST(3))
+!     	R_LOW(1)= MIN(R_LOW(1),TEST(1))
+!     	R_UPP(1)= MAX(R_UPP(1),TEST(1))
+!     	R_LOW(2)= MIN(R_LOW(2),TEST(2))
+!     	R_UPP(2)= MAX(R_UPP(2),TEST(2))
+!     	R_LOW(3)= MIN(R_LOW(3),TEST(3))
+!        R_UPP(3)= MAX(R_UPP(3),TEST(3))
+!
+!     	R_LOW(4)= MIN(R_LOW(4),TEST(4))
+!     	R_UPP(4)= MAX(R_UPP(4),TEST(4))
+!     	R_LOW(5)= MIN(R_LOW(5),TEST(5))
+!     	R_UPP(5)= MAX(R_UPP(5),TEST(5))
+!     	R_LOW(6)= MIN(R_LOW(6),TEST(6))
+!     	R_UPP(6)= MAX(R_UPP(6),TEST(6))
+!
+!     	R_LOW(11)= MIN(R_LOW(11),TEST(11))
+!	R_UPP(11)= MAX(R_UPP(11),TEST(11))
+!
+!     	R_LOW(13)= MIN(R_LOW(13),TEST(13))
+!	R_UPP(13)= MAX(R_UPP(13),TEST(13))
+!
+!     	R_LOW(20)= MIN(R_LOW(20),TEST(20))
+!	R_UPP(20)= MAX(R_UPP(20),TEST(20))
 
-     	R_LOW(4)= MIN(R_LOW(4),TEST(4))
-     	R_UPP(4)= MAX(R_UPP(4),TEST(4))
-     	R_LOW(5)= MIN(R_LOW(5),TEST(5))
-     	R_UPP(5)= MAX(R_UPP(5),TEST(5))
-     	R_LOW(6)= MIN(R_LOW(6),TEST(6))
-     	R_UPP(6)= MAX(R_UPP(6),TEST(6))
-
-     	R_LOW(11)= MIN(R_LOW(11),TEST(11))
-	R_UPP(11)= MAX(R_UPP(11),TEST(11))
-
-     	R_LOW(13)= MIN(R_LOW(13),TEST(13))
-	R_UPP(13)= MAX(R_UPP(13),TEST(13))
-
-     	R_LOW(20)= MIN(R_LOW(20),TEST(20))
-	R_UPP(20)= MAX(R_UPP(20),TEST(20))
-
-	DO II=21,30 
-     	  R_LOW(II)= MIN(R_LOW(II),TEST(II))
-	  R_UPP(II)= MAX(R_UPP(II),TEST(II))
+        !DO II=21,30 
+        DO II=1,30 
+          R_LOW(II)= MIN(R_LOW(II),TEST(II))
+          R_UPP(II)= MAX(R_UPP(II),TEST(II))
         END DO
 300	CONTINUE
 !
@@ -1795,17 +1805,17 @@ IF (IY == 0) IY=3
      	WRITE(6,*) '       1   For cartesian scaling'
      	WRITE(6,*) '       2   For external limits'
      	IPLOT = IRINT ('PLOT> Then ? ')
-!C
-!C takes care of the Optical Path Case -- since the variation is small
-!C we must avoid precision problems in the plotting, so that we will be
-!C plotting the OPD.
-!C 
-     	  IF (IX.EQ.13.OR.IY.EQ.13) THEN
-     	    P_CENT = (R_LOW(13)+R_UPP(13))/2.0D0
-     	    P_DEL  = R_UPP(13) - R_LOW(13)
-     	    R_LOW(13) = - 0.5D0*P_DEL
-     	    R_UPP(13) = + 0.5D0*P_DEL
-     	  END IF
+!srio!C
+!srio!C takes care of the Optical Path Case -- since the variation is small
+!srio!C we must avoid precision problems in the plotting, so that we will be
+!srio!C plotting the OPD.
+!srio!C 
+!srio     	  IF (IX.EQ.13.OR.IY.EQ.13) THEN
+!srio     	    P_CENT = (R_LOW(13)+R_UPP(13))/2.0D0
+!srio     	    P_DEL  = R_UPP(13) - R_LOW(13)
+!srio     	    R_LOW(13) = - 0.5D0*P_DEL
+!srio     	    R_UPP(13) = + 0.5D0*P_DEL
+!srio     	  END IF
      	  X_LOW = R_LOW(IX)
      	  Y_LOW = R_LOW(IY)
      	  X_UPP = R_UPP(IX)
@@ -1843,7 +1853,11 @@ IF (IY == 0) IY=3
      	  Y_UPP = Y_CEN + 0.5D0*DEL
      	  CALL	ROUNDOUT (X_LOW,X_UPP,Y_LOW,Y_UPP)
      	ELSE
-     	  WRITE(6,*) 'PLOT> Enter limits. '
+     	  WRITE(6,*) 'PLOT> Found limits: '
+     	  WRITE(6,*) 'PLOT>    Horizontal: ',X_LOW,X_UPP
+     	  WRITE(6,*) 'PLOT>    vertical: ',Y_LOW,Y_UPP
+     	  WRITE(6,*) 'PLOT>   '
+     	  WRITE(6,*) 'PLOT> Enter new limits. '
      	  WRITE(6,*) 'PLOT> Horizontal min.: '
 	  READ(5,*)  X_LOW
 !C     	  X_LOW	= RNUMBER ('PLOT> Horizontal min.: ')
@@ -2021,11 +2035,11 @@ iMirr=0
      	  ELSE IF (IY.EQ.20) THEN
      	      YWRI = ABS( SQRT( RAY(4,I)**2 + RAY(6,I)**2 )/RAY(5,I) )
      	  END IF
-     	  IF (IX.EQ.13) THEN
-     	      XWRI = XWRI - P_CENT
-     	  ELSE IF (IY.EQ.13) THEN
-     	      YWRI = YWRI - P_CENT
-     	  END IF
+!     	  IF (IX.EQ.13) THEN
+!     	      XWRI = XWRI - P_CENT
+!     	  ELSE IF (IY.EQ.13) THEN
+!     	      YWRI = YWRI - P_CENT
+!     	  END IF
 
 !new columns
      	  IF (IX.EQ.23) THEN
@@ -2372,6 +2386,7 @@ yplot=0
 3041	CONTINUE
 	Y1LOW = 0.0
 	Y1UPP = XMAX*1.1
+        ELSE IF (KKK.EQ.2) THEN
 	OPEN(38,FILE='plotxy_histside.dat',STATUS='UNKNOWN')
 	XPLOT(1)	= X_ARRAY(1) - STEP/2
 	YPLOT(1)	= 0.0
@@ -2482,6 +2497,7 @@ yplot=0
        WRITE(35,'(A)') 'splot "plotxy_grid.dat" u 1:2:3 w pm3d    '
        WRITE(35,'(A)') 'unset contour                             '
        WRITE(35,'(A)') 'set output                                '
+       WRITE(35,'(A)') 'unset table                               '
     END IF
     WRITE(35,'(A)')  '                                              '
     WRITE(35,'(A)')  '                                              '

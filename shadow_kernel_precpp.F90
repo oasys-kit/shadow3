@@ -1448,6 +1448,15 @@ Contains
        CALL DOT (A_VEC,VNIMAG,A_2)
        CALL DOT (A_VEC,VZIM,A_3)
        
+      rr_reflectivity = 1.0D0
+      IF (F_REFRAC.EQ.1) THEN 
+         !r_indImag_ima = 0d0 !ABS(7.35e-8)
+         IF (ABS(r_attenuation_ima).GT.1e-15) THEN
+           ! for amplitudes use sqrt(reflectivity)
+           rr_reflectivity = sqrt(exp(-ABS(r_attenuation_ima*DIST)))
+           ! print *,'>>>> ima: ',r_attenuation_ima,DIST,rr_reflectivity
+         END IF
+      END IF
        ! ** Saves the results
        
        RAY(1,J)  =   UX_1
@@ -1456,12 +1465,22 @@ Contains
        RAY(4,J)  =   VV_1
        RAY(5,J)  =   VV_2
        RAY(6,J)  =   VV_3
-       RAY(7,J)  =   A_1
-       RAY(8,J)  =   A_2
-       RAY(9,J)  =   A_3
-       
+       RAY(7,J)  =   A_1 * rr_reflectivity
+       RAY(8,J)  =   A_2 * rr_reflectivity
+       RAY(9,J)  =   A_3 * rr_reflectivity
+
        IF (NCOL.GT.12) THEN
-     	  PHASE	(1,J) = PHASE (1,J) + DIST*R_IND_IMA
+          ! changed srio@esrf.eu 2012-01-26
+          ! the optical path is always positive (use ABS(DIST)) and 
+          ! must not be affected by the refraction index if refractor
+          ! is not set
+          IF (F_REFRAC.EQ.0) THEN 
+            PHASE (1,J) = PHASE(1,J) + ABS(DIST)
+          ELSE 
+            PHASE (1,J) = PHASE(1,J) + ABS(DIST)*R_IND_IMA
+          END IF
+     	  !PHASE	(1,J) = PHASE (1,J) + DIST*R_IND_IMA
+
         IF (NCOL.EQ.18) THEN
            AP_VEC(1)	= AP(1,J)
            AP_VEC(2)	= AP(2,J)
@@ -1469,12 +1488,26 @@ Contains
            CALL DOT (AP_VEC,UXIM,A_1)
            CALL DOT (AP_VEC,VNIMAG,A_2)
            CALL DOT (AP_VEC,VZIM,A_3)
-           AP(1,J)	= A_1
-           AP(2,J)	= A_2
-           AP(3,J)	= A_3
+           AP(1,J)	= A_1 * rr_reflectivity
+           AP(2,J)	= A_2 * rr_reflectivity
+           AP(3,J)	= A_3 * rr_reflectivity
         END IF
-     END IF
+       END IF
      
+!    ! 
+!    ! apply reflectivity
+!    ! 
+!    IF (rr_reflectivity.LT.1) THEN 
+!      RAY(7,J)=RAY(7,J)*rr_reflectivity
+!      RAY(8,J)=RAY(8,J)*rr_reflectivity
+!      RAY(8,J)=RAY(9,J)*rr_reflectivity
+!      IF (NCOL.EQ.18) THEN
+!        AP(1,J)= AP(1,J)*rr_reflectivity
+!        AP(2,J)= AP(2,J)*rr_reflectivity
+!        AP(3,J)= AP(3,J)*rr_reflectivity
+!      END IF
+!    END IF
+
 100 CONTINUE
      
      ! C
@@ -1510,6 +1543,7 @@ Contains
           
     ELSE
     END IF
+
        ! C
        ! C Write out file if flag is enabled
        ! C
@@ -4651,6 +4685,8 @@ SUBROUTINE NORMAL (PIN,VOUT)
 ! C---
 SUBROUTINE RESET
 
+!todo: implicit none  In fact, the implicit here is useless, 
+!                     only the common variables are affected!
 	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
 	IMPLICIT INTEGER(kind=ski)        (F,I-N)
 ! C
@@ -6969,7 +7005,16 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	END IF
 
 	IF (F_FACET.NE.1.AND.F_KOMA.NE.1.AND.F_SEGMENT.NE.1) THEN
-     	PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+          ! changed srio@esrf.eu 2012-01-26
+          ! the optical path is always positive (use ABS(TPAR)) and 
+          ! must not be affected by the refraction index if refractor
+          ! is not set
+          IF (F_REFRAC.EQ.0) THEN 
+            PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
+          ELSE 
+            PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+          END IF
+     	  !PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 	ELSE IF (F_KOMA.EQ.1) THEN
 	  IF (VVIN(3).EQ.0.0) THEN
 	    DO 995 I_DEL=1,11
@@ -6985,7 +7030,16 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	       KOXX = 1
 	       GOTO 10000
 	    ELSE
-	       PHASE(1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+               ! changed srio@esrf.eu 2012-01-26
+               ! the optical path is always positive (use ABS(TPAR)) and 
+               ! must not be affected by the refraction index if refractor
+               ! is not set
+               IF (F_REFRAC.EQ.0) THEN 
+                 PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
+               ELSE 
+                 PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+               END IF
+	       !PHASE(1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 	    END IF
 	  END IF
 ! C	ELSE
@@ -7319,7 +7373,16 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
               goto 10000
 	      END IF
 
-	PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+        ! changed srio@esrf.eu 2012-01-26
+        ! the optical path is always positive (use ABS(TPAR)) and 
+        ! must not be affected by the refraction index if refractor
+        ! is not set
+        IF (F_REFRAC.EQ.0) THEN 
+          PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
+        ELSE 
+          PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+        END IF
+	!PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 
 	PF_OUT(1)=PF_START(1) + PF_VIN(1) * TPAR
 	PF_OUT(2)=PF_START(2) + PF_VIN(2) * TPAR
@@ -7397,7 +7460,17 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
  
           END IF
  
-        PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+        ! changed srio@esrf.eu 2012-01-26
+        ! the optical path is always positive (use ABS(TPAR)) and 
+        ! must not be affected by the refraction index if refractor
+        ! is not set
+        IF (F_REFRAC.EQ.0) THEN 
+          PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
+        ELSE 
+          PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+        END IF
+        !PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+
         CALL    PROJ (VVIN,VNOR,VTEMP)
  
         RAY(1,ITIK) = PPOUT(1)
@@ -7990,6 +8063,20 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	CALL	VECTOR	(VTEMP,AP_VEC,VTEMP)
      	CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
      	CALL	SUM	(AP_VEC,VTEMP,AP_VEC)
+
+
+      ! attenuation in lens media
+      rr_reflectivity = 1.0D0
+      IF (F_REFRAC.EQ.1) THEN 
+         IF (ABS(r_attenuation_obj).GT.1e-15) THEN
+           ! for amplitudes use sqrt(reflectivity)
+           rr_reflectivity = sqrt(exp(-ABS(r_attenuation_obj*TPAR)))
+           ! print *,'>>>> obj: ',r_attenuation_obj,TPAR,rr_reflectivity
+         END IF
+      END IF
+
+
+
 ! D	WRITE	(24,*)	A_P
 ! D	WRITE	(24,*)	VNOR
 ! C
@@ -7999,14 +8086,14 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	IF (NCOL.NE.18)	THEN
 	  CALL	SUM	(AS_VEC,AP_VEC,AS_VEC)
 	ELSE
-	  AP  (1,ITIK)	=   AP_VEC(1)
-	  AP  (2,ITIK)	=   AP_VEC(2)
-	  AP  (3,ITIK)	=   AP_VEC(3)
+	  AP  (1,ITIK)	=   AP_VEC(1) * rr_reflectivity
+	  AP  (2,ITIK)	=   AP_VEC(2) * rr_reflectivity
+	  AP  (3,ITIK)	=   AP_VEC(3) * rr_reflectivity
 	END IF
 ! C
-     	RAY (7,ITIK)	=   AS_VEC(1)
-     	RAY (8,ITIK)	=   AS_VEC(2)
-     	RAY (9,ITIK)	=   AS_VEC(3)
+     	RAY (7,ITIK)	=   AS_VEC(1) * rr_reflectivity
+     	RAY (8,ITIK)	=   AS_VEC(2) * rr_reflectivity
+     	RAY (9,ITIK)	=   AS_VEC(3) * rr_reflectivity
 
 	PHASE(2,ITIK)	=   PHS
 	PHASE(3,ITIK)	=   PHP

@@ -329,6 +329,10 @@
  				       object space.
  r_ind_ima	=  1.000000000000000 - f_refrac=1: index of refraction in
  				       image space.
+ r_attenuation_obj	=  0.0       - f_refrac=1: attenuation coefficient in 
+ 				       object space. Units of UserUnitLength^(-1)
+ r_attenuation_ima	=  0.0       - f_refrac=1: attenuation coefficient in 
+ 				       image space. Units of UserUnitLength^(-1)
  rul_a1	=  0.0000000000000000E+00 - f_ruling=5: a1 coefficient of
  				    polynomial.
  rul_a2	=  0.0000000000000000E+00 - f_ruling=5: a2 coefficient of

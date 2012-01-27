@@ -35,7 +35,9 @@ Subroutine precrl
 
     Type(GfType)           :: g1
     integer(kind=ski)      :: ns,i,j,iShape,fCyl,changeConvexity,itmp
-    real(kind=skr)         :: r0,ref0,ref1,pp,qq,pp0,qq0,ddIn,ddV
+    integer(kind=ski)      :: fwrite_local
+    real(kind=skr)         :: r0,ref0,ref1,att0,att1
+    real(kind=skr)         :: pp,qq,pp0,qq0,ddIn,ddV,qqtmp
     character(len=sklen)   :: fileName
     character(len=3)       :: stmp,stmp2
     Logical                :: arggiven=.false., esta, iOut
@@ -79,13 +81,18 @@ Subroutine precrl
     ref0 = RNUMBER(' Refraction index of the medium containing source ?')
     ref1 = RNUMBER(' Refraction index of the next medium?')
 
+    att0 = RNUMBER(' Attenuation coeff [UserLength^-1] of the medium containing source ?')
+    att1 = RNUMBER(' Attenuation coeff [UserLength^-1] of the next medium?')
+
     pp0 = RNUMBER(' p0: physical focal source-crl distance ')
     qq0 = RNUMBER(' q0: physical focal crl-image distance ')
 
     pp = RNUMBER(' p: focal source-crl distance ')
     qq = RNUMBER(' q: focal crl-image distance ')
 
-    r0  = RNUMBER(' lens semiaperture [-1 for infinity]? ')
+    r0 = -1
+    ! not yet implemented!
+    !r0  = RNUMBER(' lens semiaperture [-1 for infinity]? ')
 
     ddIn  = 0.0D0
     ddV  = 0.0D0
@@ -94,6 +101,13 @@ Subroutine precrl
       ddV  = RNUMBER('lens length [along optical axis, in vacuum] ? ')
     ENDIF
 
+    print *,'Verbose-Shadow-Run? '
+    print *,'    files to save option: '
+    print *,'      0: all files'
+    print *,'      1: mirror file only -- mirr'
+    print *,'      2: image file only -- star'
+    print *,'      3: , none'
+    fwrite_local = irint(' ? ')
     print *,''
     print *,''
     
@@ -106,25 +120,30 @@ Subroutine precrl
       stmp = adjustl(stmp)
       itmp=10
       iOut = GfForceSetValue(g1,"FMIRR("//trim(stmp)//")",itmp)
+      iOut = GfForceSetValue(g1,"FWRITE("//trim(stmp)//")",fwrite_local)
       itmp=2
       IF (mod(i,itmp).EQ.0) THEN
       ! even surfaces
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref0)
+        iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att1)
+        iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att0)
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddIn*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddV*0.5D0)
         ref_in = ref1
         ref_out = ref0
-        changeConvexity=1
+        changeConvexity=0
       ELSE
       ! odd surfaces
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref0)
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref1)
+        iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att0)
+        iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att1)
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddV*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddIn*0.5D0)
         ref_in = ref0
         ref_out = ref1
-        changeConvexity=0
+        changeConvexity=1
       ENDIF
       select case (iShape)
         ! now everything is based on 
@@ -134,9 +153,6 @@ Subroutine precrl
           ! pre-calculations 
           !
           delta = 1.0-(ref1/ref0)
-          !! f = 1.0/(1.0/qq+1.0/pp)*ns
-          !! print *, "focal distance ", f    
-          !! R = f*delta
           IF (ns.eq.1) THEN
             f = 1.0/(1.0/qq+1.0/pp)
             R = (ref1-ref0)/( ref1/qq + ref0/pp  )
@@ -144,43 +160,40 @@ Subroutine precrl
             f = 1.0/(1.0/qq+1.0/pp)*ns
             R = f*delta
           ENDIF
-          print *, "Focal distance is ", f
-          print *, "R is ", R
+          print *, "Surface, Focal distance, R, convexity: ", i, f, R, changeConvexity
 
           ccc(1) = 1.0D0
           ccc(2) = 1.0D0
           ccc(3) = 1.0D0
           ccc(9) = 2.0*R
         
-        !case (2) !ellipsoid 
-        !case (4) !paraboloid 
-        !case (5) !plane
-        !case (7) !hyperboloid
-
         case (2) !ellipsoid 
-!
-! test: use focal distance instead
-!
-!qq = (ref0/pp+ref1/qq)
-!qq=1.0d0/qq
+            qqtmp = qq
+            ! for CRL
+            IF (ns.GT.1) THEN 
+              ! use focal distance instead
+              qqtmp = (ref0/pp+ref1/qq)
+              qqtmp=1.0d0/qqtmp
+              qqtmp=qqtmp*ns
+            END IF
             print *,'Ellipsoid: Object is at Infinity'
             IF (ref0.gt.ref1) THEN
               print *,'******* Warning: n1>n2 & object at infinity: '
               print *,'******* Should you consider a hyperboloid instead of an ellipsoid?'
             ENDIF
 
-            AXMAJ  =  qq*ref1/(ref0+ref1)
+            AXMAJ  =  qqtmp*ref1/(ref0+ref1)
             print *,'Rev Ellipsoid a:   ',axmaj
-            AXMIN = qq*SQRT(abs(ref1-ref0)/(ref0+ref1))
+            AXMIN = qqtmp*SQRT(abs(ref1-ref0)/(ref0+ref1))
             print *,'Rev Ellipsoid b:   ',axmin
             AFOCI =  SQRT( AXMAJ**2-AXMIN**2 )
             print *,'Rev Ellipsoid c=sqrt(a^2-b^2): ',afoci
             print *,'Rev Ellipsoid focal discance c^2:   ',afoci**2
             ECCENT = AFOCI/AXMAJ
             print *,'Rev Ellipsoid excentricity:    ',eccent
-ee = ref1/ref0
-IF (ee.GT.1) ee=1.0d0/ee
-print *,'Rev Ellipsoid excentricity OLD:    ',ee
+            ee = ref1/ref0
+            IF (ee.GT.1) ee=1.0d0/ee
+            print *,'Rev Ellipsoid excentricity OLD:    ',ee
             !C
             !C The center is computed on the basis of the object 
             !C and image positions
@@ -190,24 +203,18 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
             !C
             !C Computes now the normal in the mirror center.
             !C
-            !rncen=DblArr(3)
             RNCEN(1)  = .0D0
             RNCEN(2)  = -1D0
             RNCEN(3)  = 0.0D0
             !C
             !C Computes the tangent versor in the mirror center.
             !C
-            !rtcen=DblArr(3)
             RTCEN(1)  =  .0D0
             RTCEN(2)  =   RNCEN(3)
             RTCEN(3)  = - RNCEN(2)
             !C Computes now the quadric coefficient with the mirror center
             !C located at (0,0,0) and normal along (0,0,1)
             !C
-            !print *,'p[cm]:  ',pp
-            !print *,'q[cm]:  ',qq
-            !print *,'refraction index n0:  ',ref0
-            !print *,'refraction index n1:  ',ref1
             print *,'Lens center at: ',0.0,ycen,zcen
             print *,'Lens normal: ',rncen 
             print *,'Lens tangent:',rtcen
@@ -215,8 +222,6 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
             A  =  1/AXMIN**2
             B  =  1/AXMAJ**2
             C  =  A
-
-
 
             CCC(1) =  A
             CCC(2) =  B*RTCEN(2)**2 + C*RTCEN(3)**2
@@ -229,7 +234,6 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
             CCC(9) =  2*(B*YCEN*RNCEN(2)+C*ZCEN*RNCEN(3))
             CCC(10) =  .0D0
 
-!            END
 !         3: BEGIN ; Toroidal ?????????????????
 !                 R_MAJ        =   SSOUR*SIMAG*2/COSTHE/(SSOUR + SIMAG)
 !                 R_MIN        =   SSOUR*SIMAG*2*COSTHE/(SSOUR + SIMAG)
@@ -244,10 +248,18 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
 !                 ;C
 !                 R_MAJ        =   R_MAJ - R_MIN
 !            END
+
         case (4) !paraboloid
             ! calculate the tangent radius (as for the sphere)
-            R = 1D0/(ref0/pp+ref1/qq)
-            R = R*(ref1-ref0)
+            IF (ns.GT.1) THEN 
+              ! for CRL
+              R = R*ns
+              R = -R
+            ELSE 
+              ! for single lens
+              R = 1D0/(ref0/pp+ref1/qq)
+              R = R*(ref1-ref0)
+            END IF
             PARAM = -R
             COSTHE = 1.0D0
             SINTHE = 0.0D0
@@ -298,12 +310,12 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
             print *,'Rev Hyperboloid focal discance c^2:   ',afoci**2
             ECCENT = AFOCI/AXMAJ
             print *,'Rev Ellipsoid excentricity:    ',eccent
-EE = ref0/ref1
-IF (ee.LT.1) ee=1.0D0/ee
-print *,'Rev Ellipsoid excentricity OLD:    ',ee
-!AXMAJ         =  qq/(1D0+EE)
-!CC = AXMAJ*EE
-!AXMIN         =  sqrt(CC*CC-AXMAJ*AXMAJ)
+            EE = ref0/ref1
+            IF (ee.LT.1) ee=1.0D0/ee
+            print *,'Rev Ellipsoid excentricity OLD:    ',ee
+            !AXMAJ         =  qq/(1D0+EE)
+            !CC = AXMAJ*EE
+            !AXMIN         =  sqrt(CC*CC-AXMAJ*AXMAJ)
 
             ! 
             BRANCH=1.0D0 ! branch=+1,-1
@@ -428,6 +440,8 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
     iOut = GfForceSetValue(g1,"r0",r0)
     iOut = GfForceSetValue(g1,"ref0",ref0)
     iOut = GfForceSetValue(g1,"ref1",ref1)
+    iOut = GfForceSetValue(g1,"att0",att0)
+    iOut = GfForceSetValue(g1,"att1",att1)
     iOut = GfForceSetValue(g1,"pp",pp)
     iOut = GfForceSetValue(g1,"qq",qq)
     iOut = GfForceSetValue(g1,"pp0",pp0)
@@ -435,6 +449,7 @@ print *,'Rev Ellipsoid excentricity OLD:    ',ee
     iOut = GfForceSetValue(g1,"r0",r0)
     iOut = GfForceSetValue(g1,"ddIn",ddIn)
     iOut = GfForceSetValue(g1,"ddV",ddV)
+    iOut = GfForceSetValue(g1,"fwrite_local",ddV)
 !
 ! print all stored variables on screen
 !
@@ -483,8 +498,9 @@ subroutine runcrl
     type (poolOE), allocatable, dimension(:) :: arrOE
     Real (kind=skr), allocatable, dimension(:,:) :: ray
     
-    Integer (kind=ski) :: i, ncol1, npoint1, ns, iOut, iErr, iFlag, iCount
-    Character(len=3) :: stmp
+    Integer (kind=ski)    :: i, ncol1, npoint1, ns, iOut, iErr, iFlag, iCount
+    !Character(len=3) :: stmp
+    character(len=sklen)  :: stmp
     
     print *,'***********************************************************************'
     print *,'  CRL: using source from begin.dat and CRL definition from crl.01'
@@ -502,12 +518,26 @@ subroutine runcrl
     print *,'runcrl: Done reading crl.01'
     
     ns = size(arrOE)
-    do i=1,ns
-      Write( stmp, '(i3)' ) i
-      stmp = adjustl(stmp)
-      call PoolOEWrite(arrOE(i),"start."//stmp)
-      print *,'runcrl: File written to disk: start.'//stmp
-    end do
+    ! 
+    ! write shadow files (not needed)
+    ! 
+    IF ( arrOE(1)%FWRITE.LT.3) THEN 
+      OPEN (UNIT=23,FILE='systemfile.dat',STATUS='UNKNOWN')
+      do i=1,ns
+        CALL FNAME (stmp, 'start', i, izero)
+        call PoolOEWrite(arrOE(i),stmp)
+        !Write( stmp, '(i3)' ) i
+        !stmp = adjustl(stmp)
+        !call PoolOEWrite(arrOE(i),"start."//stmp)
+        print *,'runcrl: File written to disk: '//trim(stmp)
+        write(23,'(a)') trim(stmp)
+      end do
+      CLOSE(23)
+      print *,'runcrl: File written to disk: systemfile.dat'
+    END IF
+
+
+    print *,'runcrl: Running trace for all interfaces'
     iCount = 1
     call TraceCRL(arrOE, ray, iCount)
     
@@ -532,6 +562,7 @@ End SUbroutine runcrl
     nOE = size(arrOE)
     nPoint = size(ray18,2)
     Do i=1, nOE
+      print *,'>> TraceCRL: tracing surface ',iCount
       Call TraceOE (arrOE(i),ray18,nPoint,iCount)
       iCount = iCount+1
     End Do
@@ -560,15 +591,20 @@ End SUbroutine runcrl
       iOut = GfGetValue(gf,"FMIRR("//trim(stmp)//")",arrOE(i)%FMIRR).and.iOut
       iOut = GfGetValue(gf,"R_IND_OBJ("//trim(stmp)//")",arrOE(i)%R_IND_OBJ).and.iOut
       iOut = GfGetValue(gf,"R_IND_IMA("//trim(stmp)//")",arrOE(i)%R_IND_IMA).and.iOut
+
+      iOut = GfGetValue(gf,"R_ATTENUATION_OBJ("//trim(stmp)//")",arrOE(i)%R_ATTENUATION_OBJ).and.iOut
+      iOut = GfGetValue(gf,"R_ATTENUATION_IMA("//trim(stmp)//")",arrOE(i)%R_ATTENUATION_IMA).and.iOut
+
       iOut = GfGetValue(gf,"T_SOURCE("//trim(stmp)//")",arrOE(i)%T_SOURCE).and.iOut
       iOut = GfGetValue(gf,"T_IMAGE("//trim(stmp)//")",arrOE(i)%T_IMAGE).and.iOut
+      iOut = GfGetValue(gf,"FWRITE("//trim(stmp)//")",arrOE(i)%FWRITE).and.iOut
       arrOE(i)%F_REFRAC = 1
-      arrOE(i)%FWRITE = 0
+!      arrOE(i)%FWRITE = 0
       arrOE(i)%T_INCIDENCE = 0.0D0
       arrOE(i)%T_REFLECTION = 180.0D0
 !       arrOE(i)%F_EXT = 1
       arrOE(i)%F_DEFAULT = 0
-      arrOE(i)%F_ANGLE = 1
+      arrOE(i)%F_ANGLE = 0
       Do j=1,10
         Write( stmp2, '(i2)' ) j
         stmp2 = adjustl(stmp2)
