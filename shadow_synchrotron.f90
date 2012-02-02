@@ -2517,6 +2517,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
      !!   warning use this instead : 
      	    IF (WRAN(ISTAR1).LT.0.5)	THETABM = -THETABM
+     	    IF (WRAN(ISTAR1).LT.0.5)	PHI = -PHI
 
      	  END IF
             END IF                          !Undulator ends.

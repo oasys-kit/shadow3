@@ -33,9 +33,9 @@ module GFile
     type, public :: GfType
        character(len=sklen) :: fileName
        ! logical for allocation
-       logical            :: alloc1
-       integer(kind=ski)            :: nLines
-       integer(kind=ski)            :: nVariables
+       logical            :: alloc1 = .false.
+       integer(kind=ski)            :: nLines=0
+       integer(kind=ski)            :: nVariables=0
        character(len=sklen), dimension(:), allocatable :: fileLines
        character(len=sklen), dimension(:), allocatable :: variableNames
        character(len=sklen), dimension(:), allocatable :: variableValues

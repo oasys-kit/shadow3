@@ -14,6 +14,7 @@
 #       make clean      : cleans files created when running make
 #       make purge      : clean + removes files created by shadow3
 #
+#       make install    : to be adapted to user needs
 #
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
@@ -99,12 +100,12 @@ examples:
 	$(FC) $(FFLAGS) -o trace3 trace3.o -L. -lshadow3
 
 	$(CC) $(CFLAGS) -c trace3_c.c
-	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3 -lshadow3c
+	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3c -lshadow3
 
 	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.c
 
 	$(CCP) $(CFLAGS) -c trace3_cpp.cpp
-	$(CCP) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3 -lshadow3c -lshadow3c++
+	$(CCP) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
 
 	$(FC) $(FFLAGS) -c fig3.f90
 	$(FC) $(FFLAGS) -o fig3 fig3.o -L. -lshadow3
@@ -113,10 +114,10 @@ examples:
 	$(FC) $(FFLAGS) -o example01_f95 example01_f95.o -L. -lshadow3
 
 	$(CC) -I. $(CFLAGS) -c example01_c.c -o example01_c.o
-	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadow3c
+	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadow3c -lshadow3
 
 	$(CCP) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
-	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++
+	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
 
 ifeq ($(MPI),1)
 	$(MPIFC) $(FFLAGS) -c trace3mpi.f90
@@ -199,7 +200,7 @@ purge: clean
 #shadow runs
 	/bin/rm -f start.* end.* begin.dat star.* mirr.* screen.* \
                    systemfile.* effic.* angle.* optax.* focus focnew*
-	/bin/rm -f plotxy* histo1* shadow3.inp pippo* xshwig.*
+	/bin/rm -f plotxy* histo1* shadow3.inp xshwig.*
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 	/bin/rm -f F12LIB.INDEX F12LIB.FULL
 #examples runs
