@@ -99,6 +99,11 @@ a=st.getshcol("TEST/star.01",1)
 ( also a=st.getshonecol("TEST/star.01",1) )
 
 
+SCRIPT EXAMPLES
+===============
+
+python example_tolerance.py
+
 FAQ
 ===
 

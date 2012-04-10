@@ -502,16 +502,37 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   for tt in axHistx.get_yticklabels():
     tt.set_size('x-small')
 
-  if calfwhm==1:
+  intensityinslit = 0.0
+  if calfwhm>=1:
     fwhmx,txf, txi = stp.calcFWHM(hx,binx[1]-binx[0])
     fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
     axHistx.plot([binx[txi],binx[txf+1]],[max(hx)*0.5,max(hx)*0.5],'x-')
     axHisty.plot([max(hy)*0.5,max(hy)*0.5],[biny[tyi],biny[tyf+1]],'x-')
     print "fwhm horizontal:  ", fwhmx
     print "fwhm vertical:    ", fwhmy
-  #if calfwhm==2:
+  if calfwhm>=2:
+    xx1 = binx[txi]
+    xx2 = binx[txf+1]
+    yy1 = biny[tyi]
+    yy2 = biny[tyf+1]
+    print "limits horizontal:  ", binx[txi],binx[txf+1]
+    print "limits vertical:  ", biny[tyi],biny[tyf+1]
+    axScatter.plot([xx1,xx2,xx2,xx1,xx1],[yy1,yy1,yy2,yy2,yy1])
     #fwhmx,txf, txi = stp.calcFWHM(hx,binx[1]-binx[0])
     #fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
+    #calculate intensity in slit
+    if nolost==0: tt = np.where(col3!=-3299)
+    if nolost==1: tt = np.where(col3==1.0)
+    if nolost==2: tt = np.where(col3!=1.0)  
+
+    ttx = np.where((col1>=xx1)&(col1<=xx2))
+    tty = np.where((col2>=yy1)&(col2<=yy2))
+  
+    ttf = set(list(tt[0])) & set(list(ttx[0])) & set(list(tty[0]))
+    tt = (np.array(sorted(list(ttf))),)
+    if len(tt[0])>0: 
+      intensityinslit = col4[tt].sum()
+      print "Intensity in slit: ",intensityinslit
     
   if title!=None:
     axHistx.set_title(title)
@@ -522,11 +543,14 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   if nolost==0: axText.text(0.0,0.8,"ALL RAYS")
   if nolost==1: axText.text(0.0,0.8,"GOOD RAYS")
   if nolost==2: axText.text(0.0,0.8,"LOST RAYS")
-  axText.text(0.0,0.7,"intensity: "+str(col4[t].sum()))
+  tmps = "intensity: "+str(col4[t].sum())
+  if calfwhm == 2:
+      tmps=tmps+" (in slit:"+str(intensityinslit)+") "
+  axText.text(0.0,0.7,tmps)
   axText.text(0.0,0.6,"total number of rays: "+str(ntot))
   axText.text(0.0,0.5,"total good rays: "+str(ngood))
   axText.text(0.0,0.4,"total lost rays: "+str(ntot-ngood))
-  if calfwhm==1:
+  if calfwhm>=1:
     axText.text(0.0,0.3,"fwhm H: "+str(fwhmx))
     axText.text(0.0,0.2,"fwhm V: "+str(fwhmy))
   if isinstance(beam,str): axText.text(0.0,0.1,"FILE: "+beam)
@@ -542,9 +566,11 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   ticket.xtitle = xtitle
   ticket.ytitle = ytitle
   ticket.title = title
-  if calfwhm==1:
+  if calfwhm>=1:
     ticket.fwhmx = fwhmx
     ticket.fwhmy = fwhmy
+  ticket.intensity = col4[t].sum()
+  ticket.intensityinslit = intensityinslit
   return ticket  
   
 if __name__=="__main__":
