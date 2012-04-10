@@ -127,7 +127,7 @@ def plotxy_CheckArg(beam,cols1,cols2,nbins,nbins_h,level,xrange,yrange,nolost,ti
   if not isinstance(ytitle,str): raise ErrorMsg('plotxy','ytitle')
   if noplot!=0 and noplot!=1: raise ErrorMsg('plotxy','noplot')
   #if ref!=0 and ref!=1: raise ErrorMsg('plotxy','ref')
-  if calfwhm!=0 and calfwhm!=1: raise ErrorMsg('plotxy','calfwhm')
+  if calfwhm!=0 and calfwhm!=1 and calfwhm!=2: raise ErrorMsg('plotxy','calfwhm')
   if not isinstance(contour,int): raise ErrorMsg('plotxy','contour')
   if contour<0 or contour>6: raise ErrorMsg('plotxy','contour')
 

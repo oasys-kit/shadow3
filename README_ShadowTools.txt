@@ -114,3 +114,8 @@ FAQ
 3) how to clean MATPLOTLIB memory (clicking "x" in the window does not clean
    memory): st.plt.close("all")
 
+4) How to run python from a directory outside the shadow3 sources?
+   Define: 
+   export LD_LIBRARY_PATH=/your_particular_path/shadow3:"${LD_LIBRARY_PATH}"
+   export PYTHONPATH=/your_particular_path/shadow3/:"${PYTHONPATH}"
+
