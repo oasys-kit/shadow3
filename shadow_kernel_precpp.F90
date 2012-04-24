@@ -265,6 +265,8 @@ Module shadow_kernel
     !!--     				RWIDX,RWIDX1,RWIDX2,PARAM, &
 !!ccc    real(kind=skr),dimension(10) :: ccc
     !!--     				PCOEFF(0:4,0:4,0:4),CIL_ANG,ELL_THE
+    ! used for polynomial mirrors (FMIRR=9)
+    integer(kind=ski) :: ndeg
     real(kind=skr),dimension(0:4,0:4,0:4) :: pcoeff
     !!--     	COMMON	/GRATING/	RULING,ORDER,BETA,PHOT_CENT,R_LAMBDA, &
     !!--     				HUNT_L,HUNT_H,BLAZE,D_SPACING,AZIM_FAN, &

@@ -1749,7 +1749,7 @@ END FUNCTION RAND_PENELOPE
   165 	IER = 129
  9000 	CONTINUE
 	!srio      CALL UERTST (IER,6HZRPOLY)
-     	print *,"Error from math routine merfi. Called with: ",P
+     	print *,"Error from math routine zrpoly. Called with NDEG,A: ",NDEG,A
  9005 	RETURN
 	END SUBROUTINE ZRPOLY
 
