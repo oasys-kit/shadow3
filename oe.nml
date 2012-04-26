@@ -111,8 +111,9 @@
  k_slit	=   0,            0,            0,            0,            0, 
        	    0,            0,            0,            0,            0
 	    - for each stop/slit, specify a shape: rectangular (0),
-	    ellipse (1), external (2).  (at this point the external shape
-	    is not yet implemented.)
+	    ellipse (1), external (2).  (external shape **is** implemented, 
+            see file format in the header of the routine screen_load_external,
+            file shadow_kernel_precpp.F90).
  istar1	=      12345701
  cil_ang	=  0.0000000000000000E+00 - if fcyl=1: angle (degrees) of
  					    cylinder axis from X axis.
@@ -270,11 +271,6 @@
         	   0.0000000000000000E+00, 0.0000000000000000E+00, 
         	   0.0000000000000000E+00, 0.0000000000000000E+00
 		- for each slit/stop in a screen, dimension in X.
- d_plate	=  0.0000000000000000E+00, 0.0000000000000000E+00, 
-        	   0.0000000000000000E+00, 0.0000000000000000E+00, 
-        	   0.0000000000000000E+00
-		- for n_plates>=1: for each plate, the distance from the
-		mirror center to the plate.
  rz_slit	=  0.0000000000000000E+00, 0.0000000000000000E+00, 
         	   0.0000000000000000E+00, 0.0000000000000000E+00, 
         	   0.0000000000000000E+00, 0.0000000000000000E+00, 
@@ -287,12 +283,29 @@
        	   0.0000000000000000E+00, 0.0000000000000000E+00, 
        	   0.0000000000000000E+00, 0.0000000000000000E+00
 		- for each screen, absolute distance from the mirror.
+ file_scr_ext	=  
+         	   'NONE SPECIFIED   - for each screen with external polygon
+		   ',		       (k_slit=2) file containing the polygon
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  ', 
+         	   'NONE SPECIFIED                                                                  '
+ d_plate	=  0.0000000000000000E+00, 0.0000000000000000E+00, 
+        	   0.0000000000000000E+00, 0.0000000000000000E+00, 
+        	   0.0000000000000000E+00
+		- for n_plates>=1: for each plate, the distance from the
+		mirror center to the plate.
  ccc	=  0.0000000000000000E+00, 0.0000000000000000E+00, 
       	   0.0000000000000000E+00, 0.0000000000000000E+00, 
       	   0.0000000000000000E+00, 0.0000000000000000E+00, 
       	   0.0000000000000000E+00, 0.0000000000000000E+00, 
       	   0.0000000000000000E+00, 0.0000000000000000E+00
-		- for FMIRR=10, the coeffs OE surface in form of conic equation:
+		- for fmirr=10, the coeffs OE surface in form of conic equation:
                   ccc[1]*X^2 + ccc[2]*Y^2 + ccc[3]*Z^2 + 
                   ccc[4]*X*Y + ccc[5]*Y*Z + ccc[6]*X*Z  + 
                   ccc[7]*X + ccc[8]*Y + ccc[9]*Z + ccc[10] = 0  
