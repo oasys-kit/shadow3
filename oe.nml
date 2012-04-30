@@ -112,7 +112,7 @@
        	    0,            0,            0,            0,            0
 	    - for each stop/slit, specify a shape: rectangular (0),
 	    ellipse (1), external (2).  (external shape **is** implemented, 
-            see file format in the header of the routine screen_load_external,
+            see file format in the header of the routine screen_external_load,
             file shadow_kernel_precpp.F90).
  istar1	=      12345701
  cil_ang	=  0.0000000000000000E+00 - if fcyl=1: angle (degrees) of

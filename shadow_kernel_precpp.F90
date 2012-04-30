@@ -5784,122 +5784,165 @@ End Subroutine screen
 ! C---
 SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 
-	implicit real(kind=skr) (a-e,g-h,o-z)
-	implicit integer(kind=ski)        (f,i-n)
-
+        !implicit real(kind=skr) (a-e,g-h,o-z)
+        !implicit integer(kind=ski)        (f,i-n)
+        implicit none 
+       
         real(kind=skr),dimension(:,:),intent(in out) :: ray,ray_out
-	!DIMENSION 	RAY(12,N_DIM),RAY_OUT(12,N_DIM)
-! C
-! C Local variables
-! C
-! C
+        integer(kind=ski),intent(in)                 :: i_scr,i_element
+        ! C
+        ! C Local variables
+        ! C
+        integer(kind=ski)    :: ierr,iflag,inp,ipoly,iray,istart
+        integer(kind=ski)    :: n_polys,n_points
+        real(kind=skr)       :: px, pz
+        logical              :: ray_lost, hit_found
+        character(len=sklen) :: filename
+
+        !
+        ! Allocatable variables
+        !
+        !real(kind=skr),dimension(MAX_NPOINTS)  :: xvec,zvec
+        !integer(kind=ski),dimension(MAX_NPOLY) :: ivec1,ivec2
+        real(kind=skr),dimension(:),allocatable    :: xvec,zvec
+        integer(kind=ski),dimension(:),allocatable :: ivec1,ivec2
+
+! C -------------  NOT LONGER APPLIES srio@esrf.eu 20120430 -------------
 ! C The following two parameters limit the polygons that can be read in.
 ! C There can be upto MAX_NPOLY polygons, and an accumulated total of 
 ! C MAX_NPOINTS points summed over all the polygons. The accumulated sum
 ! C includes polygon closure (eg., a rectangle has *5*, not 4 points after
 ! C closure). To up the limits, modify the following and recompile.
 ! C
-        integer(kind=ski),parameter :: max_npoly=50, max_npoints=1000
-	!INTEGER		MAX_NPOLY, MAX_NPOINTS
-	!PARAMETER	(MAX_NPOLY = 50)
-	!PARAMETER	(MAX_NPOINTS = 1000)
+!        integer(kind=ski),parameter :: max_npoly=50, max_npoints=1000
 
-        integer(kind=ski)           :: n_polys,n_points
-	!INTEGER		N_POLYS, N_POINTS
-	!INTEGER		IVEC1, IVEC2
-        real(kind=skr)    :: px, pz
-	!DOUBLE PRECISION XVEC, ZVEC, PX, PZ
-        
-        real(kind=skr),dimension(MAX_NPOINTS)  :: xvec,zvec
-        integer(kind=ski),dimension(MAX_NPOLY)           :: ivec1,ivec2
-	logical                                        :: ray_lost, hit_found
-        character(len=sklen)                             :: filename
-	!DIMENSION	XVEC(MAX_NPOINTS), ZVEC(MAX_NPOINTS)
-	!DIMENSION	IVEC1(MAX_NPOLY), IVEC2(MAX_NPOLY)
-	!LOGICAL		RAY_LOST, HIT_FOUND
 ! C
 ! C Load the external polygon file that describe the patterns on the screen.
-! C The file format is described in screen_load_external().
+! C The file format is described in SCREEN_EXTERNAL_LOAD().
 ! C
 ! C Note that the two vectors, xvec and zvec, contain the points for all
 ! C the polygons. Two aux vectors, ivec1 and ivec2, contain the starting
 ! C indices (into xvec and zvec) and number of points per polygon.
 ! C 
-	IFLAG = 0
+        IFLAG = 0
         filename = FILE_SCR_EXT(I_SCR)
-	CALL SCREEN_LOAD_EXTERNAL(filename, MAX_NPOLY,  &
-     	   			MAX_NPOINTS,XVEC,ZVEC,IVEC1,IVEC2, &
-     				N_POLYS,N_POINTS,IFLAG)
-	IF (IFLAG .EQ. -1) THEN
-	  CALL MSSG ('SCREEN_EXTERNAL', &
-     			'Error reading EXTERNAL file', i_one)
-	  STOP 1
-	ELSE IF (IFLAG .EQ. -2) THEN
-	  CALL MSSG ('SCREEN_EXTERNAL', &
-     			'Error in External polygon description', i_one)
-	  STOP 1
-	END IF
+        CALL SCREEN_EXTERNAL_GETDIMENSIONS(filename, N_POLYS,N_POINTS,IFLAG)
+        !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POLYS: ',N_POLYS
+        !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POINTS: ',N_POINTS
+        !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: IFLAG: ',IFLAG
+
+        ! allocate vectors
+        IF (.NOT. ALLOCATED(xvec)) THEN
+          ALLOCATE(xvec(n_points),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"SCREEN_EXTERNAL: Error allocating xvec" ; STOP 4
+          END IF
+        END IF
+        IF (.NOT. ALLOCATED(zvec)) THEN
+          ALLOCATE(zvec(n_points),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"SCREEN_EXTERNAL: Error allocating zvec" ; STOP 4
+          END IF
+        END IF
+
+        IF (.NOT. ALLOCATED(ivec1)) THEN
+          ALLOCATE(ivec1(n_polys),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"SCREEN_EXTERNAL: Error allocating ivec1" ; STOP 4
+          END IF
+        END IF
+
+        IF (.NOT. ALLOCATED(ivec2)) THEN
+          ALLOCATE(ivec2(n_polys),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"SCREEN_EXTERNAL: Error allocating ivec2" ; STOP 4
+          END IF
+        END IF
+
+        CALL SCREEN_EXTERNAL_LOAD(filename, &
+!                MAX_NPOLY, MAX_NPOINTS, &
+                XVEC,ZVEC,IVEC1,IVEC2,N_POLYS,N_POINTS,IFLAG)
+        !print *,'>>> MAX_NPOLY: ',MAX_NPOLY
+        !print *,'>>> MAX_NPOINTS: ',MAX_NPOINTS
+        !print *,'>>> N_POLYS: ',N_POLYS
+        !print *,'>>> N_POINTS: ',N_POINTS
+        !print *,'>>> XVEC: ',XVEC(1:NPOINTS)
+
+        IF (IFLAG .EQ. -1) THEN
+          CALL MSSG ('SCREEN_EXTERNAL', &
+               'Error reading EXTERNAL file', i_one)
+          STOP 1
+        ELSE IF (IFLAG .EQ. -2) THEN
+          CALL MSSG ('SCREEN_EXTERNAL', &
+               'Error in External polygon description', i_one)
+          STOP 1
+        END IF
 
 ! C
 ! C Algorithm: For each ray, see if it hits any of the polygons; if it does,
 ! C check if the polygon is a Aperture or Obstruction, and set the RAY_LOST
 ! C logical accordingly.
 ! C
-      	DO 200 IRAY=1,NPOINT
-	  HIT_FOUND = .FALSE.
- 	  PX = RAY_OUT(1,IRAY)
- 	  PZ = RAY_OUT(3,IRAY)
-	  DO 11 IPOLY = 1, N_POLYS
-	    ISTART = IVEC1(IPOLY)
-	    INP = IVEC2(IPOLY)
-	    IFLAG = 0
-	    CALL PNPOLY (PX, PZ, XVEC(ISTART), ZVEC(ISTART), &
-     			INP, IFLAG)
+!        DO 200 IRAY=1,NPOINT
+        DO IRAY=1,NPOINT
+          HIT_FOUND = .FALSE.
+          PX = RAY_OUT(1,IRAY)
+          PZ = RAY_OUT(3,IRAY)
+          !DO 11 IPOLY = 1, N_POLYS
+          DO IPOLY = 1, N_POLYS
+            ISTART = IVEC1(IPOLY)
+            INP = IVEC2(IPOLY)
+            IFLAG = 0
+            CALL PNPOLY (PX, PZ, XVEC(ISTART), ZVEC(ISTART), INP, IFLAG)
 ! C
 ! C IFLAG = -1 implies point *outside* polygon, 0 vertex, 1 inside.
 ! C I_STOP = 1 for obstruction, and 0 for aperture.
 ! C
 ! C We just need a single hit (inside+vertex) for either type of slit.
 ! C
-	    IF (IFLAG.EQ.1 .OR. IFLAG.EQ.0) HIT_FOUND = .TRUE.
- 11	  CONTINUE
+            IF (IFLAG.EQ.1 .OR. IFLAG.EQ.0) HIT_FOUND = .TRUE.
+! 11	  CONTINUE
+          END DO 
 ! C
 ! C In case of aperture, a ray is lost if does NOT hit any of the polys;
 ! C in case of obstruction, a ray is lost if it hits *ANY* of the polys.
 ! C 
-	  RAY_LOST = .FALSE.
-	  IF (I_STOP(I_SCR) .EQ. 0 .AND. .NOT. HIT_FOUND) THEN
-	      RAY_LOST = .TRUE.
-	  ELSE IF (I_STOP(I_SCR) .EQ. 1 .AND. HIT_FOUND) THEN
-	      RAY_LOST = .TRUE.
-	  END IF
+          RAY_LOST = .FALSE.
+          IF (I_STOP(I_SCR) .EQ. 0 .AND. .NOT. HIT_FOUND) THEN
+              RAY_LOST = .TRUE.
+          ELSE IF (I_STOP(I_SCR) .EQ. 1 .AND. HIT_FOUND) THEN
+              RAY_LOST = .TRUE.
+          END IF
 
-	  IF (RAY_LOST) THEN
-	    RAY     (10,IRAY) = - 1.0D2*I_ELEMENT - 1.0D0*I_SCR
-	    RAY_OUT (10,IRAY) = - 1.0D2*I_ELEMENT - 1.0D0*I_SCR
-	  END IF
- 200	CONTINUE
+          IF (RAY_LOST) THEN
+            RAY     (10,IRAY) = - 1.0D2*I_ELEMENT - 1.0D0*I_SCR
+            RAY_OUT (10,IRAY) = - 1.0D2*I_ELEMENT - 1.0D0*I_SCR
+          END IF
+        END DO
+! 200	CONTINUE
 ! C
-	RETURN
+        IF (ALLOCATED(xvec)) DEALLOCATE(xvec)
+        IF (ALLOCATED(zvec)) DEALLOCATE(zvec)
+        IF (ALLOCATED(ivec1)) DEALLOCATE(ivec1)
+        IF (ALLOCATED(ivec2)) DEALLOCATE(ivec2)
+        RETURN
 End Subroutine screen_external
 
 
 ! C+++
-! C	SUBROUTINE	SCREEN_LOAD_EXTERNAL
+! C	SUBROUTINE	SCREEN_EXTERNAL_LOAD
 ! C
 ! C	PURPOSE		This routine load the polygon(s) from a file.
 ! C
 ! C	ARGUMENTS	
 ! C			[ I ] FILE	Polygon file name
-! C			[ I ] MAX_NPOLYS Maximum number of polygons
-! C			[ I ] MAX_NPOINTS Maximum *total* number of points
-! C                       [ O ] XVEC   	X points
-! C                       [ O ] ZVEC   	Z points
-! C                       [ O ] IVEC1   	Index of poly starting points
-! C                       [ O ] IVEC2   	Number of points in each poly
-! C                       [ O ] NPOLY   	Number of polygons actually read
-! C                       [ O ] NPOINT   	Number of *total* points actually read
-! C                       [ O ] IFLAG	Returned value
+! C                     [ I ] NPOLY   	Number of polygons to be read
+! C                     [ I ] NPOINT   	Number of *total* points to be read
+! C                     [ O ] XVEC   	X points
+! C                     [ O ] ZVEC   	Z points
+! C                     [ O ] IVEC1   	Index of poly starting points
+! C                     [ O ] IVEC2   	Number of points in each poly
+! C                     [ O ] IFLAG	Returned value
 ! C					-1: Can't read file
 ! C					-2: Bad format, too many points
 ! C					 0: All ok.
@@ -5934,81 +5977,163 @@ End Subroutine screen_external
 ! C the first. The points can be in clockwise or counter-clockwise.
 ! C		
 ! C	AUTHOR 		Mumit Khan
+! C	                M Sanchez del Rio: makes arrays allocatable
 ! C---
 
-SUBROUTINE  SCREEN_LOAD_EXTERNAL (FILENAME, MAX_NPOLYS, &
-     		MAX_NPOINTS,XVEC,ZVEC,IVEC1,IVEC2,NPOLY,NPOINT,IFLAG)
+SUBROUTINE  SCREEN_EXTERNAL_LOAD (FILENAME,  &
+!                 MAX_NPOLYS, MAX_NPOINTS, &
+                 XVEC,ZVEC,IVEC1,IVEC2,NPOLY1,NPOINT1,IFLAG)
 ! C
-	IMPLICIT NONE
-	!CHARACTER*(*)	FILENAME
-	character(len=*)  :: 	FILENAME
-	integer(kind=ski) :: max_npolys,max_npoints,npoly,npoint,iflag
-	!INTEGER		MAX_NPOLYS,MAX_NPOINTS,NPOLY,NPOINT,IFLAG
-	!INTEGER		IVEC1, IVEC2
-        real(kind=skr),dimension(max_npoints) :: xvec,zvec
-        integer(kind=ski),dimension(max_npolys)         :: ivec1,ivec2
-	!DOUBLE PRECISION XVEC, ZVEC
-	!DIMENSION	XVEC(MAX_NPOINTS), ZVEC(MAX_NPOINTS)
-	!DIMENSION	IVEC1(MAX_NPOLYS),IVEC2(MAX_NPOLYS)
+        implicit none
+        character(len=*),intent(in)  :: FILENAME
+        !integer(kind=ski) :: max_npolys,max_npoints
+        integer(kind=ski),intent(in)  :: npoly1,npoint1
+        integer(kind=ski),intent(out) :: iflag
+
+        !real(kind=skr),dimension(max_npoints) :: xvec,zvec
+        !integer(kind=ski),dimension(max_npolys)         :: ivec1,ivec2
+        integer(kind=ski)                                :: npoly,npoint
+        real(kind=skr),dimension(npoint1),intent(in out)   :: xvec,zvec
+        integer(kind=ski),dimension(npoly1),intent(in out) :: ivec1,ivec2
 ! C
-	integer(kind=ski) :: np1, poly_index, pt_index, start_index
-	integer(kind=ski),parameter :: io_unit=21
-	!INTEGER		IO_UNIT, NP1, POLY_INDEX, PT_INDEX
-	!INTEGER		START_INDEX
-	!DATA		IO_UNIT / 21 /
+        integer(kind=ski) :: np1, poly_index, pt_index, start_index
+        integer(kind=ski),parameter :: io_unit=21
 ! C
-	IFLAG = 0
-	OPEN(IO_UNIT, FILE=FILENAME, status='OLD', ERR=199)
-	READ(IO_UNIT, *, ERR=299, END=299) NPOLY
-	IF (NPOLY .GT. MAX_NPOLYS) THEN
-	  CALL MSSG ('SCREEN_EXTERNAL','Too many polygons',i_one)
-	  GOTO 299
-	END IF
+        IFLAG = 0
+        OPEN(IO_UNIT, FILE=FILENAME, status='OLD', ERR=199)
+        READ(IO_UNIT, *, ERR=299, END=299) NPOLY
+        IF (NPOLY .NE. NPOLY1) THEN
+          CALL MSSG ('SCREEN_EXTERNAL','problem reading file',i_one)
+          GOTO 299
+        END IF
+        !IF (NPOLY .GT. MAX_NPOLYS) THEN
+        !  CALL MSSG ('SCREEN_EXTERNAL','Too many polygons',i_one)
+        !  GOTO 299
+        !END IF
 ! C
 ! C read all the polygons as a compound one (ie., in the same vectors).
 ! C
-	NPOINT = 0
-	DO 10 POLY_INDEX = 1, NPOLY
-	  READ(IO_UNIT, *, ERR=299, END=299) NP1
-	  DO 20 PT_INDEX = 1, NP1
-	    NPOINT = NPOINT + 1
-	    IF (NPOINT .GT. MAX_NPOINTS) THEN
-	      CALL MSSG ('SCREEN_EXTERNAL','Too many total points',i_one)
-	      GOTO 299
-	    END IF
-	    READ(IO_UNIT,*,ERR=299,END=299) XVEC(NPOINT),ZVEC(NPOINT)
- 20	  CONTINUE
+        NPOINT = 0
+        !DO 10 POLY_INDEX = 1, NPOLY
+        DO POLY_INDEX = 1, NPOLY
+          READ(IO_UNIT, *, ERR=299, END=299) NP1
+          !DO 20 PT_INDEX = 1, NP1
+          DO PT_INDEX = 1, NP1
+            NPOINT = NPOINT + 1
+            !IF (NPOINT .GT. MAX_NPOINTS) THEN
+            !  CALL MSSG ('SCREEN_EXTERNAL','Too many total points',i_one)
+            !  GOTO 299
+            !END IF
+            READ(IO_UNIT,*,ERR=299,END=299) XVEC(NPOINT),ZVEC(NPOINT)
+! 20          CONTINUE
+          END DO 
+ 
 ! C
 ! C Make sure the polygon is "closed", so check the first and last points.
 ! C
-	  START_INDEX = NPOINT - NP1 + 1
-	  IF (XVEC(START_INDEX) .NE. XVEC(NPOINT) .OR. &
-     	      ZVEC(START_INDEX) .NE. ZVEC(NPOINT)) THEN
-	    NPOINT = NPOINT + 1
-	    NP1 = NP1 + 1
-	    XVEC(NPOINT) = XVEC(START_INDEX)
-	    ZVEC(NPOINT) = ZVEC(START_INDEX)
-	  END IF
-	  IVEC1(POLY_INDEX) = START_INDEX
-	  IVEC2(POLY_INDEX) = NP1
+          START_INDEX = NPOINT - NP1 + 1
+          IF (XVEC(START_INDEX) .NE. XVEC(NPOINT) .OR. &
+                   ZVEC(START_INDEX) .NE. ZVEC(NPOINT)) THEN
+            NPOINT = NPOINT + 1
+            NP1 = NP1 + 1
+            XVEC(NPOINT) = XVEC(START_INDEX)
+            ZVEC(NPOINT) = ZVEC(START_INDEX)
+          END IF
+          IVEC1(POLY_INDEX) = START_INDEX
+          IVEC2(POLY_INDEX) = NP1
 ! C
- 10	CONTINUE
-	CLOSE(IO_UNIT)
-	GOTO 300
+! 10     CONTINUE
+        END DO ! POLY_INDEX 
+        CLOSE(IO_UNIT)
+        GOTO 300
 
- 199	CONTINUE
-	IFLAG = -1
-	GOTO 300
+ 199    CONTINUE
+        IFLAG = -1
+        GOTO 300
 
- 299	CONTINUE
-	CLOSE(IO_UNIT)
-	IFLAG = -1
-	GOTO 300
+ 299    CONTINUE
+        CLOSE(IO_UNIT)
+        IFLAG = -1
+        GOTO 300
 
- 300	CONTINUE
-	RETURN
-End Subroutine screen_load_external
+ 300    CONTINUE
+        IF (NPOINT .NE. NPOINT1) THEN
+          CALL MSSG ('SCREEN_EXTERNAL','Prblem reading file',i_one)
+        END IF
+        RETURN
+End Subroutine screen_external_load
 
+
+! C+++
+! C	SUBROUTINE	SCREEN_EXTERNAL_GETDIMENSIONS
+! C
+! C	PURPOSE		This routine gets the polygon(s) dimensions
+! C
+! C	ARGUMENTS	
+! C			[ I ] FILE	Polygon file name
+! C                     [ O ] NPOLY   	Number of polygons to be read
+! C                     [ O ] NPOINT   	Number of *total* points to be read
+! C                     [ O ] IFLAG	Returned value
+! C					-1: Can't read file
+! C					-2: Bad format, too many points
+! C					 0: All ok.
+! C		
+! C	AUTHOR 		M Sanchez del Rio
+! C---
+
+SUBROUTINE  SCREEN_EXTERNAL_GETDIMENSIONS (FILENAME, NPOLY,NPOINT,IFLAG)
+! C
+    IMPLICIT NONE
+    character(len=*),intent(in)   :: FILENAME
+    integer(kind=ski),intent(out) :: npoly,npoint,iflag
+
+    integer(kind=ski) :: np1, poly_index, pt_index, start_index
+    integer(kind=ski),parameter :: io_unit=21
+    real(kind=skr)    :: xtmp,ztmp,xtmp0,ztmp0
+
+    IFLAG = 0
+    OPEN(IO_UNIT, FILE=FILENAME, status='OLD', ERR=199)
+    READ(IO_UNIT, *, ERR=299, END=299) NPOLY
+! C
+! C read all the polygons as a compound one (ie., in the same vectors).
+! C
+    NPOINT = 0
+    DO POLY_INDEX = 1, NPOLY
+      READ(IO_UNIT, *, ERR=299, END=299) NP1
+      DO PT_INDEX = 1, NP1
+        NPOINT = NPOINT + 1
+        IF (PT_INDEX.EQ.1) THEN
+          READ(IO_UNIT,*,ERR=299,END=299) XTMP0, ZTMP0
+        ELSE 
+          READ(IO_UNIT,*,ERR=299,END=299) XTMP, ZTMP
+        END IF
+      END DO
+! C
+! C Make sure the polygon is "closed", so check the first and last points.
+! C
+      !START_INDEX = NPOINT - NP1 + 1
+      !IF (XVEC(START_INDEX) .NE. XVEC(NPOINT) .OR. &
+      !         ZVEC(START_INDEX) .NE. ZVEC(NPOINT)) THEN
+      IF (XTMP0 .NE. XTMP .OR. ZTMP0 .NE. ZTMP) THEN
+        NPOINT = NPOINT + 1
+        NP1 = NP1 + 1
+      END IF
+    END DO
+    CLOSE(IO_UNIT)
+    GOTO 300
+
+ 199    CONTINUE
+    IFLAG = -1
+    GOTO 300
+
+ 299    CONTINUE
+    CLOSE(IO_UNIT)
+    IFLAG = -1
+    GOTO 300
+
+ 300    CONTINUE
+    RETURN
+End Subroutine screen_external_getdimensions
 
 ! C+++
 ! C	SUBROUTINE	SETSOUR
@@ -8277,7 +8402,7 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 
      	!CHARACTER*80	ARG,RSTRING, INFILE
 	!CHARACTER*80	FILESOURCE
-	character(len=*),intent(inout)  :: OUTP
+	character(len=*),intent(in out)  :: OUTP
 	!!!character(len=512) :: FILESOURCE,arg,infile
 	character(len=sklen)  :: FILESOURCE
 !!!srio
@@ -8287,7 +8412,7 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 	!INTEGER		IPASS
 	!DATA 	IPASS	/ 0 /
         !SAVE		IPASS
-        integer(kind=ski)            :: iTerminate
+        !integer(kind=ski)            :: iTerminate
         integer(kind=ski),save       :: ipass=0
 ! C
 ! C Clears all variable to avoid cross talks
@@ -8298,6 +8423,7 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C
 ! C Tests for continuation or new optical system
 ! C
+
      	IF (IFLAG.EQ.0) THEN
      	 WRITE(6,*)'Mode selected is: '//trim(OUTP)
      	 WRITE(6,*)' '
@@ -10219,7 +10345,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     implicit    integer(kind=ski)       (f,i-n)
     
     integer(kind=ski), intent(in)    :: npoint1
-    type (poolSource), intent(inout) :: pool00
+    type (poolSource), intent(in out) :: pool00
     real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
 
     ! C
@@ -11023,7 +11149,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
   
   Subroutine PoolOEToGlobal(oe) !bind(C,NAME="PoolOEToGlobal")
     
-    type(poolOE),intent(inout) :: oe
+    type(poolOE),intent(in out) :: oe
     integer(kind=ski) :: i
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) name = oe%name
@@ -11046,7 +11172,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
   
   Subroutine GlobalToPoolSource(src) 
     
-    type(poolSource), intent(inout) :: src
+    type(poolSource), intent(in out) :: src
 
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) src%name = name
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) src%name = name
@@ -11065,7 +11191,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
   
   Subroutine GlobalToPoolOE(oe) 
     
-    type(poolOE),intent(inout) :: oe
+    type(poolOE),intent(in out) :: oe
     integer(kind=ski) :: i
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe%name = name

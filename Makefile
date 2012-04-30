@@ -208,8 +208,8 @@ purge: clean
 
 # customize depending on where you want to install
 install:
-	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow3/shadow3
-	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+#	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow3/shadow3
+#	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
 #	$(PY) setup.py install
 #	/bin/cp libshado*.so /usr/lib/
 #	/bin/cp shadow3 /usr/bin/
