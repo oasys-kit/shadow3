@@ -18,7 +18,7 @@ Module shadow_crl !compound refractive lenses
 !----
 !----  SUbroutine precrl
 !----
-!----  Preprocessor for COmpound Refractive Lenses
+!----  Preprocessor for Compound Refractive Lenses
 !----
 !----  create a crl.01 file with parameters for a compound refractive lens
 !---- 
@@ -34,14 +34,18 @@ Subroutine precrl
     implicit none
 
     Type(GfType)           :: g1
-    integer(kind=ski)      :: ns,i,j,iShape,fCyl,changeConvexity,itmp
-    integer(kind=ski)      :: fwrite_local
-    real(kind=skr)         :: r0,ref0,ref1,att0,att1
+    integer(kind=ski)      :: ns,i,j,ishape_local,fcyl_local
+    integer(kind=ski)      :: changeConvexity,itmp
+    integer(kind=ski)      :: fwrite_local,fhit_c_local,fshape_local
+    !integer(kind=ski)      :: n_oe_local
+    integer(kind=ski)      :: f_ext_local
+    real(kind=skr)         :: rwidx1_local,rwidx2_local,rlen1_local,rlen2_local
+    real(kind=skr)         :: ref0,ref1,att0,att1
     real(kind=skr)         :: pp,qq,pp0,qq0,ddIn,ddV,qqtmp
     character(len=sklen)   :: fileName
     character(len=3)       :: stmp,stmp2
     Logical                :: arggiven=.false., esta, iOut
-    real(kind=skr)         :: cil_ang, sin_cil, cos_cil, ref_in, ref_out
+    real(kind=skr)         :: cil_ang_local, sin_cil, cos_cil, ref_in, ref_out
     real(kind=skr),dimension(10)  :: ccc, cccTmp
     real(kind=skr), parameter :: torad = 0.017453292519943295769237
     ! variables for sphere
@@ -53,9 +57,13 @@ Subroutine precrl
     ! variables for paraboloid
     real(kind=skr)         :: costhe, sinthe, param, fact
     ! variables for hyperboloid
-    real(kind=skr)         :: cc, branch
+    real(kind=skr)         :: cc, branch,crl_length,tmp1,tmp2
     
     ccc=0.0D0
+
+
+    !n_oe_local = irint('What is the number of this optical element [default=1]? ')
+    !IF (n_oe_local .eq. 0) n_oe_local = 1
 
     print *,'Lens interface shape: '
     print *,   '1 - Sphere'
@@ -67,13 +75,13 @@ Subroutine precrl
     print *,   '7 - Hyperboloid'
     !print *,   'Cone-8??'
     !print *,   'Polynomial-9??
-    iShape = irint(' <?> ')
+    ishape_local = irint(' <?> ')
 
-    fCyl = irint('Cylindical [0=No,1=Yes] ? ')
+    fcyl_local = irint('Cylindical [0=No,1=Yes] ? ')
 
-    CIL_ANG = 0.0D0
-    IF (fCyl.eq.1) THEN 
-      CIL_ANG = RNUMBER(' Angle (degrees) of cylinder axis from X axis: ')
+    cil_ang_local = 0.0D0
+    IF (fcyl_local.eq.1) THEN 
+      cil_ang_local = RNUMBER(' Angle (degrees) of cylinder axis from X axis: ')
     ENDIF
 
     ns = irint(' Number of interfaces NS (Number of lenses=NS/2) ? ')
@@ -87,12 +95,62 @@ Subroutine precrl
     pp0 = RNUMBER(' p0: physical focal source-crl distance ')
     qq0 = RNUMBER(' q0: physical focal crl-image distance ')
 
-    pp = RNUMBER(' p: focal source-crl distance ')
-    qq = RNUMBER(' q: focal crl-image distance ')
 
-    r0 = -1
-    ! not yet implemented!
-    !r0  = RNUMBER(' lens semiaperture [-1 for infinity]? ')
+    print *,'CRL parameters: '
+    print *,'   0:  internal/calculated (from focal distances)'
+    print *,'   1:  external/user defined'
+    f_ext_local = irint('<?>')
+
+
+    if (f_ext_local.eq.0) then
+      pp = RNUMBER(' p: focal source-crl distance ')
+      qq = RNUMBER(' q: focal crl-image distance ')
+    else
+      if (ishape_local.eq.1) then
+        R = RNUMBER(' Radius of the sphere [UserLength] ? ')
+      elseif(ishape_local.eq.4) then
+        R = RNUMBER(' Radius of curvature of the paraboloid at the tip ? ')
+      elseif(ishape_local.eq.2.or.ishape_local.eq.7) then
+        AXMAJ = RNUMBER(' Major Axis ? ')
+        AXMIN = RNUMBER(' Minor Axis ? ')
+        R = 0.5*(AXMAJ + AXMIN) ! to avoid R undefined
+      end if
+    endif
+
+    !
+    ! lens dimension
+    !
+    fhit_c_local = IYES ('Lens dimensions finite [ Y/N ] ?')
+    IF (fhit_c_local.EQ.1) THEN
+       !IF (IVERB.EQ.1) THEN
+        WRITE(6,*)'Lens shape. Options:'
+        WRITE(6,*)'         rectangular :    1'
+        WRITE(6,*)'   full  elliptical  :    2'
+        !WRITE(6,*)'  "hole" elliptical  :    3'
+       !END IF
+       fshape_local = IRINT ('Shape: [ 1, 2] ?')
+       IF (fshape_local.EQ.1) THEN
+         rwidx1_local = RNUMBER ('Lens half-width x(+) ? ')
+         rwidx2_local = RNUMBER ('Lens half-width x(-) ? ')
+         rlen1_local = RNUMBER ('Lens half-length y(+) ? ')
+         rlen2_local = RNUMBER ('Lens half-length y(-) ? ')
+       ELSE
+         rwidx1_local = 0D0 ! just define it
+         rlen1_local = 0D0  ! just define it
+         rwidx2_local = RNUMBER ('External Outline Major axis ( x ) ? ')
+         rlen2_local = RNUMBER ('External Outline Minor axis ( y ) ? ')
+         !IF (fshape_local.EQ.3) THEN
+         !  rwidx1_local = RNUMBER ('Internal Outline Major axis ( x ) ? ')
+         !  rlen1_local = RNUMBER ('Internal Outline Minor axis ( y ) ? ')
+         !END IF
+       END IF
+    ELSE
+         fshape_local = 0 ! just define it
+         rwidx1_local = 0D0 ! just define it
+         rlen1_local  = 0D0  ! just define it
+         rwidx2_local = 0D0 ! just define it
+         rlen2_local  = 0D0 ! just define it
+    END IF
 
     ddIn  = 0.0D0
     ddV  = 0.0D0
@@ -110,6 +168,9 @@ Subroutine precrl
     fwrite_local = irint(' ? ')
     print *,''
     print *,''
+
+    filename = RSTRING('Name of output file (default: crl.01): ')
+    if (trim(filename).eq."") filename = "crl.01"
     
 
     !
@@ -118,9 +179,21 @@ Subroutine precrl
     DO i=1,ns
       Write( stmp, '(i3)' ) i
       stmp = adjustl(stmp)
+      ! set variables that are constat for every lens
       itmp=10
       iOut = GfForceSetValue(g1,"FMIRR("//trim(stmp)//")",itmp)
       iOut = GfForceSetValue(g1,"FWRITE("//trim(stmp)//")",fwrite_local)
+      ! finite dimensions now
+      iOut = GfForceSetValue(g1,"FHIT_C("//trim(stmp)//")",fhit_c_local)
+      !if (fhit_c_local.eq.1) then 
+      iOut = GfForceSetValue(g1,"FSHAPE("//trim(stmp)//")",fshape_local)
+      iOut = GfForceSetValue(g1,"RWIDX1("//trim(stmp)//")",rwidx1_local)
+      iOut = GfForceSetValue(g1,"RWIDX2("//trim(stmp)//")",rwidx2_local)
+      iOut = GfForceSetValue(g1,"RLEN1("//trim(stmp)//")",rlen1_local)
+      iOut = GfForceSetValue(g1,"RLEN2("//trim(stmp)//")",rlen2_local)
+      !endif
+
+      ! set variables that are change with lens number
       itmp=2
       IF (mod(i,itmp).EQ.0) THEN
       ! even surfaces
@@ -132,7 +205,7 @@ Subroutine precrl
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddV*0.5D0)
         ref_in = ref1
         ref_out = ref0
-        changeConvexity=0
+        changeConvexity=1
       ELSE
       ! odd surfaces
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref0)
@@ -143,9 +216,10 @@ Subroutine precrl
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddIn*0.5D0)
         ref_in = ref0
         ref_out = ref1
-        changeConvexity=1
+        changeConvexity=0 ! first surface is concave, R>0, (as SHADOW's default)
       ENDIF
-      select case (iShape)
+
+      select case (ishape_local)
         ! now everything is based on 
         ! F_surface = R_surface/(2*delta) delta = (n1/n2) - 1
         case (1) !spherical case need only lens semiaperture and lens length
@@ -153,14 +227,26 @@ Subroutine precrl
           ! pre-calculations 
           !
           delta = 1.0-(ref1/ref0)
-          IF (ns.eq.1) THEN
-            f = 1.0/(1.0/qq+1.0/pp)
-            R = (ref1-ref0)/( ref1/qq + ref0/pp  )
-          ELSE
-            f = 1.0/(1.0/qq+1.0/pp)*ns
-            R = f*delta
-          ENDIF
-          print *, "Surface, Focal distance, R, convexity: ", i, f, R, changeConvexity
+          if (f_ext_local.eq.0) then   ! internal/calculated
+            IF (ns.eq.1) THEN
+              f = 1.0/(1.0/qq+1.0/pp)
+              R = (ref1-ref0)/( ref1/qq + ref0/pp  )
+            ELSE
+              f = 1.0/(1.0/qq+1.0/pp)
+              R = ns*f*delta
+              R = -R   ! change sign: first interface must be concave
+            ENDIF
+          else ! external/user defined
+              f = R/delta/ns ! TODO: calculate for ellipse/hyperbola
+          endif
+
+          if (i.eq.1) then
+            print *, "Surface       : ", i
+            print *, "Focal distance (full CRL)      : ", f
+            print *, "Focal distance (this interface): ", f*ns
+            print *, "R             : ", R
+            print *, "changeConvexity     : ", changeConvexity
+          endif
 
           ccc(1) = 1.0D0
           ccc(2) = 1.0D0
@@ -168,32 +254,40 @@ Subroutine precrl
           ccc(9) = 2.0*R
         
         case (2) !ellipsoid 
-            qqtmp = qq
-            ! for CRL
-            IF (ns.GT.1) THEN 
-              ! use focal distance instead
-              qqtmp = (ref0/pp+ref1/qq)
-              qqtmp=1.0d0/qqtmp
-              qqtmp=qqtmp*ns
-            END IF
-            print *,'Ellipsoid: Object is at Infinity'
-            IF (ref0.gt.ref1) THEN
-              print *,'******* Warning: n1>n2 & object at infinity: '
-              print *,'******* Should you consider a hyperboloid instead of an ellipsoid?'
-            ENDIF
+            if (f_ext_local.eq.0) then ! internal/calculated
+              qqtmp = qq
+              ! for CRL
+              IF (ns.GT.1) THEN 
+                ! use focal distance instead
+                qqtmp = (ref0/pp+ref1/qq)
+                qqtmp=1.0d0/qqtmp
+                qqtmp=qqtmp*ns
+              END IF
+              print *,'Ellipsoid: Object is at Infinity'
+              IF (ref0.gt.ref1) THEN
+                print *,'******* Warning: n1>n2 & object at infinity: '
+                print *,'******* Should you consider a hyperboloid instead of an ellipsoid?'
+              ENDIF
+  
+              AXMAJ = qqtmp*ref1/(ref0+ref1)
+              AXMIN = qqtmp*SQRT(abs(ref1-ref0)/(ref0+ref1))
+            endif
 
-            AXMAJ  =  qqtmp*ref1/(ref0+ref1)
-            print *,'Rev Ellipsoid a:   ',axmaj
-            AXMIN = qqtmp*SQRT(abs(ref1-ref0)/(ref0+ref1))
-            print *,'Rev Ellipsoid b:   ',axmin
+
+
             AFOCI =  SQRT( AXMAJ**2-AXMIN**2 )
-            print *,'Rev Ellipsoid c=sqrt(a^2-b^2): ',afoci
-            print *,'Rev Ellipsoid focal discance c^2:   ',afoci**2
             ECCENT = AFOCI/AXMAJ
-            print *,'Rev Ellipsoid excentricity:    ',eccent
             ee = ref1/ref0
             IF (ee.GT.1) ee=1.0d0/ee
-            print *,'Rev Ellipsoid excentricity OLD:    ',ee
+            if (i.eq.1) then
+              print *,'Surface: ',i
+              print *,'Rev Ellipsoid a:   ',axmaj
+              print *,'Rev Ellipsoid b:   ',axmin
+              print *,'Rev Ellipsoid c=sqrt(a^2-b^2): ',afoci
+              print *,'Rev Ellipsoid focal discance c^2:   ',afoci**2
+              print *,'Rev Ellipsoid excentricity:    ',eccent
+              print *,'Rev Ellipsoid excentricity OLD:    ',ee
+            endif
             !C
             !C The center is computed on the basis of the object 
             !C and image positions
@@ -215,9 +309,11 @@ Subroutine precrl
             !C Computes now the quadric coefficient with the mirror center
             !C located at (0,0,0) and normal along (0,0,1)
             !C
-            print *,'Lens center at: ',0.0,ycen,zcen
-            print *,'Lens normal: ',rncen 
-            print *,'Lens tangent:',rtcen
+            if (i.eq.1) then
+              print *,'Lens center at: ',0.0,ycen,zcen
+              print *,'Lens normal: ',rncen 
+              print *,'Lens tangent:',rtcen
+            endif
 
             A  =  1/AXMIN**2
             B  =  1/AXMAJ**2
@@ -250,17 +346,39 @@ Subroutine precrl
 !            END
 
         case (4) !paraboloid
+
+
+            ! 
+            ! for the parabola we need the radius of the tangent circle, 
+            ! so this part is the same as for the sphere:
+            !
+            delta = 1.0-(ref1/ref0)
+
+            if (f_ext_local.eq.0) then
+              IF (ns.eq.1) THEN
+                ! for single lens
+                f = 1.0/(1.0/qq+1.0/pp)
+                R = (ref1-ref0)/( ref1/qq + ref0/pp  )
+                R = abs(R)
+              ELSE
+                f = 1.0/(1.0/qq+1.0/pp)
+                R = ns*f*delta
+              ENDIF
+            else 
+                f = R/delta/ns
+            endif
+
+
             ! calculate the tangent radius (as for the sphere)
-            IF (ns.GT.1) THEN 
-              ! for CRL
-              R = R*ns
-              R = -R
-            ELSE 
-              ! for single lens
-              R = 1D0/(ref0/pp+ref1/qq)
-              R = R*(ref1-ref0)
-            END IF
-            PARAM = -R
+            !IF (ns.GT.1) THEN 
+            !  ! for CRL
+            !  R = R*ns
+            !  R = -R
+            !ELSE 
+            !  R = 1D0/(ref0/pp+ref1/qq)
+            !  R = R*(ref1-ref0)
+            !END IF
+            PARAM = R
             COSTHE = 1.0D0
             SINTHE = 0.0D0
             IF (pp.LT.qq) THEN 
@@ -272,8 +390,14 @@ Subroutine precrl
               ZCEN        = - 2*qq*SINTHE*COSTHE
               fact = 1.0D0
             ENDIF
-            print *,'Paraboloid p parameter (=-R): ',PARAM
-            print *,'Lens center at: ',0.0,ycen,zcen
+
+            if (i.eq.1) then
+              print *, "Surface       : ", i
+              print *, "R             : ", R
+              print *, "changeConvexity     : ", changeConvexity
+              print *,'Paraboloid p parameter (=R): ',PARAM
+              print *,'Lens center at: ',0.0,ycen,zcen
+            endif
             CCC(1)        =   1.0D0
             CCC(2)        =   COSTHE**2
             CCC(3)        =   SINTHE**2
@@ -301,18 +425,24 @@ Subroutine precrl
               print *,'******* Should you consider an ellipsoid instead of an ellipsoid?'
             ENDIF
 
-            AXMAJ  =  qq*ref1/(ref0+ref1)
-            print *,'Rev Hyperboloid a:   ',axmaj
-            AXMIN = qq*SQRT(abs(ref1-ref0)/(ref0+ref1))
-            print *,'Rev Hyperboloid b:   ',axmin
+            if (f_ext_local.eq.0) then
+              AXMAJ  =  qq*ref1/(ref0+ref1)
+              AXMIN = qq*SQRT(abs(ref1-ref0)/(ref0+ref1))
+            endif
+
             AFOCI =  SQRT( AXMAJ**2+AXMIN**2 )
-            print *,'Rev Hyperboloid c=sqrt(a^2+b^2): ',afoci
-            print *,'Rev Hyperboloid focal discance c^2:   ',afoci**2
             ECCENT = AFOCI/AXMAJ
-            print *,'Rev Ellipsoid excentricity:    ',eccent
             EE = ref0/ref1
             IF (ee.LT.1) ee=1.0D0/ee
-            print *,'Rev Ellipsoid excentricity OLD:    ',ee
+
+            if (i.eq.1) then
+              print *,'Rev Hyperboloid a:   ',axmaj
+              print *,'Rev Hyperboloid b:   ',axmin
+              print *,'Rev Hyperboloid c=sqrt(a^2+b^2): ',afoci
+              print *,'Rev Hyperboloid focal distance c^2:   ',afoci**2
+              print *,'Rev Ellipsoid excentricity:    ',eccent
+              print *,'Rev Ellipsoid excentricity OLD:    ',ee
+            endif
             !AXMAJ         =  qq/(1D0+EE)
             !CC = AXMAJ*EE
             !AXMIN         =  sqrt(CC*CC-AXMAJ*AXMAJ)
@@ -334,15 +464,17 @@ Subroutine precrl
             RTCEN (3) =   RNCEN(2)   ! > 0
             ! 
             ! 
-            print *,'Hyperboloid a: ', AXMAJ
-            print *,'Hyperboloid b: ', AXMIN
-            print *,'Hyperboloid c: ', AFOCI
-            print *,'Hyperboloid focal discance c^2: ', AFOCI**2
-            print *,'Hyperboloid excentricity: ', ECCENT
-            print *,'Hyperbola BRANCH: ',branch
-            print *,'Lens center at: ',0.0D0,YCEN,ZCEN
-            print *,'Lens normal: ',RNCEN
-            print *,'Lens tangent: ',RTCEN
+            if (i.eq.1) then
+              print *,'Hyperboloid a: ', AXMAJ
+              print *,'Hyperboloid b: ', AXMIN
+              print *,'Hyperboloid c: ', AFOCI
+              print *,'Hyperboloid focal discance c^2: ', AFOCI**2
+              print *,'Hyperboloid excentricity: ', ECCENT
+              print *,'Hyperbola BRANCH: ',branch
+              print *,'Lens center at: ',0.0D0,YCEN,ZCEN
+              print *,'Lens normal: ',RNCEN
+              print *,'Lens tangent: ',RTCEN
+            endif
             !C
             !C Coefficients of the canonical form
             !C
@@ -384,14 +516,14 @@ Subroutine precrl
       !
       ! is cylindrical?
       !
-      IF (fCyl.eq.1) THEN 
+      IF (fcyl_local.eq.1) THEN 
        ! C
        ! C Set to zero the coeff. involving X for the cylinder case, after
        ! C projecting the surface on the desired plane.
        ! C
-        CIL_ANG = TORAD*CIL_ANG
-        COS_CIL = COS(CIL_ANG)
-        SIN_CIL = SIN(CIL_ANG)
+        cil_ang_local = TORAD*cil_ang_local
+        COS_CIL = COS(cil_ang_local)
+        SIN_CIL = SIN(cil_ang_local)
         cccTmp = CCC  ! vector copy
         CCC(1) = cccTmp(1)*SIN_CIL**4 + cccTmp(2)*COS_CIL**2*SIN_CIL**2 - & !X^2
            cccTmp(4)*COS_CIL*SIN_CIL**3
@@ -425,19 +557,53 @@ Subroutine precrl
         iOut = GfForceSetValue(g1,"ccc("//trim(stmp2)//","//trim(stmp)//")",ccc(j))
       ENDDO
     ENDDO
-    iOut = GfForceSetValue(g1,"fCyl",fCyl)
-    iOut = GfForceSetValue(g1,"cil_ang",cil_ang)
 
 
-    ! define pp0,qq0
+    ! set pp0,qq0
     iOut = GfSetValue(g1,"T_SOURCE(1)",pp0)
     iOut = GfSetValue(g1,"T_IMAGE("//trim(stmp)//")",qq0)
 
 
-    ! for memo, store the inputs [not to be used]
-    iOut = GfForceSetValue(g1,"iShape",iShape)
+    ! 
+    ! calculate CRL length
+    !
+
+    select case (ns) 
+      case(1) 
+        crl_length = 0.0
+      case(2) 
+        iOut = GfGetValue(g1,"T_IMAGE(1)",tmp1) 
+        iOut = GfGetValue(g1,"T_SOURCE(2)",tmp2)
+        crl_length = tmp1 + tmp2
+      case default
+        iOut = GfGetValue(g1,"T_IMAGE(1)",tmp1) 
+        iOut = GfGetValue(g1,"T_SOURCE(2)",tmp2)
+        crl_length = tmp1 + tmp2
+
+
+        do i=1,ns-1 
+          write( stmp2, '(i2)' ) i
+          stmp2 = adjustl(stmp2)
+          iOut = GfGetValue(g1,"T_IMAGE("//trim(stmp2)//")",tmp1) 
+          write( stmp2, '(i2)' ) i+1
+          stmp2 = adjustl(stmp2)
+          iOut = GfGetValue(g1,"T_SOURCE("//trim(stmp2)//")",tmp2)
+          crl_length = crl_length + tmp1 + tmp2
+        enddo
+    end select 
+    print *,'CLR length is: ',crl_length
+    ! for memo, store the some input variables [not needed]
+    iOut = GfForceSetValue(g1,"ishape_local",ishape_local)
+    iOut = GfForceSetValue(g1,"fwrite_local",fwrite_local)
+    iOut = GfForceSetValue(g1,"fcyl_local",fcyl_local)
+    iOut = GfForceSetValue(g1,"cil_ang_local",cil_ang_local)
+    iOut = GfForceSetValue(g1,"fhit_c_local",fhit_c_local)
+    iOut = GfForceSetValue(g1,"fshape_local",fshape_local)
+    iOut = GfForceSetValue(g1,"rwidx1_local",rwidx1_local)
+    iOut = GfForceSetValue(g1,"rwidx2_local",rwidx2_local)
+    iOut = GfForceSetValue(g1,"rlen1_local",rlen1_local)
+    iOut = GfForceSetValue(g1,"rlen2_local",rlen2_local)
     iOut = GfForceSetValue(g1,"ns",ns)
-    iOut = GfForceSetValue(g1,"r0",r0)
     iOut = GfForceSetValue(g1,"ref0",ref0)
     iOut = GfForceSetValue(g1,"ref1",ref1)
     iOut = GfForceSetValue(g1,"att0",att0)
@@ -446,10 +612,11 @@ Subroutine precrl
     iOut = GfForceSetValue(g1,"qq",qq)
     iOut = GfForceSetValue(g1,"pp0",pp0)
     iOut = GfForceSetValue(g1,"qq0",qq0)
-    iOut = GfForceSetValue(g1,"r0",r0)
     iOut = GfForceSetValue(g1,"ddIn",ddIn)
     iOut = GfForceSetValue(g1,"ddV",ddV)
-    iOut = GfForceSetValue(g1,"fwrite_local",ddV)
+    iOut = GfForceSetValue(g1,"R",R)
+    iOut = GfForceSetValue(g1,"crl_length",crl_length)
+
 !
 ! print all stored variables on screen
 !
@@ -460,7 +627,8 @@ Subroutine precrl
 ! dump the GfType into a new file
 !
 
-     fileName="crl.01"
+     !call FNAME(fileName,"crl",n_oe_local,itwo)
+     !fileName="crl.01"
      iOut = GfFileWrite(g1,fileName)
      if (iOut) then
         print *,'File written to disk: '//trim(fileName)
@@ -468,7 +636,7 @@ Subroutine precrl
         print *,'FAILED TO WRITE FILE: '//trim(fileName)
      end if
 
-    print *,'------------ ccc ---------------'
+    print *,'------------ ccc (last interface) ---------------'
           write(*,'(a,f20.10)') ,'ccc(1) = ',ccc(1)
           write(*,'(a,f20.10)') ,'ccc(2) = ',ccc(2)
           write(*,'(a,f20.10)') ,'ccc(3) = ',ccc(3)
@@ -479,14 +647,14 @@ Subroutine precrl
           write(*,'(a,f20.10)') ,'ccc(8) = ',ccc(8)
           write(*,'(a,f20.10)') ,'ccc(9) = ',ccc(9)
           write(*,'(a,f20.10)') ,'ccc(10) = ',ccc(10)
-    print *,'--------------------------------'
+    print *,'-------------------------------------------------'
 
 End Subroutine precrl
 
 !
 !
 !
-subroutine runcrl
+subroutine runcrl(idefault)
     !use shadow_globaldefinitions
     !use shadow_beamio
     !use shadow_variables
@@ -494,28 +662,44 @@ subroutine runcrl
     
     implicit none
     
+    Integer (kind=ski),intent(in) :: idefault
     type (poolSource)  :: src
     type (poolOE), allocatable, dimension(:) :: arrOE
     Real (kind=skr), allocatable, dimension(:,:) :: ray
+    character(len=sklen)   :: filesource,filecrl,fileout
     
     Integer (kind=ski)    :: i, ncol1, npoint1, ns, iOut, iErr, iFlag, iCount
     !Character(len=3) :: stmp
     character(len=sklen)  :: stmp
     
+    if (idefault.eq.0) then
+       filesource = RSTRING("File with source (default: begin.dat): ")
+       if (trim(filesource).eq."") filesource="begin.dat"
+       filecrl = RSTRING("File with CRL definition (default: crl.01): ")
+       if (trim(filecrl).eq."") filecrl="crl.01"
+       fileout = RSTRING("File final image (star.xx type, default: final.01): ")
+       if (trim(fileout).eq."") fileout="final.01"
+    else
+       filesource="begin.dat"
+       filecrl="crl.01"
+       fileout="final.01"
+    endif
+
+
     print *,'***********************************************************************'
-    print *,'  CRL: using source from begin.dat and CRL definition from crl.01'
-    print *,'        output file: final.01 '
+    print *,'  CRL: using source from '//trim(filesource)//' and CRL definition from '//trim(filecrl)
+    print *,'        output file: '//trim(fileout)
     print *,'***********************************************************************'
-    call beamGetDim("begin.dat", ncol1, npoint1, iFlag, iErr)
+    call beamGetDim(filesource, ncol1, npoint1, iFlag, iErr)
     allocate( ray(18,npoint1) )
-    call beamLoad(ray,iErr,ncol1,npoint1,"begin.dat")
+    call beamLoad(ray,iErr,ncol1,npoint1,filesource)
     ncol = ncol1
     print *, ncol1
     npoint = npoint1
     print *,'runcrl: npoint,ncol: ',npoint1,ncol1
-    print *,'runcrl: reading crl.01...'
-    call ReadCRL("crl.01",arrOE)
-    print *,'runcrl: Done reading crl.01'
+    print *,'runcrl: reading '//trim(filecrl)//'...'
+    call ReadCRL(filecrl,arrOE)
+    print *,'runcrl: Done reading '//trim(filecrl)
     
     ns = size(arrOE)
     ! 
@@ -541,8 +725,8 @@ subroutine runcrl
     iCount = 1
     call TraceCRL(arrOE, ray, iCount)
     
-    call beamWrite(ray, iErr, ncol1, npoint1, "final.01")
-    print *,'runcrl: File written to disk: final.01' 
+    call beamWrite(ray, iErr, ncol1, npoint1, fileout)
+    print *,'runcrl: File written to disk: '//fileout 
 
     return
 End SUbroutine runcrl
@@ -569,6 +753,9 @@ End SUbroutine runcrl
   End Subroutine TraceCRL
 
 
+
+  ! this routine reads the CRL definition in crl.01 and 
+  ! creates an OE array of types with each individual lens
 
   Subroutine ReadCRL(fname,arrOE)
     Character(kind=skc, len=*), intent(in) :: fname
@@ -610,6 +797,13 @@ End SUbroutine runcrl
         stmp2 = adjustl(stmp2)
         iOut = GfGetValue(gf,"ccc("//trim(stmp2)//","//trim(stmp)//")",arrOE(i)%ccc(j)).and.iOut
       End Do
+      ! CRL finite dimensions
+      iOut = GfGetValue(gf,"FHIT_C("//trim(stmp)//")",arrOE(i)%FHIT_C).and.iOut
+      iOut = GfGetValue(gf,"FSHAPE("//trim(stmp)//")",arrOE(i)%FSHAPE).and.iOut
+      iOut = GfGetValue(gf,"RWIDX1("//trim(stmp)//")",arrOE(i)%RWIDX1).and.iOut
+      iOut = GfGetValue(gf,"RWIDX2("//trim(stmp)//")",arrOE(i)%RWIDX2).and.iOut
+      iOut = GfGetValue(gf,"RLEN1("//trim(stmp)//")",arrOE(i)%RLEN1).and.iOut
+      iOut = GfGetValue(gf,"RLEN2("//trim(stmp)//")",arrOE(i)%RLEN2).and.iOut
     End Do
   End Subroutine ReadCRL
 

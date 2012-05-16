@@ -233,7 +233,7 @@ SELECT CASE (inCommandLow)
      CALL precrl()
      inCommand=""
   CASE ("runcrl")
-     CALL runcrl()
+     CALL runcrl(0)
      inCommand=""
 
 

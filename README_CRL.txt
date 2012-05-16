@@ -3,6 +3,7 @@
      CRLs in SHADOW...   Beta version, still in development....
      
               version 1: 2012-01-27  srio@esrf.eu
+              version 2: 2012-05-16  srio@esrf.eu
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -57,9 +58,9 @@ Example 1: The CRL of Snigirev et al. Nature 384, p49 (1996)
 
 data: 
     source: 
-       E = 14 keV
-       FWHM = 150 um or Sigma = 63.8 um
-       Divergence: conical, angle=10e-6 rad
+       E = 14 keV (single line)
+       Real space Gaussian: FWHM = 150 um or Sigma = 63.8 um
+       Divergence space Conical: angle=10e-6 rad
  
     Lens: 
        N=30 holes, therefore 60 interfaces
@@ -87,15 +88,18 @@ precrl
 60
 1
 0.9999972
-0.0000000
-28.000000
+0.0
+28.0
 3000
 189.87342
+0
 3000
 189.87342
+0
 25e-4
 600e-4
 3
+crl.01
 
 exit
 
@@ -104,7 +108,11 @@ exit
 
 2) Run SHADOW (runcrl)
 
-shadow3 runcrl
+shadow3> runcrl
+File with source (default: begin.dat): begin.dat
+File with CRL definition (default: crl.01): crl.01
+File final image (star.xx type, default: final.01): final.01
+... 
 
 
 Notes: 
