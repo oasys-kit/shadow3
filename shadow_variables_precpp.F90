@@ -50,15 +50,15 @@ Module shadow_variables
     !!--
     ! this is obselete now...
     ! real(kind=kind(1.0d0)), parameter ::  N_DIM = 25001
-    real(kind=skr), parameter :: pi     = 3.141592653589793238462643
-    real(kind=skr), parameter :: twopi  = 6.283185307179586467925287
-    real(kind=skr), parameter :: pihalf = 1.570796326794896619231322
-    real(kind=skr), parameter :: todeg  =57.295779513082320876798155
-    real(kind=skr), parameter :: torad  = 0.017453292519943295769237
+    !to shadow_globaldefinitions real(kind=skr), parameter :: pi     = 3.141592653589793238462643
+    !to shadow_globaldefinitions real(kind=skr), parameter :: twopi  = 6.283185307179586467925287
+    !to shadow_globaldefinitions real(kind=skr), parameter :: pihalf = 1.570796326794896619231322
+    !to shadow_globaldefinitions real(kind=skr), parameter :: todeg  =57.295779513082320876798155
+    !to shadow_globaldefinitions real(kind=skr), parameter :: torad  = 0.017453292519943295769237
 
     ! TODO: Change these values with new codata values (see NIST)
-    real(kind=skr), parameter :: tocm =   1.239852D-4
-    real(kind=skr), parameter :: toangs = 1.239852D+4
+    !to shadow_globaldefinitions real(kind=skr), parameter :: tocm =   1.239852D-4
+    !to shadow_globaldefinitions real(kind=skr), parameter :: toangs = 1.239852D+4
     integer(kind=ski), parameter  :: aDim=10
 
     ! again the same variables encapsulated in a structure 

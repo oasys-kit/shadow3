@@ -15,7 +15,7 @@
 
 Module shadow_math
 
-    use shadow_globaldefinitions, only : ski, skr, skc, sklen
+    use shadow_globaldefinitions !, only : ski, skr, skc, sklen
     implicit none
 
 !---- Everything is private unless explicitly made public ----!
@@ -479,7 +479,7 @@ END SUBROUTINE
      SUBROUTINE	ATAN_2	(SINE,COSINE,ANGLE)
 	IMPLICIT REAL(KIND=SKR) 	(A-E,G-H,O-Z)
 	IMPLICIT INTEGER(KIND=SKI) 	(F,I-N)
-     	DATA PI /3.141592653589793238462643D0/
+     	!moved to global_definitions DATA PI /3.141592653589793238462643D0/
      	IF (COSINE.EQ.0.0D0.AND.SINE.EQ.0.0D0)	THEN
      		ANGLE = 0.0D0
      		RETURN
@@ -551,7 +551,7 @@ END SUBROUTINE
 	IMPLICIT REAL(KIND=SKR) 	(A-H,O-Z)
 	IMPLICIT INTEGER(KIND=SKI) 	(I-N)
         integer(KIND=SKI) :: is
-     	DATA 	TWOPI /6.283185307179586467925287D0/
+     	! moved to shadow_globaldefinitions DATA 	TWOPI /6.283185307179586467925287D0/
 !C 
 !C  Initialize by computing the covariance matrix
 !C 

@@ -794,13 +794,13 @@ SUBROUTINE PREREFL
 	EQUIVALENCE	(OUTFIL(1,1),RF1(1))	
 	EQUIVALENCE	(OUTFIL(1,2),RF2(1))	
 
-     	DATA	PI     	/  3.141592653589793238462643D0 /
-     	DATA	PIHALF 	/  1.570796326794896619231322D0 /
-     	DATA	TWOPI 	/  6.283185307179586476925287D0 /
-     	DATA	TODEG 	/ 57.295779513082320876798155D0 /
-     	DATA	TORAD	/  0.017453292519943295769237D0 /
-	DATA	TOCM	/  1.239852D-4		     /
-	DATA	TOANGS 	/  1.239852D+4		     /
+     	!to shadow_globaldefinitions DATA	PI     	/  3.141592653589793238462643D0 /
+     	!to shadow_globaldefinitions DATA	PIHALF 	/  1.570796326794896619231322D0 /
+     	!to shadow_globaldefinitions DATA	TWOPI 	/  6.283185307179586476925287D0 /
+     	!to shadow_globaldefinitions DATA	TODEG 	/ 57.295779513082320876798155D0 /
+     	!to shadow_globaldefinitions DATA	TORAD	/  0.017453292519943295769237D0 /
+	!to shadow_globaldefinitions DATA	TOCM	/  1.239852D-4		     /
+	!to shadow_globaldefinitions DATA	TOANGS 	/  1.239852D+4		     /
 
      	RADIUS	=   2.817939D-13
 	I_TYPE	= IRINT ('Element [0] or compound [1] ? ')

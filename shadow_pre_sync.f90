@@ -26,10 +26,10 @@ Module shadow_Pre_Sync
 !
 ! the global variables here are only used for undulator and not for wiggler
 ! 
-      	real(kind=skr),parameter :: PI=3.141592653589793238462643D0
-     	real(kind=skr),parameter :: TWOPI=6.283185307179586476925287D0
-     	real(kind=skr),parameter :: PIHALF=1.570796326794896619231322D0
-     	real(kind=skr),parameter :: TOANGS=1.239852D+4
+      	!to shadow_globaldefinitions real(kind=skr),parameter :: PI=3.141592653589793238462643D0
+     	!to shadow_globaldefinitions real(kind=skr),parameter :: TWOPI=6.283185307179586476925287D0
+     	!to shadow_globaldefinitions real(kind=skr),parameter :: PIHALF=1.570796326794896619231322D0
+     	!to shadow_globaldefinitions real(kind=skr),parameter :: TOANGS=1.239852D+4
 
 !todo: check physical constants
 

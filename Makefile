@@ -119,6 +119,9 @@ examples:
 	$(CCP) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
 	$(CCP) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
 
+	$(FC) $(FFLAGS) -c example_standalone_mirror.f90 -o example_standalone_mirror.o
+	$(FC) $(FFLAGS) -o example_standalone_mirror example_standalone_mirror.o -L. -lshadow3
+
 ifeq ($(MPI),1)
 	$(MPIFC) $(FFLAGS) -c trace3mpi.f90
 	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow3 -lmpi_f90

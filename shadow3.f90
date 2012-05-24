@@ -249,6 +249,9 @@ SELECT CASE (inCommandLow)
   CASE ("sysplot")
      CALL sysplot()
      inCommand=""
+  CASE ("retrace")
+     CALL retrace_interface()
+     inCommand=""
   CASE ("exit")
      !STOP "GO ended."
      EXIT
@@ -303,7 +306,8 @@ SELECT CASE (inCommandLow)
      print *,'                    : mkdatafiles' 
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
-     print *,'                    : focnew intens recolor ffresnel'
+     print *,'                    : focnew intens recolor ffresnel ffresnel2d'
+     print *,'                    : retrace'
      print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''

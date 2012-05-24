@@ -42,7 +42,7 @@ Module Shadow_PostProcessors
     public :: SourcInfo,MirInfo,SysInfo,Translate,PlotXY
     public :: histo1,histo1_calc, histo1_calc_easy, intens_calc
     public :: FFresnel,FFresnel2D,FFresnel2D_Interface,ReColor,Intens,FocNew
-    public :: sysplot
+    public :: sysplot, retrace, retrace_interface, shrot, shtranslation
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -4298,4 +4298,179 @@ IF (NPOINT.GT.500) NPOINT = 500
 1000        FORMAT (A)
 1010        FORMAT (1X,A)
 END Subroutine sysplot
+
+!
+! SHROT: rotates the beam an angle theta around the axis X,Y or Z
+!
+! inputs: 
+!        ray: the beam array
+!        np: number of points in ray
+!        theta: the rotation angle in rad
+!        axis: 1,2 or 3 for rotation around X,Y or Z, respectively
+! outputs: 
+!        ray (overwritten): the array with the rotated beam
+!
+!
+
+subroutine shrot(ray,np,theta,axis)
+    !use shadow_globaldefinitions
+      real(kind=skr), dimension(18,np), intent(inout) :: ray
+      integer(kind=ski), intent(in)                   :: np,axis
+      real(kind=skr), intent(in)                      :: theta
+      
+      real(kind=skr), dimension(np) :: x,y,xx,yy
+      real(kind=skr)                :: sinth,costh
+      integer(kind=ski),dimension(4):: tstart
+      integer(kind=ski)             :: i1,i2,j
+
+      tstart = (/ 1,4,7,16 /)
+      costh =   cos(theta)
+      sinth =   sin(theta)
+         
+      DO j=1,4
+        select case (axis)
+        case (1)  ! rotation around X
+          i1 = tstart(j)+1
+          i2 = tstart(j)+2
+        case (2)  ! rotation around Y
+          i1 = tstart(j)-1
+          i2 = tstart(j)+1
+        case (3)  ! rotation around Z
+          i1 = tstart(j)-2
+          i2 = tstart(j)-1
+        case default
+          print *,'SHROT: invalid rotation axis: ',axis
+          stop
+        end select 
+
+        x = ray(i1,:)
+        y = ray(i2,:)
+        xx = 0.0
+        yy = 0.0
+  
+        xx =  x*costh+y*sinth
+        yy = -x*sinth+y*costh
+  
+        ray(i1,:) = xx
+        ray(i2,:) = yy
+      END DO
+      
+      return      
+end subroutine shrot
+
+!
+! SHTRANSLATION: translates the beam by a vector
+!
+! inputs: 
+!        ray: the beam array
+!        np: number of points in ray
+!        translation: the translation vector
+! outputs: 
+!        ray (overwritten): the array with the rotated beam
+!
+!
+subroutine shtranslation(ray,np,translation)
+    !use shadow_globaldefinitions
+      real(kind=skr), dimension(18,np), intent(inout) :: ray
+      integer(kind=ski), intent(in)                   :: np
+      real(kind=skr),dimension(3), intent(in)      :: translation
+      
+      ray(1,:) = ray(1,:)+translation(1)
+      ray(2,:) = ray(1,:)+translation(2)
+      ray(3,:) = ray(1,:)+translation(3)
+      return      
+end subroutine shtranslation
+
+!
+! TRANSLATE: propagates the beam in vacuum to a plane perpendiculat to the 
+!            optical axis
+!
+! inputs: 
+!        ray: the beam array
+!        np: number of points in ray
+!        distance: the distance to the image plane
+!        resetY: reset all the Y values to zero (0=no, 1=yes)
+! outputs: 
+!        ray (overwritten): the array with the rotated beam
+!
+!
+subroutine retrace(ray,np,distance,resetY)
+    !use shadow_globaldefinitions
+      real(kind=skr), dimension(18,np), intent(inout) :: ray
+      integer(kind=ski), intent(in)                   :: np,resetY
+      real(kind=skr), intent(in)                      :: distance
+
+      real(kind=skr),dimension(3)      :: tmpv
+      real(kind=skr),dimension(np)     :: rdist
+      integer(kind=ski)                :: i
+      
+      rdist = -ray(2,:)
+      rdist = (rdist+distance)/ray(5,:)
+
+      ! check for perpendicular rays
+      do i=1,np
+         if (ray(5,i).lt.1d-16) rdist(i) = 0.0
+      end do
+      ray(1,:) = ray(1,:)+rdist*ray(4,:)
+      ray(2,:) = ray(2,:)+rdist*ray(5,:)
+      ray(3,:) = ray(3,:)+rdist*ray(6,:)
+      if (resetY.eq.1) ray(2,:) = 0.0
+      return      
+end subroutine retrace
+
+!
+! this is an prompt interface to call retrace from shadow3
+!
+SUBROUTINE retrace_interface
+
+implicit none
+
+character(len=sklen) :: inFile1,outFile1
+real(kind=skr),dimension(:,:),allocatable :: ray
+integer(kind=ski) :: ncol,np1,iflag,ierr,resetY
+real(kind=skr) :: dist
+           
+INFILE1 =  RSTRING('RETRACE> Beam input file ? ')
+OUTFILE1 = RSTRING ('RETRACE> Beam output file ? ')
+DIST    =  RNUMBER ('RETRACE> Distance ? ')
+RESETY  =  IRINT('RETRACE> reset to zero all Y coordinates [0/1]?')
+
+! 
+! read input file 
+!
+CALL    beamGetDim (inFile1,ncol,np1,iflag,ierr)
+IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+  print *,'Retrace: beamGetDim: Error in file: '//trim(inFile1)
+  return
+END IF
+
+ALLOCATE( RAY(18,NP1) )
+ray=0.0d0
+
+CALL beamLoad(ray,ierr,ncol,np1,inFile1)
+
+!
+! do the job
+!
+call retrace(ray,np1,dist,resetY)
+!
+! write results
+!
+call beamWrite(ray, iErr, ncol, np1, outfile1)
+if (ierr.eq.0) then
+  print *,'File written to disk: '//trim(outfile1)
+else
+  print *,'ERROR writing file: '//trim(outfile1)
+end if
+
+!
+! clean
+!
+IF (allocated(ray)) deallocate(ray)
+
+RETURN
+
+END SUBROUTINE retrace_interface
+
+
 End Module Shadow_PostProcessors
