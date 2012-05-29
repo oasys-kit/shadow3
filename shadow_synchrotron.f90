@@ -1788,6 +1788,8 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
             real(kind=skr),dimension(4)        :: II,DX,PHI_INT
             real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
     
+            integer(kind=ski) :: n_rej=0, k_rej=0
+    
     ! C
     ! C Save the *big* arrays so it will:
     ! C  -- zero out the elements.
@@ -2107,7 +2109,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C sets up the acceptance/rejection method for optimizing source
     ! C notice that this is acceptable ONLY for random sources
     ! C
-         	IF ( F_BOUND_SOUR.EQ.1 .AND. FGRID.EQ.0 ) THEN
+         	IF ( F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
                   ITMP=-1
          	  CALL 	SOURCE_BOUND (XDUM,YDUM,ITMP)
          	END IF
@@ -3006,7 +3008,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C All rays are generated. Test for acceptance if optimized source is
     ! C specified.
     ! C
-         	IF (F_BOUND_SOUR.EQ.1 .AND. FGRID.EQ.0 ) THEN
+         	IF (F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
          	  SB_POS(1) = XXX
          	  SB_POS(2) = YYY 
          	  SB_POS(3) = ZZZ
@@ -3015,12 +3017,28 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
          	 IF (ITEST.LT.0) THEN
          	   K_REJ = K_REJ + 1
          	   N_REJ = N_REJ + 1
-    ! C     	   WRITE(6,*) 'itest ===',ITEST
-         	  IF (K_REJ.EQ.500) THEN
-         	    WRITE(6,*)N_REJ,'   rays have been rejected so far.'
-         	    WRITE(6,*)ITIK, '                  accepted.'
-         	    K_REJ = 0
-         	  END IF 
+
+          ! C     	   WRITE(6,*) 'itest ===',ITEST
+          !IF (K_REJ.EQ.500) THEN
+          IF (K_REJ.EQ.(NTOTAL/10)) THEN
+             WRITE(6,*)N_REJ,'   rays have been rejected so far.'
+             WRITE(6,*)ITIK, '                  accepted.'
+             K_REJ = 0
+          END IF
+          if (n_rej.gt.ntotal*10000) then
+            PRINT *,'sourceSync: too many rejected rays (>1000 * total rays)'
+            PRINT *,'sourceSync:    check inputs and file: '//trim(file_bound)
+            STOP 'Fatal error. Aborted.'
+stop
+          endif
+
+!    ! C     	   WRITE(6,*) 'itest ===',ITEST
+!         	  IF (K_REJ.EQ.500) THEN
+!         	    WRITE(6,*)N_REJ,'   rays have been rejected so far.'
+!         	    WRITE(6,*)ITIK, '                  accepted.'
+         	    !K_REJ = 0
+!         	  END IF 
+
     	  DO 301 J=1,6
          	    GRID(J,ITIK) = WRAN(ISTAR1)
     301    	  CONTINUE
@@ -3050,8 +3068,20 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     !TODO: work without globals!!!!
     CALL GlobalToPoolSource(pool00)
 
-         	WRITE(6,*)'Exit from SOURCE'
-         	RETURN
+
+    ntotalpoint = N_REJ+(ITIK-1)
+    if (n_rej .gt. 0) then
+      WRITE(6,*)'----------------------------------------------------------------'
+      WRITE(6,*)'  source optimization (rejection, variance reduction) used: '
+      WRITE(6,*)N_REJ+(ITIK-1),'   total number of rays have been created.'
+      WRITE(6,*)(ITIK-1),      '                  accepted (stored).'
+      WRITE(6,*)N_REJ,         '                  rejected.'
+      WRITE(6,*)real(N_REJ+ITIK-1)/real(ITIK-1), '      created/accepted ratio.'
+      WRITE(6,*)'----------------------------------------------------------------'
+    endif
+
+    WRITE(6,*)'Exit from SOURCE'
+    RETURN
     End Subroutine SOURCESYNC
     !
     !

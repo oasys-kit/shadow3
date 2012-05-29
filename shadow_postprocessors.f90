@@ -43,6 +43,7 @@ Module Shadow_PostProcessors
     public :: histo1,histo1_calc, histo1_calc_easy, intens_calc
     public :: FFresnel,FFresnel2D,FFresnel2D_Interface,ReColor,Intens,FocNew
     public :: sysplot, retrace, retrace_interface, shrot, shtranslation
+    public :: minmax, reflag, histo3
 
     !---- List of private functions ----!
     !---- List of private subroutines ----!
@@ -70,28 +71,28 @@ Module Shadow_PostProcessors
 !C
 !C---
 SUBROUTINE SourcInfo
-	implicit none
+        implicit none
+       
+        type (poolSource)      ::  pool00
 
-	type (poolSource)      ::  pool00
-
-	character(len=sklen) :: inFile1,file_Out,cd
-	character(len=80) :: comment,title
-	character(len=79),parameter :: topLin= &
+        character(len=sklen) :: inFile1,file_Out,cd
+        character(len=80) :: comment,title
+        character(len=79),parameter :: topLin= &
 '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-	character(len=20),dimension(5) :: tSpatial,tDepth,tPhot
-	character(len=20),dimension(7) :: tAng
-	character(len=20),dimension(3) :: tPol
-	character(len=20)              :: break
-	real(kind=skr),dimension(10)   :: photonArray,wave
+        character(len=20),dimension(5) :: tSpatial,tDepth,tPhot
+        character(len=20),dimension(7) :: tAng
+        character(len=20),dimension(3) :: tPol
+        character(len=20)              :: break
+        real(kind=skr),dimension(10)   :: photonArray,wave
 
-	! for date_and_time
-	character(8)  :: date
-	character(10) :: time
-	character(5)  :: zone
-	integer,dimension(8) :: values
+        ! for date_and_time
+        character(8)  :: date
+        character(10) :: time
+        character(5)  :: zone
+        integer,dimension(8) :: values
 
-     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+     	!mv to global_definitions real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
+	!mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 	integer(kind=ski)        :: J
 
 
@@ -296,7 +297,7 @@ BREAK	='    ----------------'
 3110	FORMAT (1X,' to  Photon Energy: ',G17.9,' or ',G17.9,' Angs.')
      	  END IF
 	END IF
-     	  IF (pool00%F_POLAR.EQ.1) THEN
+     	IF (pool00%F_POLAR.EQ.1) THEN
      	    WRITE (30,3130) pool00%POL_ANGLE*TODEG
 3130	FORMAT (1X,'Angular difference in phase is ',G12.5)
      	    WRITE (30,3140) pool00%POL_DEG
@@ -307,6 +308,16 @@ BREAK	='    ----------------'
 	      WRITE (30,*) 'Source points have COHERENT phase.'
 	    END IF
      	  END IF
+          ! source optimization/rejection
+          IF (pool00%F_BOUND_SOUR.GT.0) THEN
+             write(30,*) 'Source optimization (rejection, variance reduction) used: '
+             write(30,*) '    total number of rays been created: ',pool00%NTOTALPOINT
+             write(30,*) '    accepted rays (stored): ',pool00%NPOINT
+             write(30,*) '    rejected:               ', & 
+                         pool00%NTOTALPOINT-pool00%NPOINT
+             write(30,*) '    created/accepted ratio: ', & 
+                         real(pool00%NTOTALPOINT)/real(pool00%NPOINT)
+          END IF
 !C
 !C All completed.
 !C
@@ -351,8 +362,8 @@ SUBROUTINE MirInfo
 	integer,dimension(8) :: values
 
 ! todo: check that this is also defined in shadow_kernel...
-     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+     	!mv to global_definitions real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
+	!mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 	real(kind=skr)           ::ECCENT,AFOCI
 	integer(kind=ski)        :: J
 
@@ -1504,10 +1515,10 @@ SUBROUTINE PlotXY
         real(kind=skr),dimension(:),allocatable   :: XPLOT,YPLOT,XLOSS,YLOSS,weightPlot
         logical :: lExists
 
-     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
-     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
+     	!mv to global_definitions real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
+	!mv to global_definitions real(kind=skr),parameter ::TOCM=  1.239852D-4		     
+	!mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+     	!mv to global_definitions real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
      	character(len=sklen) :: FILE_IN, FILE_I0, dataDir
      	character(len=80) :: TEXT,TEXT1,TEXT2,TEXT3,TEXT4,TEXT5
      	character(len=80) :: TEXT6,TEXT7,TEXT8
@@ -3083,13 +3094,13 @@ END SUBROUTINE FFresnel2d_Interface
 SUBROUTINE ReColor
 	implicit none
 
-     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
-     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
-	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+     	!mv to global_definitions real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
+     	!mv to global_definitions real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
+     	!mv to global_definitions real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
+     	!mv to global_definitions real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
+     	!mv to global_definitions real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
+	!mv to global_definitions real(kind=skr),parameter ::TOCM=  1.239852D-4		     
+	!mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 
 	character(len=sklen) :: inFile,outFile
 	integer(kind=ski)   :: iErr,iFlag,npoint,ncol,iWhat,nLines,i,iSeed
@@ -3209,9 +3220,9 @@ END SUBROUTINE ReColor
 SUBROUTINE Intens
 	implicit none
 
-     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+     	!mv to shadow_globaldefinitions real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
+	!mv to shadow_globaldefinitions real(kind=skr),parameter ::TOCM=  1.239852D-4		     
+	!mv to shadow_globaldefinitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 
 	character(len=sklen)  :: file1,file2,outFil
 	real(kind=skr),dimension(:,:),allocatable :: ray1,ray2
@@ -4380,6 +4391,401 @@ subroutine shtranslation(ray,np,translation)
       ray(3,:) = ray(1,:)+translation(3)
       return      
 end subroutine shtranslation
+
+!C+++
+!C    PROGRAM        MINMAX
+!C
+!C    purpose        To locate maxima and minima in our ray arrays.
+!C
+!C---
+   subroutine minmax
+    implicit none
+
+    character(len=sklen) :: fileIn
+    real(kind=skr),dimension(:,:),allocatable :: ray
+    integer(kind=ski) :: ncol,npoint,iflag,ierr
+    integer(kind=ski) :: kloss,kount,i
+    real(kind=skr),dimension(6) :: test
+    real(kind=skr) :: check
+    real(kind=skr) :: xmin, xmax, ymin, ymax, zmin, zmax
+    real(kind=skr) :: x1min, x1max, y1min, y1max, z1min, z1max
+
+               
+    fileIn =  RSTRING('MINMAX> Beam input file ? ')
+
+    ! 
+    ! read input file 
+    !
+    CALL    beamGetDim (fileIn,ncol,npoint,iflag,ierr)
+    IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+      print *,'MinMax: beamGetDim: Error in file: '//trim(fileIn)
+      return
+    END IF
+
+    ALLOCATE( RAY(18,npoint) )
+    ray=0.0d0
+    
+    CALL beamLoad(ray,ierr,ncol,npoint,fileIn)
+    
+    WRITE(6,*)'Options --- Enter'
+    WRITE(6,*)'0 for excluding the losses'
+    WRITE(6,*)'1 for including losses at a particular O.E.'
+    WRITE(6,*)'2 for including all the losses.'
+    KLOSS    =   IRINT ('Then ? ')
+    IF (KLOSS.EQ.1) THEN
+           WRITE(6,*) 'Flag value ( -11000 first O.E., -22000 sec O.E., etc.) ?'
+           CHECK    =   RNUMBER ('Then ? ')
+    ELSE
+    END IF
+    KOUNT    =   0
+    DO I=1,NPOINT
+          IF (RAY(10,I).LT.0.0) KOUNT = KOUNT + 1
+    END DO
+100 CONTINUE
+    WRITE(6,*)'***********'
+    WRITE(6,*)'File examined is :'//trim(fileIn)
+    WRITE(6,*)'Found ',(NPOINT-KOUNT),' good points out of',NPOINT
+    XMIN =   1.0D+20
+    XMAX = - 1.0D+20
+    YMIN =   1.0D+20
+    YMAX = - 1.0D+20
+    ZMIN =   1.0D+20
+    ZMAX = - 1.0D+20
+
+    X1MIN =   1.0D+20
+    X1MAX = - 1.0D+20
+    Y1MIN =   1.0D+20
+    Y1MAX = - 1.0D+20
+    Z1MIN =   1.0D+20
+    Z1MAX = - 1.0D+20
+    DO 300 I=1,NPOINT
+       IF (KLOSS.EQ.0) THEN
+             IF (RAY(10,I).LT.0.0D0)   GO TO 300
+       ELSE IF (KLOSS.EQ.1) THEN
+             IF (RAY(10,I).LT.0.0D0.AND.RAY(10,I).NE.CHECK) GO TO 300
+       ELSE
+       END IF
+       TEST(1)    =   RAY(1,I)
+       TEST(2)    =   RAY(2,I)
+       TEST(3)    =   RAY(3,I)
+       TEST(4)    =   RAY(4,I)
+       TEST(5)    =   RAY(5,I)
+       TEST(6)    =   RAY(6,I)
+       XMIN = MIN(XMIN,TEST(1))
+       XMAX = MAX(XMAX,TEST(1))
+       YMIN = MIN(YMIN,TEST(2))
+       YMAX = MAX(YMAX,TEST(2))
+       ZMIN = MIN(ZMIN,TEST(3))
+       ZMAX = MAX(ZMAX,TEST(3))
+       X1MIN = MIN(X1MIN,TEST(4))
+       X1MAX = MAX(X1MAX,TEST(4))
+       Y1MIN = MIN(Y1MIN,TEST(5))
+       Y1MAX = MAX(Y1MAX,TEST(5))
+       Z1MIN = MIN(Z1MIN,TEST(6))
+       Z1MAX = MAX(Z1MAX,TEST(6))
+300 CONTINUE
+
+    WRITE(6,*)'Here we are.'
+
+    WRITE(6,*)'X max is',XMAX
+    WRITE(6,*)'X min is',XMIN
+    WRITE(6,*)'Y max is',YMAX
+    WRITE(6,*)'Y min is',YMIN
+    WRITE(6,*)'Z max is',ZMAX
+    WRITE(6,*)'Z min is',ZMIN
+
+    WRITE(6,*)'X prime max is',X1MAX
+    WRITE(6,*)'X prime min is',X1MIN
+    WRITE(6,*)'Y prime max is',Y1MAX
+    WRITE(6,*)'Y prime min is',Y1MIN
+    WRITE(6,*)'Z prime max is',Z1MAX
+    WRITE(6,*)'Z prime min is',Z1MIN
+    WRITE(6,*)'***********'
+
+    !
+    ! clean
+    !
+    IF (allocated(ray)) deallocate(ray)
+   end subroutine minmax
+
+
+!C+++
+!C       PROGRAM         REFLAG
+!C
+!C       PURPOSE         To modify the good/lost flag in a given ray file
+!C                       accordingly to those of another one. Typically
+!C                       used to study the rays that will be lost from a
+!C                       given source.
+!C
+!C       ALGORITHM       None
+!C
+!C       INPUTS          Two RAY  files
+!C
+!C       OUTPUT          Another ray file
+!C
+!C+++
+
+   subroutine reflag
+    implicit none
+
+    character(len=sklen) :: fileIn1, fileIn2,fileOut
+    real(kind=skr),dimension(:,:),allocatable :: ray1, ray2
+    integer(kind=ski) :: ncol1,npoint1,iflag,ierr,i
+    integer(kind=ski) :: ncol2,npoint2
+
+               
+    fileIn1 = RSTRING('REFLAG> File to be modified [ e.g. begin.dat ] ? ')
+    fileIn2 = RSTRING('REFLAG> File to use as modifier [ e.g. screen.0503 ] ? ')
+    fileOut = RSTRING('REFLAG> Output file ? ')
+
+
+    ! 
+    ! read input file 
+    !
+    CALL    beamGetDim (fileIn1,ncol1,npoint1,iflag,ierr)
+    IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+      print *,'Reflag: beamGetDim: Error in file: '//trim(fileIn2)
+      return
+    END IF
+    ALLOCATE( RAY1(18,npoint1) )
+    ray1=0.0d0
+    CALL beamLoad(ray1,ierr,ncol1,npoint1,fileIn1)
+    
+    CALL    beamGetDim (fileIn2,ncol2,npoint2,iflag,ierr)
+    IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+      print *,'Reflag: beamGetDim: Error in file: '//trim(fileIn2)
+      return
+    END IF
+    ALLOCATE( RAY2(18,npoint2) )
+    ray2=0.0d0
+    CALL beamLoad(ray2,ierr,ncol2,npoint2,fileIn2)
+    
+    IF (npoint1.NE.npoint2) THEN
+      WRITE(6,*) 'Sorry, different number of rays.'
+      WRITE(6,*)'You most likely have used wrong files. Please try again.'
+      return
+    END IF
+    IF (ncol1.NE.ncol1) THEN
+      WRITE(6,*)'Sorry, different number of columns.'
+      WRITE(6,*)'You most likely have used wrong files. Please try again.'
+      return
+    END IF
+
+    DO I=1,npoint1
+          RAY1 (10,I) = RAY2 (10,I)
+    END DO
+
+    call beamWrite(ray1, iErr, nCol1, nPoint1, fileOut)
+    if (ierr.eq.0) then
+      print *,'File written to disk: '//trim(fileOut)
+    else
+      print *,'Reflag: ERROR writing file: '//trim(fileOut)
+    end if
+
+    !
+    ! clean
+    !
+    IF (allocated(ray1)) deallocate(ray1)
+    IF (allocated(ray2)) deallocate(ray2)
+   end subroutine reflag
+
+!C+++
+!C
+!C      PROGRAM     HISTO3
+!C
+!C      PURPOSE     Generates a three-dimensional histogram from an
+!C                  output file of SHADOW. The purpose is that of
+!C                  optimizing the source. In some optical systems the
+!C                  number of rays traced through may be very small
+!C                  because of the mismatch between a standard source
+!C                  and the system etendue. This program defines the
+!C                  fraction of phase space that generates ``good''
+!C                  rays and limits the source generation to that 
+!C                  volume. Notice that HISTO3 assumes that the
+!C                  variables (x,y,z) are independent.
+!C
+!C      INPUT       A ray file generated by SHADOWIT or REFLAG containing the
+!C                  begin.dat file with the lost rays so labeled. 
+!C
+!C      OUTPUT      A file for use by SHADOW in the SOURCE generation.
+!C
+!C      ALGORITHM   The program will create three arrays that
+!C                  are filled with 1's when at least one ray falls
+!C            within the limits.
+!C---
+
+    subroutine histo3
+
+    implicit none
+
+    character(len=sklen) :: infile, outfile
+
+    real(kind=skr), dimension (101,101) :: ix, iy, iz
+
+    real(kind=skr),dimension(:,:),allocatable :: ray
+    integer(kind=ski) :: ncol,npoint,iflag,ierr,i,j
+    integer(kind=ski) :: kount, nx, ny, nz, nx1, ny1, nz1
+
+    real(kind=skr) :: xmin, xmax, ymin, ymax, zmin, zmax
+    real(kind=skr) :: x1min, x1max, y1min, y1max, z1min, z1max
+    real(kind=skr) :: xs, ys, zs, xs1, ys1, zs1
+    integer(kind=ski) :: jx, jy, jz, jx1, jy1, jz1
+    real(kind=skr),dimension(6) :: test
+
+             
+    infile =  RSTRING('HISTO3> Beam input file ? ')
+
+    ! 
+    ! read input file 
+    !
+    CALL    beamGetDim (infile,ncol,npoint,iflag,ierr)
+    IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
+      print *,'Histo3: beamGetDim: Error in file: '//trim(infile)
+      return
+    END IF
+
+    ALLOCATE( RAY(18,npoint) )
+    ray=0.0d0
+    CALL beamLoad(ray,ierr,ncol,npoint,infile)
+  
+    OUTFILE =  RSTRING ('Output file      ? ')
+
+!C
+!C Prepare arrays
+!C
+    KOUNT = 0
+    DO I=1,NPOINT
+          IF (RAY(10,I).LT.0.0) KOUNT = KOUNT + 1
+    END DO
+    WRITE(6,*)'Found ',(NPOINT-KOUNT),' good points out of',NPOINT
+         XMIN =   1.0D+20
+         XMAX = - 1.0D+20
+         YMIN =   1.0D+20
+         YMAX = - 1.0D+20
+         ZMIN =   1.0D+20
+         ZMAX = - 1.0D+20
+
+         X1MIN =   1.0D+20
+         X1MAX = - 1.0D+20
+         Y1MIN =   1.0D+20
+         Y1MAX = - 1.0D+20
+         Z1MIN =   1.0D+20
+         Z1MAX = - 1.0D+20
+         DO 300 I=1,NPOINT
+       IF (RAY(10,I).LT.0.0D0)   GO TO 300
+         TEST(1)    =   RAY(1,I)
+         TEST(2)    =   RAY(2,I)
+         TEST(3)    =   RAY(3,I)
+         TEST(4)    =   RAY(4,I)
+         TEST(5)    =   RAY(5,I)
+         TEST(6)    =   RAY(6,I)
+         XMIN = MIN(XMIN,TEST(1))
+         XMAX = MAX(XMAX,TEST(1))
+         YMIN = MIN(YMIN,TEST(2))
+         YMAX = MAX(YMAX,TEST(2))
+         ZMIN = MIN(ZMIN,TEST(3))
+         ZMAX = MAX(ZMAX,TEST(3))
+         X1MIN = MIN(X1MIN,TEST(4))
+         X1MAX = MAX(X1MAX,TEST(4))
+         Y1MIN = MIN(Y1MIN,TEST(5))
+         Y1MAX = MAX(Y1MAX,TEST(5))
+         Z1MIN = MIN(Z1MIN,TEST(6))
+300      Z1MAX = MAX(Z1MAX,TEST(6))
+
+         WRITE(6,*)'Here we are.'
+
+         WRITE(6,*)'X max is',XMAX
+         WRITE(6,*)'X min is',XMIN
+         WRITE(6,*)'Y max is',YMAX
+         WRITE(6,*)'Y min is',YMIN
+         WRITE(6,*)'Z max is',ZMAX
+         WRITE(6,*)'Z min is',ZMIN
+
+         WRITE(6,*)'X prime max is',X1MAX
+         WRITE(6,*)'X prime min is',X1MIN
+         WRITE(6,*)'Y prime max is',Y1MAX
+         WRITE(6,*)'Y prime min is',Y1MIN
+         WRITE(6,*)'Z prime max is',Z1MAX
+         WRITE(6,*)'Z prime min is',Z1MIN
+!C
+!C Inquire about the histogram size
+!C
+         NX  = IRINT ('How many bins in X  [ default 25 ] ? ')
+         IF (NX.EQ.0) NX = 25
+         NX1 = IRINT ('How many bins in X`          ? ')
+         IF (NX1.EQ.0) NX1 = 25
+         NY  = IRINT ('How many bins in Y           ? ')
+         IF (NY.EQ.0) NY = 25
+         NY1 = IRINT ('How many bins in Y`          ? ')
+         IF (NY1.EQ.0) NY1 = 25
+         NZ  = IRINT ('How many bins in Z           ? ')
+         IF (NZ.EQ.0) NZ = 25
+         NZ1 = IRINT ('How many bins in Z`          ? ')
+         IF (NZ1.EQ.0) NZ1 = 25
+!C
+!C Compute histogram steps
+!C
+         XS    =  (XMAX - XMIN)    /NX
+         XS1    =  (X1MAX - X1MIN)/NX1
+         YS    =  (YMAX - YMIN)    /NY
+         YS1    =  (Y1MAX - Y1MIN)/NY1
+         ZS    =  (ZMAX - ZMIN)    /NZ
+         ZS1    =  (Z1MAX - Z1MIN)/NZ1
+!C
+!C Build now the arrays
+!C
+         DO I=1,NPOINT
+          IF (RAY(10,I).GE.0.0) THEN
+             JX  = 1
+            JY  = 1
+            JZ  = 1
+            JX1 = 1
+            JY1 = 1
+            JZ1 = 1
+           IF (ABS(XS).GT.1.0D-10)  JX  = (RAY(1,I) - XMIN)   /XS  + 1
+           IF (ABS(XS1).GT.1.0D-10) JX1 = (RAY(4,I) - X1MIN) /XS1 + 1
+           IF (ABS(YS).GT.1.0D-10)  JY  = (RAY(2,I) - YMIN)   /YS  + 1
+           IF (ABS(YS1).GT.1.0D-10) JY1 = (RAY(5,I) - Y1MIN) /YS1 + 1
+           IF (ABS(ZS).GT.1.0D-10)  JZ  = (RAY(3,I) - ZMIN)   /ZS  + 1
+           IF (ABS(ZS1).GT.1.0D-10) JZ1 = (RAY(6,I) - Z1MIN) /ZS1 + 1
+            IX (JX,JX1) = 1
+            IY (JY,JY1) = 1
+            IZ (JZ,JZ1) = 1
+          END IF
+         END DO
+!C
+!C Write out arrays
+!C
+         !OPEN (21, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
+         ! changed to formatted, at leas we can see what is there!
+         ! srio@esrf.eu 20120525
+         OPEN (21, FILE=OUTFILE, STATUS='UNKNOWN', FORM='FORMATTED')
+         REWIND (21)
+         WRITE (21,*) NX,  XMIN,   XS
+         WRITE (21,*) NX1, X1MIN, XS1
+         WRITE (21,*) NY,  YMIN,   YS
+         WRITE (21,*) NY1, Y1MIN, YS1
+         WRITE (21,*) NZ,  ZMIN,   ZS
+         WRITE (21,*) NZ1, Z1MIN, ZS1
+         DO I=1,NX
+           WRITE (21,*) (IX(I,J),J=1,NX1)
+         END DO
+         DO I=1,NY
+           WRITE (21,*) (IY(I,J),J=1,NY1)
+         END DO
+         DO I=1,NZ
+           WRITE (21,*) (IZ(I,J),J=1,NZ1)
+         END DO
+         CLOSE (21)
+         print *,'File written to disk: '//trim(outfile)
+
+    ! 
+    ! clean 
+    !
+    if (allocated(ray)) deallocate(ray)
+    return
+
+   end subroutine histo3
 
 !
 ! TRANSLATE: propagates the beam in vacuum to a plane perpendiculat to the 

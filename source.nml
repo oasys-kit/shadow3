@@ -153,6 +153,12 @@
             	   ''
  file_bound	=  		  - for f_bound_sour=1; file containing
            	   ''		    the output of reflag and histo3.
+                                  - for f_bound_sour=2; file containing
+                                    the slit / acceptance : 
+                                    DIST X1 X2 Z1 Z2
+                                    DIST: distance to slit (use 0 for angular 
+                                    acceptance), X1 X2 slit limits (user unit)
+                                    of angles (if DIST=0) in X. Same for Z.
  oe_number	=             0   - the last variables are set in the
  idummy	=             0		    source generation and recorded in
  dummy	=  0.0000000000000000E+00   END.00 file.  They should be left

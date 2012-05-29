@@ -570,55 +570,119 @@ Contains
   !C 
   !C 	Algorithm		Acceptance/rejection method.
   !C 
+  !     Modified:               srio@esrf.eu 2012-05-24
+  !                             Two methods are available:
+  !
+  !                             F_BOUND_SOUR = 1 : the "traditional" method
+  !                             as described in the SHADOW SOURCE USER GUIDE
+  !                             This method is based over sampling on a 3D
+  !                             histogram, it is cumbersome and the results 
+  !                             are usually not accurate.
+  !
+  !                             F_BOUND_SOUR = 2 : the new method that send
+  !                             each ray to a rectangular slit at a given 
+  !                             distance DIST, and the ray is rejected if not 
+  !                             passing trough the slit. 
+  !                             The file format with the slit info is:
+  !                             DIST  H_MIN H_MAX V_MIN V_MAX
+  !                             Where 
+  !                             DIST is the distance from the source to the slit
+  !                             H_MIN H_MAX are the slit horizontal limits 
+  !                                         (in user units)
+  !                             V_MIN V_MAX are the slit horizontal limits 
+  !                                         (in user units)
+  !                             If DIST is set to zero, then an "angular"
+  !                             aperture is used, where H_MIN H_MAX 
+  !                             V_MIN V_MAX are the angular limits in rads.
+  !
+  !
+  !
   !C ---
   
-  SUBROUTINE	SOURCE_BOUND	(POS, DIR, IFLAG)
+  SUBROUTINE SOURCE_BOUND (POS, DIR, IFLAG)
     
     
-    ! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
-    ! IMPLICIT	INTEGER*4	(F,I-N)
-    IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-    IMPLICIT INTEGER(kind=ski)        (F,I-N)
+    implicit none
+    !IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+    !IMPLICIT INTEGER(kind=ski)        (F,I-N)
     
     !C 
     !C  Save the values that the caller expects to be there next time this
     !C  routine is called. The following chunk is basically an unnamed COMMON
     !C  block (w/out the corruption of the namespace, of course).
     !C 
-    SAVE		IX, IY, IZ, XMIN, YMIN, ZMIN, &
+    real(kind=skr),dimension(3),intent(in) :: POS,DIR
+    integer(kind=ski)                      :: IFLAG
+
+    !DIMENSION	POS(3), DIR(3)
+    !DIMENSION	IX(101,101), IY(101,101), IZ(101,101)
+    real(kind=skr),dimension(101,101)  :: IX,IY,IZ
+    real(kind=skr)  :: XMIN, YMIN, ZMIN, XS, X1S, YS, Y1S, ZS, Z1S
+    real(kind=skr)  :: X1MIN, Y1MIN, Z1MIN
+    integer(kind=ski) :: NX, NX1, NY, NY1, NZ, NZ1
+    integer(kind=ski) :: ierr,i,j,jx,j1x,jy,j1y,jx1,jy1,jz,jz1
+    real(kind=skr)  :: distSlit, h_min, h_max, v_min, v_max
+    real(kind=skr)  :: rdist, posSlitH, posSlitV
+
+    SAVE IX, IY, IZ, XMIN, YMIN, ZMIN, &
          NX, NX1, NY, NY1, NZ, NZ1, &
          XS, X1S, YS, Y1S, ZS, Z1S, &
-         X1MIN, Y1MIN, Z1MIN
-    DIMENSION	POS(3), DIR(3)
-    DIMENSION	IX(101,101), IY(101,101), IZ(101,101)
+         X1MIN, Y1MIN, Z1MIN, &
+         distSlit, h_min, h_max, v_min, v_max
     !C 	
     !C  checks for initialization
     !C 
     IF (IFLAG.LT.0) THEN
-       OPEN	(30, FILE=FILE_BOUND, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=IERR)
-       IF (IERR.NE.0) THEN
-          WRITE(6,*)'Error opening file: ',S_BOUND
-          STOP
+       IF (F_BOUND_SOUR .eq. 1) THEN !  histo3 method
+         !OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=IERR)
+         ! changed to formatted, srio@esrf.eu 20120525
+         OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
+         IF (IERR.NE.0) THEN
+            WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
+            STOP 'Fatal error. Aborted'
+         END IF
+         READ (30,*,ERR=101)    NX, XMIN, XS
+         READ (30,*,ERR=101)    NX1, X1MIN, X1S
+         READ (30,*,ERR=101)    NY, YMIN, YS
+         READ (30,*,ERR=101)    NY1, Y1MIN, Y1S
+         READ (30,*,ERR=101)    NZ, ZMIN, ZS
+         READ (30,*,ERR=101)    NZ1, Z1MIN, Z1S
+         !DO 11 I=1,NX
+         DO I=1,NX
+            READ (30,*,ERR=101)    (IX(I,J),J=1,NX1)
+!11       CONTINUE
+         END DO
+         !DO 21 I=1,NY
+         DO I=1,NY
+            READ (30,*,ERR=101)    (IY(I,J),J=1,NY1)
+!21       CONTINUE
+         END DO
+         !DO 31 I=1,NZ
+         DO I=1,NZ
+            READ (30,*,ERR=101)    (IZ(I,J),J=1,NZ1)
+!31       CONTINUE
+         END DO
+         WRITE(6,*)'Phase space boundaries file read succesfully.'
+       ELSE ! method 2, slit
+         OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
+         IF (IERR.NE.0) THEN
+            WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
+            STOP 'Fatal error. Aborted'
+         END IF
+print *,'Reding file....'
+         READ (30,*,ERR=101)    distSlit,h_min,h_max,v_min,v_max
+         !READ (30,*,ERR=101)    distSlit
+         !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
+         !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
+         !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
+         !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
+print *,'distSlit,h_min,h_max,v_min,v_max: ',distSlit,h_min,h_max,v_min,v_max
+         WRITE(6,*)'File with slit boundaries read succesfully.'
        END IF
-       READ (30,ERR=101)	NX, XMIN, XS
-       READ (30,ERR=101)	NX1, X1MIN, X1S
-       READ (30,ERR=101)	NY, YMIN, YS
-       READ (30,ERR=101)	NY1, Y1MIN, Y1S
-       READ (30,ERR=101)	NZ, ZMIN, ZS
-       READ (30,ERR=101)	NZ1, Z1MIN, Z1S
-       DO 11 I=1,NX
-          READ (30,ERR=101)	(IX(I,J),J=1,NX1)
-11     CONTINUE
-       DO 21 I=1,NY
-          READ (30,ERR=101)	(IY(I,J),J=1,NY1)
-21     CONTINUE
-       DO 31 I=1,NZ
-          READ (30,ERR=101)	(IZ(I,J),J=1,NZ1)
-31     CONTINUE
+
        CLOSE (30)
-       WRITE(6,*)'Phase space boundaries file read succesfully.'
        RETURN
-101    WRITE(6,*)'Error reading from file ',S_BOUND
+101    WRITE(6,*)'Error reading from file '//trim(FILE_BOUND)
        STOP
     ELSE IF (IFLAG.EQ.1) THEN
        !C 
@@ -626,67 +690,86 @@ Contains
        !C  Tests for ''good'' hits; if a bad one fund, return
        !C 
        IFLAG = -1
-       IF (XS.NE.0) THEN
-          JX  = (POS(1) - XMIN)/XS + 1
-       ELSE
-          JX	= 1
+       IF (F_BOUND_SOUR .EQ. 1) THEN ! method 1: histo3
+  
+         IF (XS.NE.0) THEN
+            JX  = (POS(1) - XMIN)/XS + 1
+         ELSE
+            JX = 1
+         END IF
+         IF (X1S.NE.0) THEN
+            JX1 = (DIR(1) - X1MIN)/X1S + 1
+         ELSE
+            JX1 = 1
+         END IF
+         !C 
+         !C  tests first for bounds limits; if outside any, no sense trying more.
+         !C 
+         IF (JX.LT.1.OR.JX.GT.NX) RETURN
+         !C      	  IFLAG = -11
+         IF (JX1.LT.1.OR.JX1.GT.NX1) RETURN
+         !C 
+         !C  within bounds; test for acceptance
+         !C 
+         ! D     	  IFLAG = -101
+         IF ( IX(JX,JX1).EQ.0) RETURN
+         !C 
+         !C  ''x'' is OK; continue with Y,Z
+         !C  
+         ! D     	 IFLAG = -2
+         IF (YS.NE.0) THEN
+            JY  = (POS(2) - YMIN)/YS + 1
+         ELSE
+            JY = 1
+         END IF
+         IF (Y1S.NE.0) THEN
+            JY1 = (DIR(2) - Y1MIN)/Y1S + 1
+         ELSE
+            JY1 = 0
+         END IF
+         IF (JY.LT.1.OR.JY.GT.NY) RETURN
+         ! D     	 IFLAG = -21
+         IF (JY1.LT.1.OR.JY1.GT.NY1) RETURN
+         ! D     	 IFLAG = -201
+         IF ( IY(JY,JY1).EQ.0) RETURN
+         ! D     	 IFLAG = -3
+         IF (ZS.NE.0) THEN
+            JZ  = (POS(3) - ZMIN)/ZS + 1
+         ELSE
+            JZ = 1
+         END IF
+         IF (Z1S.NE.0) THEN
+            JZ1 = (DIR(3) - Z1MIN)/Z1S + 1
+         ELSE
+            JZ1 =1
+         END IF
+         IF (JZ.LT.1.OR.JZ.GT.NZ) RETURN
+         ! D     	 IFLAG = -31
+         IF (JZ1.LT.1.OR.JZ1.GT.NZ1) RETURN
+         ! D     	 IFLAG = -301
+         IF ( IZ(JZ,JZ1).EQ.0) RETURN
+         !C 
+         !C  the ray is acceptable;
+         !C 
+         IFLAG = 1
+       ELSE ! method 2: slit
+         IF (ABS(distSlit) .le. 1d-10) THEN ! angle
+            IF ( (dir(1).ge.h_min) .and. (dir(1).le.h_max) .and. &
+                 (dir(3).ge.v_min) .and. (dir(3).le.v_max) ) IFLAG = 1
+         ELSE ! slit
+            rdist = (-pos(2)+distSlit)/dir(2)
+            ! check for perpendicular rays
+            ! if (dir(2).lt.1d-16) rdist = 0.0
+            posSlitH = pos(1)+rdist*dir(1)
+            !posSlit(2) = pos(2)+rdist*dir(2,:)
+            posSlitV = pos(3)+rdist*dir(3)
+            IF ( (posSlitH.ge.h_min) .and. (posSlitH.le.h_max) .and. &
+                 (posSlitV.ge.v_min) .and. (posSlitV.le.v_max) ) IFLAG = 1
+         END IF
        END IF
-       IF (X1S.NE.0) THEN
-          JX1 = (DIR(1) - X1MIN)/X1S + 1
-       ELSE
-          JX1	= 1
-       END IF
-       !C 
-       !C  tests first for bounds limits; if outside any, no sense trying more.
-       !C 
-       IF (JX.LT.1.OR.JX.GT.NX) RETURN
-       !C      	  IFLAG = -11
-       IF (JX1.LT.1.OR.JX1.GT.NX1) RETURN
-       !C 
-       !C  within bounds; test for acceptance
-       !C 
-       ! D     	  IFLAG = -101
-       IF ( IX(JX,JX1).EQ.0) RETURN
-       !C 
-       !C  ''x'' is OK; continue with Y,Z
-       !C  
-       ! D     	 IFLAG = -2
-       IF (YS.NE.0) THEN
-          JY  = (POS(2) - YMIN)/YS + 1
-       ELSE
-          JY	= 1
-       END IF
-       IF (Y1S.NE.0) THEN
-          JY1 = (DIR(2) - Y1MIN)/Y1S + 1
-       ELSE
-          JY1	= 0
-       END IF
-       IF (JY.LT.1.OR.JY.GT.NY) RETURN
-       ! D     	 IFLAG = -21
-       IF (JY1.LT.1.OR.JY1.GT.NY1) RETURN
-       ! D     	 IFLAG = -201
-       IF ( IY(JY,JY1).EQ.0) RETURN
-       ! D     	 IFLAG = -3
-       IF (ZS.NE.0) THEN
-          JZ  = (POS(3) - ZMIN)/ZS + 1
-       ELSE
-          JZ	= 1
-       END IF
-       IF (Z1S.NE.0) THEN
-          JZ1 = (DIR(3) - Z1MIN)/Z1S + 1
-       ELSE
-          JZ1 =1
-       END IF
-       IF (JZ.LT.1.OR.JZ.GT.NZ) RETURN
-       ! D     	 IFLAG = -31
-       IF (JZ1.LT.1.OR.JZ1.GT.NZ1) RETURN
-       ! D     	 IFLAG = -301
-       IF ( IZ(JZ,JZ1).EQ.0) RETURN
-       !C 
-       !C  the ray is acceptable;
-       !C 
-       IFLAG = 1
+
        RETURN
+     
     END IF
   END SUBROUTINE SOURCE_BOUND
   !
@@ -9242,7 +9325,7 @@ print *,'parameters yourself.                                                   
           WRITE(6,*) 'Mosaic crystal force us to use cm as unit.'
        END IF
 	SPREAD_MOS = RNUMBER ('What is the mosaic spread FWHM [deg] ? ')
-	MOSAIC_SEED  = IRINT ('Give me a random seed [odd, integer] ? ')
+	MOSAIC_SEED  = IRINT ('Give me a random seed (integer, 0=get from clock) ? ')
 	   ELSE IF (F_MOSAIC.NE.1) THEN
      	     F_BRAGG_A = IYES ('Is the crystal asymmetric [ Y/N ] ? ')
      	     IF (F_BRAGG_A.EQ.1) THEN
@@ -9894,8 +9977,26 @@ SUBROUTINE INPUT_SOURCE1
          	ISTAR1= IRINT ('Seed [ odd, 1000 - 1 000 000 ] ? ')
     		END IF				!3
     ! * Go now on to define the source.
-         	F_BOUND_SOUR 	=  IYES('Do you want to optimize the source ? ')
-         	IF ( F_BOUND_SOUR.EQ.1 ) FILE_BOUND = RSTRING ('Please input name of file with acceptance: ')
+                print *,'Do you want to optimize the source ? '
+                print *,'   i.e., reject rays, a variance reduction technique'
+                print *,'   0: no optimization'
+                print *,'   1: optimization using a phase volume (via histo3)'
+                print *,'   2: reject rays if hit outside a rectangular slit'
+                print *,'      or angular acceptance acceptance'
+                F_BOUND_SOUR =  IRINT('<?> ')
+                IF ( F_BOUND_SOUR.EQ.1 ) THEN 
+                  FILE_BOUND = RSTRING &
+                  ('Please file name with acceptance phase volume (from histo3): ')
+                END IF
+                IF ( F_BOUND_SOUR.EQ.2 ) THEN 
+                  print *,'   slit/acceptance info will be read from an ASCII file with: '
+                  print *,'   distance_to_slit x_from x_to z_from z_to'
+                  print *,'   or, alternatively '
+                  print *,'   0 xprime_min xprime_max zprime_min zprime_max'
+                  print *,'   '
+                  FILE_BOUND = RSTRING &
+                  ('Please input name of file with slit/acceptance info: ')
+                END IF
          	  
     ! **---------------------------------------------------------------------
     	!CALL CLSCREEN
@@ -10401,6 +10502,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     
     DIMENSION	RELINT(10),PRELINT(10)
     
+    integer(kind=ski) :: n_rej=0, k_rej=0
     
     ! C
     ! C Save the *big* arrays so it will:
@@ -10487,7 +10589,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C sets up the acceptance/rejection method for optimizing source
     ! C notice that this is acceptable ONLY for random sources
     ! C
-    IF ( F_BOUND_SOUR.EQ.1 .AND. FGRID.EQ.0 ) THEN
+    IF ( F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
        ITMP=-1
        CALL 	SOURCE_BOUND (XDUM,YDUM,ITMP)
     END IF
@@ -11082,7 +11184,7 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
     ! C All rays are generated. Test for acceptance if optimized source is
     ! C specified.
     ! C
-    IF (F_BOUND_SOUR.EQ.1 .AND. FGRID.EQ.0 ) THEN
+    IF (F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
        SB_POS(1) = XXX
        SB_POS(2) = YYY 
        SB_POS(3) = ZZZ
@@ -11092,11 +11194,18 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           K_REJ = K_REJ + 1
           N_REJ = N_REJ + 1
           ! C     	   WRITE(6,*) 'itest ===',ITEST
-          IF (K_REJ.EQ.500) THEN
+          !IF (K_REJ.EQ.500) THEN
+          IF (K_REJ.EQ.(NTOTAL/10)) THEN
              WRITE(6,*)N_REJ,'   rays have been rejected so far.'
              WRITE(6,*)ITIK, '                  accepted.'
              K_REJ = 0
           END IF
+          if (n_rej.gt.ntotal*1000) then
+            PRINT *,'sourceGeom: too many rejected rays (>1000 * total rays)'
+            PRINT *,'sourceGeom:    check inputs and file: '//trim(file_bound)
+            STOP 'Fatal error. Aborted.'
+stop
+          endif
     	  DO 301 J=1,6
           GRID(J,ITIK) = WRAN(ISTAR1)
 301    	  CONTINUE
@@ -11119,6 +11228,17 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
     !
     !TODO: work without globals!!!!
     CALL GlobalToPoolSource(pool00)
+
+    ntotalpoint = N_REJ+(ITIK-1)
+    if (n_rej .gt. 0) then
+      WRITE(6,*)'----------------------------------------------------------------'
+      WRITE(6,*)'  source optimization (rejection, variance reduction) used: '
+      WRITE(6,*)N_REJ+(ITIK-1),'   total number of rays have been created.'
+      WRITE(6,*)(ITIK-1),      '                  accepted (stored).'
+      WRITE(6,*)N_REJ,         '                  rejected.'
+      WRITE(6,*)real(N_REJ+ITIK-1)/real(ITIK-1), '      created/accepted ratio.'
+      WRITE(6,*)'----------------------------------------------------------------'
+    endif 
 
     WRITE(6,*)'Exit from SOURCE'
     RETURN

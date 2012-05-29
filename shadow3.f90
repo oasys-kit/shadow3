@@ -252,6 +252,15 @@ SELECT CASE (inCommandLow)
   CASE ("retrace")
      CALL retrace_interface()
      inCommand=""
+  CASE ("minmax")
+     CALL minmax()
+     inCommand=""
+  CASE ("reflag")
+     CALL reflag()
+     inCommand=""
+  CASE ("histo3")
+     CALL histo3()
+     inCommand=""
   CASE ("exit")
      !STOP "GO ended."
      EXIT
@@ -307,7 +316,7 @@ SELECT CASE (inCommandLow)
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
-     print *,'                    : retrace'
+     print *,'                    : retrace minmax reflag histo3'
      print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
