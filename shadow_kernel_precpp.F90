@@ -9997,6 +9997,9 @@ SUBROUTINE INPUT_SOURCE1
                   FILE_BOUND = RSTRING &
                   ('Please input name of file with slit/acceptance info: ')
                 END IF
+                IF ( F_BOUND_SOUR.GT.0 ) THEN 
+                  NTOTALPOINT =  IRINT('Max number of rejected rays (set 0 for infinity)')
+                END IF
          	  
     ! **---------------------------------------------------------------------
     	!CALL CLSCREEN
@@ -11195,26 +11198,34 @@ print *,'C_VX C_VZ: ',C_VX ,C_VZ
           N_REJ = N_REJ + 1
           ! C     	   WRITE(6,*) 'itest ===',ITEST
           !IF (K_REJ.EQ.500) THEN
-          IF (K_REJ.EQ.(NTOTAL/10)) THEN
+
+
+          DO J=1,6
+            GRID(J,ITIK) = WRAN(ISTAR1)
+          END DO
+          IF (K_REJ.EQ.NTOTAL) THEN
              WRITE(6,*)N_REJ,'   rays have been rejected so far.'
-             WRITE(6,*)ITIK, '                  accepted.'
+             WRITE(6,*)ITIK-1, '                  accepted.'
              K_REJ = 0
           END IF
-          if (n_rej.gt.ntotal*1000) then
-            PRINT *,'sourceGeom: too many rejected rays (>1000 * total rays)'
-            PRINT *,'sourceGeom:    check inputs and file: '//trim(file_bound)
-            STOP 'Fatal error. Aborted.'
-stop
+          !?????
+          !if (itik.eq.ntotal) goto 10005
+
+          if ( (ntotalpoint.gt.0) .and. (n_rej.ge.ntotalpoint)) then
+            PRINT *,'sourceGeom: too many rejected rays: ',ntotalpoint
+            PRINT *,'sourceGeom:    check inputs (NTOTALPOINT) and/or file: '//trim(file_bound)
+            PRINT *,'sourceGeom:    Exit'
+            npoint = itik-1  ! the current index is a bad ray...
+            ! exit
+            goto 10005
           endif
-    	  DO 301 J=1,6
-          GRID(J,ITIK) = WRAN(ISTAR1)
-301    	  CONTINUE
           GOTO 10001
        END IF
     END IF
 10000 CONTINUE
     
-    IFLAG	= 0
+10005 CONTINUE
+    IFLAG = 0
     IF (FSOUR.EQ.3) THEN
        ! C
        ! C Reset EPSI_X and EPSI_Z to the values input by the user.
@@ -11229,14 +11240,14 @@ stop
     !TODO: work without globals!!!!
     CALL GlobalToPoolSource(pool00)
 
-    ntotalpoint = N_REJ+(ITIK-1)
+    ntotalpoint = N_REJ+NPOINT
     if (n_rej .gt. 0) then
       WRITE(6,*)'----------------------------------------------------------------'
       WRITE(6,*)'  source optimization (rejection, variance reduction) used: '
-      WRITE(6,*)N_REJ+(ITIK-1),'   total number of rays have been created.'
-      WRITE(6,*)(ITIK-1),      '                  accepted (stored).'
-      WRITE(6,*)N_REJ,         '                  rejected.'
-      WRITE(6,*)real(N_REJ+ITIK-1)/real(ITIK-1), '      created/accepted ratio.'
+      WRITE(6,*)N_REJ+NPOINT,   '   total number of rays have been created.'
+      WRITE(6,*)NPOINT   ,      '                  accepted (stored).'
+      WRITE(6,*)N_REJ,          '                  rejected.'
+      WRITE(6,*)real(N_REJ+NPOINT)/real(NPOINT), '      created/accepted ratio.'
       WRITE(6,*)'----------------------------------------------------------------'
     endif 
 

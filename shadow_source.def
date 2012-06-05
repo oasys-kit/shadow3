@@ -98,7 +98,7 @@ EXPAND_SOURCE_STRING(char,character,skc,T_STRING,FILE_TRAJ,"%s",'(A)',STRLEN," "
 EXPAND_SOURCE_STRING(char,character,skc,T_STRING,FILE_SOURCE,"%s",'(A)',STRLEN," ")
 EXPAND_SOURCE_STRING(char,character,skc,T_STRING,FILE_BOUND,"%s",'(A)',STRLEN," ")
 EXPAND_SOURCE_SCALAR(int,integer,ski,T_INT,OE_NUMBER,"%d",'(I)',0)
-EXPAND_SOURCE_SCALAR(int,integer,ski,T_INT,NTOTALPOINT,"%d",'(I)',5000)
+EXPAND_SOURCE_SCALAR(int,integer,ski,T_INT,NTOTALPOINT,"%d",'(I)',10000000)
 EXPAND_SOURCE_SCALAR(int,integer,ski,T_INT,IDUMMY,"%d",'(I)',0)
 EXPAND_SOURCE_SCALAR(double,real,skr,T_DOUBLE,DUMMY,"%lf",'(F)',0.0)
 EXPAND_SOURCE_SCALAR(int,integer,ski,T_INT,F_NEW,"%d",'(I)',0)

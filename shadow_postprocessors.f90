@@ -317,6 +317,11 @@ BREAK	='    ----------------'
                          pool00%NTOTALPOINT-pool00%NPOINT
              write(30,*) '    created/accepted ratio: ', & 
                          real(pool00%NTOTALPOINT)/real(pool00%NPOINT)
+             IF (pool00%F_BOUND_SOUR.EQ.1) THEN
+              write(30,*) '    file with phase-space volume: '//trim(pool00%FILE_BOUND)
+             ELSE
+              write(30,*) '    file with slit/acceptance: '//trim(pool00%FILE_BOUND)
+             ENDIF
           END IF
 !C
 !C All completed.

@@ -33,9 +33,17 @@
 #
 
 #-------------------------------------------------------------------------------
+
+#for 32 bits compilation, set this
+#(in Ubunti needs: sudo apt-get install gfortran-multilib )
+#32BITS=-m32
+
+#for static library set this
+#STATIC=-static
+
 # customize compiler and flags
 FC = gfortran
-FFLAGS = -fPIC -ffree-line-length-none
+FFLAGS = -fPIC -ffree-line-length-none $(32BITS)  $(STATIC)
 #FC = g95
 #FFLAGS = -fPIC -ffree-line-length-huge
 
@@ -47,7 +55,7 @@ CCP = g++
 PY = python
 
 #-fopenmp -g
-CFLAGS = -fPIC  
+CFLAGS = -fPIC $(32BITS)
 #-fopenmp -g
 
 LIBFLAGS = -shared -lm 

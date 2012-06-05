@@ -2339,20 +2339,22 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C           POSITIONS
     ! C
     ! C
-         	KK	=   0
-         	MM	=   0
-    	DO 10000 ITIK=1,NTOTAL
-         	KK	=  KK + 1
-         	IF (KK.EQ.250) THEN
-         	  ITOTRAY = KK + MM*250
-         	 IF (MM.EQ.0) THEN
-         	  WRITE(6,*)'Generated ',ITOTRAY,' rays out of ',NTOTAL
-         	 ELSE
-         	  WRITE(6,*)'          ',ITOTRAY
-         	 END IF
-         	  KK = 0
-         	  MM = MM + 1
-         	END IF
+         KK = 0
+         MM = 0
+
+         DO 10000 ITIK=1,NTOTAL
+                KK = KK + 1
+                !IF (KK.EQ.250) THEN
+                IF (KK.EQ.NTOTAL/20) THEN
+                  ITOTRAY = KK + MM*(NTOTAL/20)
+                 IF (MM.EQ.0) THEN
+                  WRITE(6,*)'Generated ',ITOTRAY,' rays out of ',NTOTAL
+                 ELSE
+                  WRITE(6,*)'          ',ITOTRAY
+                 END IF
+                  KK = 0
+                  MM = MM + 1
+                END IF
     ! C
     ! C The following entry point is for the "optimized" source
     ! C
@@ -3008,59 +3010,52 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C All rays are generated. Test for acceptance if optimized source is
     ! C specified.
     ! C
-         	IF (F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
-         	  SB_POS(1) = XXX
-         	  SB_POS(2) = YYY 
-         	  SB_POS(3) = ZZZ
-         	  ITEST = 1
-         	  CALL SOURCE_BOUND (SB_POS, DIREC, ITEST)
-         	 IF (ITEST.LT.0) THEN
-         	   K_REJ = K_REJ + 1
-         	   N_REJ = N_REJ + 1
-
+    IF (F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
+       SB_POS(1) = XXX
+       SB_POS(2) = YYY 
+       SB_POS(3) = ZZZ
+       ITEST = 1
+       CALL SOURCE_BOUND (SB_POS, DIREC, ITEST)
+       IF (ITEST.LT.0) THEN
+          K_REJ = K_REJ + 1
+          N_REJ = N_REJ + 1
           ! C     	   WRITE(6,*) 'itest ===',ITEST
           !IF (K_REJ.EQ.500) THEN
-          IF (K_REJ.EQ.(NTOTAL/10)) THEN
+
+
+          DO J=1,6
+             GRID(J,ITIK) = WRAN(ISTAR1)
+          END DO
+          IF (K_REJ.EQ.NTOTAL) THEN
              WRITE(6,*)N_REJ,'   rays have been rejected so far.'
-             WRITE(6,*)ITIK, '                  accepted.'
+             WRITE(6,*)ITIK-1, '                  accepted.'
              K_REJ = 0
           END IF
-          if (n_rej.gt.ntotal*10000) then
-            PRINT *,'sourceSync: too many rejected rays (>1000 * total rays)'
-            PRINT *,'sourceSync:    check inputs and file: '//trim(file_bound)
-            STOP 'Fatal error. Aborted.'
-stop
+          !?????
+          !if (itik.eq.ntotal) goto 10005
+
+          if ( (ntotalpoint.gt.0) .and. (n_rej.ge.ntotalpoint)) then
+            PRINT *,'sourceSync: too many rejected rays: ',ntotalpoint
+            PRINT *,'sourceSync:    check inputs (NTOTALPOINT) and/or file: '//trim(file_bound)
+            PRINT *,'sourceSync:    Exit'
+            npoint = itik - 1 ! the current index is a bad ray
+            ! exit
+            goto 10005
           endif
-
-!    ! C     	   WRITE(6,*) 'itest ===',ITEST
-!         	  IF (K_REJ.EQ.500) THEN
-!         	    WRITE(6,*)N_REJ,'   rays have been rejected so far.'
-!         	    WRITE(6,*)ITIK, '                  accepted.'
-         	    !K_REJ = 0
-!         	  END IF 
-
-    	  DO 301 J=1,6
-         	    GRID(J,ITIK) = WRAN(ISTAR1)
-    301    	  CONTINUE
-         	  GOTO 10001
-         	 END IF
-         	END IF
-    10000	CONTINUE
+          GOTO 10001
+       END IF
+    END IF
+10000       CONTINUE
     
-    	IFLAG	= 0
-        !!!CALL WRITE_OFF(FNAME,BEGIN,PHASE,AP,NCOL,NTOTAL,IFLAG,IOFORM,IERR)
-        !!!IF (IERR.NE.0) THEN
-    	!!!    ERRMSG = 'Error Writing File '// FNAME
-    	!!!    CALL LEAVE ('SOURCE', ERRMSG, IERR)
-    	!!!ENDIF
-        !!! 	NPOINT = NTOTAL
-    	IF (FSOUR.EQ.3) THEN
-    ! C
-    ! C Reset EPSI_X and EPSI_Z to the values input by the user.
-    ! C
-    	   EPSI_X = EPSI_XOLD
-    	   EPSI_Z = EPSI_ZOLD
-    	ENDIF
+10005 continue
+    IFLAG = 0
+    IF (FSOUR.EQ.3) THEN
+       ! C
+       ! C Reset EPSI_X and EPSI_Z to the values input by the user.
+       ! C
+       EPSI_X = EPSI_XOLD
+       EPSI_Z = EPSI_ZOLD
+    ENDIF
     
     !
     ! put global variables into pool 
@@ -3069,14 +3064,14 @@ stop
     CALL GlobalToPoolSource(pool00)
 
 
-    ntotalpoint = N_REJ+(ITIK-1)
+    ntotalpoint = N_REJ+NPOINT
     if (n_rej .gt. 0) then
       WRITE(6,*)'----------------------------------------------------------------'
       WRITE(6,*)'  source optimization (rejection, variance reduction) used: '
-      WRITE(6,*)N_REJ+(ITIK-1),'   total number of rays have been created.'
-      WRITE(6,*)(ITIK-1),      '                  accepted (stored).'
-      WRITE(6,*)N_REJ,         '                  rejected.'
-      WRITE(6,*)real(N_REJ+ITIK-1)/real(ITIK-1), '      created/accepted ratio.'
+      WRITE(6,*)N_REJ+NPOINT,   '   total number of rays have been created.'
+      WRITE(6,*)NPOINT,         '                  accepted (stored).'
+      WRITE(6,*)N_REJ,          '                  rejected.'
+      WRITE(6,*)real(N_REJ+NPOINT)/real(NPOINT), '      created/accepted ratio.'
       WRITE(6,*)'----------------------------------------------------------------'
     endif
 
