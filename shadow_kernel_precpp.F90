@@ -2200,8 +2200,7 @@ print *,'distSlit,h_min,h_max,v_min,v_max: ',distSlit,h_min,h_max,v_min,v_max
           GO TO 100
        ELSE
           WRITE(6,*)'Intercept error. All coefficients were zero'
-          
-          STOP
+          !STOP
           GO TO 200
        END IF
        ! C
@@ -6233,342 +6232,350 @@ End Subroutine screen_external_getdimensions
 SUBROUTINE SETSOUR
 
 !todo implicit?
-!	implicit real(kind=skr) (a-e,g-h,o-z)
-!	implicit integer(kind=ski)        (f,i-n)
+!    implicit real(kind=skr) (a-e,g-h,o-z)
+!    implicit integer(kind=ski)        (f,i-n)
 
-        real(kind=skr)   :: q_phot,sinn,sinm,graze,theta_b,deflec
-        real(kind=skr)   :: sinbeta,theta_t
-        real(kind=skr)   :: cosx,sinx,cosy,siny,cosz,sinz
-        real(kind=skr)   :: dumm1=0,zero=0.0
-        integer(kind=ski)          :: ipsflag,ierr
+real(kind=skr)   :: q_phot,sinn,sinm,graze,theta_b,deflec
+real(kind=skr)   :: sinbeta,theta_t
+real(kind=skr)   :: cosx,sinx,cosy,siny,cosz,sinz
+real(kind=skr)   :: dumm1=0,zero=0.0
+integer(kind=ski)          :: ipsflag,ierr
 
 
-     	WRITE(6,*) 'Call to SETSOUR'
+WRITE(6,*) 'Call to SETSOUR'
 
-     	IF (F_DEFAULT.EQ.1) THEN
-     		SSOUR	=  T_SOURCE
-     		SIMAG	=  T_IMAGE
-     		THETA	=  T_INCIDENCE
-     	END IF
+! srio@esrf.eu 2012-06-06
+! debug (noticed by N. Canestrari) : 
+! THETA IS DEFINED ONLY IF F_DEFAULT IS SET (i.e., F_EXT=1), 
+! BUT IS ALSO USED in MSETUP THEN F_EXT=0
+if (f_ext .eq. 1) theta = t_incidence
+
+IF (F_DEFAULT.EQ.1) THEN
+    SSOUR =  T_SOURCE
+    SIMAG =  T_IMAGE
+    THETA =  T_INCIDENCE
+END IF
+
+
 ! C
-	IF (F_CRYSTAL.EQ.1) THEN
-     	  CALL	CRYSTAL	(0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0, &
-     			0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,i_one)  
-! C
-! C Change units and FWHM->S.D. for the mosaic case
-! C
-	IF (F_MOSAIC.EQ.1) SPREAD_MOS = SPREAD_MOS*TORAD/2.35D0
-! C
-! C Define diffraction order for asymmetric case
-! C
-	  IF (F_BRAGG_A.EQ.1) THEN
-     	   A_BRAGG	=   TORAD*A_BRAGG
-! *
-! * In the crystal laue case the ORDER value selects the incidence of the
-! * beam: ORDER=-1 (defauls) the beam arrive on the bragg planes. ORDER=+1
-! * the beam arrives under the bragg planes
-! *
-	   if (f_refrac.ne.1) then
-     	   IF ((A_BRAGG.Le.0.0).or.(a_bragg.ge.pihalf)) ORDER = -1
-     	   IF ((A_BRAGG.Gt.0.0).and.(a_bragg.lt.pihalf)) ORDER = +1
-	   end if
-     	   F_RULING = 1
-	  ELSE IF (F_BRAGG_A.NE.1) THEN
-	       A_BRAGG	=   0.0D0
-	  END IF
-! C
-! C   define flags for crystals in transmission mode (laue geometry)
-! C   (in the "symmetrical laue case" in fact we work with the
-! C   asymmetrical with alpha=90 deg.)
-! C
-	  if (f_crystal.eq.1.and.f_refrac.eq.1) then        !laue case
-		if (f_bragg_a.ne.1) then
-		  a_bragg = pihalf  
-		  if(f_mosaic.ne.1) then
-			f_bragg_a = 1
-			a_bragg = pihalf  
-			f_ruling = 1
-	          end if
-	        end if
-	  end if
-! C
-! C Define diffraction order for Johansson geometry 
-! C
-	  IF (F_JOHANSSON.EQ.1) THEN
-     	    A_BRAGG	=   TORAD*A_BRAGG
-     	    IF (A_BRAGG.LT.0.0) ORDER = -1
-     	    IF (A_BRAGG.GE.0.0) ORDER = +1
-            F_BRAGG_A   = 1
-            F_RULING    = 5
-            F_RUL_ABS   = 1
-	  END IF
-! C
-! C Sets the mirror at the BRAGG angle.
-! C
-     	 IF (F_CENTRAL.EQ.1.AND.F_CRYSTAL.EQ.1) THEN
-     	  IF (F_PHOT_CENT.EQ.1)   PHOT_CENT = TOANGS/R_LAMBDA
-     	  IF (F_PHOT_CENT.EQ.0)   R_LAMBDA  = TOANGS/PHOT_CENT
-	   Q_PHOT = TWOPI/R_LAMBDA*1.0D8
-! C
-! C next, compute the Bragg angle without index of refraction corrections
-! C
-	  GRAZE =  ASIN(R_LAMBDA*0.5D-8/D_SPACING)
-	  SINN  =  SIN(GRAZE+A_BRAGG)
-	  SINM  =  SIN(GRAZE-A_BRAGG)
-! C
-! C Compute now the correct Bragg angle (including N)
-! C (only valid for reflection geometry)
-! C
-	  if (f_refrac.eq.0) then                                  !bragg
-	   CALL CRYSTAL (Q_PHOT,SINN,SINM,zero,DUMM1,DUMM1,DUMM1, &
-                                DUMM1,DUMM1,DUMM1,DUMM1,THETA_B,ione)
-	  else if (f_refrac.eq.1) then                             !laue
-	   if (order.eq.-1) then             ! rays onto bragg planes
-	      if (a_bragg.ge.0) theta_b = a_bragg + graze
-	      if (a_bragg.lt.0) theta_b = pi - graze + a_bragg
-	   else ! rays below bragg planes
-	      if (a_bragg.ge.0) theta_b = a_bragg - graze
-	      if (a_bragg.lt.0) theta_b = pi + a_bragg + graze
-	   end if
-	  end if
-! C
-     	  T_INCIDENCE = 90.0D0 - THETA_B*TODEG
-! C
-! C     	  T_REFLECTION = ACOSD(COS(THETA_B)*COSD(2.0*ALFA_ASS)+
-! C     $            SIND(2.0D0*ALFA_ASS)*SQRT((SIN(THETA_B))**2-
-! C     $            2.0D0*DELTA))
-! C	  T_REFLECTION = 90.0D0 - T_REFLECTION
-     	 END IF
-     	END IF
+IF (F_CRYSTAL.EQ.1) THEN
+    CALL    CRYSTAL    (0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0, &
+        0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,i_one)  
+    ! C
+    ! C Change units and FWHM->S.D. for the mosaic case
+    ! C
+    IF (F_MOSAIC.EQ.1) SPREAD_MOS = SPREAD_MOS*TORAD/2.35D0
+    ! C
+    ! C Define diffraction order for asymmetric case
+    ! C
+    IF (F_BRAGG_A.EQ.1) THEN
+        A_BRAGG    =   TORAD*A_BRAGG
+        !*
+        !* In the crystal laue case the ORDER value selects the incidence of the
+        !* beam: ORDER=-1 (defauls) the beam arrive on the bragg planes. 
+        !*       ORDER=+1 the beam arrives under the bragg planes
+        !*
+        if (f_refrac.ne.1) then
+            IF ((A_BRAGG.Le.0.0).or.(a_bragg.ge.pihalf)) ORDER = -1
+            IF ((A_BRAGG.Gt.0.0).and.(a_bragg.lt.pihalf)) ORDER = +1
+        end if
+        F_RULING = 1
+    ELSE IF (F_BRAGG_A.NE.1) THEN
+        A_BRAGG    =   0.0D0
+    END IF
+    ! C
+    ! C   define flags for crystals in transmission mode (laue geometry)
+    ! C   (in the "symmetrical laue case" in fact we work with the
+    ! C   asymmetrical with alpha=90 deg.)
+    ! C
+    if (f_crystal.eq.1.and.f_refrac.eq.1) then        !laue case
+        if (f_bragg_a.ne.1) then
+          a_bragg = pihalf  
+          if(f_mosaic.ne.1) then
+            f_bragg_a = 1
+            a_bragg = pihalf  
+            f_ruling = 1
+          end if
+        end if
+    end if
+    ! C
+    ! C Define diffraction order for Johansson geometry 
+    ! C
+    IF (F_JOHANSSON.EQ.1) THEN
+        A_BRAGG    =   TORAD*A_BRAGG
+        IF (A_BRAGG.LT.0.0) ORDER = -1
+        IF (A_BRAGG.GE.0.0) ORDER = +1
+        F_BRAGG_A   = 1
+        F_RULING    = 5
+        F_RUL_ABS   = 1
+    END IF
+    !C
+    !C Sets the mirror at the BRAGG angle.
+    !C
+    IF (F_CENTRAL.EQ.1.AND.F_CRYSTAL.EQ.1) THEN
+        IF (F_PHOT_CENT.EQ.1)   PHOT_CENT = TOANGS/R_LAMBDA
+        IF (F_PHOT_CENT.EQ.0)   R_LAMBDA  = TOANGS/PHOT_CENT
+        Q_PHOT = TWOPI/R_LAMBDA*1.0D8
+        !C
+        !C next, compute the Bragg angle without index of refraction corrections
+        !C
+        GRAZE =  ASIN(R_LAMBDA*0.5D-8/D_SPACING)
+        SINN  =  SIN(GRAZE+A_BRAGG)
+        SINM  =  SIN(GRAZE-A_BRAGG)
+        !C
+        !C Compute now the correct Bragg angle (including N)
+        !C (only valid for reflection geometry)
+        !C
+        if (f_refrac.eq.0) then                                  !bragg
+           CALL CRYSTAL (Q_PHOT,SINN,SINM,zero,DUMM1,DUMM1,DUMM1, &
+                                    DUMM1,DUMM1,DUMM1,DUMM1,THETA_B,ione)
+        else if (f_refrac.eq.1) then                             !laue
+           if (order.eq.-1) then             ! rays onto bragg planes
+              if (a_bragg.ge.0) theta_b = a_bragg + graze
+              if (a_bragg.lt.0) theta_b = pi - graze + a_bragg
+           else ! rays below bragg planes
+              if (a_bragg.ge.0) theta_b = a_bragg - graze
+              if (a_bragg.lt.0) theta_b = pi + a_bragg + graze
+           end if
+        end if
+        !C
+        T_INCIDENCE = 90.0D0 - THETA_B*TODEG
+        !C
+        !C           T_REFLECTION = ACOSD(COS(THETA_B)*COSD(2.0*ALFA_ASS)+
+        !C     $            SIND(2.0D0*ALFA_ASS)*SQRT((SIN(THETA_B))**2-
+        !C     $            2.0D0*DELTA))
+        !C      T_REFLECTION = 90.0D0 - T_REFLECTION
+    END IF
+END IF ! end of crystal
 ! C
 ! C Computes the line density at the pole for an holographic grating.
 ! C
-     	 IF (F_RULING.EQ.2) THEN
-	     CALL	HOLO_SET
-	 END IF
+IF (F_RULING.EQ.2) THEN
+    CALL HOLO_SET
+END IF
 ! C
 ! C Changes to SETSOUR for surface roughness calculations
 ! C
-	if (f_roughness.eq.1) then
-	   ipsflag = -1
-	   ierr = 0
-! Csrio	   call pspect (0,0,iseed,ierr,ipsflag)
-	      CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
+if (f_roughness.eq.1) then
+    ipsflag = -1
+    ierr = 0
+    ! Csrio       call pspect (0,0,iseed,ierr,ipsflag)
+    CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
 
-	   if (ierr.ne.0) call leave &
-              ('Error on return from PSPECT','SETSOUR',izero)
-	   if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
-	END IF
+    if (ierr.ne.0) call leave ('Error on return from PSPECT','SETSOUR',izero)
+    if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
+end if
 ! C
 ! C The following sequence is necessary now, as some of the angles
 ! C may be changed.
 ! C Debugged MSR 9/20/90: the variable RULING must be controlled by F_CRYSTAL
 ! C
-     	IF (F_CRYSTAL.EQ.1) THEN
-     	 RULING = SIN(ABS(A_BRAGG))/D_SPACING
-     	 IF (F_CENTRAL.EQ.1) THEN
-     		F_MONO = 2
-     	 ELSE
-     	        F_MONO = -1
-     	 END IF
-     	END IF
+IF (F_CRYSTAL.EQ.1) THEN
+    RULING = SIN(ABS(A_BRAGG))/D_SPACING
+    IF (F_CENTRAL.EQ.1) THEN
+        F_MONO = 2
+    ELSE
+        F_MONO = -1
+    END IF
+END IF
 ! C
 ! C Auto-tuning of monochromators
 ! C F_CENTRAL and F_CRYSTAL statement added to get correct
 ! C reflection angle for crystal, i.e. F_MONO=2
 ! C 31 May 1990, clw.
 ! C
-     	IF ((F_CENTRAL.EQ.1.AND.F_GRATING.EQ.1).OR. &
-           (F_CENTRAL.EQ.1.AND.F_CRYSTAL.EQ.1)) THEN
-     	 IF (F_PHOT_CENT.EQ.1)   PHOT_CENT = TOANGS/R_LAMBDA
-     	 IF (F_PHOT_CENT.EQ.0)   R_LAMBDA  = TOANGS/PHOT_CENT
-     	  IF (F_MONO.EQ.1) THEN
-! C
-! C ERG-GRASSHOPPER case
-! C
-     	   SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
-     					+ SIN (T_INCIDENCE*TORAD)
-     	   BETA	   =    ASIN( SINBETA )
-     	   T_REFLECTION  =   BETA*TODEG
-     	    IF (F_EXT.EQ.0) THEN
-! C
-! C The radius follows from the condition that the object lies on
-! C the Rowland circle.
-! C
-     	     THETA_T	=   THETA*TORAD
-     	     RMIRR = SSOUR/COS(THETA_T)
-! C
-! C This is to avoid that MSETUP will recompute the radius.
-! C
-     	     F_EXT =  1
-     	    END IF
-! C
-! C Computes the distance to the rowland circle.
-! C
-     	   T_IMAGE   =   RMIRR*COS(BETA)
-     	  ELSE IF (F_MONO.EQ.0) THEN
-! C
-! C TGM-SEYA MOUNT
-! C DIFFRAC gives the rotation angle for the grating.
-! C
-     	   CALL	  DIFFRAC
-     	   F_MOVE = 1		! This will rotate the mirror
-     	  ELSE IF (F_MONO.EQ.2) THEN
-! C      	
-! C constant incidence angle
-! C
-     	   SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
-     					+ SIN (T_INCIDENCE*TORAD)
-     	   BETA	   =    ASIN( SINBETA )
-     	   T_REFLECTION  =   BETA*TODEG
-! C
-! C laue crystals
-! C
-	      if (f_refrac.eq.1) then
-                  if (order.eq.-1)  then
-                     if (a_bragg.ge.0) &
-                       t_reflection=(pihalf+a_bragg-graze)*todeg
-                     if (a_bragg.lt.0) &
-                       t_reflection=(3.0d0*pihalf+a_bragg+graze)*todeg
-                  else
-                      if (a_bragg.ge.0) &
-                       t_reflection=(pihalf+a_bragg+graze)*todeg
-                      if (a_bragg.lt.0) &
-                       t_reflection=(3.0d0*pihalf+a_bragg-graze)*todeg
-                  end if
-	      end if
-     	  ELSE IF (F_MONO.EQ.3) THEN
-! C
-! C constant diffraction angle
-! C
-     	   SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
-     					+ SIN (T_REFLECTION*TORAD)
-     	   BETA	   =    ASIN( SINBETA )
-     	   T_INCIDENCE =   BETA*TODEG
-     	  ELSE IF (F_MONO.EQ.4) THEN
-! C
-! C constant blaze mount (Hunter)
-! C
-     	   BLAZE   =   BLAZE*TORAD
-     	   T_INCIDENCE = BLAZE + &
-     		 ACOS(-ORDER*R_LAMBDA*1.0D-8/2*RULING/SIN(BLAZE))
-     	   T_REFLECTION	=   T_INCIDENCE - 2*BLAZE
-     	   DEFLEC = T_INCIDENCE + T_REFLECTION
-! C
-! C This will pivot the gratings around the monochromator center
-! C
-     	    IF (F_HUNT.EQ.1) THEN
-     	     T_SOURCE =   HUNT_L/2 + HUNT_H/2/TAN(DEFLEC)
-     	     T_IMAGE  =   HUNT_H/2/SIN(DEFLEC)
-     	    ELSE IF (F_HUNT.EQ.2) THEN
-     	     T_SOURCE =   HUNT_H/2/SIN(DEFLEC)
-     	     T_IMAGE  =   HUNT_L/2 + HUNT_H/2/TAN(DEFLEC)
-     	    END IF
-     	   T_INCIDENCE =   T_INCIDENCE*TODEG
-     	   T_REFLECTION=   T_REFLECTION*TODEG
-     	   DEFLEC  =   DEFLEC*TODEG
-! D     	  OPEN (25,FILE='BLAZE',STATUS='NEW')
-! D     	  WRITE (25,*)	F_HUNT,RULING
-! D     	  WRITE (25,*)	HUNT_H,HUNT_L
-! D     	  WRITE (25,*)	T_INCIDENCE,T_REFLECTION
-! D     	  WRITE (25,*)	T_SOURCE,T_IMAGE
-! D     	  WRITE (25,*)	DEFLEC,BLAZE
-! D     	  CLOSE (25)
-     	  END IF
-! C/
-! C This is necessary as some of the T_XXXX will have been changed
-! C
-     	 IF (F_DEFAULT.EQ.1) THEN
-     		SSOUR	=  T_SOURCE
-     		SIMAG	=  T_IMAGE
-     		THETA	=  T_INCIDENCE
-     	 END IF
-     	ELSE
-     	END IF
-! D		THETA_IN  =   THETA
-		THETA     =   TORAD*THETA   	!Pass to radians
-		DELTA     =   PIHALF - THETA
+IF ((F_CENTRAL.EQ.1.AND.F_GRATING.EQ.1).OR. &
+    (F_CENTRAL.EQ.1.AND.F_CRYSTAL.EQ.1)) THEN
+    IF (F_PHOT_CENT.EQ.1)   PHOT_CENT = TOANGS/R_LAMBDA
+    IF (F_PHOT_CENT.EQ.0)   R_LAMBDA  = TOANGS/PHOT_CENT
+    IF (F_MONO.EQ.1) THEN
+        ! C
+        ! C ERG-GRASSHOPPER case
+        ! C
+        SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
+            + SIN (T_INCIDENCE*TORAD)
+        BETA       =    ASIN( SINBETA )
+        T_REFLECTION  =   BETA*TODEG
+        IF (F_EXT.EQ.0) THEN
+            ! C
+            ! C The radius follows from the condition that the object lies on
+            ! C the Rowland circle.
+            ! C
+            THETA_T    =   THETA*TORAD
+            RMIRR = SSOUR/COS(THETA_T)
+            ! C
+            ! C This is to avoid that MSETUP will recompute the radius.
+            ! C
+            F_EXT =  1
+        END IF
+        ! C
+        ! C Computes the distance to the rowland circle.
+        ! C
+        T_IMAGE   =   RMIRR*COS(BETA)
+    ELSE IF (F_MONO.EQ.0) THEN
+        ! C
+        ! C TGM-SEYA MOUNT
+        ! C DIFFRAC gives the rotation angle for the grating.
+        ! C
+        CALL      DIFFRAC
+        F_MOVE = 1        ! This will rotate the mirror
+    ELSE IF (F_MONO.EQ.2) THEN
+        ! C          
+        ! C constant incidence angle
+        ! C
+        SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
+            + SIN (T_INCIDENCE*TORAD)
+        BETA       =    ASIN( SINBETA )
+        T_REFLECTION  =   BETA*TODEG
+        ! C
+        ! C laue crystals
+        ! C
+        if (f_refrac.eq.1) then
+            if (order.eq.-1)  then
+                if (a_bragg.ge.0) &
+                    t_reflection=(pihalf+a_bragg-graze)*todeg
+                if (a_bragg.lt.0) &
+                    t_reflection=(3.0d0*pihalf+a_bragg+graze)*todeg
+            else
+                if (a_bragg.ge.0) &
+                    t_reflection=(pihalf+a_bragg+graze)*todeg
+                if (a_bragg.lt.0) &
+                    t_reflection=(3.0d0*pihalf+a_bragg-graze)*todeg
+            end if
+        end if
+    ELSE IF (F_MONO.EQ.3) THEN
+    ! C
+    ! C constant diffraction angle
+    ! C
+        SINBETA =    ORDER*(TOCM/PHOT_CENT)*RULING  &
+            + SIN (T_REFLECTION*TORAD)
+        BETA       =    ASIN( SINBETA )
+        T_INCIDENCE =   BETA*TODEG
+    ELSE IF (F_MONO.EQ.4) THEN
+        ! C
+        ! C constant blaze mount (Hunter)
+        ! C
+        BLAZE   =   BLAZE*TORAD
+        T_INCIDENCE = BLAZE + &
+            ACOS(-ORDER*R_LAMBDA*1.0D-8/2*RULING/SIN(BLAZE))
+        T_REFLECTION    =   T_INCIDENCE - 2*BLAZE
+        DEFLEC = T_INCIDENCE + T_REFLECTION
+        ! C
+        ! C This will pivot the gratings around the monochromator center
+        ! C
+        IF (F_HUNT.EQ.1) THEN
+            T_SOURCE =   HUNT_L/2 + HUNT_H/2/TAN(DEFLEC)
+            T_IMAGE  =   HUNT_H/2/SIN(DEFLEC)
+        ELSE IF (F_HUNT.EQ.2) THEN
+            T_SOURCE =   HUNT_H/2/SIN(DEFLEC)
+            T_IMAGE  =   HUNT_L/2 + HUNT_H/2/TAN(DEFLEC)
+        END IF
+        T_INCIDENCE =   T_INCIDENCE*TODEG
+        T_REFLECTION=   T_REFLECTION*TODEG
+        DEFLEC  =   DEFLEC*TODEG
+        ! D           OPEN (25,FILE='BLAZE',STATUS='NEW')
+        ! D           WRITE (25,*)    F_HUNT,RULING
+        ! D           WRITE (25,*)    HUNT_H,HUNT_L
+        ! D           WRITE (25,*)    T_INCIDENCE,T_REFLECTION
+        ! D           WRITE (25,*)    T_SOURCE,T_IMAGE
+        ! D           WRITE (25,*)    DEFLEC,BLAZE
+        ! D           CLOSE (25)
+    END IF
+    ! C/
+    ! C This is necessary as some of the T_XXXX will have been changed
+    ! C
+    IF (F_DEFAULT.EQ.1) THEN
+        SSOUR    =  T_SOURCE
+        SIMAG    =  T_IMAGE
+        THETA    =  T_INCIDENCE
+    END IF
+ELSE
+END IF ! end autotuning
+
+! D        THETA_IN  =   THETA
+THETA     =   TORAD*THETA       !Pass to radians
+DELTA     =   PIHALF - THETA
 ! ** Some useful variables are now computed.
-		COSTHE    =   COS(THETA)
-		SINTHE    =   SIN(THETA)
-		COSDEL    =   COS(DELTA)
-		SINDEL    =   SIN(DELTA)
+COSTHE    =   COS(THETA)
+SINTHE    =   SIN(THETA)
+COSDEL    =   COS(DELTA)
+SINDEL    =   SIN(DELTA)
 ! ** THis is necessary now
-! D		ALPHA_IN  =   ALPHA
-     		ALPHA	  =   ALPHA*TORAD
-     		COSAL	  =   COS(ALPHA)
-     		SINAL	  =   SIN(ALPHA)
-! D		ALPHA_IS  =   ALPHA_S
-     		ALPHA_S	  =   ALPHA_S*TORAD
-     		COSAL_S	  =   COS(ALPHA_S)
-     		SINAL_S   =   SIN(ALPHA_S)
+! D        ALPHA_IN  =   ALPHA
+ALPHA      =   ALPHA*TORAD
+COSAL      =   COS(ALPHA)
+SINAL      =   SIN(ALPHA)
+! D        ALPHA_IS  =   ALPHA_S
+ALPHA_S      =   ALPHA_S*TORAD
+COSAL_S      =   COS(ALPHA_S)
+SINAL_S   =   SIN(ALPHA_S)
 
-     		X_PHASE	  =   TORAD*X_PHASE
-     		Y_PHASE	  =   TORAD*Y_PHASE
+X_PHASE      =   TORAD*X_PHASE
+Y_PHASE      =   TORAD*Y_PHASE
 
-     		T_INCIDENCE   =   T_INCIDENCE*TORAD
-     		T_REFLECTION  =   T_REFLECTION*TORAD
-	   
-	PSOUR(1)  =   .0D0
-	PSOUR(2)  = - SSOUR*SINTHE
-	PSOUR(3)  =   SSOUR*COSTHE
+T_INCIDENCE   =   T_INCIDENCE*TORAD
+T_REFLECTION  =   T_REFLECTION*TORAD
+       
+PSOUR(1)  =   .0D0
+PSOUR(2)  = - SSOUR*SINTHE
+PSOUR(3)  =   SSOUR*COSTHE
 
 ! ** Now the 'real' case
-	IF (FSTAT.EQ.1) THEN
+IF (FSTAT.EQ.1) THEN ! move the source
 
- 	  X_SOUR_ROT	=    TORAD*X_SOUR_ROT
- 	  Y_SOUR_ROT	=    TORAD*Y_SOUR_ROT
- 	  Z_SOUR_ROT	=    TORAD*Z_SOUR_ROT
-     	 COSX	=   COS ( X_SOUR_ROT )
-     	  SINX	= - SIN ( X_SOUR_ROT )
-     	 COSY	=   COS ( Y_SOUR_ROT )
-     	  SINY	= - SIN ( Y_SOUR_ROT )
-     	 COSZ	=   COS ( Z_SOUR_ROT )
-     	  SINZ	= - SIN ( Z_SOUR_ROT )
+    X_SOUR_ROT    =    TORAD*X_SOUR_ROT
+    Y_SOUR_ROT    =    TORAD*Y_SOUR_ROT
+    Z_SOUR_ROT    =    TORAD*Z_SOUR_ROT
+    COSX    =   COS ( X_SOUR_ROT )
+    SINX    = - SIN ( X_SOUR_ROT )
+    COSY    =   COS ( Y_SOUR_ROT )
+    SINY    = - SIN ( Y_SOUR_ROT )
+    COSZ    =   COS ( Z_SOUR_ROT )
+    SINZ    = - SIN ( Z_SOUR_ROT )
 
-     	 U_SOUR(1)	=   COSZ*COSY
-     	 V_SOUR(1)	=   COSZ*SINX*SINY - SINZ*COSX
-     	 W_SOUR(1)	=   COSZ*SINY*COSX + SINZ*SINX
+    U_SOUR(1)    =   COSZ*COSY
+    V_SOUR(1)    =   COSZ*SINX*SINY - SINZ*COSX
+    W_SOUR(1)    =   COSZ*SINY*COSX + SINZ*SINX
 
-     	 U_SOUR(2)	=   SINZ*COSY
-     	 V_SOUR(2)	=   SINZ*SINX*SINY + COSZ*COSX
-     	 W_SOUR(2)	=   SINZ*SINY*COSX - SINX*COSZ
+    U_SOUR(2)    =   SINZ*COSY
+    V_SOUR(2)    =   SINZ*SINX*SINY + COSZ*COSX
+    W_SOUR(2)    =   SINZ*SINY*COSX - SINX*COSZ
 
-     	 U_SOUR(3)	= - SINY
-     	 V_SOUR(3)	=   COSY*SINX
-     	 W_SOUR(3)	=   COSY*COSX
+    U_SOUR(3)    = - SINY
+    V_SOUR(3)    =   COSY*SINX
+    W_SOUR(3)    =   COSY*COSX
 
 
-! D		RTHETA_IN =   RTHETA
+    ! D        RTHETA_IN =   RTHETA
 
-		RTHETA    =   TORAD*RTHETA   	!Pass to radians
-		RDELTA    =   PIHALF - RTHETA
+    RTHETA    =   TORAD*RTHETA       !Pass to radians
+    RDELTA    =   PIHALF - RTHETA
 
-! ** Some useful variables are now computed.
+    ! ** Some useful variables are now computed.
 
-		COSTHR    =   COS(RTHETA)
-		SINTHR    =   SIN(RTHETA)
-		COSDER    =   COS(RDELTA)
-		SINDER    =   SIN(RDELTA)
+    COSTHR    =   COS(RTHETA)
+    SINTHR    =   SIN(RTHETA)
+    COSDER    =   COS(RDELTA)
+    SINDER    =   SIN(RDELTA)
 
-	PSREAL(1) =   OFF_SOUX
-	PSREAL(2) =   OFF_SOUY - RDSOUR*SINTHR
-	PSREAL(3) =   OFF_SOUZ + RDSOUR*COSTHR
+    PSREAL(1) =   OFF_SOUX
+    PSREAL(2) =   OFF_SOUY - RDSOUR*SINTHR
+    PSREAL(3) =   OFF_SOUZ + RDSOUR*COSTHR
 
-	ELSE
-		PSREAL(1) =   0.0D0
-		PSREAL(2) = - SIN(T_INCIDENCE)*T_SOURCE
-		PSREAL(3) =   COS(T_INCIDENCE)*T_SOURCE
-		RTHETA 	  =   T_INCIDENCE
-		RDELTA    =   PIHALF - T_INCIDENCE
-		SINTHR    =   SIN(T_INCIDENCE)
-		COSTHR    =   COS(T_INCIDENCE)
-		COSDER    =   COS(RDELTA)
-		SINDER    =   SIN(RDELTA)
-     		RDSOUR	  =   T_SOURCE
-	END IF
+ELSE ! source does not move
+    PSREAL(1) =   0.0D0
+    PSREAL(2) = - SIN(T_INCIDENCE)*T_SOURCE
+    PSREAL(3) =   COS(T_INCIDENCE)*T_SOURCE
+    RTHETA       =   T_INCIDENCE
+    RDELTA    =   PIHALF - T_INCIDENCE
+    SINTHR    =   SIN(T_INCIDENCE)
+    COSTHR    =   COS(T_INCIDENCE)
+    COSDER    =   COS(RDELTA)
+    SINDER    =   SIN(RDELTA)
+    RDSOUR      =   T_SOURCE
+END IF
 
-     	WRITE(6,*) 'Exit from SETSOUR'
+WRITE(6,*) 'Exit from SETSOUR'
 
 End Subroutine setsour
 
@@ -7216,13 +7223,13 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
 	IF (F_FACET.NE.1.AND.F_KOMA.NE.1.AND.F_SEGMENT.NE.1) THEN
           ! changed srio@esrf.eu 2012-01-26
-          ! the optical path is always positive (use ABS(TPAR)) and 
-          ! must not be affected by the refraction index if refractor
-          ! is not set
+          ! the optical path must not be affected by the refraction index 
+          ! if refractor is not set
+          ! srio@esrf.eu 2012-06-06 removed ABS(TPAR)
           IF (F_REFRAC.EQ.0) THEN 
-            PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
-          ELSE 
-            PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+            PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR
+          ELSE
+            PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
           END IF
      	  !PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 	ELSE IF (F_KOMA.EQ.1) THEN
@@ -7241,13 +7248,17 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	       GOTO 10000
 	    ELSE
                ! changed srio@esrf.eu 2012-01-26
-               ! the optical path is always positive (use ABS(TPAR)) and 
-               ! must not be affected by the refraction index if refractor
-               ! is not set
+               ! the optical path must not be affected by the refraction 
+               ! index if refractor is not set
+               ! srio@esrf.eu 2012-06-06 removes ABS(tpar)
                IF (F_REFRAC.EQ.0) THEN 
-                 PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)
+                 PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR
                ELSE 
-                 PHASE (1,ITIK) = PHASE(1,ITIK) + ABS(TPAR)*R_IND_OBJ
+                 if (f_crystal .eq. 0) then
+                   PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
+                 else ! laue crystals
+                   PHASE (1,ITIK) = PHASE(1,ITIK) + TPAR
+                 endif
                END IF
 	       !PHASE(1,ITIK) = PHASE(1,ITIK) + TPAR*R_IND_OBJ
 	    END IF
