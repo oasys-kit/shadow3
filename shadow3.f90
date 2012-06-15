@@ -26,7 +26,6 @@ PROGRAM  Shadow3
   use shadow_pre_sync    ! undulator preprocessors
   use shadow_preprocessors       ! general preprocessors
   use shadow_postprocessors      ! general postprocessors
-!  use urgent_cdf       ! undulator preprocessor by Urgent
 
   implicit none
 
@@ -181,9 +180,9 @@ SELECT CASE (inCommandLow)
   CASE ("bragg")
      CALL bragg
      inCommand=""
-  CASE ("grade_mlayer")
-     CALL grade_mlayer
-     inCommand=""
+  !CASE ("grade_mlayer")
+  !   CALL grade_mlayer
+  !   inCommand=""
   CASE ("pre_mlayer")
      CALL pre_mlayer
      inCommand=""
@@ -193,9 +192,9 @@ SELECT CASE (inCommandLow)
   CASE ("presurface")
      CALL presurface
      inCommand=""
-!  CASE ("cdf_z")
-!     CALL cdf_z
-!     inCommand=""
+  !CASE ("cdf_z")
+  !   CALL cdf_z
+  !   inCommand=""
   CASE ("epath")
      i_device = 0
      CALL epath(i_Device)
@@ -310,7 +309,8 @@ SELECT CASE (inCommandLow)
      print *,'Commands Available at this level: '
      print *,'  [MAIN]            : source trace'
      print *,'  [PRE-PROCESSORS]  : prerefl bragg presurface'
-     print *,'                    : input_source pre_mlayer grade_mlayer'
+     !print *,'                    : input_source pre_mlayer grade_mlayer'
+     print *,'                    : input_source pre_mlayer '
      print *,'                    : make_id epath nphoton undul_set undul_phot undul_cdf' 
      print *,'                    : mkdatafiles' 
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '

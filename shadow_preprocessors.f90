@@ -179,11 +179,12 @@ SUBROUTINE OPT_ELE (RF1,RF2,ENERGY,DENSITY)
 	real(kind=skr)  :: ATWT,RMU,EMF,DENSITY
      	real(kind=skr),dimension(420) :: ENERGY,RF1,RF2
      	real(kind=skr)    :: avog,atoms
-     	integer(kind=ski) :: NUMBER1
-     	integer(kind=ski) :: i
-	character(len=2)  :: ELEMENT
-!todo Sort out constants and physical constants...
-     	DATA	AVOG	/  6.022098E+23 		     /
+        integer(kind=ski) :: NUMBER1
+        integer(kind=ski) :: i
+        character(len=2)  :: ELEMENT
+
+!       DATA	AVOG	/  6.022098E+23 		     /
+        AVOG =   6.02214129E+23
 
 
      	ELEMENT	= RSTRING('Enter atomic symbol (capitalized) : ')
@@ -226,7 +227,8 @@ SUBROUTINE OPT_COM (RF1,RF2,ENERGY,DENSITY)
      	real(kind=skr),dimension(5)   :: AT,RREL
      	real(kind=skr)                :: avog
 
-     	AVOG	=   6.022098E+23
+     	!AVOG=   6.022098E+23
+        AVOG =   6.02214129E+23
      	DO 14 I = 1,5
      	  IREL(I) = 0
      	  RREL(I) = 0.0
@@ -767,87 +769,89 @@ SUBROUTINE Binary(data, lb, ub, item, loc)
 	 return
 END SUBROUTINE Binary
 
-!***********************************************************************
-!*	program 	PREREFL					      *
-!*								      *
-!*	F.Cerrina,	SRC - June 1983				      *
-!*			Modified July 1986
-!*								      *
-!* This program is based on the compilation of atomic scattering factors
-!* of B.Henke, Low Energy X-Ray Diagnostics - 1981 and formulaes therein
-!* The photon energy range is 30-100000 eV, for all elements.	      *
-!*
-!* This program will generate a file of the right structure for Shadow *
-!* The output will be an array in energy				      *
-!*								      *
-!C	Link with READLIB.OBJ
-!***********************************************************************
+!************************************************************************
+!*	program 	PREREFL					        *
+!*								        *
+!*	F.Cerrina,	SRC - June 1983				        *
+!*			Modified July 1986                              *
+!*								        *
+!* This program is based on the compilation of atomic scattering factors*
+!* of B.Henke, Low Energy X-Ray Diagnostics - 1981 and formulaes therein*
+!* The photon energy range is 30-100000 eV, for all elements.	        *
+!*                                                                      *
+!* This program will generate a file of the right structure for Shadow  *
+!* The output will be an array in energy				*
+!*								        *
+!C	Link with READLIB.OBJ                                           *
+!************************************************************************
 SUBROUTINE PREREFL
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
-	real(kind=skr),dimension(420)   :: RF1,RF2,ENERGY
-	real(kind=skr),dimension(420,2) :: OUTFIL
-	real(kind=skr) :: DENSITY
-	character(len=sklen) :: OUT_FILE
-	integer(kind=ski),parameter     :: N_DIM=10000
-	real(kind=skr),dimension(N_DIM) :: AF1,AF2
-	EQUIVALENCE	(OUTFIL(1,1),RF1(1))	
-	EQUIVALENCE	(OUTFIL(1,2),RF2(1))	
+        !implicit real(kind=skr)    (a-h,o-z)
+        !implicit integer(kind=ski) (i-n)
+        implicit none
+        real(kind=skr),dimension(420)   :: RF1,RF2,ENERGY
+        real(kind=skr),dimension(420,2) :: OUTFIL
+        real(kind=skr) :: DENSITY
+        character(len=sklen) :: OUT_FILE
+        integer(kind=ski),parameter     :: N_DIM=10000
+        real(kind=skr),dimension(N_DIM) :: AF1,AF2
 
-     	!to shadow_globaldefinitions DATA	PI     	/  3.141592653589793238462643D0 /
-     	!to shadow_globaldefinitions DATA	PIHALF 	/  1.570796326794896619231322D0 /
-     	!to shadow_globaldefinitions DATA	TWOPI 	/  6.283185307179586476925287D0 /
-     	!to shadow_globaldefinitions DATA	TODEG 	/ 57.295779513082320876798155D0 /
-     	!to shadow_globaldefinitions DATA	TORAD	/  0.017453292519943295769237D0 /
-	!to shadow_globaldefinitions DATA	TOCM	/  1.239852D-4		     /
-	!to shadow_globaldefinitions DATA	TOANGS 	/  1.239852D+4		     /
+        real(kind=skr)     :: radius,estart,efinal,estep,alpha,depth0,elfactor
+        real(kind=skr)     :: f1,f2,gamma1,photon,qmax,qmin,qstep,wave
+        integer(kind=ski)  :: i_type,i,nener,npoint
 
-     	RADIUS	=   2.817939D-13
-	I_TYPE	= IRINT ('Element [0] or compound [1] ? ')
-     	DENSITY	= RNUMBER('Density [ g/cm3 ] ?')
-	IF (I_TYPE.EQ.0) THEN
-	  CALL	OPT_ELE	(RF1,RF2,ENERGY,DENSITY)
-	ELSE IF (I_TYPE.EQ.1) THEN
-	  CALL	OPT_COM	(RF1,RF2,ENERGY,DENSITY)
-	ELSE 
-	  STOP	'Error !  Invalid response.'
-	END IF
-     	 WRITE(6,*) 'Enter starting photon energy,end and step'
-     	READ(*,*) ESTART,EFINAL,ESTEP
-     	OUT_FILE	= RSTRING('Output file : ')
+        EQUIVALENCE    (OUTFIL(1,1),RF1(1))    
+        EQUIVALENCE    (OUTFIL(1,2),RF2(1))    
 
-     	QMIN	=   ESTART/TOCM*TWOPI
-     	QMAX	=   EFINAL/TOCM*TWOPI
-     	QSTEP	=   ESTEP/TOCM*TWOPI
-     	NPOINT	=  (EFINAL-ESTART)/ESTEP + 1
-	DEPTH0	=   DENSITY/2.0D0
-	IF (NPOINT.GT.N_DIM) STOP	'Too many points (*N_DIM* max.)'
-     	OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
-	REWIND (20)
-     	WRITE (20)	QMIN,QMAX,QSTEP,DEPTH0
-     	WRITE (20)	NPOINT
-	ELFACTOR	= LOG10(1.0D4/30.0D0)/300.0D0
-     	DO 11 I=1,NPOINT
-     	PHOTON	=   ESTART + (I-1)*ESTEP
-	NENER	=   LOG10(PHOTON/30.0E0)/ELFACTOR + 1
-     	F1	=   OUTFIL(NENER,1) +  &
-      	(OUTFIL(NENER+1,1) - OUTFIL(NENER,1))*(PHOTON - ENERGY(NENER))/ &
-      	(ENERGY(NENER+1) - ENERGY(NENER))
-     	F2	=   OUTFIL(NENER,2) +  &
-      	(OUTFIL(NENER+1,2) - OUTFIL(NENER,2))*(PHOTON - ENERGY(NENER))/ &
-      	(ENERGY(NENER+1) - ENERGY(NENER))
-!*** Computes now ALPHA and gamma
-     	WAVE	=   TOCM/PHOTON
-     	ALPHA	=   RADIUS/PI*(WAVE**2)*F1
-     	GAMMA	=   RADIUS/PI*(WAVE**2)*F2
-     	AF1(I)	=   ALPHA
-     	AF2(I)  =   GAMMA
-11     	CONTINUE
-     	WRITE (20)	(AF1(I),I=1,NPOINT)
-     	WRITE (20)	(AF2(I),I=1,NPOINT)
-     	CLOSE (20)
-     	!CALL	EXIT (0)
-	RETURN
+
+        !RADIUS    =   2.817939D-13
+        RADIUS    =   2.8179403267D-13
+        I_TYPE    = IRINT ('Element [0] or compound [1] ? ')
+        DENSITY    = RNUMBER('Density [ g/cm3 ] ?')
+        IF (I_TYPE.EQ.0) THEN
+          CALL    OPT_ELE    (RF1,RF2,ENERGY,DENSITY)
+        ELSE IF (I_TYPE.EQ.1) THEN
+          CALL    OPT_COM    (RF1,RF2,ENERGY,DENSITY)
+        ELSE 
+          STOP    'Error !  Invalid response.'
+        END IF
+        WRITE(6,*) 'Enter starting photon energy,end and step'
+        READ(*,*) ESTART,EFINAL,ESTEP
+        OUT_FILE    = RSTRING('Output file : ')
+
+        QMIN    =   ESTART/TOCM*TWOPI
+        QMAX    =   EFINAL/TOCM*TWOPI
+        QSTEP    =   ESTEP/TOCM*TWOPI
+        NPOINT    =  (EFINAL-ESTART)/ESTEP + 1
+        DEPTH0    =   DENSITY/2.0D0
+        IF (NPOINT.GT.N_DIM) STOP    'Too many points (*N_DIM* max.)'
+        OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
+        REWIND (20)
+        WRITE (20)    QMIN,QMAX,QSTEP,DEPTH0
+        WRITE (20)    NPOINT
+        ELFACTOR    = LOG10(1.0D4/30.0D0)/300.0D0
+        !DO 11 I=1,NPOINT
+        DO I=1,NPOINT
+            PHOTON    =   ESTART + (I-1)*ESTEP
+            NENER    =   LOG10(PHOTON/30.0E0)/ELFACTOR + 1
+            F1    =   OUTFIL(NENER,1) +  &
+              (OUTFIL(NENER+1,1) - OUTFIL(NENER,1))*(PHOTON - ENERGY(NENER))/ &
+              (ENERGY(NENER+1) - ENERGY(NENER))
+            F2    =   OUTFIL(NENER,2) +  &
+              (OUTFIL(NENER+1,2) - OUTFIL(NENER,2))*(PHOTON - ENERGY(NENER))/ &
+              (ENERGY(NENER+1) - ENERGY(NENER))
+            !*** Computes now ALPHA and gamma
+            WAVE    =   TOCM/PHOTON
+            ALPHA    =   RADIUS/PI*(WAVE**2)*F1
+            gamma1    =   RADIUS/PI*(WAVE**2)*F2
+            AF1(I)    =   ALPHA
+            AF2(I)  =   gamma1
+        END DO
+!11      CONTINUE
+        WRITE (20)    (AF1(I),I=1,NPOINT)
+        WRITE (20)    (AF2(I),I=1,NPOINT)
+        CLOSE (20)
+        !CALL    EXIT (0)
+        RETURN
 END SUBROUTINE PREREFL
 
 
@@ -878,20 +882,25 @@ SUBROUTINE OptPropComp
      	real(kind=skr),dimension(420) ::OUTFIL41,OUTFIL42
      	real(kind=skr),dimension(420) ::OUTFIL51,OUTFIL52
 
-     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
-     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
-     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
-     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
-	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
-	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+!     	real(kind=skr),parameter ::PI=  3.141592653589793238462643D0 
+!     	real(kind=skr),parameter ::PIHALF=  1.570796326794896619231322D0 
+!     	real(kind=skr),parameter ::TWOPI=  6.283185307179586467925287D0 
+!     	real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
+!     	real(kind=skr),parameter ::TORAD=  0.017453292519943295769237D0 
+!	real(kind=skr),parameter ::TOCM=  1.239852D-4		     
+!	real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
 
 	real(kind=skr)    :: RADIUS,AVOG,RMOL,RMOLEC,RMu,AtWt,Emf
 	real(kind=skr)    :: at1,at2,at3,at4,at5,f1,f2,wave,alpha,gamma
 	integer(kind=ski) :: I,J,K,IDK,NATOMS
 
-     	RADIUS	=   2.817939E-13
-     	AVOG	=   6.022098E+23
+        !RADIUS	=   2.817939E-13
+        !AVOG	=   6.022098E+23
+        !updated srio@esrf.eu 2012-06-06 
+        !http://physics.nist.gov/cgi-bin/cuu/Value?re|search_for=electron
+        RADIUS =   2.8179403267E-13
+        ! http://physics.nist.gov/cgi-bin/cuu/Value?na|search_for=avogadro
+        AVOG =   6.02214129E+23
 
     	DENSITY = RNUMBER('Density [ g/cm3 ] ? ')
      	DO 12 I = 1,5
@@ -998,103 +1007,170 @@ END SUBROUTINE OptPropComp
 !C
 !C---
 SUBROUTINE Pre_Mlayer
-	implicit none
+        implicit none
 
-     	character(len=sklen) :: FILEOUT,FGRADE
-	real(kind=skr),dimension(1001)  :: THICK,GAMMA
+        character(len=sklen) :: FILEOUT,FGRADE
+	real(kind=skr),dimension(1001) :: THICK,GAMMA1,mlroughness1,mlroughness2
         real(kind=skr) :: ESTART, EFINAL 
 	real(kind=skr)    :: ElFactor
-	integer(kind=ski)    :: np,i,j,npair,iGrade
+        integer(kind=ski)    :: np,i,j,npair,iGrade
+	real(kind=skr)    :: aa0,aa1,aa2
 
-	FILEOUT	= RSTRING ('Name of output file : ')
-10     	ESTART = RNUMBER ('Photon energy (eV) from : ')
-	IF (ESTART.LT. DBLE(30)) THEN
-	  WRITE(6,*)'Minimum energy is 30 eV.  Try again.'
-	  GO TO 10
-	END IF
-11     	EFINAL = RNUMBER ('                     to : ')
-	IF (EFINAL.GT.100000) THEN
-	  WRITE(6,*)'Maximum energy is 100,000 eV.  Try again.'
-	  GO TO 11
-	END IF
-	ELFACTOR = LOG10(1.0E4/30.0)/300.0
-	ISTART = LOG10(ESTART/30.0E0)/ELFACTOR + 1
-	IFINAL = LOG10(EFINAL/30.0E0)/ELFACTOR + 2
-	NP = IFINAL - ISTART + 1
-	OPEN	(20,FILE=FILEOUT,STATUS='UNKNOWN')
-	REWIND (20)
-	WRITE	(20,*)	NP
+        FILEOUT = RSTRING ('Name of output file : ')
+10      ESTART = RNUMBER ('Photon energy (eV) from : ')
+        IF (ESTART.LT. DBLE(30)) THEN
+          WRITE(6,*)'Minimum energy is 30 eV.  Try again.'
+          GO TO 10
+        END IF
+11      EFINAL = RNUMBER ('                     to : ')
+        IF (EFINAL.GT.100000) THEN
+          WRITE(6,*)'Maximum energy is 100,000 eV.  Try again.'
+          GO TO 11
+        END IF
+        ELFACTOR = LOG10(1.0E4/30.0)/300.0
+        ISTART = LOG10(ESTART/30.0E0)/ELFACTOR + 1
+        IFINAL = LOG10(EFINAL/30.0E0)/ELFACTOR + 2
+        NP = IFINAL - ISTART + 1
+        OPEN(20,FILE=FILEOUT,STATUS='UNKNOWN')
+        REWIND (20)
+        WRITE(20,*) NP
 !C
 !C Get the refractive index of the substrate.
 !C
-	WRITE(6,*)'***************************************************'
-	WRITE(6,*)'Specify the substrate material :'
-	CALL	OptPropComp
-	WRITE	(20,*)	(ENER(I), I = 1, NP)
-	DO 19 I = 1, NP
- 19	    WRITE	(20,*)	DELTA(I), BETA(I)
+        WRITE(6,*)'***************************************************'
+        WRITE(6,*)'Specify the substrate material :'
+        CALL OptPropComp
+        WRITE (20,*) (ENER(I), I = 1, NP)
+        DO 19 I = 1, NP
+ 19     WRITE (20,*) DELTA(I), BETA(I)
+
+        WRITE(6,*) "  "
+        WRITE(6,*) "The stack is as follows: "
+        write(6,*) "      "
+        write(6,*) "                 vacuum   "
+        write(6,*) "      |------------------------------|  \   "
+        write(6,*) "      |          odd (n)             |  |   "
+        write(6,*) "      |------------------------------|  | BILAYER # n   "
+        write(6,*) "      |          even (n)            |  |   "
+        write(6,*) "      |------------------------------|  /   "
+        write(6,*) "      |          .                   |   "
+        write(6,*) "      |          .                   |   "
+        write(6,*) "      |          .                   |   "
+        write(6,*) "      |------------------------------|  \   "
+        write(6,*) "      |          odd (1)             |  |   "
+        write(6,*) "      |------------------------------|  | BILAYER # 1   "
+        write(6,*) "      |          even (1)            |  |   "
+        write(6,*) "      |------------------------------|  /   "
+        write(6,*) "      |                              |   "
+        write(6,*) "      |///////// substrate //////////|   "
+        write(6,*) "      |                              |   "
+        write(6,*) "      "
+        WRITE(6,*) ' '
+
 !C
 !C Get the refractive index of the even layer.
 !C
-	WRITE(6,*)'***************************************************'
-	WRITE(6,*)'Right above the substrate is the even layer material'
-	WRITE(6,*)'Specify the even layer material :'
-	CALL	OptPropComp
-	DO 29 I = 1, NP
- 29	    WRITE	(20,*)	DELTA(I), BETA(I)
+        WRITE(6,*)'***************************************************'
+        WRITE(6,*)'Right above the substrate is the even layer material'
+        WRITE(6,*)' '
+        WRITE(6,*)'Specify the even layer material :'
+        CALL OptPropComp
+        DO 29 I = 1, NP
+ 29     WRITE (20,*) DELTA(I), BETA(I)
 !C
 !C Get the refractive index of the odd layer.
 !C
-	WRITE(6,*)'***************************************************'
-	WRITE(6,*)'Odd layer material is on top of the even layer.'
-	WRITE(6,*)'Specify the odd layer material :'
-	CALL	OptPropComp
-	DO 39 I = 1, NP
- 39    	    WRITE	(20,*)	DELTA(I), BETA(I)
-	WRITE(6,*)'***************************************************'
-	NPAIR	= IRINT ('No. of layer pairs : ')
-	WRITE	(20,*)	NPAIR
-   	WRITE(6,*) ' '
-   	WRITE(6,*)  &
+        WRITE(6,*)'***************************************************'
+        WRITE(6,*)'Odd layer material is on top of the even layer.'
+
+        WRITE(6,*)' '
+        WRITE(6,*)'Specify the odd layer material :'
+        CALL OptPropComp
+        DO 39 I = 1, NP
+ 39     WRITE(20,*)  DELTA(I), BETA(I)
+
+        WRITE(6,*)'***************************************************'
+        NPAIR = IRINT ('No. of layer pairs : ')
+        ! srio@esrf.eu 2012-06-07 Nevot-Croce ML roughness model implemented.
+        ! By convention, starting from the version that includes ML roughness
+        ! we set NPAR negative, in order to assure compatibility with old
+        ! versions. If NPAR<0, roughness data are read, if NPAR>0 no roughness.
+        !WRITE(20,*) NPAIR
+        WRITE(20,*) -NPAIR
+
+        WRITE(6,*) ' '
+        WRITE(6,*)  &
       'Starting from the substrate surface, specify the thickness t :'
-   	WRITE(6,*) '      t = t(odd) + t(even)        in Angstroms,'
-   	WRITE(6,*) 'and the gamma ratio :'
-   	WRITE(6,*) '      t(even) / (t(odd) + t(even))'
-   	WRITE(6,*) 'for EACH layer pairs.'
-   	WRITE(6,*) ' '
-   	WRITE(6,*)  &
-      'Type two -1 whenever you want the remaining layers ', &
-      'to assume the thickness and gamma ratio of the previous one.'
-   	WRITE(6,*) ' '
-   	DO 219 I = 1, NPAIR
-   	  WRITE(6,*) 't and gamma ratio of layer ',I,' :'
-   	  READ(5,*) THICK(I),GAMMA(I)
-   	  IF (THICK(I).EQ.-1.AND.GAMMA(I).EQ.-1) THEN
-   	    DO 319 J = I, NPAIR
-   	      THICK(J) = THICK(I-1)
-   	      GAMMA(J) = GAMMA(I-1)
-319   	    CONTINUE
-   	    GO TO 15
-   	  END IF
-219   	CONTINUE
-15	DO 119 I = 1, NPAIR
-   	  WRITE	(20,*)	THICK(I),GAMMA(I)
-119   	CONTINUE
+        WRITE(6,*) '      t = t(odd) + t(even)        in Angstroms,'
+        WRITE(6,*) 'and the gamma ratio :'
+        WRITE(6,*) '      t(even) / (t(odd) + t(even))'
+        WRITE(6,*) 'for EACH bilayer.'
+        WRITE(6,*) ' '
+        WRITE(6,*)  &
+     'Type two -1 whenever you want the remaining layers ', &
+     'to assume the thickness, gamma ratio and roughnesses of the previous one.'
+        WRITE(6,*) ' '
+        DO 219 I = 1, NPAIR
+          WRITE(6,*) 'thickness [A], gamma ratio, '//  &
+                     'roughness even [A] and roughness odd [A] of bilayer ',I,' :'
+          READ(5,*) THICK(I),GAMMA1(I),mlroughness1(i),mlroughness2(i)
+          IF (THICK(I).EQ.-1.AND.GAMMA1(I).EQ.-1&
+                            .and.mlroughness1(i).eq.-1&
+                            .and.mlroughness2(i).eq.-1) THEN
+            DO 319 J = I, NPAIR
+              THICK(J) = THICK(I-1)
+              GAMMA1(J) = GAMMA1(I-1)
+              mlroughness1(J) = mlroughness1(I-1)
+              mlroughness2(J) = mlroughness2(I-1)
+319         CONTINUE
+            GO TO 15
+          END IF
+219     CONTINUE
+15      DO 119 I = 1, NPAIR
+          WRITE(20,*) THICK(I),GAMMA1(I),mlroughness1(i),mlroughness2(i)
+119     CONTINUE
    
-   	WRITE(6,*) '***************************************************'
-   	IGRADE	= IYES('Is t and/or gamma graded over the surface ? ')
-   	WRITE(6,*) ' '
-   	WRITE	(20,*)	IGRADE
-   	IF (IGRADE.EQ.1) THEN
-   	WRITE(6,*)  &
-      'Then GRADE_MLAYER should be run to generate the spline ', &
-      'coefficients for the t and gamma factors over the surface.', &
-      '  Here just type in the file name that WILL be used to store',  &
-      ' the spline coefficients :'
-   	FGRADE	= RSTRING(' ')
-   	WRITE	(20,*)	FGRADE
-   	END IF
-   	CLOSE 	(20)
+        WRITE(6,*) '***************************************************'
+        WRITE(6,*) '  Is the multilayer graded over the surface? '
+        WRITE(6,*) '      0: No ' 
+        WRITE(6,*) '      1: t and/or gamma graded over the surface '
+        WRITE(6,*) '         (input spline files with t and gamma gradient'
+        WRITE(6,*) '      2: t graded over the surface '
+        WRITE(6,*) '         (input quadratic fit to t gradient)'
+        WRITE(6,*) '      '
+        IGRADE = IRINT('<?>')
+        !IGRADE = IYES('Is t and/or gamma graded over the surface ? ')
+        WRITE(6,*) ' '
+        WRITE(20,*) IGRADE
+print *,'>>>>>>>>>>>>>>>>> IGRADE: ',IGRADE
+        IF (IGRADE.EQ.1) THEN
+          WRITE(6,*)  &
+          'Generation of the spline coefficients for the t and gamma factors'
+          WRITE(6,*)  &
+          ' over the surface.'
+          !WRITE(6,*)  &
+          !'Then GRADE_MLAYER should be run to generate the spline ', &
+          !'coefficients for the t and gamma factors over the surface.', &
+          !'  Here just type in the file name that WILL be used to store',  &
+          !' the spline coefficients :'
+          !call grade_mlayer(FGRADE)
+          !FGRADE = RSTRING(' ')
+          call grade_mlayer(fgrade)
+          WRITE(20,*) trim(FGRADE)
+        ELSE IF (IGRADE.EQ.2) THEN
+          WRITE(6,*) 'A second degree polynomial fit of the thickness grading'
+          WRITE(6,*) 'must be available:'
+          WRITE(6,*) '   t(y) = BILATER_THICHNESS(y)/BILAYER_THICKNESS(y=0)'
+          WRITE(6,*) '   t(y) = a0 + a1*y + a2*(y^2)  '
+          WRITE(6,*) '   Enter a0, a1, a2'
+          !aa0 = RNUMBER('a0 (constant term) ')
+          !aa1 = RNUMBER('a1 (slope term) ')
+          !aa2 = RNUMBER('a2 (quadratic term) ')
+          READ(5,*) aa0,aa1,aa2
+          WRITE(20,*) aa0,aa1,aa2
+        ELSE
+        END IF
+        CLOSE (20)
 END SUBROUTINE Pre_Mlayer
 
 !C+++
@@ -1116,11 +1192,12 @@ END SUBROUTINE Pre_Mlayer
 !C	Output		A file containing the spline array prepared by
 !C			IMSL function IBCCCU
 !C---
-SUBROUTINE Grade_Mlayer
+SUBROUTINE Grade_Mlayer(outfile)
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
-     	character(len=sklen) :: INFILE,OUTFILE
+        character(len=sklen),intent(out) :: OUTFILE
+        character(len=sklen) :: INFILE
      	real(kind=skr),dimension(2,101,2,101) :: CSPL 
      	real(kind=skr),dimension(20602)       :: WK 
      	real(kind=skr),dimension(101)         :: X,Y
@@ -1267,15 +1344,17 @@ SUBROUTINE BRAGG
         implicit real(kind=skr) (a-h,o-z)
         implicit integer(kind=ski)        (i-n)
 
-     	real(kind=skr),parameter ::PI=3.141592653589793238462643D0
-     	real(kind=skr),parameter ::PIHALF=1.570796326794896619231322D0 
-     	real(kind=skr),parameter ::TWOPI=6.283185307179586467925287D0 
-     	real(kind=skr),parameter ::TODEG=57.295779513082320876798155D0 
-     	real(kind=skr),parameter ::TORAD=0.017453292519943295769237D0 
-	real(kind=skr),parameter ::TOCM=1.239852D-4	    
-	real(kind=skr),parameter ::TOANGS=1.239852D+4
-     	real(kind=skr),parameter ::E2_MC2=2.817939D-13
-	real(kind=skr),parameter ::AVOG=6.022098D+23
+!     	real(kind=skr),parameter ::PI=3.141592653589793238462643D0
+!     	real(kind=skr),parameter ::PIHALF=1.570796326794896619231322D0 
+!     	real(kind=skr),parameter ::TWOPI=6.283185307179586467925287D0 
+!     	real(kind=skr),parameter ::TODEG=57.295779513082320876798155D0 
+!     	real(kind=skr),parameter ::TORAD=0.017453292519943295769237D0 
+!	real(kind=skr),parameter ::TOCM=1.239852D-4	    
+!	real(kind=skr),parameter ::TOANGS=1.239852D+4
+        !real(kind=skr),parameter ::E2_MC2=2.817939D-13
+     	real(kind=skr),parameter ::E2_MC2=2.8179403276D-13
+        !real(kind=skr),parameter ::AVOG=6.022098D+23
+	real(kind=skr),parameter ::AVOG= 6.02214129E+23
 
      	character(len=sklen) :: OUTFIL
 	COMPLEX*16	CI,FA,FB,STRUCT,F_0,REFRAC
@@ -2026,7 +2105,7 @@ SUBROUTINE BRAGG
 	  WRITE	(21,*)	(EP+DES_FAC_O)*MUL_FAC,(CDABS(RCP_O))**2
 	endif
 !C
-!C Only for asymmetrical case (the reflected R.C)
+!C Only for asymmetrical case (the reflectedeR.C)
 !C
 	IF (I_ASYM.EQ.1) THEN
 	 UVE_H	= PI*SP_HKL*COS_G*(1.0D0-1.0D0/ASS_FAC)*EP/R_LAM0

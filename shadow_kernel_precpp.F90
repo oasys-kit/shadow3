@@ -374,7 +374,7 @@ Module shadow_kernel
 
 
     !! variables passed between reflec and fresnel
-    real(kind=skr),dimension(200)  :: t_oe, gratio
+    real(kind=skr),dimension(500)  :: t_oe, gratio, mlroughness1, mlroughness2
     real(kind=skr)                 :: delo, beto, dele, bete, dels, bets
 
 
@@ -669,14 +669,14 @@ Contains
             WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
             STOP 'Fatal error. Aborted'
          END IF
-print *,'Reding file....'
+!!print *,'Reding file....'
          READ (30,*,ERR=101)    distSlit,h_min,h_max,v_min,v_max
          !READ (30,*,ERR=101)    distSlit
          !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
          !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
          !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
          !READ (30,ERR=101)    distSlit,h_min,h_max,v_min,v_max
-print *,'distSlit,h_min,h_max,v_min,v_max: ',distSlit,h_min,h_max,v_min,v_max
+!!print *,'distSlit,h_min,h_max,v_min,v_max: ',distSlit,h_min,h_max,v_min,v_max
          WRITE(6,*)'File with slit boundaries read succesfully.'
        END IF
 
@@ -4259,7 +4259,8 @@ End Subroutine read_axis
 ! C+++
 ! C	SUBROUTINE	REFLEC
 ! C
-! C	PURPOSE		To compute the local reflectivity of a mirror;
+! C	PURPOSE		To compute the local reflectivity of a mirror or
+! C                     multilayer. Also compute filter transmittivity.
 ! C
 ! C	FLAGS		k_what:  .lt. 0 --> initialization call. Reads
 ! C					in data file.
@@ -4276,54 +4277,62 @@ End Subroutine read_axis
 ! C			[ O ] ABSOR	: absorption coefficient
 ! C
 ! C---
-SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
-                               PHASEP,PHASES,ABSOR,K_WHAT)
+SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S,PHASEP,PHASES,ABSOR,K_WHAT)
 
-	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-	IMPLICIT INTEGER(kind=ski)        (F,I-N)
+implicit none
+!IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+!IMPLICIT INTEGER(kind=ski)        (F,I-N)
 
+real(kind=skr),dimension(3),intent(in)   :: pin
+real(kind=skr),             intent(in)   :: wnum,sin_ref,cos_pole
+integer(kind=ski),          intent(in)   :: k_what
+real(kind=skr),             intent(inout):: absor
+real(kind=skr),             intent(out)  :: r_s,r_p,phases,phasep
 
-        integer(kind=ski), parameter  :: dimMLenergy=300
+integer(kind=ski), parameter  :: dimMLenergy=300
 
-        real(kind=skr),dimension(1000)   :: zf1,zf2
-        real(kind=skr),dimension(3)      :: pin
-        real(kind=skr),dimension(dimMLenergy)    :: ener, &
-!        real(kind=skr),dimension(300)    :: ener, &
+real(kind=skr),dimension(1000)   :: zf1,zf2
+real(kind=skr),dimension(dimMLenergy)    :: ener, &
             delta_s,beta_s,delta_e,beta_e,delta_o,beta_o
-     	! DIMENSION	ZF1(1000),ZF2(1000)
-	! DIMENSION 	PIN(3)
-!        dimension 	t_oe(200),gratio(200)
-! C        dimension 	do(200),de(200)
-	!dimension	ener(300),delta_s(300),beta_s(300),delta_e(300)
-	!dimension	beta_e(300),delta_o(300),beta_o(300)
-        logical 	ele(5),elo(5),els(5)
-	character(len=sklen)    ::  file_grade
-	!character*80	file_grade
 
-        real(kind=skr),dimension(2,101,2,101) :: tspl,gspl
-        real(kind=skr),dimension(101)         :: tx,ty,gx,gy
-        real(kind=skr),dimension(6)           :: pds
-	!dimension	tspl (2,101,2,101),tx(101),ty(101),pds(6)
-	!dimension	gspl (2,101,2,101),gx(101),gy(101)
-!	external	dbcevl
+logical,dimension(5)    ::  ele,elo,els
+character(len=sklen)    ::  file_grade
+
+real(kind=skr),dimension(2,101,2,101) :: tspl,gspl
+real(kind=skr),dimension(101)         :: tx,ty,gx,gy
+real(kind=skr),dimension(6)           :: pds
+
+real(kind=skr)   :: lateral_grade_constant=1D0 !initialization avoids save
+real(kind=skr)   :: lateral_grade_slope=0D0 
+real(kind=skr)   :: lateral_grade_quadratic=0D0 
+
+real(kind=skr)   :: ab_coeff, cos_ref, del_x, depth0, elfactor, gfact
+real(kind=skr)   :: qmin, qmax, qstep, ratio, phot_ener, ratio1, ratio2
+real(kind=skr)   :: rho, rs1, rs2, tfact, tfilm, wnum0, xin, xlam, yin, gamma1
+integer(kind=ski):: i,j,nrefl,i_grade,ierr,ier,index1,iunit
+integer(kind=ski):: ngx, ngy, ntx, nty, nin, npair
+
+!dimension	tspl (2,101,2,101),tx(101),ty(101),pds(6)
+!dimension	gspl (2,101,2,101),gx(101),gy(101)
+!external	dbcevl
 
 ! srio danger commented these commons, put in shadow_variables...
 !        common /aaa/ 	t_oe,gratio
-!         common /bbb/ 	delo,beto,dele,bete,dels,bets
+!        common /bbb/ 	delo,beto,dele,bete,dels,bets
 
 ! C
 ! C SAVE the variables that need to be saved across subsequent invocations
 ! C of this subroutine.
 ! C
-	SAVE		QMIN, QMAX, QSTEP, DEPTH0, NREFL, TFILM, &
-     			ZF1, ZF2, &
-     			NIN, ENER,  &
-     			DELTA_S, BETA_S,  &
-     			NPAIR, &
-     			DELTA_E,BETA_E, &
-     			DELTA_O,BETA_O, &
-     			TSPL,TX,TY,PDS, &
-     			GSPL,GX,GY
+SAVE        QMIN, QMAX, QSTEP, DEPTH0, NREFL, TFILM, &
+            ZF1, ZF2, &
+            NIN, ENER,  &
+            DELTA_S, BETA_S,  &
+            NPAIR, &
+            DELTA_E,BETA_E, &
+            DELTA_O,BETA_O, &
+            TSPL,TX,TY,PDS, &
+            GSPL,GX,GY
 ! C
 ! C Initialization call. The ZF1,ZF2 values do NOT correspond to the F1,F2
 ! C atomic scattering factors, as they contain a more complex form:
@@ -4346,323 +4355,398 @@ SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S, &
 ! C		 1	Reflection case
 ! C		 2	Absorption case
 ! C
-     	IF (K_WHAT.EQ.0) THEN
-	  IF (F_REFL.EQ.0) THEN
-     	    OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
-     	        	FORM='UNFORMATTED', IOSTAT=iErr)
-	   ! srio added test
-           IF (ierr /= 0 ) then
+IF (K_WHAT.EQ.0) THEN
+    IF (F_REFL.EQ.0) THEN  !mirror
+        OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
+                      FORM='UNFORMATTED', IOSTAT=iErr)
+        ! srio added test
+        IF (ierr /= 0 ) then
              PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
              STOP ' Fatal error: aborted'
-           END IF
+        END IF
 
-     	    READ (23) QMIN,QMAX,QSTEP,DEPTH0
-	    READ (23) NREFL
-     	    READ (23) (ZF1(I),I=1,NREFL)
-	    READ (23) (ZF2(I),I=1,NREFL)
-     	    CLOSE (23)
-	    TFILM = ABSOR
-! D
-! D	DO ID=1,NREFL
-! D	  DPHOT = (QMIN + QSTEP*(ID-1))/TWOPI*TOCM
-! D	  WRITE (35,1010) DPHOT,ZF1(ID),ZF2(ID)
-! D	CONTINUE
-! D1010	FORMAT (1X,3(E15.8,2X))
-! D
-     	     RETURN
-     	   ELSE IF (F_REFL.EQ.2) THEN
-! C
-! C  this version allows specification of the individual
-! C  layer thicknesses.
-! C
-! C  input parameters:
-! C  npair = no. of layer pairs (npair=0 means an ordinary mirror, elo is the mirror
-! C  xlam = wavelength (angstroms)
-! C  elo = odd layer material
-! C  ele = even layer material
-! C  els = substrate material
-! C  1.0 - delo - i*beto = complex refractive index (odd)
-! C  1.0 - dele - i*bete = complex refractive index (even)
-! C  t_oe   = thickness t(odd)+t(even) in Angstroms of each layer pair
-! C  gratio = gamma ratio t(even)/(t(odd)+t(even))  of each layer pair
-! C  phr = grazing angle in radians
-! C
-! C
-	iunit = 23
-! WARNING: I got sometimes segmentation fault around this point. 
-!          Problem not identified....  srio@esrf.eu 2010-08-26
-!print *,'<><> opening file: '//trim(file_refl)
-!print *,'<><> opening file'
-!print *,''
+        READ (23) QMIN,QMAX,QSTEP,DEPTH0
+        READ (23) NREFL
+        READ (23) (ZF1(I),I=1,NREFL)
+        READ (23) (ZF2(I),I=1,NREFL)
+        CLOSE (23)
+        TFILM = ABSOR
+        RETURN
+    ELSE IF (F_REFL.EQ.2) THEN  !multilayer
+        ! C
+        ! C  this version allows specification of the individual
+        ! C  layer thicknesses.
+        ! C
+        ! C  input parameters:
+        ! C  npair = no. of layer pairs (npair=0 means an ordinary mirror, 
+        ! C          elo is the mirror
+        ! C  xlam = wavelength (angstroms)
+        ! C  elo = odd layer material
+        ! C  ele = even layer material
+        ! C  els = substrate material
+        ! C  1.0 - delo - i*beto = complex refractive index (odd)
+        ! C  1.0 - dele - i*bete = complex refractive index (even)
+        ! C  t_oe   = thickness t(odd)+t(even) in Angstroms of each layer pair
+        ! C  gratio = gamma ratio t(even)/(t(odd)+t(even))  of each layer pair
+        ! C  phr = grazing angle in radians
+        ! C
+        ! C
+        iunit = 23
+        ! WARNING: I got sometimes segmentation fault around this point. 
+        !          Problem not identified....  srio@esrf.eu 2010-08-26
         open(unit=iunit,FILE=FILE_REFL,status='OLD',IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-          print *,"MIRROR: File not found: "//trim(file_refl)
-          stop 'File not found. Aborted.'
-	end if
-	READ(iunit,*)	NIN
+            print *,"MIRROR: File not found: "//trim(file_refl)
+            stop 'File not found. Aborted.'
+        end if
+        READ(iunit,*) NIN
         IF (NIN > dimMLenergy) THEN 
-          print *,'REFLEC: Error: In file: '//trim(file_refl)
-          print *,'               Maximum number of energy points is',dimMLenergy
-          print *,'               Using number of energy points',NIN
-          stop 'Error reaing file. Aborted.'
+            print *,'REFLEC: Error: In file: '//trim(file_refl)
+            print *,'               Maximum number of energy points is',dimMLenergy
+            print *,'               Using number of energy points',NIN
+            stop 'Error reaing file. Aborted.'
         END IF 
-	READ(iunit,*)	(ENER(I), I = 1, NIN)
-	DO 13 I=1,NIN
-	  READ(iunit,*)	DELTA_S(I),BETA_S(I)
-13	CONTINUE
-	DO 23 I=1,NIN
-	  READ(iunit,*)	DELTA_E(I),BETA_E(I)
-23	CONTINUE
-	  DO 33 I=1,NIN
-	READ(iunit,*)	DELTA_O(I),BETA_O(I)
-33	CONTINUE
-        READ(iunit,*)	NPAIR
- 	do 11 i = 1, npair
-          read(iunit,*) t_oe(i),gratio(i)	
-11	CONTINUE
-! C
-! C Is the multilayer thickness graded ?
-! C
-	read    (iunit,*)   i_grade
-	if (i_grade.eq.1) then
-	  read  (iunit,101) file_grade
-101       format        (a80)
-          OPEN  (45, FILE=FILE_GRADE, STATUS='OLD', FORM='UNFORMATTED', &
-                     IOSTAT=iErr)
+        READ(iunit,*) (ENER(I), I = 1, NIN)
+        DO 13 I=1,NIN
+            READ(iunit,*) DELTA_S(I),BETA_S(I)
+13      CONTINUE
+        DO 23 I=1,NIN
+            READ(iunit,*)  DELTA_E(I),BETA_E(I)
+23      CONTINUE
+        DO 33 I=1,NIN
+            READ(iunit,*) DELTA_O(I),BETA_O(I)
+33      CONTINUE
+        READ(iunit,*) NPAIR
+        if(npair .lt. 0) then ! if npair<0 roughness data is available
+            do i = 1, abs(npair)
+                read(iunit,*) t_oe(i),gratio(i),mlroughness1(i),mlroughness2(i)
+            end do 
+        else
+            do i = 1, npair
+                read(iunit,*) t_oe(i),gratio(i)
+                mlroughness1(i)=0.0
+                mlroughness2(i)=0.0
+            end do
+        endif
+        npair = abs(npair)
+        ! C
+        ! C Is the multilayer thickness graded ?
+        ! C
+        read    (iunit,*)   i_grade
+        ! 0=None
+        ! 1=spline files 
+        ! 2=quadic coefficients
+
+        ! spline
+        if (i_grade.eq.1) then
+          read  (iunit,'(a)') file_grade   
+          OPEN  (45, FILE=adjustl(FILE_GRADE), STATUS='OLD', & 
+                FORM='UNFORMATTED', IOSTAT=iErr)
           ! srio added test
           if (iErr /= 0 ) then
-            print *,"MIRROR: File not found: "//trim(file_grade)
+            print *,"REFLEC: File not found: "//trim(adjustl(file_grade))
             stop 'File not found. Aborted.'
-	  end if
+          end if
 
           READ  (45) NTX, NTY
-	  READ  (45) TX,TY
-	  DO 205 I = 1, NTX
-	  DO 205 J = 1, NTY
-       	  READ  (45) TSPL(1,I,1,J),TSPL(1,I,2,J),    & ! spline for t
-     		     TSPL(2,I,1,J),TSPL(2,I,2,J)
-205	  CONTINUE
-! C      	  READ  (45) (((TSPL(1,I,1,J),TSPL(1,I,2,J),    ! spline for t
-! C     $		     TSPL(2,I,1,J),TSPL(2,I,2,J)), J = 1,NTY), I = 1,NTX)
-	  READ (45) NGX, NGY
+          READ  (45) TX,TY
+          !DO 205 I = 1, NTX
+          !DO 205 J = 1, NTY
+          DO I = 1, NTX
+            DO J = 1, NTY
+              READ  (45) TSPL(1,I,1,J),TSPL(1,I,2,J),    & ! spline for t
+                         TSPL(2,I,1,J),TSPL(2,I,2,J)
+            END DO
+          END DO
+
+          READ (45) NGX, NGY
           READ (45) GX,GY
-	  DO 305 I = 1, NGX
-	  DO 305 J = 1, NGY
-          READ (45) GSPL(1,I,1,J),GSPL(1,I,2,J),    & ! spline for gamma
-          	    GSPL(2,I,1,J),GSPL(2,I,2,J)
-305	  CONTINUE  
-! C          READ (45) (((GSPL(1,I,1,J),GSPL(1,I,2,J),    ! spline for gamma
-! C     $     	    GSPL(2,I,1,J),GSPL(2,I,2,J)), J = 1,NGY), I = 1,NGX)
+          DO I = 1, NGX
+            DO J = 1, NGY
+              READ (45) GSPL(1,I,1,J),GSPL(1,I,2,J),    & ! spline for gamma
+                        GSPL(2,I,1,J),GSPL(2,I,2,J)
+            END DO
+          END DO
+
           CLOSE (45)
-	end if
+        end if
+
+        if (i_grade.eq.2) then  ! quadric coefficients
+          !
+          ! laterally gradded multilayer
+          !
+          read(iunit,*) lateral_grade_constant,lateral_grade_slope, &
+                        lateral_grade_quadratic
+        end if
+
         close(unit=iunit)
-	tfilm = absor
+        tfilm = absor
         RETURN
-     	END IF
-	END IF
+    END IF
+END IF
 ! C
 ! C This is the notmal calculation part;
 ! C
 ! C If F_REFL is 1, ALFA and GAMMA are defined during the input session
 ! C and are not modified anymore (single line or closely spaced lines case)
 ! C
-    	IF (F_REFL.EQ.0) THEN			!Both absorp and normal
-						!reflectivity
-     	  INDEX =   (WNUM - QMIN)/QSTEP + 1
-! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
-     	  IF (INDEX.LT.1) INDEX=1
-! C	   ('REFLEC','Photon energy below lower limit.',0)
-	  IF (INDEX.GT.NREFL) INDEX=NREFL-1
-! C	   ('REFLEC','Photon energy above upper limit.',0)
-	  IF (INDEX.EQ.NREFL)	INDEX	= INDEX - 1
-     	  WNUM0	=   QSTEP*(INDEX-1) + QMIN
-     	  DEL_X	=   WNUM - WNUM0
-     	  DEL_X	=   DEL_X/QSTEP
-     	  ALFA	=   ZF1(INDEX) + (ZF1(INDEX+1)-ZF1(INDEX))*DEL_X
-     	  GAMMA	=   ZF2(INDEX) + (ZF2(INDEX+1)-ZF2(INDEX))*DEL_X
-! D	WRITE (37,1020) WNUM,WNUM0,INDEX,DEL_X,ALFA,GAMMA
-! D1020	FORMAT (1X,2(E15.8,1X),I4,3(E15.8,1X))
-     	END IF
-     	IF (K_WHAT.EQ.1) THEN
-	  IF (F_REFL.NE.2) THEN
-! C
-! C Computes the optical coefficients.
-! C
-     	  COS_REF =  SQRT(1.0D0 - SIN_REF**2)
-     	  RHO	=   SIN_REF**2 - ALFA
-     	  RHO	=   RHO + SQRT ((SIN_REF**2 - ALFA)**2 + GAMMA**2)
-     	  RHO	=   SQRT(RHO/2)
-! C
-! C Computes now the reflectivities
-! C
-     	  RS1	=   4*(RHO**2)*(ABS(SIN_REF)-RHO)**2 + GAMMA**2
-     	  RS2	=   4*(RHO**2)*(ABS(SIN_REF)+RHO)**2 + GAMMA**2
-     	  R_S	=   RS1/RS2
-! C
-! C Computes now the polarization ratio
-! C
-     	  RATIO1	=   4*RHO**2*(RHO*ABS(SIN_REF)-COS_REF**2)**2 + &
-     		    GAMMA**2*SIN_REF**2
-     	  RATIO2	=   4*RHO**2*(RHO*ABS(SIN_REF)+COS_REF**2)**2 + &
-     		    GAMMA**2*SIN_REF**2
-     	  RATIO	=   RATIO1/RATIO2
-! C
-! C The reflectivity for p light will be
-! C
-     	  R_P	=   R_S*RATIO
-	  R_S	=   SQRT(R_S)
-	  R_P	=   SQRT(R_P)
-	  ELSE
-! C
-! C Multilayers reflectivity.
-! C First interpolate for all the refractive indices.
-! C
-	  XLAM	=   TWOPI/WNUM*1.0D8		! Angstrom
-	  PHOT_ENER	= WNUM/TWOPI*TOCM	! eV
-	  ELFACTOR	= LOG10(1.0D04/30.0D0)/300.0D0
-	  INDEX	= LOG10(PHOT_ENER/ENER(1))/ELFACTOR + 1
-! C	  INDEX	= 96.0*LOG10(PHOT_ENER/ENER(1)) + 1
-! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
-	  IF (INDEX.LT.1) INDEX=1
-! C		('REFLEC','Photon energy too small.',2)
-	  IF (INDEX.GT.NIN) INDEX=NIN-1
-! C		('REFLEC','Photon energy too large.',2)
-	  DELS	= DELTA_S(INDEX) + (DELTA_S(INDEX+1) - DELTA_S(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
-	  BETS	= BETA_S(INDEX) + (BETA_S(INDEX+1) - BETA_S(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
-	  DELE	= DELTA_E(INDEX) + (DELTA_E(INDEX+1) - DELTA_E(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
-	  BETE	= BETA_E(INDEX) + (BETA_E(INDEX+1) - BETA_E(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
-	  DELO	= DELTA_O(INDEX) + (DELTA_O(INDEX+1) - DELTA_O(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
-	  BETO	= BETA_O(INDEX) + (BETA_O(INDEX+1) - BETA_O(INDEX)) &
-     		*(PHOT_ENER - ENER(INDEX))/(ENER(INDEX+1) - ENER(INDEX))
+IF (F_REFL.EQ.0) THEN      !Both absorp and normal
+    !reflectivity
+    index1 =   (WNUM - QMIN)/QSTEP + 1
+    ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
+    IF (index1.LT.1) index1=1
+    ! C     ('REFLEC','Photon energy below lower limit.',0)
+    IF (index1.GT.NREFL) index1=NREFL-1
+    ! C     ('REFLEC','Photon energy above upper limit.',0)
+    IF (index1.EQ.NREFL)  index1  = index1 - 1
+    WNUM0  =   QSTEP*(index1-1) + QMIN
+    DEL_X  =   WNUM - WNUM0
+    DEL_X  =   DEL_X/QSTEP
+    ALFA  =   ZF1(index1) + (ZF1(index1+1)-ZF1(index1))*DEL_X
+    gamma1  =   ZF2(index1) + (ZF2(index1+1)-ZF2(index1))*DEL_X
+    ! D  WRITE (37,1020) WNUM,WNUM0,INDEX,DEL_X,ALFA,GAMMA
+    ! D1020  FORMAT (1X,2(E15.8,1X),I4,3(E15.8,1X))
+END IF
 
-! C
-! C	  CALL 	FRESNEL	(NPAIR,SIN_REF,COS_POLE,XLAM,R_S,R_P,PHASES,PHASEP)
-! C
-! C
-! C If graded, compute the factor for t and gamma at the intercept PIN.
-! C
-	  IF (I_GRADE.EQ.1) THEN
+IF (K_WHAT.EQ.1) THEN
+    IF (F_REFL.NE.2) THEN
+        ! C
+        ! C Computes the optical coefficients.
+        ! C
+        COS_REF =  SQRT(1.0D0 - SIN_REF**2)
+        RHO  =   SIN_REF**2 - ALFA
+        RHO  =   RHO + SQRT ((SIN_REF**2 - ALFA)**2 + gamma1**2)
+        RHO  =   SQRT(RHO/2)
+        ! C
+        ! C Computes now the reflectivities
+        ! C
+        RS1  =   4*(RHO**2)*(ABS(SIN_REF)-RHO)**2 + gamma1**2
+        RS2  =   4*(RHO**2)*(ABS(SIN_REF)+RHO)**2 + gamma1**2
+        R_S  =   RS1/RS2
+        ! C
+        ! C Computes now the polarization ratio
+        ! C
+        RATIO1  =   4*RHO**2*(RHO*ABS(SIN_REF)-COS_REF**2)**2 + &
+        gamma1**2*SIN_REF**2
+        RATIO2  =   4*RHO**2*(RHO*ABS(SIN_REF)+COS_REF**2)**2 + &
+        gamma1**2*SIN_REF**2
+        RATIO  =   RATIO1/RATIO2
+        ! C
+        ! C The reflectivity for p light will be
+        ! C
+        R_P  =   R_S*RATIO
+        R_S  =   SQRT(R_S)
+        R_P  =   SQRT(R_P)
+    ELSE
+        ! C
+        ! C Multilayers reflectivity.
+        ! C First interpolate for all the refractive indices.
+        ! C
+        XLAM  =   TWOPI/WNUM*1.0D8    ! Angstrom
+        PHOT_ENER  = WNUM/TWOPI*TOCM  ! eV
+        ELFACTOR  = LOG10(1.0D04/30.0D0)/300.0D0
+        index1  = LOG10(PHOT_ENER/ENER(1))/ELFACTOR + 1
+        ! C    INDEX  = 96.0*LOG10(PHOT_ENER/ENER(1)) + 1
+        ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
+        IF (index1.LT.1) index1=1
+        ! C    ('REFLEC','Photon energy too small.',2)
+        IF (index1.GT.NIN) index1=NIN-1
+        ! C    ('REFLEC','Photon energy too large.',2)
+        DELS  = DELTA_S(index1) + (DELTA_S(index1+1) - DELTA_S(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+        BETS  = BETA_S(index1) + (BETA_S(index1+1) - BETA_S(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+        DELE  = DELTA_E(index1) + (DELTA_E(index1+1) - DELTA_E(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+        BETE  = BETA_E(index1) + (BETA_E(index1+1) - BETA_E(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+        DELO  = DELTA_O(index1) + (DELTA_O(index1+1) - DELTA_O(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+        BETO  = BETA_O(index1) + (BETA_O(index1+1) - BETA_O(index1)) &
+             *(PHOT_ENER - ENER(index1))/(ENER(index1+1) - ENER(index1))
+
+        ! C
+        ! C CALL FRESNEL (NPAIR,SIN_REF,COS_POLE,XLAM,R_S,R_P,PHASES,PHASEP)
+        ! C
+        ! C
+        ! C If graded, compute the factor for t and gamma at the intercept PIN.
+        ! C
+        TFACT       = 1.0D0
+        GFACT       = 1.0D0
+        IF (I_GRADE.EQ.1) THEN
             XIN = PIN(1)
-	    YIN = PIN(2)
+            YIN = PIN(2)
             CALL DBCEVL (TX,NTX,TY,NTY,TSPL,i101,XIN,YIN,PDS,IER)
-	    IF (IER.NE.0) THEN
-	      CALL      MSSG ('REFLEC','Spline error # ',IER)
-	      RETURN
-	    END IF
+            IF (IER.NE.0) THEN
+              CALL      MSSG ('REFLEC','Spline error # ',IER)
+              RETURN
+            END IF
             TFACT = PDS(1)
-! C
+            ! C
             CALL DBCEVL (GX,NGX,GY,NGY,GSPL,i101,XIN,YIN,PDS,IER)
             IF (IER.NE.0) THEN
               CALL MSSG ('REFLEC','Spline error # ',IER)
-	      RETURN
+              RETURN
             END IF
-	    GFACT = PDS(1)
-          ELSE
-            TFACT       = 1.0D0
- 	    GFACT       = 1.0D0
-	  END IF
-          CALL  FRESNEL  &
-      (TFACT,GFACT,NPAIR,SIN_REF,COS_POLE,XLAM,R_S,R_P,PHASES,PHASEP)
-	  END IF
-     	 ELSE IF(K_WHAT.EQ.2) THEN
-! C
-! C This is the transmission case. SIN_REF is now the incidence angle
-! C onto the filter.
-! C
-! C Computes now the penetration depth. SIN_REF is now the cosine of
-! C the incidence angle of the ray on the screen.
-! C
-! C     	  DEPTH	=   DEPTH0*GAMMA*SIN_REF/WNUM
-	  AB_COEFF	= WNUM*GAMMA/ABS(SIN_REF)
-! C
-! C Computes the film absorption. The thickness is passed at the call with
-! C K_WHAT = 0
-! C
-! C ABSOR is the attenuation of the A vector.
-! C
-     	  ABSOR	=   EXP(-TFILM*AB_COEFF/2.0D0)
-     	END IF
-! D
-! D	DPHOT	=   WNUM/TWOPI*TOCM
-! D	WRITE (34,1000)	DPHOT,R_S,R_P,SIN_REF
-! D1000	FORMAT (1X,4(E15.8,2X))
-! D
-     	RETURN
+            GFACT = PDS(1)
+        ELSE IF (I_GRADE.EQ.2) THEN
+            TFACT = lateral_grade_constant+ &
+                    lateral_grade_slope*pin(2) + &
+                    lateral_grade_quadratic*pin(2)*pin(2)
+        ELSE
+        END IF
+
+        CALL FRESNEL  (TFACT,GFACT,NPAIR,SIN_REF,COS_POLE,XLAM, &
+                         R_S,R_P,PHASES,PHASEP)
+    END IF
+ELSE IF(K_WHAT.EQ.2) THEN
+    ! C
+    ! C This is the transmission case. SIN_REF is now the incidence angle
+    ! C onto the filter.
+    ! C
+    ! C Computes now the penetration depth. SIN_REF is now the cosine of
+    ! C the incidence angle of the ray on the screen.
+    ! C
+    ! C         DEPTH  =   DEPTH0*GAMMA*SIN_REF/WNUM
+    AB_COEFF  = WNUM*gamma1/ABS(SIN_REF)
+    ! C
+    ! C Computes the film absorption. The thickness is passed at the call with
+    ! C K_WHAT = 0
+    ! C
+    ! C ABSOR is the attenuation of the A vector.
+    ! C
+    ABSOR  =   EXP(-TFILM*AB_COEFF/2.0D0)
+END IF
+RETURN
 End Subroutine reflec
 
 
-! ******************************************************************************
-subroutine FRESNEL (TFACT,GFACT,N,SIN_REF,COS_POLE,xlam,ans, &
-     		anp,phaseS,PHASEP)
+!C------------------------------------------------------------------------------
+!C  subroutine FRESNEL 
+!C------------------------------------------------------------------------------
+!c  compute x-ray/u.v. reflection efficiency of multilayers
+!c
+!c  inputs: 
+!c         tfact   : used for ML with graded thickness (thickness coeff)
+!c         gfact   : used for ML with graded thickness (gamma coeff)
+!c         n       : number of bilayers
+!c         sin_ref :  sin of angle of incidence (grazing??)
+!c         cos_pole:  cos of angle of between normal and pole??
+!c outputs:
+!c         ans = S polarization  reflectivity 
+!c         anp = P polarization  reflectivity 
+!c         phaseS = change of phase S
+!c         phaseP = change di phase P
+!c  other variables: 
+!c        delo,dele,dels = parameter delta odd, even, substrate respectively
+!c        belo,bele,bels = parametro beta odd, even, substrate respectively
+!c        1.0 - delo - i*beto = complex refractive index (odd)
+!c        1.0 - dele - i*bete = complex refractive index (even)
+!c        t_o = thickness of odd layers (a)
+!c        t_e = thickness of even layers (a)
+!c
+!c----------------------------------------------------------------------------
+!C
+!C
+!C               vacuum
+!C    |------------------------------|  \
+!C    |          odd (n)             |  |
+!C    |------------------------------|  | BILAYER # n
+!C    |          even (n)            |  |
+!C    |------------------------------|  /
+!C    |          .                   |
+!C    |          .                   |
+!C    |          .                   |
+!C    |------------------------------|  \
+!C    |          odd (1)             |  |
+!C    |------------------------------|  | BILAYER # 1
+!C    |          even (1)            |  |
+!C    |------------------------------|  /
+!C    |                              |
+!C    |///////// substrate //////////|
+!C    |                              |
+!C
+!c----------------------------------------------------------------------------
+!c----------------------------------------------------------------------------
+
+subroutine FRESNEL (tfact,gfact,n,sin_ref,cos_pole,xlam,ans, anp,phaseS,phaseP)
+
+implicit none
+
+real(kind=skr),  intent(in)  :: tfact,gfact,sin_ref,cos_pole,xlam
+real(kind=skr),  intent(out) :: ans, anp,phaseS,phaseP
+
+real(kind=skr)     :: xmfv,sin_ref2, cos_ref2, pp, qq, refv
+integer(kind=ski)  :: i,j,n
+
+complex(kind=skx)  ::  ci,fo,fe,fv,ffe,ffv,ffvp,ffo,ffep,ffop,re2
+complex(kind=skx)  ::  ro2,ao,ae,r,rp,fs,ffs,ffsp,rs2
+real(kind=skr)     ::  gamma,thick,t_e,t_o
+
+! nevot-croce roughness
+real(kind=skr)     ::  sigma_o2,sigma_e2,sigma_s2,sigma_v2
+complex(kind=skx)  ::  arg_o,arg_e,arg_s,arg_v
+complex(kind=skx)  ::  fnevot_o,fnevot_e,fnevot_s,fnevot_v
+real(kind=skr)     ::  prefact
 ! C
 
-        ! srio danger: default implicit not defined
-	! IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-	! IMPLICIT INTEGER(kind=ski)        (F,I-N)
+! "i" cpmplex
+ci=(0.0D0,1.0D0)
 
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
-     	IMPLICIT REAL(kind=skr) (A-H,O-Z)
-	IMPLICIT INTEGER(kind=ski)        (I-N)
-     	
-        ! srio commanted: alrady in shadow_variables
-     	! DATA	PI     	/  3.141592653589793238462643D0 /
-     	! DATA	TODEG 	/ 57.295779513082320876798155D0 /
-        complex*16 ci,fo,fe,fv,ffe,ffv,ffvp,ffo,ffep,ffop,re2, &
-     		   ro2,ao,ae,r,rp,fs,ffs,ffsp,rs2
-        real(kind=skr)    ::    gamma,thick,t_e,t_o
-        ! defined in shadow_variables...
-        !dimension t_oe(200),gratio(200)
-        !common /aaa/ t_oe,gratio
-        !common /bbb/ delo,beto,dele,bete,dels,bets
-! C
-      ci=(0.0D0,1.0D0)
-      ro2=(1.0D0-delo-ci*beto)**2
-      re2=(1.0D0-dele-ci*bete)**2
-      rs2=(1.0D0-dels-ci*bets)**2
-      SIN_REF2	= SIN_REF**2
-      COS_REF2	= 1.0D0 - SIN_REF2
-! C      refo=(sin(phr))**2-2.0*delo
-! C      xmfo=-2.0*beto
-! C      fo=cmplx(refo,xmfo)
-      fo = ro2 - COS_REF2
-! C      refe=(sin(phr))**2-2.0*dele
-! C      xmfe=-2.0*bete
-! C      fe=cmplx(refe,xmfe)
-      fe = re2 - COS_REF2
-      refv=SIN_REF2
-      xmfv=0.0D0
-      fv = Dcmplx(refv,xmfv)
-! C      refs=(sin(phr))**2-2.0*dels
-! C      xmfs=-2.0*bets
-! C      fs=cmplx(refs,xmfs)
-      fs = rs2 - COS_REF2
-! C
-      fo=cDsqrt(fo)
-      fe=cDsqrt(fe)
-      fv=cDsqrt(fv)
-      fs=cDsqrt(fs)
-      ffe=(fe-fo)/(fe+fo)
-      ffo=-ffe
-      ffv=(fv-fo)/(fv+fo)
-      ffs=(fe-fs)/(fe+fs)
-      ffep=(fe/re2-fo/ro2)/(fe/re2+fo/ro2)
-      ffop=-ffep
-      ffvp=(fv-fo/ro2)/(fv+fo/ro2)
-      ffsp=(fe/re2-fs/rs2)/(fe/re2+fs/rs2)
-      r=(0.0D0,0.0D0)
-      rp=(0.0D0,0.0D0)
-      do 1 j=1,n
-! C
-! C compute the thickness for the odd and even material :
-! C
-         THICK	= T_OE(J) * TFACT
-         GAMMA	= GRATIO(J) * GFACT
+! (refraction index "odd,even,substrate")**2 
+ro2=(1.0D0-delo-ci*beto)**2
+re2=(1.0D0-dele-ci*bete)**2
+rs2=(1.0D0-dels-ci*bets)**2
+
+! angles
+SIN_REF2 = SIN_REF**2
+COS_REF2 = 1.0D0 - SIN_REF2
+
+! f(o,e) = sin theta_inc - sin theta_ critical
+fo = ro2 - COS_REF2
+fe = re2 - COS_REF2
+refv=SIN_REF2
+xmfv=0.0D0
+
+fv = Dcmplx(refv,xmfv)
+fs = rs2 - COS_REF2
+
+fo=cDsqrt(fo)
+fe=cDsqrt(fe)
+fv=cDsqrt(fv)
+fs=cDsqrt(fs)
+
+! Fresnel formula "S" (in function of incidence angle and critical angle)
+ffe=(fe-fo)/(fe+fo)
+ffo=-ffe
+ffv=(fv-fo)/(fv+fo)
+ffs=(fe-fs)/(fe+fs)
+! Fresnel formula "P" (in function of incidence angle and critical angle)
+ffep=(fe/re2-fo/ro2)/(fe/re2+fo/ro2)
+ffop=-ffep
+ffvp=(fv-fo/ro2)/(fv+fo/ro2)
+ffsp=(fe/re2-fs/rs2)/(fe/re2+fs/rs2)
+
+! reflectivity initialization
+r=(0.0D0,0.0D0)
+rp=(0.0D0,0.0D0)
+prefact=(8.*(PI**2.))/(xlam**2)
+
+
+!c Nevot-Croce roughness
+!c DO NOT include refraction index in the roughness formula
+sigma_s2=0.0d0 ! sigma_s**2.0 !roughn. substrate
+sigma_v2=0.0d0 ! sigma_v**2.0!roughn. vacuum
+
+! loop over the bilayers
+! remember thet "even" is the bottom sublayer
+do 1 j=1,n   ! n is the number of bilayers
+         ! C
+         ! C compute the thickness for the odd and even material :
+         ! C
+         THICK = T_OE(J) * TFACT
+         GAMMA = GRATIO(J) * GFACT
          t_e = GAMMA * THICK
          t_o = (1.0D0-GAMMA) * THICK
          ! C
@@ -4671,28 +4755,67 @@ subroutine FRESNEL (TFACT,GFACT,N,SIN_REF,COS_POLE,xlam,ans, &
          ao=cDexp(ao)
          ae=cDexp(ae)
          if(j.eq.1)go to 6
-         r=(ae**4)*(r+ffe)/(r*ffe+1.0D0)
-         rp=(ae**4)*(rp+ffep)/(rp*ffep+1.0D0)
+         ! even (botton) sublayer
+         sigma_e2=mlroughness1(j)**2.0 !roughn. even layer
+         arg_e=FO*FE*sigma_e2/(CDSqrt(ro2)*CDSqrt(re2))
+         fnevot_e=cdexp(-prefact*arg_e)
+         r=(ae**4)*(r+ffe*fnevot_e)/(r*ffe*fnevot_e+1.0)
+         rp=(ae**4)*(rp+ffep*fnevot_e)/(rp*ffep*fnevot_e+1.0)
+         !r=(ae**4)*(r+ffe)/(r*ffe+1.0D0)
+         !rp=(ae**4)*(rp+ffep)/(rp*ffep+1.0D0)
          go to 7
-6        r=(ae**4)*(r+ffs)/(r*ffs+1.0D0)
-         rp=(ae**4)*(rp+ffsp)/(rp*ffsp+1.0D0)
-7        r=(ao**4)*(r+ffo)/(r*ffo+1.0D0)
-         rp=(ao**4)*(rp+ffop)/(rp*ffop+1.0D0)
-1        continue
-         r=(r+ffv)/(r*ffv+1.0D0)
-         pp = Dimag(r)
-         qq = Dreal(r)
-         CALL	ATAN_2	(PP,QQ,PHASES)	! S phase change in units of radians
-         rp=(rp+ffvp)/(rp*ffvp+1.0D0)
-         PP = DIMAG(RP)
-         QQ = DREAL (RP)
-         CALL	ATAN_2	(PP,QQ,PHASEP)	! P phase change in units of radians
-         anp=cDabs(rp)
-         ! C      anp=anp**2
-         ans=cDabs(r)
-         ! C      ans=ans**2
-         return
-       End Subroutine fresnel
+6        continue  
+         ! layer on top of substrate
+         arg_s=FE*FS*sigma_s2/(CDSqrt(re2)*CDSqrt(rs2))
+         fnevot_s=cdexp(-prefact*arg_s)
+         r=(ae**4.0)*(r+ffs*fnevot_s)/(r*ffs*fnevot_s+1.0)
+         rp=(ae**4.0)*(rp+ffsp*fnevot_s)/(rp*ffsp*fnevot_s+1.0)
+         !r=(ae**4)*(r+ffs)/(r*ffs+1.0D0)
+         !rp=(ae**4)*(rp+ffsp)/(rp*ffsp+1.0D0)
+7        continue
+         ! odd layer (top sublayer)
+         sigma_o2=mlroughness2(j)**2.0 !roughn. odd layer
+         arg_o=FO*FE*sigma_o2/(CDSqrt(ro2)*CDSqrt(re2))
+         fnevot_o=cdexp(-prefact*arg_o)
+         r=(ao**4.0)*(r+ffo*fnevot_o)/(r*ffo*fnevot_o+1.0)
+         rp=(ao**4.0)*(rp+ffop*fnevot_o)/(rp*ffop*fnevot_o+1.0)
+         !r=(ao**4)*(r+ffo)/(r*ffo+1.0D0)
+         !rp=(ao**4)*(rp+ffop)/(rp*ffop+1.0D0)
+1 continue
+
+!
+! vacuum interface
+!
+arg_v=fo*fv*sigma_v2/CDSqrt(ro2)
+fnevot_v=cdexp(-prefact*arg_v)
+r=(r+ffv*fnevot_v)/(r*ffv*fnevot_v+1.0)
+!r=(r+ffv)/(r*ffv+1.0D0)
+!
+!added srio@esrf.eu 2012-06-07
+!rp=(rp+ffvp)/(rp*ffvp+1.0)
+rp=(rp+ffvp*fnevot_v)/(rp*ffvp*fnevot_v+1.0)
+
+!
+! calculate phases
+!
+pp = Dimag(r)
+qq = Dreal(r)
+CALL ATAN_2(PP,QQ,PHASES)       ! S phase change in units of radians
+rp=(rp+ffvp)/(rp*ffvp+1.0D0)
+anp=cDabs(rp)
+! C      anp=anp**2
+
+PP = DIMAG(RP)
+QQ = DREAL (RP)
+CALL ATAN_2(PP,QQ,PHASEP)       ! P phase change in units of radians
+ans=cDabs(r)
+! C      ans=ans**2
+!
+! end 
+!
+return
+
+End Subroutine fresnel
 
 
 ! C+++
@@ -10713,7 +10836,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        DO 51 C_VX = -INT(CL_VX), INT(CL_VX)
     !!srio 	    DO 61 C_VZ = -CL_VZ, CL_VZ
           DO 61 C_VZ = -INT(CL_VZ), INT(CL_VZ)
-print *,'C_VX C_VZ: ',C_VX ,C_VZ
+!!print *,'C_VX C_VZ: ',C_VX ,C_VZ
              INDEXMOM	= INDEXMOM + 1
              GRID (4,INDEXMOM)	= C_VX * STEP_VX + 0.5D0
              GRID (6,INDEXMOM)	= C_VZ * STEP_VZ + 0.5D0
