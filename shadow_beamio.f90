@@ -323,223 +323,273 @@ contains
     !
     !
 
-    !!+++
-    !!	SUBROUTINE	WRITE_OFF (FNAME,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,IERR)
-    !!
-    !!	Input	:	FNAME	(character*(*))	Output file name
-    !!			RAY	Array which contains the basic 12 columns that
-    !!				defined each ray
-    !!			PHASE	Array which contains the OPD and the 2 phase 
-    !!				angles of the A vector
-    !!			AP	Array which contains the Ap vector for each ray
-    !!			NCOL	Number of columns for each ray 
-    !!				(valid NCOL = 12, 13, or 18)
-    !!			NPOINT	Number of rays
-    !!			IFLAG	A flag which is written to the output file.
-    !!			IFORM = 0, Binary output
-    !!			      = 1, Formatted output
-    !!	
-    !!	Output	:	IERR = 0, normal return
-    !!			     = 1, error opening file
-    !!			     = 2, error writing file
-    !!
-    !!---
-	subroutine write_off (fname, ray, phase, ap, ncol, npoint, iFlag, iForm, iErr)
-     	character(len=*),          	intent(in)   	:: fname
-     	real(kind=skr), dimension(:,:),	intent(in)   	:: ray
-     	real(kind=skr), dimension(:,:),	intent(in)   	:: phase
-     	real(kind=skr), dimension(:,:),	intent(in)   	:: ap
-		integer(kind=ski),             	intent(inout) 	:: ncol
-		integer(kind=ski),             	intent(inout) 	:: npoint
-		integer(kind=ski),             	intent(in)		:: iFlag, iForm
-		integer(kind=ski),             	intent(out)   	:: iErr
+!!+++
+!!	SUBROUTINE	WRITE_OFF (FNAME,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,IERR)
+!!
+!!	Input	:	FNAME	(character*(*))	Output file name
+!!			RAY	Array which contains the basic 12 columns that
+!!				defined each ray
+!!			PHASE	Array which contains the OPD and the 2 phase 
+!!				angles of the A vector
+!!			AP	Array which contains the Ap vector for each ray
+!!			NCOL	Number of columns for each ray 
+!!				(valid NCOL = 12, 13, or 18)
+!!			NPOINT	Number of rays
+!!			IFLAG	A flag which is written to the output file.
+!!			IFORM = 0, Binary output
+!!			      = 1, Formatted output
+!!	
+!!	Output	:	IERR = 0, normal return
+!!			     = 1, error opening file
+!!			     = 2, error writing file
+!!
+!!---
+subroutine write_off (fname, ray, phase, ap, ncol, npoint, iFlag, iForm, iErr)
 
-		integer(kind=ski), parameter	:: iounit=20
-		character(len=80)           	:: fformat
-		integer(kind=ski)           	:: i, j, k, l
+implicit none
+character(len=*),              intent(in)       :: fname
+real(kind=skr), dimension(:,:),intent(in)       :: ray
+real(kind=skr), dimension(:,:),intent(in)       :: phase
+real(kind=skr), dimension(:,:),intent(in)       :: ap
+integer(kind=ski),             intent(inout)    :: ncol
+integer(kind=ski),             intent(inout)    :: npoint
+integer(kind=ski),             intent(in)       :: iFlag, iForm
+integer(kind=ski),             intent(out)      :: iErr
 
-        !!
-        !! Check for valid argument of NCOL.
-        !!
-		if (ncol .ne. 12 .and. ncol .ne. 13 .and. ncol .ne. 18) then
-          	print *, "BEAMIO-WRITE_OFF Warning: Invalid argument of NCOL: ", ncol
-          	ncol = size(ray,1)
-          	print *, "BEAMIO-WRITE_OFF Using NCOL=Size(ray,1)=", ncol
-          	print *, "BEAMIO-WRITE_OFF FileName: "//trim(fname)
-          	print *, " "
+integer(kind=ski), parameter  :: iounit=20
+character(len=80)             :: fformat
+integer(kind=ski)             :: i, j, k, l
+integer(kind=ski)             :: write_only_good_rays,npointOut
+
+! todo: generalize this local flag
+write_only_good_rays = 0
+!!
+!! Check for valid argument of NCOL.
+!!
+if (ncol .ne. 12 .and. ncol .ne. 13 .and. ncol .ne. 18) then
+    print *, "BEAMIO-WRITE_OFF Warning: Invalid argument of NCOL: ", ncol
+    ncol = size(ray,1)
+    print *, "BEAMIO-WRITE_OFF Using NCOL=Size(ray,1)=", ncol
+    print *, "BEAMIO-WRITE_OFF FileName: "//trim(fname)
+    print *, " "
+end if
+
+!!
+!! Check for valid argument of NPOINT.
+!!
+if (npoint .le. 0) then
+    print *, "BEAMIO-WRITE_OFF Warning: Invalid argument of NPOINT: ", npoint
+    npoint = size(ray,2)
+    print *, "BEAMIO-WRITE_OFF Using NPOINT=Size(ray,2)=", npoint
+    print *, "BEAMIO-WRITE_OFF FileName: "//trim(fname)
+    print *, " "
+end if
+
+!!
+!! Decide if output is formatted or unformatted.
+!!
+
+if (iForm .eq. 0) then
+    fformat = 'UNFORMATTED'
+else if (iForm .eq. 1) then
+    fformat = 'FORMATTED'
+else
+    print *, "BEAMIO-WRITE_OFF Error Invalid argument of IO Format: ", iForm
+    print *, "BEAMIO-WRITE_OFF Abort."
+    stop
+end if
+
+!!
+!! Now do the dirty deed. Also, Remove the INITIALSIZE hint used 
+!! for the VMS version.
+!!
+
+open (unit=iounit, file=fname, status='unknown', form=fformat, iostat=iErr)
+
+if (iErr /= 0 ) then
+    print *,"BEAMIO-WRITE_OFF Error opening file: "//trim(fName)
+    iErr=1
+    return
+end if
+
+REWIND (iounit)
+
+npointOut = npoint
+if (write_only_good_rays .gt. 0) then
+   npointOut = 0
+   do i=1, npoint
+      if (ray(10,i) .gt. 0) npointOut = npointOut + 1
+   end do
+
+end if
+
+if (iForm .EQ. 0) then
+    write (iounit, err=20) ncol, npointOut, iFlag
+else
+    write (iounit, *, err=20) ncol, npointOut, iFlag
+end if
+
+if (write_only_good_rays .eq. 0) then
+    if (ncol .eq. 12) then
+        if (IFORM .EQ. 0) then
+            do i=1, npoint
+                write (iounit, err=20) (ray(j,i), j=1,12)
+            end do
+        else
+            do i=1, npoint
+                write (iounit, *, err=20) (ray(j,i), j=1,12)
+            end do
         end if
-
-        !!
-        !! Check for valid argument of NPOINT.
-        !!
-		if (npoint .le. 0) then
-          	print *, "BEAMIO-WRITE_OFF Warning: Invalid argument of NPOINT: ", npoint
-          	npoint = size(ray,2)
-          	print *, "BEAMIO-WRITE_OFF Using NPOINT=Size(ray,2)=", npoint
-          	print *, "BEAMIO-WRITE_OFF FileName: "//trim(fname)
-          	print *, " "
-        end if
-
-        !!
-        !! Decide if output is formatted or unformatted.
-        !!
-
-		if (iForm .eq. 0) then
-	  		fformat = 'UNFORMATTED'
-		else if (iForm .eq. 1) then
-	  		fformat = 'FORMATTED'
-		else
-        	print *, "BEAMIO-WRITE_OFF Error Invalid argument of IO Format: ", iForm
-          	stop
-		end if
-
-        !!
-        !! Now do the dirty deed. Also, Remove the INITIALSIZE hint used 
-        !! for the VMS version.
-        !!
-
-     	open (unit=iounit, file=fname, status='unknown', form=fformat, iostat=iErr)
-
-        if (iErr /= 0 ) then
-          	print *,"BEAMIO-WRITE_OFF Error opening file: "//trim(fName)
-          	iErr=1
-          	return
-        end if
-
-		REWIND (iounit)
-
-		if (iForm .EQ. 0) then
-	  		write (iounit, err=20) ncol, npoint, iFlag
-		else
-	  		write (iounit, *, err=20) ncol, npoint, iFlag
-		end if
-
-		if (ncol .eq. 12) then
-	  		if (IFORM .EQ. 0) then
-	    		do i=1, npoint
-		  			write (iounit, err=20) (ray(j,i), j=1,12)
-        		end do
-	  		else
-	    		do i=1, npoint
-		  			write (iounit, *, err=20) (ray(j,i), j=1,12)
-            	end do
-	  		end if
-		else if (ncol .eq. 13) then
-	  		if (iForm .eq. 0) then
-	      		do i=1, npoint
-		  			write (iounit, err=20) (ray(j,i), j=1,12), phase(1,i)
-              	end do
-	  		else
-	      		do i=1, npoint
-		  			write (iounit, *, err=20) (ray(j,i), j=1,12), phase(1,I)
-            	end do
-	  		end if
-		else if (ncol .eq. 18) then
-	  		if (iForm .eq. 0) then
-	      		do i=1, npoint
-		  			write (20, err=20) (ray(j,i), j=1,12), (phase(k,i), K=1,3), (ap(l,i), l=1,3)
-              	end do
-	  		else
-	      		do i=1, npoint
-		  			write (20, *, err=20) (ray(j,i), j=1,12), (phase(k,i), k=1,3), (ap(l,i), l=1,3)
-            	end do
-	  		end if
-		end if
-
-        !!
-        !! Close file.
-        !!
-    	close (unit=iounit)
-
-        !! successful end
-     	iErr = 0
-     	return
-        !! unsuccessful end
-    20	iErr	=  2
-     	return
-    end subroutine write_off
-
-    !
-    !
-    !
-
-    !! 
-    !! 	SUBROUTINE	beamWrite (FNAME,RAY,IERR)
-    !! 
-    !! 	Input	:	FNAME	Output file name
-    !! 			RAY	Array which contains the basic 12,13 or 18 
-    !!                          columns that defined each ray
-    !! 	
-    !! 	Output	:	IERR = 0, normal return
-    !! 			     = 1, error opening file
-    !! 			     = 2, error writing file
-    !! 
-    !! 
-
-	subroutine beamWrite (ray, iErr, ncol, npoint, fname) !bind(C, name="beamWrite")
-     	character(len=*), intent(in)	:: fname
-        integer(kind=ski),intent(in)	:: ncol
-        integer(kind=ski),intent(in)	:: npoint
-     	real(kind=skr), dimension(18,npoint),	intent(in)	:: ray
-	integer(kind=ski),intent(out)	:: iErr
-
-	integer(kind=ski), parameter			:: iounit=20
-	integer(kind=ski)          				:: i, j, k, l
-	integer(kind=ski)                 		:: iform, iflag
-	character(len=80)                  		:: fformat
-
-
-        iflag=0
-
-
-        !! just a warning...
-        if (ncol.ne.12.and.ncol.ne.13.and.ncol.ne.18) then
-            print *, "beamWrite Warning: number of columns: ",ncol
-        end if
-
-        iForm=0
-	if (iForm .eq. 0) then
-	  fformat = 'UNFORMATTED'
-	else
-	  fformat = 'FORMATTED'
-	end if
-
-     	open (unit=iounit, file=fname, status='unknown', form=fformat, iostat=iErr)
-
-        if (iErr /= 0 ) then
-        	print *,"beamWrite Error opening file: "//trim(fName)
-        	iErr=1
-        	return
-        end if
-
+    else if (ncol .eq. 13) then
         if (iForm .eq. 0) then
-		write (iounit, err=20) ncol, npoint, iFlag
-	else
-	  	write (iounit, *, err=20) ncol, npoint, iFlag
-	end if
+            do i=1, npoint
+                write (iounit, err=20) (ray(j,i), j=1,12), phase(1,i)
+            end do
+        else
+            do i=1, npoint
+                write (iounit, *, err=20) (ray(j,i), j=1,12), phase(1,I)
+            end do
+        end if
+    else if (ncol .eq. 18) then
+        if (iForm .eq. 0) then
+            do i=1, npoint
+                write (20, err=20) (ray(j,i), j=1,12), (phase(k,i), K=1,3), (ap(l,i), l=1,3)
+            end do
+        else
+            do i=1, npoint
+                write (20, *, err=20) (ray(j,i), j=1,12), (phase(k,i), k=1,3), (ap(l,i), l=1,3)
+            end do
+        end if
+    end if
+else ! write only good rays
+    if (ncol .eq. 12) then
+        if (IFORM .EQ. 0) then
+            do i=1, npoint
+                write (iounit, err=20) (ray(j,i), j=1,12)
+            end do
+        else
+            do i=1, npoint
+                write (iounit, *, err=20) (ray(j,i), j=1,12)
+            end do
+        end if
+    else if (ncol .eq. 13) then
+        if (iForm .eq. 0) then
+            do i=1, npoint
+                if (ray(10,i) .gt. 0) write (iounit, err=20) (ray(j,i), j=1,12), phase(1,i)
+            end do
+        else
+            do i=1, npoint
+                if (ray(10,i) .gt. 0) write (iounit, *, err=20) (ray(j,i), j=1,12), phase(1,I)
+            end do
+        end if
+    else if (ncol .eq. 18) then
+        if (iForm .eq. 0) then
+            do i=1, npoint
+                if (ray(10,i) .gt. 0) write (20, err=20) (ray(j,i), j=1,12), (phase(k,i), K=1,3), (ap(l,i), l=1,3)
+            end do
+        else
+            do i=1, npoint
+                if (ray(10,i) .gt. 0) write (20, *, err=20) (ray(j,i), j=1,12), (phase(k,i), k=1,3), (ap(l,i), l=1,3)
+            end do
+        end if
+    end if
+end if
 
-	if (iForm .eq. 0) then
-    	  do i=1, npoint
-	        write (iounit, err=20) (ray(j,i), j=1,ncol)
-          end do
-	else
-	  do i=1, npoint
-		write (iounit, *, err=20) (ray(j,i), j=1,ncol)
-          end do
-	end if
+!!
+!! Close file.
+!!
+close (unit=iounit)
 
-    	close (unit=iounit)
+!! successful end
+iErr = 0
+return
+!! unsuccessful end
+20    iErr    =  2
+return
+end subroutine write_off
 
-        !! succesful end
-     	iErr = 0
-     	return
-        !! unsuccesful end
-    20	iErr = 2
-     	return
-    end subroutine beamWrite
-    !
-    !
-    !
+!
+!
+!
+
+!! 
+!! 	SUBROUTINE	beamWrite (FNAME,RAY,IERR)
+!! 
+!! 	Input	:	FNAME	Output file name
+!! 			RAY	Array which contains the basic 12,13 or 18 
+!!                          columns that defined each ray
+!! 	
+!! 	Output	:	IERR = 0, normal return
+!! 			     = 1, error opening file
+!! 			     = 2, error writing file
+!! 
+!! 
+
+subroutine beamWrite (ray, iErr, ncol, npoint, fname) !bind(C, name="beamWrite")
+implicit none
+character(len=*), intent(in)    :: fname
+integer(kind=ski),intent(in)    :: ncol
+integer(kind=ski),intent(in)    :: npoint
+real(kind=skr), dimension(18,npoint),    intent(in)    :: ray
+integer(kind=ski),intent(out)   :: iErr
+
+integer(kind=ski), parameter    :: iounit=20
+integer(kind=ski)               :: i, j, k, l
+integer(kind=ski)               :: iform, iflag
+character(len=80)               :: fformat
+
+
+iflag=0
+
+
+!! just a warning...
+if (ncol.ne.12.and.ncol.ne.13.and.ncol.ne.18) then
+    print *, "beamWrite Warning: number of columns: ",ncol
+end if
+
+iForm=0
+if (iForm .eq. 0) then
+    fformat = 'UNFORMATTED'
+else
+    fformat = 'FORMATTED'
+end if
+
+open (unit=iounit, file=fname, status='unknown', form=fformat, iostat=iErr)
+
+if (iErr /= 0 ) then
+    print *,"beamWrite Error opening file: "//trim(fName)
+    iErr=1
+    return
+end if
+
+if (iForm .eq. 0) then
+    write (iounit, err=20) ncol, npoint, iFlag
+else
+    write (iounit, *, err=20) ncol, npoint, iFlag
+end if
+
+if (iForm .eq. 0) then
+    do i=1, npoint
+        write (iounit, err=20) (ray(j,i), j=1,ncol)
+    end do
+else
+    do i=1, npoint
+        write (iounit, *, err=20) (ray(j,i), j=1,ncol)
+    end do
+end if
+
+close (unit=iounit)
+
+!! succesful end
+iErr = 0
+return
+!! unsuccesful end
+20      iErr = 2
+return
+end subroutine beamWrite
+!
+!
+!
 
 end module shadow_beamio
 

@@ -2094,7 +2094,7 @@ Contains
          REWIND (24)
          DO WHILE (eof == 0)
             read(24,'(a)', IOSTAT=eof) stmp
-            write(23,'(a)') trim(stmp)
+            if (eof == 0) write(23,'(a)') trim(stmp)
          END DO
          CLOSE(24)
        END IF
@@ -2108,8 +2108,6 @@ Contains
        WRITE (23,*) ( CENTRAL(J), J =16,18)
        WRITE (23,*) ( CENTRAL(J), J =19,21)
        WRITE (23,*) ( CENTRAL(J), J =22,24)
-
-
     CLOSE (23)
     END IF
     WRITE(6,*)'Exit from OPTAXIS'

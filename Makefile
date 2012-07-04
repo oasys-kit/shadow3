@@ -40,6 +40,7 @@
 
 #for static library set this
 #STATIC=-static
+STATIC=-static-libgfortran -static-libgcc
 
 # customize compiler and flags
 FC = gfortran
