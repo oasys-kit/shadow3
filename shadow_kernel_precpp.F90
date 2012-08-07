@@ -2132,39 +2132,37 @@ Contains
   ! C					       -1       complex sol.
   ! C
   Subroutine INTERCEPT (XIN, VIN, TPAR, IFLAG)
+    implicit none
     
-    
-    IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-    IMPLICIT INTEGER(kind=ski)        (F,I-N)
-    
-    
-    real(kind=skr),dimension(3)  :: xin,vin
+    real(kind=skr),dimension(3),intent(in) :: xin,vin
+    real(kind=skr),intent(out)             :: tpar
+    integer(kind=ski),intent(out)          :: iflag
+    real(kind=skr)                         :: AA,BB,CC,DETER,DENOM,TPAR1,TPAR2
+
     ! C
     ! C tests for non-conic mirrors
     ! C
-    IF (FMIRR.EQ.3) THEN				! Torus
-       CALL QUARTIC	( XIN, VIN, TPAR, IFLAG)
-       IF (IFLAG.LT.0)	RETURN
-    ELSE IF (FMIRR.EQ.9) THEN			! Gen poly
+    IF (FMIRR.EQ.3) THEN  ! Torus
+       CALL QUARTIC( XIN, VIN, TPAR, IFLAG)
+       IF (IFLAG.LT.0) RETURN
+    ELSE IF (FMIRR.EQ.9) THEN ! Gen poly
        IF (F_KOMA.NE.1) THEN
-       	  CALL POLY ( XIN, VIN, TPAR, IFLAG)
+          CALL POLY ( XIN, VIN, TPAR, IFLAG)
        ELSE
-	  CALL SPOLY ( XIN, VIN, TPAR, IFLAG)
-   ! C	  type *,'IFLAG',IFLAG
-   ! C	  type *,'TPAR',TPAR
+          CALL SPOLY ( XIN, VIN, TPAR, IFLAG)
        END IF
-       IF (IFLAG.LT.0)	RETURN
+       IF (IFLAG.LT.0) RETURN
     ELSE 
        ! C
        ! C conic mirrors
        ! C
-       AA 	=   CCC(1)*VIN(1)**2  &
+       AA       =   CCC(1)*VIN(1)**2  &
             + CCC(2)*VIN(2)**2  &
             + CCC(3)*VIN(3)**2 &
             + CCC(4)*VIN(1)*VIN(2)  &
             + CCC(5)*VIN(2)*VIN(3) &
             + CCC(6)*VIN(1)*VIN(3)
-       BB 	=   CCC(1)*XIN(1)*VIN(1)*2 &
+       BB       =   CCC(1)*XIN(1)*VIN(1)*2 &
             + CCC(2)*XIN(2)*VIN(2)*2 &
             + CCC(3)*XIN(3)*VIN(3)*2 &
             + CCC(4)*(XIN(2)*VIN(1)  &
@@ -2177,8 +2175,8 @@ Contains
             + CCC(8)*VIN(2)  &
             + CCC(9)*VIN(3) 
 ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/hyperbola_fixes_2008-10-22.txt
-       ! Csrio     $		  + CCC(10)
-       CC 	=   CCC(1)*XIN(1)**2  &
+       ! Csrio     $              + CCC(10)
+       CC       =   CCC(1)*XIN(1)**2  &
             + CCC(2)*XIN(2)**2  &
             + CCC(3)*XIN(3)**2   &
             + CCC(4)*XIN(2)*XIN(1)  &
@@ -2192,9 +2190,9 @@ Contains
        ! C Solve now the second deg. equation **
        ! C
        IF (ABS(AA).GT.1.0D-15) THEN
-          DENOM 	= 0.5D0/AA
+          DENOM       = 0.5D0/AA
        ELSE IF (BB.NE.0.0D0) THEN
-          TPAR   	= - CC/BB
+          TPAR         = - CC/BB
           GO TO 100
        ELSE
           WRITE(6,*)'Intercept error. All coefficients were zero'
@@ -2202,32 +2200,43 @@ Contains
           GO TO 200
        END IF
        ! C
-       DETER 	= BB**2 - CC*AA*4
+       !DETER       = BB**2 - CC*AA*4
+       DETER = BB*BB - CC*AA*4
        ! C
        IF (DETER.LT.0.0) THEN
           GO TO 200
        ELSE
-          TPAR1 	= -(BB + SQRT(DETER))*DENOM
-          TPAR2 	= -(BB - SQRT(DETER))*DENOM
+          ! niccolo.canestrari@gmail.com
+          ! avoid loss of significance B ~ DETER, that happens if AA<<
+          !TPAR1       = -(BB + SQRT(DETER))*DENOM
+          !TPAR2       = -(BB - SQRT(DETER))*DENOM
+          if(ABS(4*CC*AA/BB/BB).ge.1.0D-6) then  ! normal case
+            TPAR1 = -(BB + SQRT(DETER))*DENOM
+            TPAR2 = -(BB - SQRT(DETER))*DENOM
+          else  ! patological case, e.g., in parabolic lenses close to the pole
+            TPAR1 = - CC/BB - AA*CC**2/BB**3
+            TPAR2 = -(BB/AA + TPAR1)
+          endif
        END IF
+
        IF (IFLAG.LT.0) THEN
           ! C
           ! C Ripple case : always take the closest intercept onto the ideal surface.
           ! C
           IF (ABS(TPAR1).LT.ABS(TPAR2)) THEN
-             TPAR	= TPAR1
+             TPAR = TPAR1
           ELSE
-             TPAR	= TPAR2
+             TPAR = TPAR2
           END IF
        ELSE 
           ! C
           ! C tests for convexity
           ! C
-          ! Csrio     	   IF (FMIRR.NE.7.AND.F_CONVEX.NE.1) THEN
-          ! Csrio     	     TPAR	=   MAX (TPAR1,TPAR2)
-          ! Csrio     	   ELSE
-          ! Csrio     	     TPAR	=   MIN (TPAR1,TPAR2)
-          ! Csrio     	   END IF
+          ! Csrio              IF (FMIRR.NE.7.AND.F_CONVEX.NE.1) THEN
+          ! Csrio                TPAR      =   MAX (TPAR1,TPAR2)
+          ! Csrio              ELSE
+          ! Csrio                TPAR      =   MIN (TPAR1,TPAR2)
+          ! Csrio              END IF
           ! C
           ! C Changed to take the solution closer to the mirror pole. 
           ! C This was needed to correctly calculate hyperbolic Laue crystals
