@@ -4364,18 +4364,43 @@ SAVE        QMIN, QMAX, QSTEP, DEPTH0, NREFL, TFILM, &
 ! C
 IF (K_WHAT.EQ.0) THEN
     IF (F_REFL.EQ.0) THEN  !mirror
+       !
+       ! srio@esrf.eu 2012/09/28 change the prerefl file from bin to ascii
+       ! (for compatibility with pre_mlayer and bragg, and for allowing 
+       ! other codes to create it).
+       ! Note: the old binary format is also accepted when reading 
+       !  
         OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
                       FORM='UNFORMATTED', IOSTAT=iErr)
-        ! srio added test
         IF (ierr /= 0 ) then
              PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
              STOP ' Fatal error: aborted'
         END IF
 
-        READ (23) QMIN,QMAX,QSTEP,DEPTH0
-        READ (23) NREFL
-        READ (23) (ZF1(I),I=1,NREFL)
-        READ (23) (ZF2(I),I=1,NREFL)
+        READ (23,ERR=222) QMIN,QMAX,QSTEP,DEPTH0
+        READ (23,IOSTAT=iErr) NREFL
+        IF (iErr.NE.0) GOTO 222
+        READ (23,IOSTAT=iErr) (ZF1(I),I=1,NREFL)
+        IF (iErr.NE.0) GOTO 222
+        READ (23,IOSTAT=iErr) (ZF2(I),I=1,NREFL)
+        IF (iErr.NE.0) GOTO 222
+        CLOSE (23)
+        TFILM = ABSOR
+        RETURN
+! this part is for new ascii format
+222     continue
+        close(23)
+        OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
+                      FORM='FORMATTED', IOSTAT=iErr)
+        ! srio added test
+        IF (ierr /= 0 ) then
+             PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
+             STOP ' Fatal error: aborted'
+        END IF
+        READ (23,*) QMIN,QMAX,QSTEP,DEPTH0
+        READ (23,*) NREFL
+        READ (23,*) (ZF1(I),I=1,NREFL)
+        READ (23,*) (ZF2(I),I=1,NREFL)
         CLOSE (23)
         TFILM = ABSOR
         RETURN

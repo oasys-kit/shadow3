@@ -797,7 +797,7 @@ SUBROUTINE PREREFL
 
         real(kind=skr)     :: radius,estart,efinal,estep,alpha,depth0,elfactor
         real(kind=skr)     :: f1,f2,gamma1,photon,qmax,qmin,qstep,wave
-        integer(kind=ski)  :: i_type,i,nener,npoint
+        integer(kind=ski)  :: i_type,i,nener,npoint,i_format
 
         EQUIVALENCE    (OUTFIL(1,1),RF1(1))    
         EQUIVALENCE    (OUTFIL(1,2),RF2(1))    
@@ -824,10 +824,26 @@ SUBROUTINE PREREFL
         NPOINT    =  (EFINAL-ESTART)/ESTEP + 1
         DEPTH0    =   DENSITY/2.0D0
         IF (NPOINT.GT.N_DIM) STOP    'Too many points (*N_DIM* max.)'
-        OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
-        REWIND (20)
-        WRITE (20)    QMIN,QMAX,QSTEP,DEPTH0
-        WRITE (20)    NPOINT
+        !
+        ! srio@esrf.eu 2012/09/28 change the prerefl file from bin to ascii
+        ! (for compatibility with pre_mlayer and bragg, and for allowing 
+        ! other codes to create it).
+        ! Note: the old binary format is also accepted when reading 
+        !       (see REFLEC subroutine in shadow_kernel)
+        !  
+        i_format=1
+        !i_Format    = iyes('Unformatted [0] of formatted (ascii) [1] file: ')
+        IF (I_FORMAT.EQ.0) THEN  ! old format
+          OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
+          REWIND (20)
+          WRITE (20)    QMIN,QMAX,QSTEP,DEPTH0
+          WRITE (20)    NPOINT
+        ELSE  ! new format
+          OPEN (20,FILE=OUT_FILE,STATUS='UNKNOWN',FORM='FORMATTED')
+          REWIND (20)
+          WRITE (20,*)    QMIN,QMAX,QSTEP,DEPTH0
+          WRITE (20,*)    NPOINT
+        END IF
         ELFACTOR    = LOG10(1.0D4/30.0D0)/300.0D0
         !DO 11 I=1,NPOINT
         DO I=1,NPOINT
@@ -845,10 +861,20 @@ SUBROUTINE PREREFL
             gamma1    =   RADIUS/PI*(WAVE**2)*F2
             AF1(I)    =   ALPHA
             AF2(I)  =   gamma1
+            !write(77,*) photon,ALPHA,gamma1
         END DO
 !11      CONTINUE
-        WRITE (20)    (AF1(I),I=1,NPOINT)
-        WRITE (20)    (AF2(I),I=1,NPOINT)
+        IF (I_FORMAT.EQ.0) THEN ! old format
+          WRITE (20)    (AF1(I),I=1,NPOINT)
+          WRITE (20)    (AF2(I),I=1,NPOINT)
+        ELSE ! new format
+          DO I=1,NPOINT
+             WRITE (20,*)    AF1(I)
+          END DO
+          DO I=1,NPOINT
+            WRITE (20,*)    AF2(I)
+          END DO
+        END IF
         CLOSE (20)
         !CALL    EXIT (0)
         RETURN
@@ -1142,7 +1168,6 @@ SUBROUTINE Pre_Mlayer
         !IGRADE = IYES('Is t and/or gamma graded over the surface ? ')
         WRITE(6,*) ' '
         WRITE(20,*) IGRADE
-print *,'>>>>>>>>>>>>>>>>> IGRADE: ',IGRADE
         IF (IGRADE.EQ.1) THEN
           WRITE(6,*)  &
           'Generation of the spline coefficients for the t and gamma factors'
