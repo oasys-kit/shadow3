@@ -4309,11 +4309,12 @@ real(kind=skr),dimension(6)           :: pds
 real(kind=skr)   :: lateral_grade_constant=1D0 !initialization avoids save
 real(kind=skr)   :: lateral_grade_slope=0D0 
 real(kind=skr)   :: lateral_grade_quadratic=0D0 
+integer(kind=ski):: i_grade=0
 
 real(kind=skr)   :: ab_coeff, cos_ref, del_x, depth0, elfactor, gfact
 real(kind=skr)   :: qmin, qmax, qstep, ratio, phot_ener, ratio1, ratio2
 real(kind=skr)   :: rho, rs1, rs2, tfact, tfilm, wnum0, xin, xlam, yin, gamma1
-integer(kind=ski):: i,j,nrefl,i_grade,ierr,ier,index1,iunit
+integer(kind=ski):: i,j,nrefl,ierr,ier,index1,iunit
 integer(kind=ski):: ngx, ngy, ntx, nty, nin, npair
 
 !dimension	tspl (2,101,2,101),tx(101),ty(101),pds(6)
