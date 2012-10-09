@@ -1436,23 +1436,28 @@ Contains
     ! ** element, if any.
     
     
-    IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-    IMPLICIT INTEGER(kind=ski)        (F,I-N)
+    !IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+    !IMPLICIT INTEGER(kind=ski)        (F,I-N)
+    implicit none
 
     
-    ! todo danger: srio to check this change - save removed!! 
-    !	DIMENSION RAY(12,NPOINT),AP(3,NPOINT), PHASE(3,NPOINT)
-    real(kind=skr),dimension(:,:) ::  RAY,AP,PHASE
+    integer(kind=ski),            intent(in)    :: i_what
+    real(kind=skr),dimension(:,:),intent(inout) ::  RAY,AP,PHASE
     
     real(kind=skr),dimension(6 ,npoint) ::  RAY_STORE
     real(kind=skr),dimension(12,npoint) ::  PLATE
     
-    !	DIMENSION RAY(12,N_DIM),PLATE(12,N_DIM),AP(3,N_DIM), &
-    !     		  PHASE(3,N_DIM),RAY_STORE(6,N_DIM)
+    ! 
+    real(kind=skr)  :: xnew,znew
+    real(kind=skr)  :: above,below,dist,q_in_mod,rr_attenuation_ima,tmp
+    real(kind=skr)  :: UX_1, WY_1, VZ_1, VV_1, VV_2, VV_3, A_1, u_1, u_2, v_1, v_2
+    real(kind=skr)  :: rr_reflectivity, test1, test2, a_2, a_3
+    integer(kind=ski)               :: j, icheck, iflag, jj, ierr, kounts
+
     
-    DIMENSION V_OUT(3),P_MIR(3),P_IMAG(3),A_VEC(3),AP_VEC(3)
-    DIMENSION PLATE_CEN(3)
-    REAL*8 XNEW,ZNEW
+    real(kind=skr),dimension(3)  :: V_OUT,P_MIR,P_IMAG,A_VEC,AP_VEC,PLATE_CEN
+
+    ! todo danger: srio to check this change - save removed!! 
     ! C
     ! C Save some local large arrays to avoid overflowing stack.
     ! C
@@ -1464,7 +1469,7 @@ Contains
     ! ** Computes first the intercept onto the true image plane, to be used
     ! ** by RESTART.
     
-    DO 100	J=1,NPOINT
+    DO 100 J=1,NPOINT
        
        ! ** Checks if the ray has been reflected by the mirror.
        
@@ -1536,11 +1541,16 @@ Contains
       rr_reflectivity = 1.0D0
       IF (F_REFRAC.EQ.1) THEN 
          !r_indImag_ima = 0d0 !ABS(7.35e-8)
-         IF (ABS(r_attenuation_ima).GT.1e-15) THEN
+         ! we need now to call get_refraction_index (again, first called in mirror1)
+         ! because rr_attenuation_ima is not global
+         Q_IN_MOD    =   RAY(11,J)
+         call get_refraction_index(ione,Q_IN_MOD,tmp,tmp,tmp,rr_attenuation_ima)
+         IF (ABS(rr_attenuation_ima).GT.1e-15) THEN
            ! for amplitudes use sqrt(reflectivity)
-           rr_reflectivity = sqrt(exp(-ABS(r_attenuation_ima*DIST)))
-           ! print *,'>>>> ima: ',r_attenuation_ima,DIST,rr_reflectivity
+           !rr_reflectivity = sqrt(exp(-ABS(r_attenuation_ima*DIST)))
+           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_ima*DIST)))
          END IF
+         !if (j.le.10) print *,'>>>>0 ima: ',rr_attenuation_ima,DIST,rr_reflectivity
       END IF
        ! ** Saves the results
        
@@ -1564,42 +1574,28 @@ Contains
           ELSE 
             PHASE (1,J) = PHASE(1,J) + ABS(DIST)*R_IND_IMA
           END IF
-     	  !PHASE	(1,J) = PHASE (1,J) + DIST*R_IND_IMA
+          !PHASE	(1,J) = PHASE (1,J) + DIST*R_IND_IMA
 
         IF (NCOL.EQ.18) THEN
-           AP_VEC(1)	= AP(1,J)
-           AP_VEC(2)	= AP(2,J)
-           AP_VEC(3)	= AP(3,J)
+           AP_VEC(1) = AP(1,J)
+           AP_VEC(2) = AP(2,J)
+           AP_VEC(3) = AP(3,J)
            CALL DOT (AP_VEC,UXIM,A_1)
            CALL DOT (AP_VEC,VNIMAG,A_2)
            CALL DOT (AP_VEC,VZIM,A_3)
-           AP(1,J)	= A_1 * rr_reflectivity
-           AP(2,J)	= A_2 * rr_reflectivity
-           AP(3,J)	= A_3 * rr_reflectivity
+           AP(1,J) = A_1 * rr_reflectivity
+           AP(2,J) = A_2 * rr_reflectivity
+           AP(3,J) = A_3 * rr_reflectivity
         END IF
        END IF
      
-!    ! 
-!    ! apply reflectivity
-!    ! 
-!    IF (rr_reflectivity.LT.1) THEN 
-!      RAY(7,J)=RAY(7,J)*rr_reflectivity
-!      RAY(8,J)=RAY(8,J)*rr_reflectivity
-!      RAY(8,J)=RAY(9,J)*rr_reflectivity
-!      IF (NCOL.EQ.18) THEN
-!        AP(1,J)= AP(1,J)*rr_reflectivity
-!        AP(2,J)= AP(2,J)*rr_reflectivity
-!        AP(3,J)= AP(3,J)*rr_reflectivity
-!      END IF
-!    END IF
-
 100 CONTINUE
      
      ! C
      ! C 4/26/93 making use of the slit rotation option.
      ! C
      
-    IF (FSLIT.EQ.1)	THEN
+    IF (FSLIT.EQ.1) THEN
      
        U_1   = - SLLEN/2
        U_2   =   SLLEN/2
@@ -1632,21 +1628,20 @@ Contains
        ! C
        ! C Write out file if flag is enabled
        ! C
-    IF	((FWRITE.EQ.0).OR.(FWRITE.EQ.2)) THEN
-       CALL	FNAME (FFILE, 'star', I_WHAT, izero)
-       IFLAG	= 0
-       CALL	WRITE_OFF (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
-       IF (IERR.NE.0)	 &
-            CALL LEAVE ('IMAGE','Error writing STAR',IERR)
+    IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.2)) THEN
+       CALL FNAME (FFILE, 'star', I_WHAT, izero)
+       IFLAG = 0
+       CALL WRITE_OFF (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
+       IF (IERR.NE.0) CALL LEAVE ('IMAGE','Error writing STAR',IERR)
     END IF
     ! C
     ! C Computes now the (optional) images.
     ! C
     DO 300 JJ=1,N_PLATES
        
-       PLATE_CEN(1)	=    C_STAR(1)*D_PLATE(JJ)
-       PLATE_CEN(2)	=    C_STAR(2)*D_PLATE(JJ)
-       PLATE_CEN(3)	=    C_STAR(3)*D_PLATE(JJ)
+       PLATE_CEN(1) = C_STAR(1)*D_PLATE(JJ)
+       PLATE_CEN(2) = C_STAR(2)*D_PLATE(JJ)
+       PLATE_CEN(3) = C_STAR(3)*D_PLATE(JJ)
        
        DO 400 J=1,NPOINT
           ! C
@@ -1658,33 +1653,33 @@ Contains
           ELSE
           END IF
           ! C
-          P_MIR(1)	=   RAY_STORE(1,J)	
-          P_MIR(2)	=   RAY_STORE(2,J)
-          P_MIR(3)	=   RAY_STORE(3,J)
+          P_MIR(1) = RAY_STORE(1,J) 
+          P_MIR(2) = RAY_STORE(2,J)
+          P_MIR(3) = RAY_STORE(3,J)
           
-          V_OUT(1)  =   RAY_STORE(4,J)
-          V_OUT(2)  =   RAY_STORE(5,J)
-          V_OUT(3)  =   RAY_STORE(6,J)
+          V_OUT(1) = RAY_STORE(4,J)
+          V_OUT(2) = RAY_STORE(5,J)
+          V_OUT(3) = RAY_STORE(6,J)
           
-          ABOVE	=   (PLATE_CEN(1) - P_MIR(1))*C_PLATE(1) + &
-               (PLATE_CEN(2) - P_MIR(2))*C_PLATE(2) + &
-               (PLATE_CEN(3) - P_MIR(3))*C_PLATE(3)
+          ABOVE = (PLATE_CEN(1) - P_MIR(1))*C_PLATE(1) + &
+                  (PLATE_CEN(2) - P_MIR(2))*C_PLATE(2) + &
+                  (PLATE_CEN(3) - P_MIR(3))*C_PLATE(3)
           
-          BELOW   =   C_PLATE(1)*V_OUT(1) + C_PLATE(2)*V_OUT(2) + &
-               C_PLATE(3)*V_OUT(3)
+          BELOW  = C_PLATE(1)*V_OUT(1) + C_PLATE(2)*V_OUT(2) + &
+                   C_PLATE(3)*V_OUT(3)
           
           IF (BELOW.NE.0.0D0) THEN
-             DIST	=   ABOVE/BELOW
+             DIST = ABOVE/BELOW
           ELSE
-             PLATE(10,J)  = - 3.0D0
+             PLATE(10,J) = -3.0D0
              GO TO 400
           END IF
           ! C
           ! C Computes now the intersections onto the PLATE plane.
           ! C
-          P_IMAG(1)  =   P_MIR(1) + DIST*V_OUT(1)
-          P_IMAG(2)  =   P_MIR(2) + DIST*V_OUT(2)
-          P_IMAG(3)  =   P_MIR(3) + DIST*V_OUT(3)
+          P_IMAG(1) = P_MIR(1) + DIST*V_OUT(1)
+          P_IMAG(2) = P_MIR(2) + DIST*V_OUT(2)
+          P_IMAG(3) = P_MIR(3) + DIST*V_OUT(3)
           ! C
           ! C Rotate now the results in the PLATE plane.
           ! C Computes the projection of P_IMAG onto the image plane versors.
@@ -1710,17 +1705,17 @@ Contains
           PLATE(7,J)   =   RAY(7,J)
           PLATE(8,J)   =   RAY(8,J)
           PLATE(9,J)   =   RAY(9,J)
-          PLATE(10,J)   =   RAY(10,J)
-          PLATE(11,J)   =   RAY(11,J)
-          PLATE(12,J)   =   RAY(12,J)
+          PLATE(10,J)  =   RAY(10,J)
+          PLATE(11,J)  =   RAY(11,J)
+          PLATE(12,J)  =   RAY(12,J)
 400    CONTINUE
           
        ! C
-       KOUNTS	= 100*I_WHAT + JJ
-       CALL	FNAME	(FFILE, 'plate', KOUNTS, ifour)
-       IFLAG	= 0
-       CALL	WRITE_OFF (FFILE,PLATE,PHASE,AP,NCOL,NPOINT,IFLAG, izero,IERR)
-       IF (IERR.NE.0)	CALL LEAVE ('IMAGE','Error writing PLATE',IERR)
+       KOUNTS = 100*I_WHAT + JJ
+       CALL FNAME(FFILE, 'plate', KOUNTS, ifour)
+       IFLAG = 0
+       CALL WRITE_OFF (FFILE,PLATE,PHASE,AP,NCOL,NPOINT,IFLAG, izero,IERR)
+       IF (IERR.NE.0) CALL LEAVE ('IMAGE','Error writing PLATE',IERR)
        ! C The following cannot be implemented until the phase and AP is recompute at
        ! C the plate.
        ! C	IF (F_POLAR.EQ.1) THEN
@@ -3491,6 +3486,8 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C
 ! C Defines ratio of refraction indeces for refractor case
 ! C
+! srio@esrf.eu 2012/10/05 ALFA will be recalculated in mirror as a function
+! of the photon energy, if selected.
      	IF (F_REFRAC.EQ.1) ALFA = R_IND_IMA/R_IND_OBJ
 ! C
 ! C clear array
@@ -4269,7 +4266,7 @@ End Subroutine read_axis
 ! C	PURPOSE		To compute the local reflectivity of a mirror or
 ! C                     multilayer. Also compute filter transmittivity.
 ! C
-! C	FLAGS		k_what:  .lt. 0 --> initialization call. Reads
+! C	FLAGS		k_what:  .eq. 0 --> initialization call. Reads
 ! C					in data file.
 ! C			         .gt. 0 --> performs computations.
 ! C			(see below)
@@ -4518,7 +4515,7 @@ IF (K_WHAT.EQ.0) THEN
     END IF
 END IF
 ! C
-! C This is the notmal calculation part;
+! C This is the normal calculation part;
 ! C
 ! C If F_REFL is 1, ALFA and GAMMA are defined during the input session
 ! C and are not modified anymore (single line or closely spaced lines case)
@@ -4527,10 +4524,16 @@ IF (F_REFL.EQ.0) THEN      !Both absorp and normal
     !reflectivity
     index1 =   (WNUM - QMIN)/QSTEP + 1
     ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
-    IF (index1.LT.1) index1=1
-    ! C     ('REFLEC','Photon energy below lower limit.',0)
-    IF (index1.GT.NREFL) index1=NREFL-1
-    ! C     ('REFLEC','Photon energy above upper limit.',0)
+    IF (index1.LT.1) THEN
+       index1=1
+       ! C     ('REFLEC','Photon energy below lower limit.',0)
+       print *,"REFLEC: Warning: Photon energy below lower limit. Rerun prerefl."
+    END IF
+    IF (index1.GT.NREFL) THEN
+       index1=NREFL-1
+       ! C     ('REFLEC','Photon energy above upper limit.',0)
+       print *,"REFLEC: Warning: Photon energy above upper limit. Rerun prerefl."
+    END IF
     IF (index1.EQ.NREFL)  index1  = index1 - 1
     WNUM0  =   QSTEP*(index1-1) + QMIN
     DEL_X  =   WNUM - WNUM0
@@ -4985,6 +4988,7 @@ SUBROUTINE RESET
         F_ROUGHNESS     =       0
         FDUMMY          =       0
         F_ANGLE         =       0
+        F_R_IND         =       0
 ! C
 ! C  CALC block
 ! C
@@ -5184,6 +5188,8 @@ SUBROUTINE RESET
 ! C
      	R_IND_OBJ	=       1.0D0
      	R_IND_IMA	=       1.0D0
+        R_ATTENUATION_OBJ =     0.0D0
+        R_ATTENUATION_IMA =     0.0D0
      	ALFA		=	0.0D0
      	GAMMA		=	0.0D0
      	POL_ANGLE	=	0.0D0
@@ -5233,6 +5239,8 @@ SUBROUTINE RESET
         FILE_SEGMENT    =       'NONE SPECIFIED'
         FILE_SEGP       =       'NONE SPECIFIED'
         FILE_FAC        =       'NONE SPECIFIED'
+        FILE_R_IND_OBJ  =       'NONE SPECIFIED'
+        FILE_R_IND_IMA  =       'NONE SPECIFIED'
 
      	WRITE(6,*)'Exit from RESET'
 
@@ -7205,6 +7213,10 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! D	  OPEN	(27,FILE='REPHASE',STATUS='NEW')	
 ! D
      	END IF
+        ! read lens optical constants
+        if ((f_refrac.eq.1).and.(f_crystal.eq.0).and.(f_r_ind.gt.0)) then
+            call get_refraction_index (izero,0d0,tmp,tmp,tmp,tmp)
+        end if
 ! C
 ! C If no reflectivity options are selected for crystal case, full polarization
 ! C dependence is assumed.
@@ -7526,12 +7538,21 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	  ELSE
 	    Q_IN_MOD	=   10000
 	  END IF
+
+          ! this call returns rr_ind_* = r_ind_* if F_R_IND=0, otherwise it interpolates
+          call get_refraction_index(ione,Q_IN_MOD,rr_ind_obj,rr_attenuation_obj,&
+                                                  rr_ind_ima,rr_attenuation_ima)
+          !recalculate ALFA as a function of the energy
+          rr_alfa = rr_ind_ima/rr_ind_obj
+!if (itik.le.10) print *,'>>>0 alfa_old,alfa_new,new_obj,new_ima: ',alfa,rr_alfa,rr_ind_obj,rr_ind_ima
+ 
      	  CALL SCALAR	(VVIN,Q_IN_MOD,Q_IN)
      	  CALL PROJ	(Q_IN,VNOR,VTEMP)
      	  CALL VECTOR 	(VTEMP,Q_IN,K_PAR)
 	  CALL DOT	(VTEMP,VTEMP,Q1_PER)
 	  CALL DOT 	(K_PAR,K_PAR,Q_PAR)
-	  Q2_PER	= ALFA**2*Q1_PER + (ALFA**2-1)*Q_PAR
+	  !Q2_PER	= ALFA**2*Q1_PER + (ALFA**2-1)*Q_PAR
+	  Q2_PER	= rr_ALFA**2*Q1_PER + (rr_ALFA**2-1)*Q_PAR
 	  CALL SCALAR	(VTEMP,SQRT(Q2_PER/Q1_PER),VTEMP)
 	  CALL SUM	(VTEMP,K_PAR,Q_OUT)
 	  CALL DOT	(Q_OUT,Q_OUT,TTEMP)
@@ -8444,11 +8465,12 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
       ! attenuation in lens media
       rr_reflectivity = 1.0D0
       IF (F_REFRAC.EQ.1) THEN 
-         IF (ABS(r_attenuation_obj).GT.1e-15) THEN
+         IF (ABS(rr_attenuation_obj).GT.1e-15) THEN
            ! for amplitudes use sqrt(reflectivity)
-           rr_reflectivity = sqrt(exp(-ABS(r_attenuation_obj*TPAR)))
-           ! print *,'>>>> obj: ',r_attenuation_obj,TPAR,rr_reflectivity
+           !rr_reflectivity = sqrt(exp(-ABS(r_attenuation_obj*TPAR)))
+           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_obj*TPAR)))
          END IF
+!if (itik.lt.10) print *,'>>>>0 obj: ',rr_attenuation_obj,TPAR,rr_reflectivity
       END IF
 
 
@@ -9459,18 +9481,49 @@ print *,'parameters yourself.                                                   
 	!WRITE(6,'(1X,A)') trim(MSSG2)
 	WRITE(6,*)
 !**------------------------------------------------------------------
-     	IF (F_GRATING.EQ.0) THEN
-     	F_CRYSTAL = IYES ('Are we dealing with a crystal [ Y/N ] ? ')
-	    IF (F_REFRAC.EQ.1.and.f_crystal.ne.1) THEN     !lens
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
-	      WRITE(6,*) 'Enter the index of refraction in OBJECT space:'
-	      R_IND_OBJ = RNUMBER ('Object space: ')
-	      WRITE(6,*) 'Enter the index of refraction in IMAGE space:'
-	      R_IND_IMA = RNUMBER ('Image space: ')
-	    END IF
+        IF (F_GRATING.EQ.0) THEN
+        F_CRYSTAL = IYES ('Are we dealing with a crystal [ Y/N ] ? ')
+        IF (F_REFRAC.EQ.1.and.f_crystal.ne.1) THEN     !lens
+!-----
+            print *,' Enter index of refraction in the two media (ONJECT and IMAGE spaces):'
+            print *,'    '
+            print *,' Index of refraction (optical constants) from: '
+            print *,'     0: constant: keyword in both media'
+            print *,'     1: file(from prerefl) in first medium keyboard in next medium'
+            print *,'     2: keyboard in first medium and file (from prerefl) next medium'
+            print *,'     3: file(from prerefl) in both media'
+            print *,'     '
+            f_r_ind = irint('?>')
+            WRITE(6,*)
+
+            select case (f_r_ind)
+                case (0) 
+                  !WRITE(6,*) 'Enter the index of refraction in OBJECT space:'
+                  !R_IND_OBJ = RNUMBER ('Object space: ')
+                  !WRITE(6,*) 'Enter the index of refraction in IMAGE space:'
+                  !R_IND_IMA = RNUMBER ('Image space: ')
+                  R_IND_OBJ = RNUMBER(' Enter the index of refraction in OBJECT space: ')
+                  R_IND_IMA = RNUMBER(' Enter the index of refraction in IMAGE space: ')
+                  R_ATTENUATION_OBJ = &
+                       RNUMBER(' Enter attenuation coeff [UserLength^-1] in OBJECT space: ')
+                  R_ATTENUATION_IMA = &
+                       RNUMBER(' Enter attenuation coeff [UserLength^-1] in IMAGE space: ')
+                case (1) 
+                  FILE_R_IND_OBJ = rstring(" Enter file (from prerefl) for OBJECT space: ")
+                  R_IND_IMA = RNUMBER(' Enter the index of refraction in IMAGE space: ')
+                  R_ATTENUATION_IMA = &
+                       RNUMBER(' Enter attenuation coeff [UserLength^-1] in IMAGE space: ')
+                case (2) 
+                  R_IND_OBJ = RNUMBER(' Enter the index of refraction in OBJECT space: ')
+                  R_ATTENUATION_OBJ = &
+                       RNUMBER(' Enter attenuation coeff [UserLength^-1] in OBJECT space: ')
+                  FILE_R_IND_IMA = rstring(" Enter file (from prerefl) for IMAGE space: ")
+                case (3) 
+                  FILE_R_IND_OBJ = rstring(" Enter file (from prerefl) for OBJECT space: ")
+                  FILE_R_IND_IMA = rstring(" Enter file (from prerefl) for IMAGE space: ")
+            end select 
+!-----
+        END IF
 
      	 IF (F_CRYSTAL.EQ.1) THEN
      	   WRITE(6,*) 'File containing crystal parameters ?'
@@ -11709,11 +11762,9 @@ End Subroutine MIRROR18
 ! C	PARAMETERS	In Common blocks
 ! C
 ! C---
-SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, &
-                     !RAY,AP,PHASE, &
-                     i_what)
+SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, i_what)
 
-	implicit none
+        implicit none
 
         integer(kind=ski), intent(in) :: NPOINT1,NCOL1
         integer(kind=ski), intent(in) :: i_what
@@ -11722,7 +11773,7 @@ SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, &
         !real(kind=skr),dimension(3,NPOINT1),     intent(in out) :: PHASE, AP
         real(kind=skr),dimension(NCOL1,NPOINT1) :: RAY
         real(kind=skr),dimension(3,NPOINT1)     :: PHASE, AP
-        integer(kind=ski)                                   :: i,j
+        integer(kind=ski)                       :: i,j
 
 !
 !       initialize
@@ -11743,7 +11794,7 @@ SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, &
 ! call the binded routine
 !
 
-	CALL IMAGE1(RAY,AP,PHASE,I_WHAT)
+        CALL IMAGE1(RAY,AP,PHASE,I_WHAT)
 
 
 !
@@ -11753,7 +11804,7 @@ SUBROUTINE IMAGE18 (RAY18,NCOL1,NPOINT1, &
         IF (NCOL1 == 18) THEN
           RAY18(13:15,:) = PHASE
           RAY18(16:18,:) = AP
-	END IF
+        END IF
 
 End Subroutine image18
 
@@ -11776,7 +11827,7 @@ SUBROUTINE DeAlloc
     implicit none
 
      integer(kind=ski) :: SERR,IFLAG
-     real(kind=skr)    :: xin,yin,zout
+     real(kind=skr)    :: xin=0d0,yin=0d0,zout=0d0
      real(kind=skr),dimension(3)     :: vin=(/0.0,1.0,0.0/)
     
     WRITE(6,*)'Call to DEALLOC'
@@ -11786,13 +11837,19 @@ SUBROUTINE DeAlloc
       ! C
       ! C External spline distortion selected.
       ! C
-	IFLAG	= -2
-	SERR    = 0
-	xin = 0.0D0
-	yin = 0.0D0
-	zout = 0.0D0
-	CALL	SUR_SPLINE	(XIN,YIN,ZOUT,VIN,IFLAG,SERR)
+      IFLAG = -2
+      SERR = 0
+      !xin = 0.0D0
+      !yin = 0.0D0
+      zout = 0.0D0
+      CALL SUR_SPLINE(XIN,YIN,ZOUT,VIN,IFLAG,SERR)
     END IF
+
+    ! deallocate lens optical constants arrays
+    if ((f_refrac.eq.1).and.(f_crystal.eq.0).and.(f_r_ind.gt.0)) then
+       iflag = 2
+       call get_refraction_index (iflag,xin,yin,yin,yin,yin)
+    end if 
     
     WRITE(6,*)'Exit from DEALLOC'
 
@@ -12029,6 +12086,293 @@ SUBROUTINE Shadow3Trace
 
 END SUBROUTINE Shadow3Trace
 
+
+! C+++
+! C	SUBROUTINE	GET_REFRACTION_INDEX
+! C
+! C	PURPOSE		To get the refraction index as a function of q (or energy)
+! C                     for lenses.
+! C
+! C	FLAG		k_what:  .eq. 0 --> initialization call. Reads in data file.
+! C			         .eq. 1 --> performs computations.
+! C			         .eq. 2 --> deallocate arrays
+! C			(see below)
+! C
+! C	ARGUMENTS	[ I ] wnum 	: wavenumber (cm-1) 
+! C			[ O ] rr_ind_obj : real part of the refraction index (object)
+! C			[ O ] rr_attenuation_obj : attenuation coeff (object)
+! C			[ O ] rr_ind_ima : real part of the refraction index (image)
+! C			[ O ] rr_attenuation_ima : attenuation coeff (image)
+! C
+! C---
+SUBROUTINE get_refraction_index(k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
+                                      rr_ind_ima,rr_attenuation_ima)
+
+implicit none
+
+integer(kind=ski),          intent(in)   :: k_what
+real(kind=skr),             intent(in)   :: wnum
+real(kind=skr),             intent(out)  :: rr_ind_obj,rr_attenuation_obj
+real(kind=skr),             intent(out)  :: rr_ind_ima,rr_attenuation_ima
+
+real(kind=skr)                           :: qmin_obj, qmax_obj, qstep_obj, depth0_obj
+real(kind=skr)                           :: qmin_ima, qmax_ima, qstep_ima, depth0_ima
+real(kind=skr),dimension(:),allocatable  :: zf1_obj,zf2_obj
+real(kind=skr),dimension(:),allocatable  :: zf1_ima,zf2_ima
+integer(kind=ski)                        :: nrefl_obj
+integer(kind=ski)                        :: nrefl_ima
+
+real(kind=skr)                  :: ratio, phot_ener, ratio1, ratio2
+integer(kind=ski)               :: index1,i,iErr
+real(kind=skr)                  :: wnum0,del_x
+! note that alfa (watch the f!!) and gamma are called internally myALFA and myGAMMA
+! to avoid conflict with the global ALFA and GAMMA.
+real(kind=skr)                  :: myALFA,myGAMMA
+integer(kind=ski)               :: i_debug=0
+
+
+! C
+! C SAVE the variables that need to be saved across subsequent invocations
+! C of this subroutine.
+! C
+SAVE        QMIN_obj, QMAX_obj, QSTEP_obj, DEPTH0_obj, NREFL_obj, zf1_obj, zf2_obj
+SAVE        QMIN_ima, QMAX_ima, QSTEP_ima, DEPTH0_ima, NREFL_ima, zf1_ima, zf2_ima
+
+! C
+! C Initialization call. 
+! C WNUM is the WAVENUMBER (cm-1) of the ray.
+! C ALFA and GAMMA are the complex dielectric function
+! C		EPSILON	  = 1 - ALFA + i*GAMMA		[ i=sqrt(-1) ]
+! C and are dependent ONLY on the material, while the reflectivities
+! C depend of course on the geometry too.
+! C
+! C 	K_WHAT = 0	Initialization/arrays allocation
+! C		 1	Calculation
+! C		 2	arrays deallocation
+! C
+
+! initialize outputs to the constant values and return if interpolation vs E not needed.
+rr_ind_obj = r_ind_obj
+rr_attenuation_obj = r_attenuation_obj
+rr_ind_ima = r_ind_ima
+rr_attenuation_ima = r_attenuation_ima
+IF ((K_WHAT.EQ.1).and.(F_R_IND.eq.0)) RETURN
+
+
+select case (k_what)
+case (0)  ! load files
+    if (f_r_ind.eq.0) return
+
+    if ((f_r_ind.eq.1).or.(f_r_ind.eq.3)) then 
+        ! only new ascii output from prerefl is accepted for lenses
+        OPEN  (23,FILE=FILE_R_IND_OBJ,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+        ! srio added test
+        IF (ierr /= 0 ) then
+             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_obj)
+             STOP ' Fatal error: aborted'
+        END IF
+        READ (23,*) QMIN_obj,QMAX_obj,QSTEP_obj,DEPTH0_obj
+        READ (23,*) NREFL_obj
+        IF (.NOT. ALLOCATED(zf1_obj)) THEN
+          ALLOCATE(zf1_obj(nrefl_obj),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+          END IF
+        END IF
+        IF (.NOT. ALLOCATED(zf2_obj)) THEN
+          ALLOCATE(zf2_obj(nrefl_obj),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+          END IF
+        END IF
+        READ (23,*) (zf1_obj(I),I=1,NREFL_obj)
+        READ (23,*) (zf2_obj(I),I=1,NREFL_obj)
+        CLOSE (23)
+        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(FILE_R_IND_OBJ)
+    end if
+
+
+    if ((f_r_ind.eq.2).or.(f_r_ind.eq.3)) then 
+        ! only new ascii output from prerefl is accepted for lenses
+        OPEN  (23,FILE=FILE_R_IND_IMA,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+        ! srio added test
+        IF (ierr /= 0 ) then
+             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_ima)
+             STOP ' Fatal error: aborted'
+        END IF
+        READ (23,*) QMIN_ima,QMAX_ima,QSTEP_ima,DEPTH0_ima
+        READ (23,*) NREFL_ima
+        IF (.NOT. ALLOCATED(zf1_ima)) THEN
+          ALLOCATE(zf1_ima(nrefl_ima),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+          END IF
+        END IF
+        IF (.NOT. ALLOCATED(zf2_ima)) THEN
+          ALLOCATE(zf2_ima(nrefl_ima),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+          END IF
+        END IF
+        READ (23,*) (zf1_ima(I),I=1,NREFL_ima)
+        READ (23,*) (zf2_ima(I),I=1,NREFL_ima)
+        CLOSE (23)
+        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(FILE_R_IND_IMA)
+    end if
+! C
+! C This is the normal calculation part;
+! C
+case (1)
+
+   ! interpolation in OBJECT space
+   if ((f_r_ind.eq.1).or.(f_r_ind.eq.3)) then
+       if (i_debug.gt.1) then 
+          !
+          ! write file (for test)
+          !
+          write(77,'(a)') "#S 1 image"
+          write(77,'(a)') "#N 4"
+          write(77,'(a)') "#L q[cm-1]  energy[eV]  delta  beta"
+          do index1=1,nrefl_obj
+             WNUM0  =   QSTEP_obj*(index1-1) + QMIN_obj
+             write(77,*) wnum0,wnum0*tocm/twopi,zf1_obj(index1)/2,zf2_obj(index1)*wnum0
+          end do
+          print *,">>Debug: File fort.77 written"
+       end if
+
+       index1 =   (WNUM - QMIN_obj)/QSTEP_obj + 1
+       IF (index1.LT.1) THEN 
+          index1=1
+          print *,"GET_REFRACTION_INDEX: Warning: Photon energy below lower limit. Rerun prerefl."
+       END IF
+       IF (index1.GT.NREFL_obj) THEN
+          index1=NREFL_obj-1
+          print *,"GET_REFRACTION_INDEX: Warning: Photon energy above upper limit. Rerun prerefl."
+       END IF
+       IF (index1.EQ.NREFL_obj)  index1  = index1 - 1
+       WNUM0  =   QSTEP_obj*(index1-1) + QMIN_obj
+       DEL_X  =   WNUM - WNUM0
+       DEL_X  =   DEL_X/QSTEP_obj
+       myALFA  =   zf1_obj(index1) + (zf1_obj(index1+1)-zf1_obj(index1))*DEL_X
+       myGAMMA  =   zf2_obj(index1) + (zf2_obj(index1+1)-zf2_obj(index1))*DEL_X
+       rr_ind_obj = 1d0 - myALFA/2
+       rr_attenuation_obj = myGAMMA*wnum
+   endif
+
+   ! interpolation in image space
+   if ((f_r_ind.eq.2).or.(f_r_ind.eq.3)) then
+       if (i_debug.gt.1) then 
+         !
+         ! write file (for test)
+         !
+         write(88,'(a)') "#S 1 image"
+         write(88,'(a)') "#N 4"
+         write(88,'(a)') "#L q[cm-1]  energy[eV]  delta  beta"
+         do index1=1,nrefl_ima
+            WNUM0  =   QSTEP_ima*(index1-1) + QMIN_ima
+            write(88,*) wnum0,wnum0*tocm/twopi,zf1_ima(index1)/2,zf2_ima(index1)*wnum0
+         end do
+         print *,">>Debug: File fort.88 written"
+       end if
+
+       index1 =   (WNUM - QMIN_ima)/QSTEP_ima + 1
+       IF (index1.LT.1) THEN
+          index1=1
+          print *,"GET_REFRACTION_INDEX: Warning: Photon energy below lower limit. Rerun prerefl."
+       END IF
+       IF (index1.GT.NREFL_ima) THEN
+          index1=NREFL_ima-1
+          print *,"GET_REFRACTION_INDEX: Warning: Photon energy above upper limit. Rerun prerefl."
+       END IF
+       IF (index1.EQ.NREFL_ima)  index1  = index1 - 1
+       WNUM0  =   QSTEP_ima*(index1-1) + QMIN_ima
+       DEL_X  =   WNUM - WNUM0
+       DEL_X  =   DEL_X/QSTEP_ima
+       myALFA  =   zf1_ima(index1) + (zf1_ima(index1+1)-zf1_ima(index1))*DEL_X
+       myGAMMA  =   zf2_ima(index1) + (zf2_ima(index1+1)-zf2_ima(index1))*DEL_X
+       rr_ind_ima = 1d0 - myALFA/2
+       rr_attenuation_ima = myGAMMA*wnum
+   endif
+   if (i_debug.gt.0) then
+       print *,">debug: q,energy: ",wnum,wnum*tocm/twopi
+       print *,">debug: delta obj,ima:       ",1d0-rr_ind_obj,1d0-rr_ind_ima
+       print *,">debug: attenuation_obj,ima: ",rr_attenuation_obj,rr_attenuation_ima
+   end if
+!
+! array deallocation
+!
+case (2)
+   if(allocated(zf1_obj)) deallocate(zf1_obj)
+   if(allocated(zf2_obj)) deallocate(zf2_obj)
+   if(allocated(zf1_ima)) deallocate(zf1_ima)
+   if(allocated(zf2_ima)) deallocate(zf2_ima)
+   if (i_debug.gt.0) print *,">>Debug: arrays deallocated (prerefl for lens)"
+case default
+   continue
+end select
+
+return
+End Subroutine get_refraction_index
+
+!
+!
+!
+
+!
+! this is a very simple routine that displays the refraction index obtained from
+! a file created by prerefl. 
+! It can be used for testing prerefl, or for simple calculations of refractive 
+! index. 
+!
+! limitations: only (new) ascii files from prerefl are accepted 
+!
+! todo: move to shadow_preprocessors (needs direct access to file, nit using 
+!                                    get_refraction_index() )
+SUBROUTINE prerefl_test ()
+
+implicit none
+
+integer(kind=ski)           :: k_what
+real(kind=skr)              :: rr_ind_obj,rr_attenuation_obj
+real(kind=skr)              :: rr_ind_ima,rr_attenuation_ima
+real(kind=skr)              :: wnum,energy1
+
+print *,"   prerefl_test: calculates refraction index for a given energy"
+print *,"                 using a file created by the prerefl preprocessor."
+print *,"   "
+F_R_IND = 1  ! to read file in the object space 
+FILE_R_IND_OBJ = RSTRING("File Name (from prerefl): ")
+! read file
+k_what=0
+call GET_REFRACTION_INDEX (k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
+                                      rr_ind_ima,rr_attenuation_ima)
+energy1 = rnumber("Photon energy [eV]: ")
+wnum = twopi*energy1/tocm
+!calculate
+k_what=1
+call GET_REFRACTION_INDEX (k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
+                                      rr_ind_ima,rr_attenuation_ima)
+!print outputs
+print *,"------------------------------------------------------------------------"
+print *,"Inputs: "
+print *,"   prerefl file: "//trim(FILE_R_IND_OBJ)//" gives for E=",energy1,"eV: "
+print *,"   energy [eV]:                       ",energy1
+print *,"   wavelength [A]:                    ",(1d0/wnum)*twopi*1e+8
+print *,"   wavenumber (2 pi/lambda) [cm^-1]:  ",wnum
+print *,"Outputs: "
+print *,"   refraction index = (1-delta) + i*beta : "
+print *,"   delta:                          ",1d0-rr_ind_obj
+print *,"   beta:                           ",rr_attenuation_obj/(2*wnum)
+print *,"   real(n):                        ",rr_ind_obj
+print *,"   attenuation coef [cm^-1]:       ",rr_attenuation_obj
+print *,"------------------------------------------------------------------------"
+
+!cleaning
+k_what=2
+call GET_REFRACTION_INDEX (k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
+                                      rr_ind_ima,rr_attenuation_ima)
+RETURN
+End Subroutine prerefl_test
 
 End Module shadow_kernel
 

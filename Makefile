@@ -81,7 +81,7 @@ FMODULES = \
 	shadow_preprocessors.f90 \
 	shadow_postprocessors.f90 \
 	shadow_bind_f.f90 \
-	shadow_crl.f90 
+	shadow_crl.f90
 #	cdf_z.f
 
 
@@ -207,7 +207,7 @@ clean:
 	/bin/rm -f shadow_version.h
 
 # files created by python
-	/bin/rm -rf build
+	/bin/rm -rf build *.pyc
 
 purge: clean
 #shadow runs

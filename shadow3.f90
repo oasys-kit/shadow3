@@ -317,6 +317,7 @@ SELECT CASE (inCommandLow)
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
      print *,'                    : retrace minmax reflag histo3'
+     print *,'                    : prerefl_test'
      print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
@@ -325,6 +326,9 @@ SELECT CASE (inCommandLow)
   CASE ("version")
      call shadow_version_info
      inCommand="?"
+  CASE ("prerefl_test")
+     CALL prerefl_test()
+     inCommand=""
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 
         CALL SYSTEM( inCommand(2:sklen) )

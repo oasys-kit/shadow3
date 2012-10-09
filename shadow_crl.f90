@@ -35,14 +35,14 @@ Subroutine precrl
 
     Type(GfType)           :: g1
     integer(kind=ski)      :: ns,i,j,ishape_local,fcyl_local
-    integer(kind=ski)      :: changeConvexity,itmp
-    integer(kind=ski)      :: fwrite_local,fhit_c_local,fshape_local
+    integer(kind=ski)      :: changeConvexity,itmp,ftmp
+    integer(kind=ski)      :: fwrite_local,fhit_c_local,fshape_local,f_r_ind_local
     !integer(kind=ski)      :: n_oe_local
     integer(kind=ski)      :: f_ext_local
     real(kind=skr)         :: rwidx1_local,rwidx2_local,rlen1_local,rlen2_local
     real(kind=skr)         :: ref0,ref1,att0,att1
     real(kind=skr)         :: pp,qq,pp0,qq0,ddIn,ddV,qqtmp
-    character(len=sklen)   :: fileName
+    character(len=sklen)   :: fileName,file0,file1
     character(len=3)       :: stmp,stmp2
     Logical                :: arggiven=.false., esta, iOut
     real(kind=skr)         :: cil_ang_local, sin_cil, cos_cil, ref_in, ref_out
@@ -60,7 +60,12 @@ Subroutine precrl
     real(kind=skr)         :: cc, branch,crl_length,tmp1,tmp2
     
     ccc=0.0D0
-
+    file0="none_specified"
+    file1="none_specified"
+    ref0=1d0
+    ref1=1d0
+    att0=0d0
+    att1=0d0
 
     !n_oe_local = irint('What is the number of this optical element [default=1]? ')
     !IF (n_oe_local .eq. 0) n_oe_local = 1
@@ -86,11 +91,40 @@ Subroutine precrl
 
     ns = irint(' Number of interfaces NS (Number of lenses=NS/2) ? ')
 
-    ref0 = RNUMBER(' Refraction index of the medium containing source ?')
-    ref1 = RNUMBER(' Refraction index of the next medium?')
+    print *,' You must enter refraction index in the two media:'
+    print *,'    first, for the medium containing the source (OBJECT for the first interface)'
+    print *,'    then, for the next medium (IMAGE for the first interface)'
+    print *,'    '
+    print *,' Refraction index (optical constants) from: '
+    print *,'     0: constant: keyword in both media'
+    print *,'     1: file(from prerefl) in first medium keyboard in next medium'
+    print *,'     2: keyboard in first medium and file (from prerefl) next medium'
+    print *,'     3: file(from prerefl) in both media'
+    print *,'     '
+    f_r_ind_local = irint('?>')
 
-    att0 = RNUMBER(' Attenuation coeff [UserLength^-1] of the medium containing source ?')
-    att1 = RNUMBER(' Attenuation coeff [UserLength^-1] of the next medium?')
+    select case (f_r_ind_local)
+        case (0) 
+          ref0 = RNUMBER(' Refraction index of the medium containing source ?')
+          ref1 = RNUMBER(' Refraction index of the next medium?')
+          att0 = RNUMBER(' Attenuation coeff [UserLength^-1] of the medium containing source ?')
+          att1 = RNUMBER(' Attenuation coeff [UserLength^-1] of the next medium?')
+        case (1) 
+          file0 = rstring("file (from prerefl) for medium containing source")
+          ref1 = RNUMBER(' Refraction index of the next medium?')
+          att1 = RNUMBER(' Attenuation coeff [UserLength^-1] of the next medium?')
+        case (2) 
+          ref0 = RNUMBER(' Refraction index of the medium containing source ?')
+          att0 = RNUMBER(' Attenuation coeff [UserLength^-1] of the medium containing source ?')
+          file1 = rstring("file (from prerefl) for the next medium")
+        case (3) 
+          file0 = rstring("file (from prerefl) for medium containing source")
+          file1 = rstring("file (from prerefl) for the next medium")
+    end select 
+
+
+
+
 
     pp0 = RNUMBER(' p0: physical focal source-crl distance ')
     qq0 = RNUMBER(' q0: physical focal crl-image distance ')
@@ -196,11 +230,22 @@ Subroutine precrl
       ! set variables that are change with lens number
       itmp=2
       IF (mod(i,itmp).EQ.0) THEN
+         select case(f_r_ind_local)
+            case (1)
+              ftmp = 2
+            case (2)
+              ftmp = 1
+            case default
+              ftmp = f_r_ind_local
+         end select
       ! even surfaces
+        iOut = GfForceSetValue(g1,"F_R_IND("//trim(stmp)//")",ftmp)
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att0)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file1)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file0)
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddIn*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddV*0.5D0)
         ref_in = ref1
@@ -208,10 +253,13 @@ Subroutine precrl
         changeConvexity=1
       ELSE
       ! odd surfaces
+        iOut = GfForceSetValue(g1,"F_R_IND("//trim(stmp)//")",f_r_ind_local)
         iOut = GfForceSetValue(g1,"R_IND_OBJ("//trim(stmp)//")",ref0)
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att1)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file0)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file1)
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddV*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddIn*0.5D0)
         ref_in = ref0
@@ -776,11 +824,14 @@ End SUbroutine runcrl
       Write( stmp, '(i3)' ) i
       stmp = adjustl(stmp)
       iOut = GfGetValue(gf,"FMIRR("//trim(stmp)//")",arrOE(i)%FMIRR).and.iOut
+      iOut = GfGetValue(gf,"F_R_IND("//trim(stmp)//")",arrOE(i)%F_R_IND).and.iOut
       iOut = GfGetValue(gf,"R_IND_OBJ("//trim(stmp)//")",arrOE(i)%R_IND_OBJ).and.iOut
       iOut = GfGetValue(gf,"R_IND_IMA("//trim(stmp)//")",arrOE(i)%R_IND_IMA).and.iOut
 
       iOut = GfGetValue(gf,"R_ATTENUATION_OBJ("//trim(stmp)//")",arrOE(i)%R_ATTENUATION_OBJ).and.iOut
       iOut = GfGetValue(gf,"R_ATTENUATION_IMA("//trim(stmp)//")",arrOE(i)%R_ATTENUATION_IMA).and.iOut
+      iOut = GfGetValue(gf,"FILE_R_IND_OBJ("//trim(stmp)//")",arrOE(i)%FILE_R_IND_OBJ).and.iOut
+      iOut = GfGetValue(gf,"FILE_R_IND_IMA("//trim(stmp)//")",arrOE(i)%FILE_R_IND_IMA).and.iOut
 
       iOut = GfGetValue(gf,"T_SOURCE("//trim(stmp)//")",arrOE(i)%T_SOURCE).and.iOut
       iOut = GfGetValue(gf,"T_IMAGE("//trim(stmp)//")",arrOE(i)%T_IMAGE).and.iOut

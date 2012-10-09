@@ -792,12 +792,14 @@ SUBROUTINE PREREFL
         real(kind=skr),dimension(420,2) :: OUTFIL
         real(kind=skr) :: DENSITY
         character(len=sklen) :: OUT_FILE
-        integer(kind=ski),parameter     :: N_DIM=10000
-        real(kind=skr),dimension(N_DIM) :: AF1,AF2
+        !integer(kind=ski),parameter     :: N_DIM=10000
+        !real(kind=skr),dimension(N_DIM) :: AF1,AF2
+        real(kind=skr),dimension(:),allocatable  :: af1,af2
+
 
         real(kind=skr)     :: radius,estart,efinal,estep,alpha,depth0,elfactor
         real(kind=skr)     :: f1,f2,gamma1,photon,qmax,qmin,qstep,wave
-        integer(kind=ski)  :: i_type,i,nener,npoint,i_format
+        integer(kind=ski)  :: i_type,i,nener,npoint,i_format,ierr
 
         EQUIVALENCE    (OUTFIL(1,1),RF1(1))    
         EQUIVALENCE    (OUTFIL(1,2),RF2(1))    
@@ -823,7 +825,22 @@ SUBROUTINE PREREFL
         QSTEP    =   ESTEP/TOCM*TWOPI
         NPOINT    =  (EFINAL-ESTART)/ESTEP + 1
         DEPTH0    =   DENSITY/2.0D0
-        IF (NPOINT.GT.N_DIM) STOP    'Too many points (*N_DIM* max.)'
+
+        ! srio@esrf.eu 2012/10/06 make arrays allocatable
+        !IF (NPOINT.GT.N_DIM) STOP    'Too many points (*N_DIM* max.)'
+        IF (.NOT. ALLOCATED(af1)) THEN
+          ALLOCATE(af1(npoint),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"PREREFL: Error allocating array" ; STOP 4
+          END IF
+        END IF
+        IF (.NOT. ALLOCATED(af2)) THEN
+          ALLOCATE(af2(npoint),STAT=ierr)
+          IF (ierr /= 0) THEN
+            print *,"PREREFL: Error allocating array" ; STOP 4
+          END IF
+        END IF
+
         !
         ! srio@esrf.eu 2012/09/28 change the prerefl file from bin to ascii
         ! (for compatibility with pre_mlayer and bragg, and for allowing 
@@ -856,11 +873,11 @@ SUBROUTINE PREREFL
               (OUTFIL(NENER+1,2) - OUTFIL(NENER,2))*(PHOTON - ENERGY(NENER))/ &
               (ENERGY(NENER+1) - ENERGY(NENER))
             !*** Computes now ALPHA and gamma
-            WAVE    =   TOCM/PHOTON
-            ALPHA    =   RADIUS/PI*(WAVE**2)*F1
-            gamma1    =   RADIUS/PI*(WAVE**2)*F2
-            AF1(I)    =   ALPHA
-            AF2(I)  =   gamma1
+            WAVE = TOCM/PHOTON
+            ALPHA = RADIUS/PI*(WAVE**2)*F1
+            gamma1 = RADIUS/PI*(WAVE**2)*F2
+            AF1(I) = ALPHA
+            AF2(I) = gamma1
             !write(77,*) photon,ALPHA,gamma1
         END DO
 !11      CONTINUE
@@ -869,14 +886,17 @@ SUBROUTINE PREREFL
           WRITE (20)    (AF2(I),I=1,NPOINT)
         ELSE ! new format
           DO I=1,NPOINT
-             WRITE (20,*)    AF1(I)
+             WRITE (20,*) AF1(I)
           END DO
           DO I=1,NPOINT
-            WRITE (20,*)    AF2(I)
+            WRITE (20,*)  "  ",AF2(I)
           END DO
         END IF
         CLOSE (20)
         !CALL    EXIT (0)
+        if(allocated(af1)) deallocate(af1)
+        if(allocated(af2)) deallocate(af2)
+
         RETURN
 END SUBROUTINE PREREFL
 
