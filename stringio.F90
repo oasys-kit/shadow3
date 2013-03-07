@@ -34,88 +34,89 @@
 !
 
 Module stringIO
-    !---- Use Modules ----!
-	use shadow_globaldefinitions
-    !---- Variables ----!
-    implicit none
+      !---- Use Modules ----!
+      use shadow_globaldefinitions, only: ski, skr, skx, skc, sklen, OS, OS_DS
+      !---- Variables ----!
+      implicit none
 
-    !---- Everything is private unless explicitly made public ----!
-    private 
+      !---- Everything is private unless explicitly made public ----!
+      private 
 
-    !---- List of public functions ----!
+      !---- List of public functions ----!
+ 
+      !TODO: all routines are public by now.
+      !Some routines cam be made private?
+      ! private :: blablaF1
+      !---- List of public overloaded functions ----!
+      !---- List of public functions ----!
+      public ::  iyes, rnumber, rstring, iblank, fname, u_case
+      public ::  myConcat
+      !---- List of public subroutines ----!
+      public ::  mssg,leave, irint, despace, clscreen, datapath
+      public ::  fstrlocase, fstrupcase
 
-    !TODO: all routines are public by now.
-    !Some routines cam be made private?
-    ! private :: blablaF1
-    !---- List of public overloaded functions ----!
-    !---- List of public functions ----!
-    public ::  iyes, rnumber, rstring, iblank, fname, u_case
-    public ::  myConcat
-    !---- List of public subroutines ----!
-    public ::  mssg,leave, irint, despace, clscreen, datapath
-    public ::  fstrlocase, fstrupcase
 
+     !---- List of private functions ----!
+     ! private :: blablaF2
+     !---- List of private subroutines ----!
+     private :: fstrtrim, fstrtrim_l, fstrtrim_r, fstrchr
+     private :: fstrfill
+ 
+     !---- Definitions ----!
 
-    !---- List of private functions ----!
-    ! private :: blablaF2
-    !---- List of private subroutines ----!
-    private :: fstrtrim, fstrtrim_l, fstrtrim_r, fstrchr
-    private :: fstrfill
+     !---- Interfaces ----!
 
-    !---- Definitions ----!
+     Contains
+     !
+     !---- Public Functions and Subroutines ----!
+     !
 
-    !---- Interfaces ----!
-
-  Contains
-    !
-    !---- Public Functions and Subroutines ----!
-    !
-
-    ! C+++
-    ! C	SUBROUTINE	MSSG	(TEXT1,TEXT2,IFLAG)
-    ! C
-    ! C	PURPOSE		Outputs an error message to the screen and
-    ! C			to a file
-    ! C
-    ! C	ARGUEMNTS	TEXT1 : Tipically, the calling routine name
-    ! C			TEXT2 : A file name, or a message
-    ! C			TEXT3 : A flag or an IOSTAT value.
-    ! C
-    ! C---
+     ! C+++
+     ! C SUBROUTINE MSSG (TEXT1,TEXT2,IFLAG)
+     ! C
+     ! C PURPOSE  
+     ! C     Outputs an error message to the screen and to a file
+     ! C
+     ! C ARGUEMNTS 
+     ! C     TEXT1 : Tipically, the calling routine name
+     ! C     TEXT2 : A file name, or a message
+     ! C     IFLAG : A flag or an IOSTAT value.
+     ! C
+     ! C---
     
-     	SUBROUTINE	MSSG (T1, T2, IFLAG)
-     	CHARACTER *(*)	T1, T2
+     SUBROUTINE MSSG (T1, T2, IFLAG)
+       CHARACTER *(*) T1, T2
 !     	integer(kind=ski) iblank,iflag
-     	integer(kind=ski) iflag
-     	WRITE(6,*)'SHADOW-E-Error: '
-     	WRITE(6,*)'Module     : ', T1
-     	WRITE(6,*)'Message    : ', T2
-     	WRITE(6,*)'Error flag : ', IFLAG
-     	WRITE (33, 100) T1(1:IBLANK(T1))
-     	WRITE (33, 100) T2(1:IBLANK(T2))
-     	WRITE (33, 110) IFLAG
-    100	FORMAT (1X,'>',A)
-    110	FORMAT (1X,I5)
-     	RETURN
-     	END SUBROUTINE MSSG
+       integer(kind=ski) iflag
+       WRITE(6,*)'SHADOW-E-Error: '
+       WRITE(6,*)'Module     : ', T1
+       WRITE(6,*)'Message    : ', T2
+       WRITE(6,*)'Error flag : ', IFLAG
+       WRITE (33, 100) T1(1:IBLANK(T1))
+       WRITE (33, 100) T2(1:IBLANK(T2))
+       WRITE (33, 110) IFLAG
+100    FORMAT (1X,'>',A)
+110    FORMAT (1X,I5)
+       RETURN
+     END SUBROUTINE MSSG
 
-    !
-    !
-    !
+     !
+     !
+     !
 
-    ! C+++
-    ! C	SUBROUTINE	LEAVE
-    ! C
-    ! C	PURPOSE		To print out a message, then signal the VAX 
-    ! C			condition handler to abort the command procedure.
-    ! C---
+     ! C+++
+     ! C	SUBROUTINE	LEAVE
+     ! C
+     ! C	PURPOSE		To print out a message, then signal the VAX 
+     ! C			condition handler to abort the command procedure.
+     ! C---
 
-	SUBROUTINE	LEAVE	(TEXT1,TEXT2,IFLAG)
-	CHARACTER*(*)	TEXT1,TEXT2
-	integer(kind=ski)		SS_ABORT
-	integer(kind=ski)		iflag
-	PARAMETER	(SS_ABORT = 44)
-	CALL	MSSG	(TEXT1,TEXT2,IFLAG)
+  SUBROUTINE LEAVE (TEXT1,TEXT2,IFLAG)
+    CHARACTER*(*) TEXT1,TEXT2
+    integer(kind=ski) SS_ABORT
+    integer(kind=ski) iflag
+    PARAMETER (SS_ABORT = 44)
+    CALL MSSG (TEXT1,TEXT2,IFLAG)
     ! C	STOP		SS_ABORT
     ! C
     ! C HACK/FIXME/TODO
@@ -124,9 +125,9 @@ Module stringIO
     ! #if rs6000
     ! 	STOP		1
     ! #else
-	    CALL	EXIT	(SS_ABORT)
+    CALL EXIT (SS_ABORT)
     ! #endif
-	END SUBROUTINE LEAVE
+  END SUBROUTINE LEAVE
 
 
 
@@ -143,13 +144,13 @@ Module stringIO
     ! C			If IN = Y or y or 1, then IYES = 1
     ! C			else		 	  IYES = 0
     ! C---
-     	integer(kind=ski) FUNCTION IYES (PROMPT)
-     	CHARACTER *(*)	PROMPT
-     	CHARACTER *1	IN
-     	LOGICAL		TEST
-     	IYES	= 1
-    10     	WRITE (6,1000,ADVANCE='NO')	PROMPT
-    1000	FORMAT	(1X,A,2x)
+  integer(kind=ski) FUNCTION IYES (PROMPT)
+    CHARACTER *(*) PROMPT
+    CHARACTER *1 IN
+    LOGICAL TEST
+    IYES = 1
+10  WRITE (6,1000,ADVANCE='NO') PROMPT
+1000	FORMAT	(1X,A,2x)
     ! #ifdef MICROSOFT
     !      	READ	(5,*,ERR=20) IN
     ! #else
@@ -907,6 +908,10 @@ End Subroutine datapath
     myConcat = str1//"("//trim(adjustl(str2))//")"
 
   end function myConcat
+
+
+
+
 
 
 End Module stringio

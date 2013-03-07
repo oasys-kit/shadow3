@@ -1,0 +1,10 @@
+$ls start.*
+$echo "start.01" > systemfile.dat
+$cat systemfile.dat
+source
+systemfile
+trace
+systemfile
+0
+exit
+

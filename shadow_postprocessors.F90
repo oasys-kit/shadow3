@@ -1171,7 +1171,7 @@ SUBROUTINE Histo1
             WRITE (21,*)  "# Gnuplot script for shadow3"
             WRITE (21,*)  "# Created by histo1"
             WRITE (21,*)  "#"
-            IF (trim(OS_NAME) == "Windows") THEN
+            IF (OS==1) THEN
                 WRITE(21,'(A)')  'set terminal win '
             ELSE
                 WRITE(21,'(A)')  'set terminal x11 '
@@ -2517,7 +2517,7 @@ yplot=0
     END IF
     WRITE(35,'(A)')  '                                              '
     WRITE(35,'(A)')  '                                              '
-IF (trim(OS_NAME) == "Windows") THEN
+IF (OS==1) THEN
     WRITE(35,'(A)')  'set terminal win size 900,600                 '
 ELSE
     WRITE(35,'(A)')  'set terminal x11 size 900,600                 '
@@ -3925,7 +3925,7 @@ SUBROUTINE FocNew
            write(35,'(A)') '# Created by focnew '
            write(35,'(A)') '# '
 
-           IF (trim(OS_NAME) == "Windows") THEN
+           IF (OS==1) THEN
              write(35,'(A)') 'set terminal win  '
            ELSE
              write(35,'(A)') 'set terminal x11  '
@@ -4273,7 +4273,7 @@ IF (NPOINT.GT.500) NPOINT = 500
            write(35,1000) '# Created by histo1 '
            write(35,1000) '# '
 
-           IF (trim(OS_NAME) == "Windows") THEN
+           IF (OS==1) THEN
              write(35,1000) 'set terminal win  '
            ELSE
              write(35,1000) 'set terminal x11  '

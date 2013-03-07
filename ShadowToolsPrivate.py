@@ -1,18 +1,11 @@
-import Shadow as sd
-import numpy as np
+import ShadowLibExtensions as sd
+import numpy 
 import matplotlib.pyplot as plt
 import matplotlib
 import os
 import socket
 import getpass
 import datetime
-
-#Label = ['X','Y','Z','Xp','Yp','Zp','Esx','Esy','Esz','flag','Energy','id','op_path','phs','php','Epx','Epy','Epz',
-#         'wavelength','R','Theta','|E|','|E|^2','|Es|^2','|Ep|^2','K','Kx','Ky','Kz','S0','S1','S2','S3']
-
-#A2EV = 50676.89919462
-
-
 
 
 class ArgsError(Exception):
@@ -152,11 +145,11 @@ def setGoodRange(col):
   return [rmin,rmax]
   
 def findIndex(xx,n,la,lb):  
-  return int( np.floor((xx-(lb-la)*0.5/n-la)*n/(lb-la)) )
+  return int( numpy.floor((xx-(lb-la)*0.5/n-la)*n/(lb-la)) )
   
 
 def calcFWHM(h,binSize):
-  t = np.where(h>max(h)*0.5)
+  t = numpy.where(h>max(h)*0.5)
   return binSize*(t[0][-1]-t[0][0]+1), t[0][-1], t[0][0]
 
 

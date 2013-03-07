@@ -18,6 +18,7 @@
 !
 
 module GFile
+!    use iso_varying_string, only : replace
     use stringio, only : u_case
     use shadow_globaldefinitions, only : ski, skr, skc, sklen
     implicit none
@@ -25,10 +26,13 @@ module GFile
     public :: GfFileLoad, GfFileWrite, GfTypePrint, GfIsDefined
     public :: GfTypeAllocate
     public :: GfGetValue, GfSetValue, GfForceSetValue
+    public :: GfGetArrValue, GfSetArrValue
 
     private :: GfGetValueString, GfGetValueInteger, GfGetValueReal
     private :: GfSetValueString, GfSetValueInteger, GfSetValueReal
     private :: GfForceSetValueString, GfForceSetValueInteger, GfForceSetValueReal
+    private :: GfSetArrayValueString, GfSetArrayValueInteger, GfSetArrayValueReal
+    private :: GfGetArrayValueString, GfGetArrayValueInteger, GfGetArrayValueReal
 
     type, public :: GfType
        character(len=sklen) :: fileName
@@ -57,16 +61,122 @@ module GFile
       module procedure GfForceSetValueString
       module procedure GfForceSetValueInteger
       module procedure GfForceSetValueReal
-   	end interface
+    end interface
+
+    interface GfGetArrValue
+      module procedure GfGetArrayValueString
+      module procedure GfGetArrayValueInteger
+      module procedure GfGetArrayValueReal
+    end interface
+
+    interface GfSetArrValue
+      module procedure GfSetArrayValueString
+      module procedure GfSetArrayValueInteger
+      module procedure GfSetArrayValueReal
+    end interface
 
 contains
+    function GfGetArrayValueString(g1,varname,varval) result(iOut)
+      type(GfType), intent(in) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      character(kind=skc,len=*), intent(inout) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfGetValueString(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+    function GfGetArrayValueInteger(g1,varname,varval) result(iOut)
+      type(GfType), intent(in) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      integer(kind=ski), intent(inout) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfGetValueInteger(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+    function GfGetArrayValueReal(g1,varname,varval) result(iOut)
+      type(GfType), intent(in) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      real(kind=skr), intent(inout) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfGetValueReal(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+
+
+    function GfSetArrayValueString(g1,varname,varval) result(iOut)
+      type(GfType), intent(inout) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      character(kind=skc,len=*), intent(in) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfForceSetValueString(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+    function GfSetArrayValueInteger(g1,varname,varval) result(iOut)
+      type(GfType), intent(inout) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      integer(kind=ski), intent(in) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfForceSetValueInteger(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+    function GfSetArrayValueReal(g1,varname,varval) result(iOut)
+      type(GfType), intent(inout) :: g1
+      character(kind=skc,len=*), intent(in) :: varname
+      real(kind=skr), intent(in) :: varval(:)
+      logical :: iOut
+      integer :: i
+      character(len=5) :: f
+
+      iOut = .true.
+      do i=1,size(varval)
+        write(f,'(I2)') i
+        iOut = GfForceSetValueReal(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+      end do
+    end function
+
+
+
 
 
     function GfTypeAllocate (g1, nLines, nVariables) result(iOut)
-       type(GfType), 				intent (inout)	:: g1
+       type(GfType), intent (inout):: g1
        integer(kind=ski), optional, intent (in)     :: nLines
        integer(kind=ski), optional, intent (in)     :: nVariables
-       logical 										:: iOut
+       logical :: iOut
 
        integer(kind=ski) 			:: n, nVar
 
@@ -110,8 +220,10 @@ contains
 
        iOut = GfIsDefined(g1,variableName,j)
 
-       if (iOut) read(g1%variableValues(j),fmt="(a)") var
-       variable = trim(var)
+       if (iOut) then 
+         read(g1%variableValues(j),fmt="(a)") var
+         variable = trim(var)
+       end if
 
        if (.not. iOut) print *,"Warning GfGetValueString: "//trim(variableName)
 
@@ -130,8 +242,10 @@ contains
 
        iOut = GfIsDefined(g1, variableName, j)
 
-       if (iOut) read (g1%variableValues(j),fmt=*) var
-       variable=var
+       if (iOut) then 
+         read (g1%variableValues(j),fmt=*) var
+         variable=var
+       end if
 
        if (.not. iOut) print *,"Warning GfGetValueInteger: "//trim(variableName)
 
@@ -150,8 +264,10 @@ contains
 
        iOut = GfIsDefined(g1, variableName, j)
 
-       if (iOut) read (g1%variableValues(j),fmt=*) var
-       variable=var
+       if (iOut) then 
+         read (g1%variableValues(j),fmt=*) var
+         variable=var
+       end if
 
 
        if (.not. iOut) print *,"Warning GfGetValueReal: "//trim(variableName)

@@ -392,7 +392,7 @@ Module shadow_kernel
 
   	public :: PoolOEToGlobal,PoolSourceToGlobal
   	public :: GlobalToPoolOE,GlobalToPoolSource
-  	public :: traceoe,Shadow3Trace
+  	public :: traceoe,Shadow3Trace,presurface_translate
   
   
   !---- List of private functions ----!
@@ -11885,7 +11885,11 @@ SUBROUTINE TraceOE (oeType,ray18,npoint1,icount) bind(C,NAME="TraceOE")
         integer(kind=ski)      :: i,ncol1
 
 
-	ncol1 = ncol ! cp from existing one
+	if(ncol.ne.0) then
+		ncol1 = ncol ! cp from existing one
+	else
+		ncol1 = 18
+	endif
 
         call reset
 
@@ -11990,19 +11994,19 @@ End Subroutine traceoe
 ! C---
 SUBROUTINE Shadow3Trace
 
-	implicit none
+        implicit none
 
         character(len=sklen)      :: mode !, arg
-	integer(kind=ski)       :: icount,ipass,nsave,iTerminate
-	integer(kind=ski)       :: numarg
-	integer(kind=ski)       :: ncol1,np,iflag,ierr
+        integer(kind=ski)       :: icount,ipass,nsave,iTerminate
+        integer(kind=ski)       :: numarg
+        integer(kind=ski)       :: ncol1,np,iflag,ierr
 
         real(kind=skr),dimension(:,:),allocatable :: ray,phase,ap
-	logical				          :: logicalFlag=.true.
+	logical                                   :: logicalFlag=.true.
 
-	print *,''
-	print *,'Ray Tracing Selected. Begin procedure.'
-	print *,''
+        print *,''
+        print *,'Ray Tracing Selected. Begin procedure.'
+        print *,''
 
         mode = RString('Mode selected [prompt OR batch OR systemfile] ?')
 
@@ -12010,80 +12014,77 @@ SUBROUTINE Shadow3Trace
 
         !call FStrUpCase(mode)
 
-  	icount = 0
-       	ipass  = 1
-  	nsave = 0
+        icount = 0
+        ipass  = 1
+        nsave = 0
 
 ! C
 ! C Start by inquiring about the optical system
 ! C
-	DO WHILE (logicalFlag)  ! enters in an infinite loop over oe's
-        !
-        ! srio: this will change input mode, and load
-        ! input variables (start.xx)
-        !
-        CALL Reset
-   	CALL Switch_Inp (mode,icount,iTerminate)
-	IF (iTerminate == 1) RETURN
+        DO WHILE (logicalFlag)  ! enters in an infinite loop over oe's
+!
+! srio: this will change input mode, and load
+! input variables (start.xx)
+!
+          CALL Reset
+          CALL Switch_Inp (mode,icount,iTerminate)
+          IF (iTerminate == 1) RETURN
 
-        !
-        ! it is necessary to allocate main arrays (ray, phase, ap) here, 
-        ! at the main level. 
-        ! 
+!
+! it is necessary to allocate main arrays (ray, phase, ap) here, 
+!at the main level. 
+! 
 
-       IF  (  (.NOT. ALLOCATED(Ray)) &
-            .OR.   (.NOT. ALLOCATED(Ap)) &
-            .OR.   (.NOT. ALLOCATED(Phase)) ) THEN
+          IF ( .NOT.( ALLOCATED(Ray).AND.ALLOCATED(Ap).AND.ALLOCATED(Phase) ) ) THEN
+            CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
 
-        CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
-
-         IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
-            PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
-            STOP
-         ELSE
+            IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
+              PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
+              STOP
+            ELSE
  
-            !
-            ! allocate arrays
-            !
-            IF (ALLOCATED(ray)) DEALLOCATE(ray)
-            IF (ALLOCATED(ap)) DEALLOCATE(ap)
-            IF (ALLOCATED(phase)) DEALLOCATE(phase)
-            IF (.NOT. ALLOCATED(ray)) then
-               ALLOCATE(ray(ncol1,np),STAT=ierr)
-               IF (ierr /= 0) THEN
+!
+! allocate arrays
+!
+              IF (ALLOCATED(ray)) DEALLOCATE(ray)
+              IF (ALLOCATED(ap)) DEALLOCATE(ap)
+              IF (ALLOCATED(phase)) DEALLOCATE(phase)
+              IF (.NOT. ALLOCATED(ray)) then
+                ALLOCATE(ray(ncol1,np),STAT=ierr)
+                IF (ierr /= 0) THEN
                   PRINT *,"TRACE: Error allocating ray" ; STOP 4
-               END IF
-            END IF
-            IF (.NOT. ALLOCATED(ap)) THEN
-               ALLOCATE(ap(3,np),STAT=ierr)
-               IF (ierr /= 0) THEN
+                END IF
+              END IF
+              IF (.NOT. ALLOCATED(ap)) THEN
+                ALLOCATE(ap(3,np),STAT=ierr)
+                IF (ierr /= 0) THEN
                   PRINT *,"TRACE: Error allocating ray" ; STOP 4
-               END IF
-            END IF
-            IF (.NOT. ALLOCATED(phase)) THEN
-               ALLOCATE(phase(3,np),STAT=ierr)
-               IF (ierr /= 0) THEN
+                END IF
+              END IF
+              IF (.NOT. ALLOCATED(phase)) THEN
+                ALLOCATE(phase(3,np),STAT=ierr)
+                IF (ierr /= 0) THEN
                   print *,"TRACE: Error allocating ray" ; STOP 4
-               END IF
-            END IF
+                END IF
+              END IF
 
-	    !read source file (nor here... it is done in msetup)
-	    
-            ! put dimensions in variable pool
-            npoint=np
-            ncol=ncol1
-         END IF
-       END IF
+!read source file (nor here... it is done in msetup)
+            
+! put dimensions in variable pool
+              npoint=np
+              ncol=ncol1
+            END IF
+          END IF
  
 
-  	CALL Trace_Step (nsave, icount, ipass, ray, phase, ap)
-	END DO ! end do while infinite loop
+          CALL Trace_Step (nsave, icount, ipass, ray, phase, ap)
+        END DO ! end do while infinite loop
 
         IF (ALLOCATED(ray)) DEALLOCATE(ray)
         IF (ALLOCATED(ap)) DEALLOCATE(ap)
         IF (ALLOCATED(phase)) DEALLOCATE(phase)
 
-	RETURN
+        RETURN
 
 END SUBROUTINE Shadow3Trace
 
@@ -12374,6 +12375,120 @@ call GET_REFRACTION_INDEX (k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
                                       rr_ind_ima,rr_attenuation_ima)
 RETURN
 End Subroutine prerefl_test
+
+
+
+! C+++
+! C	SUBROUTINE	presurface_translate
+! C
+! C	PURPOSE		To compute the interpolated surface from a 
+! C			bi-cubic spline.
+! C
+! C	INPUT		An unformatted file prepared by PRESURFACE.
+! C
+! C	ARGUMENTS	Input:
+! C			 {x,y} 	coordinates
+! C			 IFlag: -1, readin file from FILESURF
+! C			         0, compute z
+! C				-2, clear arrays
+! C			Output:
+! C			 z	value of z at {x.y}
+! C			 v[3]	normal to surface at {x,y,z}
+! C			 Iflag:  0, normal completion
+! C			        -1, out of bounds
+! C			serr: surface spline error (-9 is bad)
+! C
+! C---
+SUBROUTINE presurface_translate ()
+
+
+! C This routine now takes an additional parameter SERR which indiates
+! C whether errors occur when calculating the ray's intersection with the
+! C mirror as specified by a PRESURFACE spline file.
+
+! C Below, the CSPL, X, and Y have been changed to allow a maximum of
+! C 201 points instead of 101.
+! C
+
+implicit none
+real(kind=skr),dimension(201) :: Xold
+real(kind=skr),dimension(201) :: Yold
+real(kind=skr),dimension(2,201,2,201) :: CSPLold
+!
+real(kind=skr),dimension(501) :: X
+real(kind=skr),dimension(6)   :: PDS(6)
+real(kind=skr),dimension(:),allocatable :: Y
+real(kind=skr),dimension(:,:,:,:),allocatable ::  CSPL
+
+character(len=sklen)      :: filein,fileout
+
+INTEGER(KIND=ski) :: iostat_value, SERR,nx,ny,nxold,nyold,i,j,k,l
+! C 
+! C Replace OPEN calls with library routine FOPENR()
+! C	  CALL FOPENR(20, FILE_RIP, 'UNFORMATTED', IFERR, IOSTAT)
+! C
+filein =  rstring('Input file (binary from presurface/SHADOW 2.x): ')
+OPEN  (20, FILE=filein, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=IOSTAT_value)
+IF (IOSTAT_value.NE.0) THEN
+  print *,'PRESURFACE_TRANSLATE: Error opening file '//trim(filein)
+END IF
+READ  (20) NXold, Nyold
+READ  (20) Xold,Yold
+READ  (20) CSPLold
+CLOSE (20)
+
+print *,'X: ',xold(1:3),'...',xold((nxold-3):nxold)
+print *,'Y: ',yold(1:nyold)
+print *,'NX: ',nxold
+print *,'NY: ',nyold
+
+!
+! new file
+!
+fileout =  rstring('Output file (binary for SHADOW3): ')
+
+nx = nxold
+ny = nyold
+
+allocate( Y(NY) )
+allocate( CSPL(2,501,2,NY) )
+! cp data
+X = 0.0
+cspl = 0.0
+X(1:nx) = xold(1:nx)
+Y = yold(1:ny)
+do i=1,2 
+do j=1,201
+do k=1,2
+do l=1,NY
+cspl(i,j,k,l) = csplold(i,j,k,l)
+end do
+end do
+end do
+end do
+
+OPEN  (20, FILE=fileout, STATUS='unknown', FORM='UNFORMATTED', IOSTAT=IOSTAT_value)
+write  (20) nX,nY
+write  (20) X,Y
+write  (20) CSPL
+CLOSE (20)
+! C
+! C Succesful completion
+! C
+! D	  WRITE(6,*)'Read ',NX,' by ',NY,' array.'
+!     	  IERR = 0
+!     	 RETURN
+!     	ELSE IF (IERR.EQ.-2) THEN !deallocate arrays
+!     	  RETURN
+!     	ELSE 
+!     	END IF
+
+IF(ALLOCATED( Y ))    DEALLOCATE(Y)
+IF(ALLOCATED( CSPL )) DEALLOCATE(CSPL)
+
+return
+End Subroutine presurface_translate
+
 
 End Module shadow_kernel
 

@@ -72,5 +72,7 @@ void CShadowFFresnel2D ( double*, int, double, dComplex*, pixel*, pixel* );
 void CShadowSetupDefaultSource ( poolSource* );
 void CShadowSetupDefaultOE ( poolOE* );
 
+char* trim(char*);
+
 #endif
 

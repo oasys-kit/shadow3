@@ -17,7 +17,8 @@ Contents:
 
 SHADOW is an open source ray tracing code for modeling optical systems. 
 
-Targeted to synchrotron radiation beamlines, it has unique features for designing X-ray optical systems. 
+Targeted to synchrotron radiation beamlines, it has unique features for designing X-ray 
+optical systems. 
 
 For more info, please read this paper (open access):
 
@@ -53,36 +54,34 @@ Tools:
   Makefile:  makefile 
 
 Source files: 
-  shadow_kernel_precpp.F90
-  shadow_version_precpp.F90
-  shadow_variables_precpp.F90
+	shadow_version.F90 
+	shadow_globaldefinitions.F90 
+	stringio.F90 
+	gfile.F90 
+	shadow_beamio.F90 
+	shadow_math.F90 
+	shadow_variables.F90 
+	shadow_kernel.F90 
+	shadow_synchrotron.F90 
+	shadow_pre_sync.F90 
+	shadow_preprocessors.F90 
+	shadow_postprocessors.F90 
+	shadow_bind_f.F90 
+	shadow_crl.F90
 
-  gfile.f90		      
-  stringio.f90
-  shadow_pre_sync.f90
-  shadow_beamio.f90	      
-  shadow_synchrotron.f90
-  shadow_bind_f.f90	      
-  shadow_crl.f90		      
-  shadow_globaldefinitions.f90  
-  shadow_math.f90		      
-  shadow_postprocessors.f90     
-  shadow_preprocessors.f90      
-
-  cdf_z.f
-  wranc.c
+        cdf_z.f
+        wranc.c
 
 Source file main shadow3 program:
-  shadow3.f90		      
+  shadow3.F90		      
 
 Source file optional main programs (examples):
-  gen_source.f90		      
-  trace3.f90
-  trace3mpi.f90
-  trace.f90
-  example01_f95.f90	      
-  example02_f95.f90	      
-  fig3.f90		      
+  gen_source.F90		      
+  trace3.F90
+  trace3mpi.F90
+  trace.F90
+  example01_f95.F90	      
+  example02_f95.F90	      
 
 Source file API (C/C++/PYTHON/IDL)
   shadow_bind_idl.c	   
@@ -103,15 +102,23 @@ Source file examples API (C/C++/PYTHON/IDL)
   shadow_bind_idl_test.pro
 
 README files:
-  README.txt
-  README_API.TXT
+  README.txt (this file)
+  README_API.txt 
   README_CRL.txt 
   README_MPI.txt 
-  README_ShadowTools.txt
+  README_PYTHON.txt
+  source.nml   (description of the source variables, as in start.00)
+  oe.nml       (description of the optical element variables, as in start.01)
+
+Data files: 
+  PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
+
+Directories:
+  PRIMER_INPUT_FILES  (script to run all the examples discussed in the Primer)
 
 4 Building SHADOW
 ----------------
-  Check the Makefile if you need to redefine compilers etc.
+  Check (edit) the Makefile if you need to redefine compilers etc.
 
   The use of Makefile is documented in its header. Basically:
   make           : builds shadow3 the main program

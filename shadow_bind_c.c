@@ -2,9 +2,52 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "shadow_bind_c.h"
 
 const int NCOL=18;
+
+char *trim(char *str)
+{
+  char *end;
+
+  while(isspace(*str)) str++;
+  if(*str == 0) return str;
+  end = str + strlen(str) - 1;
+  while(end > str && isspace(*end)) end--;
+  *(end+1) = 0;
+  return str;
+}
+
+void FixPoolSourceFromFortran(poolSource *Src){
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strcpy(Src->name,trim(Src->name));
+#include "shadow_source.def"
+}
+
+void FixPoolOEFromFortran(poolOE *Oe){
+  int i;
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strcpy(Oe->name,trim(Oe->name));
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) 
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) for(i=0;i<arrdim;i++) strcpy(Oe->name[i],trim(Oe->name[i]));
+#include "shadow_oe.def"
+}
+
+void FixPoolSourceForFortran(poolSource *Src){
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) if(strlen(Src->name)<length) memset(Src->name+strlen(Src->name),' ',length-strlen(Src->name));
+#include "shadow_source.def"
+}
+
+void FixPoolOEForFortran(poolOE *Oe){
+  int i;
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) if(strlen(Oe->name)<length) memset(Oe->name+strlen(Oe->name),' ',length-strlen(Oe->name));
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) 
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) for(i=0;i<arrdim;i++) if(strlen(Oe->name[i])<length) memset(Oe->name[i]+strlen(Oe->name[i]),' ',length-strlen(Oe->name[i]));
+#include "shadow_oe.def"
+}
 
 /*
  *  CShadowAllocateBeamFromPool(poolSource*,double*) purpose is to allocate correctly Ray.
@@ -29,6 +72,7 @@ double* CShadowAllocateBeam ( int nPoint, double* Ray )
 void CShadowPoolSourceLoad ( poolSource* Src, char* FileIn )
 {
   BindShadowPoolSourceLoad ( Src, FileIn, strlen ( FileIn ) );
+  FixPoolSourceFromFortran( Src );
 }
 
 /*
@@ -37,6 +81,7 @@ void CShadowPoolSourceLoad ( poolSource* Src, char* FileIn )
  */
 void CShadowPoolSourceWrite ( poolSource* Src, char* FileOut )
 {
+  FixPoolSourceForFortran ( Src );
   BindShadowPoolSourceWrite ( Src, FileOut, strlen ( FileOut ) );
 }
 
@@ -47,6 +92,7 @@ void CShadowPoolSourceWrite ( poolSource* Src, char* FileOut )
 void CShadowPoolOELoad ( poolOE* Oe, char* FileIn )
 {
   BindShadowPoolOELoad ( Oe, FileIn, strlen ( FileIn ) );
+  FixPoolOEFromFortran( Oe );
 }
 
 /*
@@ -55,6 +101,9 @@ void CShadowPoolOELoad ( poolOE* Oe, char* FileIn )
  */
 void CShadowPoolOEWrite ( poolOE* Oe, char* FileOut )
 {
+  printf("fixing poolOE for Fortran\n"); fflush(stdout);
+  FixPoolOEForFortran ( Oe );
+  printf("fixed poolOE for Fortran\n"); fflush(stdout);
   BindShadowPoolOEWrite ( Oe, FileOut, strlen ( FileOut ) );
 }
 
@@ -65,17 +114,20 @@ void CShadowPoolOEWrite ( poolOE* Oe, char* FileOut )
  */
 void CShadowSourceGeom ( poolSource* Src, double* Ray )
 {
+  FixPoolSourceForFortran ( Src );
   BindShadowSourceGeom ( Src, Ray, & ( Src->NPOINT ) );
 }
 
 void CShadowSourceSync ( poolSource* Src, double* Ray )
 {
+  FixPoolSourceForFortran ( Src );
   BindShadowSourceSync ( Src, Ray, & ( Src->NPOINT ) );
 }
 
-void CShadowTraceOE ( poolOE* OE, double* Ray, int nPoint, int iCount )
+void CShadowTraceOE ( poolOE* Oe, double* Ray, int nPoint, int iCount )
 {
-  BindShadowTraceOE ( OE, Ray, &nPoint, &iCount );
+  FixPoolOEForFortran ( Oe );
+  BindShadowTraceOE ( Oe, Ray, &nPoint, &iCount );
 }
 
 void CShadowBeamGetDim ( int* nCol, int* nPoint, char* FileDat )

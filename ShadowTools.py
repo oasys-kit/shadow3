@@ -1,10 +1,15 @@
-import numpy as np
-import Shadow as sd
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib import figure as matfig
-import pylab
-import matplotlib
+import numpy 
+import ShadowLibExtensions as sd
+try: 
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from matplotlib import figure as matfig
+    import pylab
+    import matplotlib
+except ImportError: 
+    print(sys.exc_info()[1]) 
+    pass
+
 import ShadowToolsPrivate as stp
 from ShadowToolsPrivate import Histo1_Ticket as Histo1_Ticket
 from ShadowToolsPrivate import plotxy_Ticket as plotxy_Ticket
@@ -18,13 +23,13 @@ def getshonecol(beam,col):
   The column are numbered in the fortran convention, i.e. starting from 1.
   It returns a numpy.array filled with the values of the chosen column.
   
-  Inputs:
+  Inumpy.ts:
      beam     : str instance with the name of the shadow file to be loaded. OR
                 Shadow.Beam initialized instance.
      col      : int for the chosen columns.
      
   Outputs:
-     numpy.array 1-D with length NPOINT.
+     numpy.array 1-D with length numpy.INT.
      
   Error:
      if an error occurs an ArgsError is raised.
@@ -75,34 +80,34 @@ def getshonecol(beam,col):
     ray = bm.rays
   if col>=0 and col<18 and col!=10:  column =  ray[:,col]
   if col==10: column =  ray[:,col]/A2EV
-  if col==18: column =  2*np.pi*1.0e8/ray[:,10]
-  if col==19: column =  np.sqrt(ray[:,0]*ray[:,0]+ray[:,1]*ray[:,1]+ray[:,2]*ray[:,2])
-  if col==20: column =  np.arccos(ray[:,4])
-  if col==21: column =  np.sqrt(np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0))
-  if col==22: column =  np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0)
-  if col==23: column =  np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
-  if col==24: column =  np.sum(np.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
+  if col==18: column =  2*numpy.pi*1.0e8/ray[:,10]
+  if col==19: column =  numpy.sqrt(ray[:,0]*ray[:,0]+ray[:,1]*ray[:,1]+ray[:,2]*ray[:,2])
+  if col==20: column =  numpy.arccos(ray[:,4])
+  if col==21: column =  numpy.sqrt(numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0))
+  if col==22: column =  numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0)
+  if col==23: column =  numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
+  if col==24: column =  numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
   if col==25: column =  ray[:,10]*1.0e8
   if col==26: column =  ray[:,3]*ray[:,10]*1.0e8
   if col==27: column =  ray[:,4]*ray[:,10]*1.0e8
   if col==28: column =  ray[:,5]*ray[:,10]*1.0e8
   if col==29:
-    E2s = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
-    E2p = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
+    E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
+    E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
     column =  E2p+E2s    
   if col==30:
-    E2s = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
-    E2p = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
+    E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
+    E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
     column =  E2p-E2s
   if col==31:
-    E2s = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
-    E2p = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
-    Cos = np.cos(ray[:,13]-ray[:,14])
+    E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
+    E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
+    Cos = numpy.cos(ray[:,13]-ray[:,14])
     column =  2*E2s*E2p*Cos
   if col==32:
-    E2s = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
-    E2p = np.sum(np.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
-    Sin = np.sin(ray[:,13]-ray[:,14])
+    E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
+    E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
+    Sin = numpy.sin(ray[:,13]-ray[:,14])
     column =  2*E2s*E2p*Sin
   return column
 
@@ -112,15 +117,15 @@ def getshcol(beam,col):
   '''
   Extract multiple columns from a shadow file (eg.'begin.dat') or a Shadow.Beam instance. 
   The column are numbered in the fortran convention, i.e. starting from 1.
-  It returns a np.array filled with the values of the chosen column.
+  It returns a numpy.array filled with the values of the chosen column.
   
-  Inputs:
+  Inumpy.ts:
      beam     : str instance with the name of the shadow file to be loaded. OR
                 Shadow.Beam initialized instance.
      col      : tuple or list instance of int with the number of columns chosen.
      
   Outputs:
-     numpy.array 2-D with dimension R x NPOINT. Where R is the total number of column chosen
+     numpy.array 2-D with dimension R x numpy.INT. Where R is the total number of column chosen
      
   Error:
      if an error occurs an ArgsError is raised.      
@@ -178,11 +183,11 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   Plot the histogram of a column, simply counting the rays, or weighting with the intensity.
   It returns a ShadowTools.Histo1_Ticket which contains the histogram data, and the figure.
   
-  Inputs:
+  Inumpy.ts:
      beam     : str instance with the name of the shadow file to be loaded, or a Shadow.Beam initialized instance.
      col      : int for the chosen column.
   
-  Optional Inputs:
+  Optional Inumpy.ts:
      xrange   : tuple or list of length 2 describing the interval of interest for x, the data read from the chosen column.
      yrange   : tuple or list of length 2 describing the interval of interest for y, counts or intensity depending on ref.
      nbins    : number of bins of the histogram.
@@ -267,17 +272,17 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     ytitlesave=None
   if ref==0: 
     x, a = getshcol(beam,(col+1,10))
-    w = np.ones(len(x))
+    w = numpy.ones(len(x))
   else:
     x, a, w = getshcol(beam,(col+1,10,ref))
   if nolost==0: 
-    t = np.where(a!=-3299)
+    t = numpy.where(a!=-3299)
     ytitle = 'All rays'
   if nolost==1: 
-    t = np.where(a==1.0)
+    t = numpy.where(a==1.0)
     ytitle = 'Good rays'
   if nolost==2: 
-    t = np.where(a!=1.0)
+    t = numpy.where(a!=1.0)
     ytitle = 'Lost rays'
   if len(t[0])==0:
     print "no rays match the selection, the histogram will not be plotted"
@@ -285,13 +290,13 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   if ref==0:
     ytitle = 'counts ' + ytitle
     h,bins,patches = axHist.hist(x[t],bins=nbins,histtype='step',alpha=0.5)
-    if yrange==None: yrange = [0.0, np.max(h)*1.1]
+    if yrange==None: yrange = [0.0, numpy.max(h)*1.1]
     hw=h
   if ref>=22: 
     ytitle = (stp.getLabel(ref-1))[0] + ' ' + ytitle
-    h,bins = np.histogram(x[t],bins=nbins)
+    h,bins = numpy.histogram(x[t],bins=nbins)
     hw,bins,patches = axHist.hist(x[t],bins=nbins,histtype='step',alpha=0.5,weights=w[t])
-    if yrange==None: yrange = [0.0, np.max(hw)*1.1]
+    if yrange==None: yrange = [0.0, numpy.max(hw)*1.1]
   fwhm = None
   if calfwhm==1:
     fwhm, tf, ti = stp.calcFWHM(h,bins[1]-bins[0])
@@ -332,12 +337,12 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
 def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title='PLOTXY',xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
   '''
   Draw the scatter or contour or pixel-like plot of two columns of a Shadow.Beam instance or of a given shadow file, along with histograms for the intensity on the top and right side.
-  Inputs:
+  Inumpy.ts:
      beam     : str instance with the name of the shadow file to be loaded, or a Shadow.Beam initialized instance.
      cols1    : first column.
      cols2    : second column.
   
-  Optional Inputs:
+  Optional Inumpy.ts:
      nbins    : int for the size of the grid (nbins x nbins). It will affect the plot only if non scatter.
      nbins_h  : int for the number of bins for the histograms
      level    : int number of level to be drawn. It will affect the plot only if contour.
@@ -417,19 +422,19 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   if xtitle==None: xtitle=(stp.getLabel(cols1-1))[0]
   if ytitle==None: ytitle=(stp.getLabel(cols2-1))[0]
   
-  if nolost==0: t = np.where(col3!=-3299)
-  if nolost==1: t = np.where(col3==1.0)
-  if nolost==2: t = np.where(col3!=1.0)  
+  if nolost==0: t = numpy.where(col3!=-3299)
+  if nolost==1: t = numpy.where(col3==1.0)
+  if nolost==2: t = numpy.where(col3!=1.0)  
 
   if xrange==None: xrange = stp.setGoodRange(col1[t])
   if yrange==None: yrange = stp.setGoodRange(col2[t])
   #print xrange
   #print yrange
-  tx = np.where((col1>xrange[0])&(col1<xrange[1]))
-  ty = np.where((col2>yrange[0])&(col2<yrange[1]))
+  tx = numpy.where((col1>xrange[0])&(col1<xrange[1]))
+  ty = numpy.where((col2>yrange[0])&(col2<yrange[1]))
   
   tf = set(list(t[0])) & set(list(tx[0])) & set(list(ty[0]))
-  t = (np.array(sorted(list(tf))),)
+  t = (numpy.array(sorted(list(tf))),)
   if len(t[0])==0: 
     print "no point selected"
     return None
@@ -455,9 +460,9 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   if contour==0:
     axScatter.scatter(col1[t],col2[t],s=0.5)
   if contour>0 and contour<7:
-    if contour==1 or contour==3 or contour==5: w = np.ones( len(col1) )
+    if contour==1 or contour==3 or contour==5: w = numpy.ones( len(col1) )
     if contour==2 or contour==4 or contour==6: w = col4
-    grid = np.zeros(nbins*nbins).reshape(nbins,nbins)
+    grid = numpy.zeros(nbins*nbins).reshape(nbins,nbins)
     for i in t[0]:
       indX = stp.findIndex(col1[i],nbins,xrange[0],xrange[1])
       indY = stp.findIndex(col2[i],nbins,yrange[0],yrange[1])
@@ -465,8 +470,8 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
         grid[indX][indY] = grid[indX][indY] + w[i]
       except IndexError:
         pass
-    X, Y = np.mgrid[xrange[0]:xrange[1]:nbins*1.0j,yrange[0]:yrange[1]:nbins*1.0j]
-    L = np.linspace(np.amin(grid),np.amax(grid),level)
+    X, Y = numpy.mgrid[xrange[0]:xrange[1]:nbins*1.0j,yrange[0]:yrange[1]:nbins*1.0j]
+    L = numpy.linspace(numpy.amin(grid),numpy.amax(grid),level)
     if contour==1 or contour==2: axScatter.contour(X, Y, grid, colors='k', levels=L)
     if contour==3 or contour==4: axScatter.contour(X, Y, grid, levels=L)
     if contour==5 or contour==6: axScatter.pcolor(X, Y, grid)  
@@ -481,13 +486,13 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   for tt in axScatter.get_yticklabels():
     tt.set_size('x-small')
   
-  #if ref==0: col4 = np.ones(len(col4),dtype=float)
+  #if ref==0: col4 = numpy.ones(len(col4),dtype=float)
   
   axHistx = figure.add_axes(rect_histx, sharex=axScatter)
   axHisty = figure.add_axes(rect_histy, sharey=axScatter)
   
-  binx = np.linspace(xrange[0],xrange[1],nbins_h)
-  biny = np.linspace(yrange[0],yrange[1],nbins_h)
+  binx = numpy.linspace(xrange[0],xrange[1],nbins_h)
+  biny = numpy.linspace(yrange[0],yrange[1],nbins_h)
   if contour==0 or contour==1 or contour==3 or contour==5:
     hx, binx, patchx = axHistx.hist(col1[t],bins=binx,histtype='step',color='k')
     hy, biny, patchy = axHisty.hist(col2[t],bins=biny,orientation='horizontal',histtype='step',color='k')
@@ -521,15 +526,15 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     #fwhmx,txf, txi = stp.calcFWHM(hx,binx[1]-binx[0])
     #fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
     #calculate intensity in slit
-    if nolost==0: tt = np.where(col3!=-3299)
-    if nolost==1: tt = np.where(col3==1.0)
-    if nolost==2: tt = np.where(col3!=1.0)  
+    if nolost==0: tt = numpy.where(col3!=-3299)
+    if nolost==1: tt = numpy.where(col3==1.0)
+    if nolost==2: tt = numpy.where(col3!=1.0)  
 
-    ttx = np.where((col1>=xx1)&(col1<=xx2))
-    tty = np.where((col2>=yy1)&(col2<=yy2))
+    ttx = numpy.where((col1>=xx1)&(col1<=xx2))
+    tty = numpy.where((col2>=yy1)&(col2<=yy2))
   
     ttf = set(list(tt[0])) & set(list(ttx[0])) & set(list(tty[0]))
-    tt = (np.array(sorted(list(ttf))),)
+    tt = (numpy.array(sorted(list(ttf))),)
     if len(tt[0])>0: 
       intensityinslit = col4[tt].sum()
       print "Intensity in slit: ",intensityinslit
@@ -537,8 +542,8 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   if title!=None:
     axHistx.set_title(title)
   axText = figure.add_axes(rect_text)
-  ntot = len(np.where(col3!=3299)[0])
-  ngood = len(np.where(col3==1)[0])
+  ntot = len(numpy.where(col3!=3299)[0])
+  ngood = len(numpy.where(col3==1)[0])
   nbad = ntot - ngood
   if nolost==0: axText.text(0.0,0.8,"ALL RAYS")
   if nolost==1: axText.text(0.0,0.8,"GOOD RAYS")
@@ -580,8 +585,8 @@ if __name__=="__main__":
   a.load("begin.dat")
   ticket1 = histo1(a,1,nbins=25,noplot=1,calfwhm=1)
   ticket1.figure.show()
-  raw_input()
+  raw_inumpy.t()
   ticket1 = plotxy(a,(1,3),noplot=1)
   ticket1.figure.show()
-  raw_input()
+  raw_inumpy.t()
 

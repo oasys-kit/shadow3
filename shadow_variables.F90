@@ -21,6 +21,8 @@
 !----
 !----
 
+#define STR(X) "X"
+
 Module shadow_variables
     !---- Use Modules ----!
     use shadow_globaldefinitions
@@ -80,7 +82,7 @@ Module shadow_variables
 
 
     public  :: PoolOELoad,PoolOEWrite,PoolSourceLoad,PoolSourceWrite
-    public  :: PoolOEDefault
+    public  :: PoolOEDefault, PoolSourceDefault
     private :: PoolSourceToGf,PoolOEToGf,GfToPoolSource,GfToPoolOE
 
 Contains
@@ -99,8 +101,8 @@ Contains
     
     iOut = GfTypeAllocate(gf,zero,zero)
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, #name, src%name) .and. iOut
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, #name, src%name) .and. iOut
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, STR(name), src%name) .and. iOut
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, STR(name), src%name) .and. iOut
 #include "shadow_source.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
   End Subroutine PoolSourceToGf
@@ -117,29 +119,24 @@ Contains
     logical                     :: iOut
     integer(kind=ski)           :: zero=0,i
     !
-    character(kind=skc,len=2), dimension(10)     :: str
     
     iOut = GfTypeAllocate(gf,zero,zero)
-
-    do i=1, 10
-       write(str(i),'(I2)') i
-    end do
 
     !! START CODE CREATED AUTOMATICALLY (cpp)
     
     !srio danger
     !iOut= iOut .and. GfForceSetValue(gf,"NPOINT",pool01%NPOINTOE)
 
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, #name, oe%name) .and. iOut
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, #name, oe%name) .and. iOut
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
-    do i=1, arrdim newline \
-       iOut=GfForceSetValue(gf, myConcat( #name, trim(str(i))), oe%name(i)) .and. iOut newline \
-    end do
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \ 
-    do i=1, arrdim newline \
-       iOut=GfForceSetValue(gf, myConcat( #name, trim(str(i))), oe%name(i)) .and. iOut newline \
-    end do
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfForceSetValue(gf, STR(name), oe%name) .and. iOut
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfForceSetValue(gf, STR(name), oe%name) .and. iOut
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) iOut=GfSetArrValue(gf, STR(name), oe%name) .and. iOut
+!    do i=1, arrdim \
+!       iOut=GfForceSetValue(gf, STR(name)//trim(str(i)), oe%name(i)) .and. iOut \
+!    end do
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) iOut=GfSetArrValue(gf, STR(name),oe%name) .and. iOut
+!    do i=1, arrdim \
+!       iOut=GfForceSetValue(gf, STR(name)//trim(str(i)), oe%name(i)) .and. iOut \
+!    end do
 #include "shadow_oe.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
   End Subroutine PoolOEToGf
@@ -169,18 +166,16 @@ Contains
     !  use other more mature compiler to avoid it!
     !srio danger and smeagolas too
 
-    SELECT CASE (OS_NAME)
-      CASE ("Linux") 
-           iout = gffilewrite(gf,"/dev/null")
-      CASE ("Windows") 
+    SELECT CASE (OS)
+      CASE (1) 
            iout = gffilewrite(gf,"tmp.dat")
       CASE DEFAULT
            iout = gffilewrite(gf,"/dev/null")
     END SELECT
 
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf,#name,src%name)  .and. iOut
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf,#name,src%name)  .and. iOut
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf,STR(name),src%name)  .and. iOut
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf,STR(name),src%name)  .and. iOut
 #include "shadow_source.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
 
@@ -200,7 +195,6 @@ Contains
     type(poolOE),intent(inout)  :: oe 
     logical                     :: iOut
     integer(kind=ski)           :: zero=0,i
-    character(kind=skc,len=2), dimension(10) :: str
     
     !  WARNING WARNING WARNING
     !  due to mysterious reasons in g95:
@@ -215,34 +209,22 @@ Contains
     !  use other more mature compiler to avoid it!
     !srio danger and smeagolas too
 
-    SELECT CASE (OS_NAME)
-      CASE ("Linux") 
-           iout = gffilewrite(gf,"/dev/null")
-      CASE ("Windows") 
+    SELECT CASE (OS)
+      CASE (1) 
            iout = gffilewrite(gf,"tmp.dat")
-      CASE DEFAULT
+      CASE DEFAULT ! so 2,3,4
            iout = gffilewrite(gf,"/dev/null")
     END SELECT
-
-    do i=1, 10
-       write(str(i),'(I2)') i
-    end do
 
 !     iOut= GfGetValue(gf,"FMIRR",oe%FMIRR)                       .and. iOut 
 !     ...
 !     iOut= GfGetValue(gf,"THICK(10)",oe%THICK(10))               .and. iOut 
 
     !! START CODE CREATED AUTOMATICALLY (cpp)
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf, #name, oe%name) .and. iOut
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf, #name, oe%name) .and. iOut
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \ 
-    do i=1,arrdim newline \
-       iOut=GfGetValue(gf, myConcat( #name, trim(str(i)) ), oe%name(i)) .and. iOut newline \
-    end do
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \ 
-    do i=1,arrdim newline \
-       iOut=GfGetValue(gf, myConcat( #name, trim(str(i)) ), oe%name(i)) .and. iOut newline \
-    end do
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) iOut=GfGetValue(gf, STR(name), oe%name) .and. iOut
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) iOut=GfGetValue(gf, STR(name), oe%name) .and. iOut
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) iOut=GfGetArrValue(gf, STR(name), oe%name) .and. iOut
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) iOut=GfGetArrValue(gf, STR(name), oe%name) .and. iOut
 #include "shadow_oe.def"
     !! END CODE CREATED AUTOMATICALLY (cpp)
 
@@ -259,6 +241,7 @@ Contains
     type (gfType) :: gf
     
     if(.not.GfFileLoad(gf,filename))  print *, "unable to load all file"
+    call PoolSourceDefault(pool00)
     call GfToPoolSource(gf,pool00)
     
     return
@@ -283,6 +266,7 @@ Contains
     type (gfType) :: gf
     
     if(.not.GfFileLoad(gf,filename))  print *, "unable to load all file"
+    call PoolOEDefault(pool01)
     call GfToPoolOE(gf,pool01)
     
     return
@@ -305,21 +289,24 @@ Contains
 !
 !
     
+  subroutine PoolSourceDefault(src)
+    type (poolSource), intent(inout) :: src
+    integer(kind=ski) :: i
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) src%name=defvalue
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) src%name=defvalue
+#include "shadow_source.def"
+  end subroutine PoolSourceDefault
+
   subroutine PoolOEDefault(oe)
     type (poolOE), intent(inout) :: oe
     integer(kind=ski) :: i
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe%name=defvalue
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) oe%name=defvalue
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
-    do i=1,arrdim newline \
-      oe%name(i) = defvalue newline \
-    end do
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
-    do i=1,arrdim newline \
-      oe%name(i) = defvalue newline \
-    end do
-#include "shadow_oe.def"    
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) FORALL(i=1:arrdim) oe%name(i)=defvalue
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) FORALL(i=1:arrdim) oe%name(i)=defvalue
+#include "shadow_oe.def" 
   end subroutine PoolOEDefault
+
 
 !
 !

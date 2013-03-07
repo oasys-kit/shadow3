@@ -1,0 +1,17 @@
+
+$rm -f histo1mod.gpl
+$echo "#    ">>histo1mod.gpl
+$echo "# Gnuplot script for shadow3    ">>histo1mod.gpl
+$echo "# Created by histo1    ">>histo1mod.gpl
+$echo "#    ">>histo1mod.gpl
+$echo "set terminal x11     ">>histo1mod.gpl
+$echo "plot 'histo1_begin.dat' using 1:2 with boxes,  'histo1_screen.dat' using 1:2 with boxes , 'histo1_mirr.dat' using 1:2 with boxes     ">>histo1mod.gpl
+!$echo "pause -1 'Press <Enter> to end graphic '    ">>histo1mod.gpl
+$echo "pause 3   ">>histo1mod.gpl
+
+
+$cat histo1mod.gpl
+
+$gnuplot histo1mod.gpl
+exit
+

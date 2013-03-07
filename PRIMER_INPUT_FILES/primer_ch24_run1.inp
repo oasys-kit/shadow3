@@ -1,0 +1,114 @@
+source
+prompt
+1
+0
+1000
+10001
+0
+0
+0
+1
+1
+0.05
+0.05
+0.01
+0.01
+0
+0
+0
+
+
+$ls -lt
+
+
+trace
+prompt
+0
+<enter>
+1
+0
+20
+20
+20
+40
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+begin.dat
+0
+EXIT
+
+!
+!
+!
+plotxy
+star.01
+0
+Image at continuation plane
+1
+3
+0
+0
+0
+55
+55
+$sed 's/pause -1/pause 3/' < plotxy.gpl > plotxy1.gpl
+$gnuplot plotxy1.gpl
+
+!
+!
+!
+plotxy
+star.01
+0
+Phase space X
+1
+4
+0
+0
+0
+55
+55
+$sed 's/pause -1/pause 3/' < plotxy.gpl > plotxy1.gpl
+$gnuplot plotxy1.gpl
+
+
+!
+!
+!
+plotxy
+star.01
+0
+Phase space Z
+3
+6
+0
+0
+0
+55
+55
+$sed 's/pause -1/pause 3/' < plotxy.gpl > plotxy1.gpl
+$gnuplot plotxy1.gpl
+
+
+exit

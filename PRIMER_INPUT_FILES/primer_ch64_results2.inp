@@ -1,0 +1,14 @@
+
+$rm -f bragg2.gpl
+$echo "set terminal x11     ">>bragg2.gpl
+$echo "plot 'star01.dat' u 1:2 w points, 'star02.dat' u 1:2 w points, 'star02misaligned.dat' u 1:2 w points" >> bragg2.gpl
+!$echo "pause -1 'Press <Enter> to end graphic '    ">>bragg2.gpl
+$echo "pause 3   ">>bragg2.gpl
+
+
+$cat bragg2.gpl
+
+!please wait for 3 s
+$gnuplot bragg2.gpl
+exit
+

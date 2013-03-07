@@ -16,40 +16,28 @@ module shadow_globaldefinitions
     integer, parameter, public :: sklen = 1024
 !
 
-
-!
-! Operating system dependencies **Please Edit**
-!
-
-   !!----
-   !!---- OS: Integer variable 1: Windows, 2: Mac, 3: Linux, ....
-   !!---- OS_NAME: Character variable, name of the operating system
-   !!---- OS_DS: ASCII code of directory separator character
-   !!
+!!----
+!!---- OS: Integer variable 1: Windows, 2: Mac, 3: Linux, 4:Sun
+!!---- OS_DS: ASCII code of directory separator character
+!!
    
-   ! UNCOMMENT THIS BLOCK FOR WINDOWS
-   !integer, parameter :: OS= 1    ! Windows
-   !character(len=7), parameter :: OS_NAME="Windows"
-   !character(len=1), parameter :: OS_DS="\"
-
-
-   ! UNCOMMENT THIS BLOCK FOR LINUX
-   integer(kind=ski), parameter :: OS= 2    ! Linux
-   character(len=5), parameter :: OS_NAME="Linux"
-   character(len=1), parameter :: OS_DS="/"
-
-
-   ! UNCOMMENT THIS BLOCK FOR MACOS
-   !integer, parameter :: OS= 3    ! MacOS
-   !character(len=5), parameter :: OS_NAME="MacOS"
-   !character(len=1), parameter :: OS_DS="/"
-
-
-   ! UNCOMMENT THIS BLOCK FOR SOLARIS
-   !integer, parameter :: OS= 4    ! Solaris
-   !character(len=7), parameter :: OS_NAME="Solaris"
-   !character(len=1), parameter :: OS_DS="/" 
-
+#ifdef _COMPILE4WIN
+! defined for both win32 and win64
+   integer(kind=ski), parameter :: OS = 1
+   character(len=1),  parameter :: OS_DS = "\"
+#endif
+#ifdef _COMPILE4NIX
+   integer(kind=ski), parameter :: OS = 3
+   character(len=1),  parameter :: OS_DS = "/"
+#endif
+#ifdef _COMPILE4MAX
+   integer(kind=ski), parameter :: OS = 2
+   character(len=1),  parameter :: OS_DS = "/"
+#endif
+#ifdef _COMPILE4SUN
+   integer(kind=ski), parameter :: OS = 4
+   character(len=1),  parameter :: OS_DS = "/"
+#endif
 
 !
 ! mathematical and physical constants

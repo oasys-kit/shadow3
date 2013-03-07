@@ -1,0 +1,37 @@
+$cat effic.01
+
+mirinfo
+end.01
+plane crystal diffraction
+test shadow diffraction profile
+mirror1.txt
+
+
+$cat mirror1.txt
+
+
+plotxy
+star.01
+0
+diffraction profile on crystal 1
+6
+25
+0
+0
+-1
+$cp plotxy_scatter.dat star01.dat
+
+plotxy
+star.02
+0
+diffraction after second crystal
+6
+25
+0
+0
+-1
+
+$cp plotxy_scatter.dat star02.dat
+
+
+exit

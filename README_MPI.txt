@@ -1,11 +1,18 @@
-trace3mpi Readme - Using SHADOW with MPI
 
-i)   How to build the MPI version
-ii)  Executing trace3mpi locally
-iii) Executing trace3mpi on ESRF NICE and OAR
+--------------------------------------------------------------------------------
+                  Using SHADOW with MPI: building and using trace3mpi
+--------------------------------------------------------------------------------
 
+Contents:
 
-i) How to build the MPI version
+1 How to build the MPI version
+2 Executing trace3mpi locally
+3 Executing trace3mpi on ESRF NICE and OAR
+
+--------------------------------------------------------------------------------
+
+1) How to build the MPI version
+-------------------------------
 
     Prerequisites: gfortran + mpif90 of the same version
 
@@ -20,7 +27,8 @@ i) How to build the MPI version
      order to set the environment correctly. 
      Usage: ./mpi_make.sh 
 
-ii) Executing trace3mpi locally
+2) Executing trace3mpi locally
+------------------------------
 
      Launch: mpirun -n NUMPROC trace3mpi -t|s|a
      NUMPROC is the number of processes to be used.
@@ -45,7 +53,8 @@ ii) Executing trace3mpi locally
            process 1 will write star.01-2 etc...
 
             
-iii) Executing trace3mpi at ESRF
+3) Executing trace3mpi at ESRF
+------------------------------
 
       Executing on NICE without OAR (i.e. on corals or rnice):
 

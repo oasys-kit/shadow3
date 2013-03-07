@@ -329,6 +329,9 @@ SELECT CASE (inCommandLow)
   CASE ("prerefl_test")
      CALL prerefl_test()
      inCommand=""
+  CASE ("presurface_translate")
+     CALL presurface_translate()
+     inCommand=""
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 
         CALL SYSTEM( inCommand(2:sklen) )

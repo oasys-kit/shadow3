@@ -1,6 +1,27 @@
-
+/*
+ * =====================================================================================
+ *
+ *       Filename:  shadow_bind_python.c
+ *
+ *    Description:  
+ *
+ *        Version:  1.0
+ *        Created:  11/27/2012 11:44:07 AM
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  YOUR NAME (), 
+ *   Organization:  
+ *
+ * =====================================================================================
+ */
+#include <stdlib.h>
 #include "shadow_bind_python.h"
-#include "shadow_bind_c.h"
+#include <float.h>
+#include <math.h>
+#include <emmintrin.h>
+#include <string.h>
+//#include <intrin.h>
 
 /***************************************************************************
  *         Shadow_Source Python Object
@@ -11,370 +32,53 @@
  *
  ***************************************************************************/
 
-void PySourceToSource ( Shadow_Source* pySrc, poolSource* src )
-{
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) src->name = pySrc->name;
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strncpy(src->name, PyString_AsString(pySrc->name), STRLEN);
-#include "shadow_source.def"
-}
-
-void SourceToPySource ( poolSource* src, Shadow_Source* pySrc )
-{
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) pySrc->name = src->name;
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) pySrc->name = PyString_FromString(src->name);
-#include "shadow_source.def"
-}
-
 static void Source_dealloc ( Shadow_Source* self )
 {
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) if(self->name!=NULL) Py_DECREF(self->name);
-#include "shadow_source.def"
   self->ob_type->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* Source_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
 {
-  Shadow_Source* self;
-  self = ( Shadow_Source* ) type->tp_alloc ( type, 0 );
-  if ( self != NULL ) {
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) self->name=defvalue;
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) self->name = NULL;
-#include "shadow_source.def"
-  }
-  return ( PyObject* ) self;
+  return type->tp_alloc ( type, 0 );
 }
 
 static int Source_init ( Shadow_Source* self, PyObject* args, PyObject* kwds )
 {
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) self->name = PyString_FromString(defvalue);
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) self->pl.name=defvalue;
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strcpy(self->pl.name,defvalue);
 #include "shadow_source.def"
   return 0;
 }
 
 static PyObject* Source_load ( Shadow_Source* self, PyObject* args )
 {
-  poolSource* src = NULL;
   const char* FileName;
   if ( !PyArg_ParseTuple ( args, "s", &FileName ) ) {
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
     return NULL;
   }
-  src = ( poolSource* ) malloc ( sizeof ( poolSource ) );
-  CShadowPoolSourceLoad ( src, ( char* ) FileName );
-  SourceToPySource ( src, self );
-  free ( src );
+  CShadowPoolSourceLoad ( &(self->pl), ( char* ) FileName );
 
-  Py_RETURN_NONE;
+  Py_RETURN_NONE; //TODO do we want to output self???
 }
 
 static PyObject* Source_write ( Shadow_Source* self, PyObject* args )
 {
-  poolSource* src;
   const char* FileName;
   if ( !PyArg_ParseTuple ( args, "s", &FileName ) ) {
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
     return NULL;
   }
-  src = ( poolSource* ) malloc ( sizeof ( poolSource ) );
-  PySourceToSource ( self, src );
-  CShadowPoolSourceWrite ( src, ( char* ) FileName );
-  free ( src );
+  CShadowPoolSourceWrite ( &(self->pl), ( char* ) FileName );
 
-  Py_RETURN_NONE;
+  Py_RETURN_NONE; //TODO do we want to output self???
 }
-
-//different point of view
-
-//instead spatial has to be
-static PyObject* Source_SpacePoint ( Shadow_Source* self )
-{
-  self->FDISTR = 0;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceRectangle ( Shadow_Source* self, PyObject* args )
-{
-  double x, z;
-  if ( !PyArg_ParseTuple ( args, "dd", &x, &z ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be two doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 1;
-  self->WXSOU = x;
-  self->WZSOU = z;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceEllipse ( Shadow_Source* self, PyObject* args )
-{
-  double x, z;
-  if ( !PyArg_ParseTuple ( args, "dd", &x, &z ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be two doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 2;
-  self->WXSOU = x;
-  self->WZSOU = z;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceGaussian ( Shadow_Source* self, PyObject* args )
-{
-  double x, z;
-  if ( !PyArg_ParseTuple ( args, "dd", &x, &z ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be two doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 3;
-  self->SIGMAX = x;
-  self->SIGMAZ = z;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceDepthNone ( Shadow_Source* self )
-{
-  self->FSOURCE_DEPTH = 1;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceDepthUniform ( Shadow_Source* self, PyObject* args )
-{
-  double y;
-  if ( !PyArg_ParseTuple ( args, "d", &y ) ) {
-    PyErr_SetString ( PyExc_TypeError, "argument should be a double!" );
-    return NULL;
-  }
-  self->FSOURCE_DEPTH = 2;
-  self->WYSOU = y;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_SpaceDepthGaussian ( Shadow_Source* self, PyObject* args )
-{
-  double y;
-  if ( !PyArg_ParseTuple ( args, "d", &y ) ) {
-    PyErr_SetString ( PyExc_TypeError, "argument should be a double!" );
-    return NULL;
-  }
-  self->FSOURCE_DEPTH = 3;
-  self->SIGMAY = y;
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_AngleFlat ( Shadow_Source* self, PyObject* args )
-{
-  double x1, x2, z1, z2;
-  if ( !PyArg_ParseTuple ( args, "dddd", &x1, &x2, &z1, &z2 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be four doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 1;
-  self->HDIV1 = x1;
-  self->HDIV2 = z1;
-  self->VDIV1 = x2;
-  self->VDIV2 = z2;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_AngleUniform ( Shadow_Source* self, PyObject* args )
-{
-  double x1, x2, z1, z2;
-  if ( !PyArg_ParseTuple ( args, "dddd", &x1, &x2, &z1, &z2 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be four doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 2;
-  self->HDIV1 = x1;
-  self->HDIV2 = z1;
-  self->VDIV1 = x2;
-  self->VDIV2 = z2;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_AngleGaussian ( Shadow_Source* self, PyObject* args )
-{
-  double x1, x2, x3, z1, z2, z3;
-  if ( !PyArg_ParseTuple ( args, "dddddd", &x1, &x2, &x3, &z1, &z2, &z3 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be six doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 3;
-  self->HDIV1 = x1;
-  self->HDIV2 = z1;
-  self->VDIV1 = x2;
-  self->VDIV2 = z2;
-  self->SIGDIX = x3;
-  self->SIGDIZ = z3;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_AngleConical ( Shadow_Source* self, PyObject* args )
-{
-  double x, z;
-  if ( !PyArg_ParseTuple ( args, "dd", &x, &z ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be two doubles!" );
-    return NULL;
-  }
-  self->FDISTR = 4;
-  self->CONE_MAX = x;
-  self->CONE_MIN = z;
-
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_EnergySingle ( Shadow_Source* self, PyObject* args )
-{
-  double e1;
-  if ( !PyArg_ParseTuple ( args, "d", &e1 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "argument should be a double!" );
-    return NULL;
-  }
-  self->F_COLOR = 1;
-  self->N_COLOR = 1;
-  self->PH1 = e1;
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_EnergySeveral ( Shadow_Source* self, PyObject* args )
-{
-  int ne;
-  double e1, e2, e3, e4, e5, e6, e7, e8, e9, e10;
-  if ( !PyArg_ParseTuple ( args, "idd|dddddddd", &ne, &e1, &e2, &e3, &e4, &e5, &e6, &e7, &e8, &e9, &e10 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be an integer and two or more (up to ten) doubles!" );
-    return NULL;
-  }
-  if ( ne<2||ne>10 ) {
-    PyErr_SetString ( PyExc_TypeError, "integer argument should be between two and ten!" );
-    return NULL;
-  }
-  self->F_COLOR = 2;
-  self->N_COLOR = ne;
-  if ( 0<ne ) {
-    self->PH1  = e1 ;
-  }
-  if ( 1<ne ) {
-    self->PH2  = e2 ;
-  }
-  if ( 2<ne ) {
-    self->PH3  = e3 ;
-  }
-  if ( 3<ne ) {
-    self->PH4  = e4 ;
-  }
-  if ( 4<ne ) {
-    self->PH5  = e5 ;
-  }
-  if ( 5<ne ) {
-    self->PH6  = e6 ;
-  }
-  if ( 6<ne ) {
-    self->PH7  = e7 ;
-  }
-  if ( 7<ne ) {
-    self->PH8  = e8 ;
-  }
-  if ( 8<ne ) {
-    self->PH9  = e9 ;
-  }
-  if ( 9<ne ) {
-    self->PH10 = e10;
-  }
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_EnergyUniform ( Shadow_Source* self, PyObject* args )
-{
-  double e1, e2;
-  if ( !PyArg_ParseTuple ( args, "dd", &e1, &e2 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "argument should be a double!" );
-    return NULL;
-  }
-  self->F_COLOR = 3;
-  self->N_COLOR = 2;
-  self->PH1 = e1;
-  self->PH2 = e2;
-  Py_RETURN_NONE;
-}
-
-static PyObject* Source_EnergyRelative ( Shadow_Source* self, PyObject* args )
-{
-  int ne;
-  double e1, e2, e3, e4, e5, e6, e7, e8, e9, e10;
-  double r1, r2, r3, r4, r5, r6, r7, r8, r9, r10;
-  if ( !PyArg_ParseTuple ( args, "idddd|dddddddddddddddd", &ne,
-                                                                                                     &e1, &r1, &e2, &r2, &e3, &r3, &e4, &r4, &e5, &r5,
-                                                                                                     &e6, &r6, &e7, &r7, &e8, &r8, &e9, &r9, &e10, &r10 ) ) {
-    PyErr_SetString ( PyExc_TypeError, "arguments should be an integer and two or more (up to ten) doubles!" );
-    return NULL;
-  }
-  if ( ne<2||ne>10 ) {
-    PyErr_SetString ( PyExc_TypeError, "integer argument should be between two and ten!" );
-    return NULL;
-  }
-  self->F_COLOR = 4;
-  self->N_COLOR = ne;
-  if ( 0<ne ) {
-    self->PH1  = e1 ;
-    self->RL1  = r1 ;
-  }
-  if ( 1<ne ) {
-    self->PH2  = e2 ;
-    self->RL1  = r2 ;
-  }
-  if ( 2<ne ) {
-    self->PH3  = e3 ;
-    self->RL1  = r3 ;
-  }
-  if ( 3<ne ) {
-    self->PH4  = e4 ;
-    self->RL1  = r4 ;
-  }
-  if ( 4<ne ) {
-    self->PH5  = e5 ;
-    self->RL1  = r5 ;
-  }
-  if ( 5<ne ) {
-    self->PH6  = e6 ;
-    self->RL1  = r6 ;
-  }
-  if ( 6<ne ) {
-    self->PH7  = e7 ;
-    self->RL1  = r7 ;
-  }
-  if ( 7<ne ) {
-    self->PH8  = e8 ;
-    self->RL1  = r8 ;
-  }
-  if ( 8<ne ) {
-    self->PH9  = e9 ;
-    self->RL1  = r9 ;
-  }
-  if ( 9<ne ) {
-    self->PH10 = e10;
-    self->RL1  = r10;
-  }
-  Py_RETURN_NONE;
-}
-
-
 
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* Source_get_##name(Shadow_Source* self, void* closure) \
 { \
-  Py_INCREF(self->name); \
-  return self->name; \
+  return PyString_FromString(trim(self->pl.name)); \
 }
 #include "shadow_source.def"
 
@@ -382,27 +86,20 @@ static PyObject* Source_get_##name(Shadow_Source* self, void* closure) \
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int Source_set_##name(Shadow_Source* self, PyObject* value, void* closure) \
 { \
-  if(value == NULL) { \
-    PyErr_SetString(PyExc_TypeError, "Cannot delete attribute"); \
+  if( value!=NULL && PyString_Check(value) ) { \
+    strcpy(self->pl.name, PyString_AsString(PyString_AsEncodedObject(value,"utf8","replace"))); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a string."); \
     return -1; \
   } \
-  if(! PyString_Check(value)) { \
-    PyErr_SetString(PyExc_TypeError, "The value passed must be a string"); \
-    return -1; \
-  } \
-  if(PyString_Size(value)>=1024) { \
-    PyErr_SetString(PyExc_TypeError, "the string value is too long"); \
-    return -1; \
-  } \
-  Py_DECREF(self->name); \
-  Py_INCREF(value); \
-  self->name=value; \
   return 0; \
 }
 #include "shadow_source.def"
 
+
 static PyMemberDef Source_members[] = {
-#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) {#name,pytype,offsetof(Shadow_Source,name),0,#name},
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) {#name,pytype,offsetof(Shadow_Source,pl.name),0,#name},
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue)
 #include "shadow_source.def"
   {NULL}                                             /* Sentinel          */
@@ -411,21 +108,6 @@ static PyMemberDef Source_members[] = {
 static PyMethodDef Source_methods[] = {
   {"load" , ( PyCFunction ) Source_load , METH_VARARGS, "load Shadow.Source from a file"},
   {"write", ( PyCFunction ) Source_write, METH_VARARGS, "write Shadow.Source on a file" },
-  {"spacePoint", ( PyCFunction ) Source_SpacePoint, METH_NOARGS, "define Source spacial distribution to be a point"},
-  {"spaceRectangle", ( PyCFunction ) Source_SpaceRectangle, METH_VARARGS, "define Source spacial distribution to be in a rectangle"},
-  {"spaceEllipse", ( PyCFunction ) Source_SpaceEllipse, METH_VARARGS, "define Source spacial distribution to be in an ellipse"},
-  {"spaceGaussian", ( PyCFunction ) Source_SpaceGaussian, METH_VARARGS, "define Source spacial distribution to be a gaussian"},
-  {"spaceDepthNone", ( PyCFunction ) Source_SpaceDepthNone, METH_NOARGS, "define Source spacial distribution to not have depth"},
-  {"spaceDepthUniform", ( PyCFunction ) Source_SpaceDepthUniform, METH_VARARGS, "define Source spacial distribution to have a uniform depth"},
-  {"spaceDepthGaussian", ( PyCFunction ) Source_SpaceDepthGaussian, METH_VARARGS, "define Source spacial distribution to have a gaussian depth"},
-  {"angleFlat", ( PyCFunction ) Source_AngleFlat, METH_VARARGS, "define Source angular distribution to be flat"},
-  {"angleUniform", ( PyCFunction ) Source_AngleUniform, METH_VARARGS, "define Source angular distribution to be uniform"},
-  {"angleGaussian", ( PyCFunction ) Source_AngleGaussian, METH_VARARGS, "define Source angular distribution to be gaussian"},
-  {"angleConical", ( PyCFunction ) Source_AngleConical, METH_VARARGS, "define Source angular distribution to be in a Cone"},
-  {"energySingle", ( PyCFunction ) Source_EnergySingle, METH_VARARGS, "define Source energy distribution to take a single energy value"},
-  {"energySeveral", ( PyCFunction ) Source_EnergySeveral, METH_VARARGS, "define Source energy distribution to take several energy values (up to ten)"},
-  {"energyUniform", ( PyCFunction ) Source_EnergyUniform, METH_VARARGS, "define Source energy distribution to be uniform"},
-  {"energyRelative", ( PyCFunction ) Source_EnergyRelative, METH_VARARGS, "define Source energy distribution to take several energy values (up to ten) with aside the values of their weight"},
   {NULL}                                             /* Sentinel          */
 };
 
@@ -440,7 +122,7 @@ static PyGetSetDef Source_getseters[] = {
 static PyTypeObject ShadowSourceType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
-  "Shadow.Source",                                   /* tp_name           */
+  "Source",                                          /* tp_name           */
   sizeof ( Shadow_Source ),                          /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
   ( destructor ) Source_dealloc,                     /* tp_dealloc        */
@@ -481,6 +163,44 @@ static PyTypeObject ShadowSourceType = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /***************************************************************************
  *         Shadow_OE Python Object
  *
@@ -490,160 +210,143 @@ static PyTypeObject ShadowSourceType = {
  *
  ***************************************************************************/
 
-void PyOEToOE ( Shadow_OE* pyOe, poolOE* oe )
-{
-  int i;
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe->name = pyOe->name;
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strncpy(oe->name, PyString_AsString(pyOe->name), STRLEN);
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
-  for(i=0;i<ADIM;i++) oe->name[i] = *( (ctype*) ( PyArray_GETPTR1(pyOe->name, i) ) );
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
-  for(i=0;i<ADIM;i++) strncpy(oe->name[i], (char*) ( PyArray_GETPTR1(pyOe->name, i) ), STRLEN);
-#include "shadow_oe.def"
-}
-
-void OEToPyOE ( poolOE* oe, Shadow_OE* pyOe )
-{
-  int i;
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) pyOe->name = oe->name;
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) pyOe->name = PyString_FromString(oe->name);
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
-  for(i=0;i<ADIM;i++) *( (ctype*) ( PyArray_GETPTR1(pyOe->name, i) ) ) = oe->name[i];
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
-  for(i=0;i<ADIM;i++) strncpy((char*) ( PyArray_GETPTR1(pyOe->name, i) ), oe->name[i], STRLEN);
-#include "shadow_oe.def"
-}
-
-
 static void OE_dealloc ( Shadow_OE* self )
 {
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) if(self->name!=NULL) Py_DECREF(self->name);
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) if(self->name!=NULL) Py_DECREF(self->name);
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) if(self->name!=NULL) Py_DECREF(self->name);
-#include "shadow_oe.def"
   self->ob_type->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* OE_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
 {
-  Shadow_OE* self;
-  self = ( Shadow_OE* ) type->tp_alloc ( type, 0 );
-  if ( self != NULL ) {
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) self->name = defvalue;
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) self->name = NULL;
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) self->name = NULL;
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) self->name = NULL;
+  Shadow_OE *self;
+  int i;
+  self = (Shadow_OE*) type->tp_alloc ( type, 0 );
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) self->pl.name = defvalue;
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strcpy(self->pl.name, defvalue);
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) for(i=0;i<arrdim;i++) self->pl.name[i]=defvalue;
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) memset(&(self->pl.name[0][0]), 0, arrdim*length);
 #include "shadow_oe.def"
-  }
-  return ( PyObject* ) self;
+  return (PyObject*) self;
 }
 
 static int OE_init ( Shadow_OE* self, PyObject* args, PyObject* kwds )
 {
   int i;
-  int nd = 1;
-  npy_intp dims[nd];
-  npy_intp strides_int[nd];
-  npy_intp strides_double[nd];
-  npy_intp strides_char[nd];
-  dims[0] = 10;
-  strides_int[0] = sizeof ( int );
-  strides_double[0] = sizeof ( double );
-  strides_char[0] = 1024*sizeof ( char );
-#define ski NPY_INT32
-#define skr NPY_FLOAT64
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) self->name = PyString_FromString(defvalue);
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
-  self->name = PyArray_New(&PyArray_Type, nd, dims, fkind, strides_##ctype, NULL, sizeof(ctype), NPY_CARRAY|NPY_OWNDATA, NULL); \
-  for(i=0;i<ADIM;i++) *( (ctype*)( PyArray_GETPTR1(self->name,i) ) ) = defvalue;
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
-  self->name = PyArray_New(&PyArray_Type, nd, dims, NPY_STRING, strides_##ctype, NULL, 1024*sizeof(ctype), NPY_CARRAY|NPY_OWNDATA, NULL); \
-  for(i=0;i<ADIM;i++) strncpy( (ctype*)( PyArray_GETPTR1(self->name,i) ) , defvalue, STRLEN);
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) self->pl.name = defvalue;
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) strcpy(self->pl.name, defvalue);
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) for(i=0;i<arrdim;i++) self->pl.name[i]=defvalue;
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) memset(self->pl.name, 0, arrdim*length);
 #include "shadow_oe.def"
-#undef ski
-#undef skr
   return 0;
 }
 
 static PyObject* OE_load ( Shadow_OE* self, PyObject* args )
 {
-  poolOE* oe;
   const char* FileName;
   if ( !PyArg_ParseTuple ( args, "s", &FileName ) ) {
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
     return NULL;
   }
-  oe = ( poolOE* ) malloc ( sizeof ( poolOE ) );
-  CShadowPoolOELoad ( oe, ( char* ) FileName );
-  OEToPyOE ( oe, self );
-
-  free ( oe );
+  CShadowPoolOELoad ( &(self->pl), ( char* ) FileName );
 
   Py_RETURN_NONE;
 }
 
 static PyObject* OE_write ( Shadow_OE* self, PyObject* args )
 {
-  poolOE* oe;
   const char* FileName;
   if ( !PyArg_ParseTuple ( args, "s", &FileName ) ) {
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
     return NULL;
   }
-  oe = ( poolOE* ) malloc ( sizeof ( poolOE ) );
-  PyOEToOE ( self, oe );
-  CShadowPoolOEWrite ( oe, ( char* ) FileName );
-
-  free ( oe );
+  CShadowPoolOEWrite ( &(self->pl), ( char* ) FileName );
 
   Py_RETURN_NONE;
 }
 
+#define ski NPY_INT32
+#define skr NPY_FLOAT64
+#define skc NPY_STRING
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* OE_get_##name(Shadow_OE* self, void* closure) \
 { \
-  Py_INCREF(self->name); \
-  return self->name; \
+  return PyString_FromString(trim(self->pl.name)); \
 }
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue)
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue)
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+static PyObject* OE_get_##name(Shadow_OE* self, void *closure){ \
+  int ndims = 1; \
+  npy_intp dims[1] = {arrdim}; \
+  return PyArray_SimpleNewFromData(ndims,dims,fkind,self->pl.name); \
+}
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+static PyObject* OE_get_##name(Shadow_OE* self, void *closure){ \
+  PyObject *res; \
+  int nd = 1; \
+  npy_intp strides[1] = {length*sizeof(char)}; \
+  npy_intp dims[1] = {arrdim}; \
+  res = PyArray_New(&PyArray_Type,nd,dims,fkind,strides,self->pl.name,length,0,NULL); \
+  return res; \
+}
 #include "shadow_oe.def"
+
+//  int nd = 1; 
+//  for(i=0;i<arrdim;i++) 
+//  printf("str[%d]%s\n", i, self->pl.name[i]); 
+//  strcpy(PyArray_GETPTR1(res,i),self->pl.name[i]); 
+//  self->pl.name[i]);
 
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
 { \
-  if(value == NULL) { \
-    PyErr_SetString(PyExc_TypeError, "Cannot delete attribute"); \
+  if( value!=NULL && PyString_Check(value) ) { \
+    strcpy(self->pl.name, PyString_AsString(PyString_AsEncodedObject(value,"utf8","replace"))); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a string."); \
     return -1; \
   } \
-  if(! PyString_Check(value)) { \
-    PyErr_SetString(PyExc_TypeError, "The value passed must be a string"); \
-    return -1; \
-  } \
-  if(PyString_Size(value)>=1024) { \
-    PyErr_SetString(PyExc_TypeError, "the string value is too long"); \
-    return -1; \
-  } \
-  Py_DECREF(self->name); \
-  Py_INCREF(value); \
-  self->name=value; \
   return 0; \
 }
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue)
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue)
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
+{ \
+  if(PyArray_Check(value) && PyArray_ISCONTIGUOUS(value) && PyArray_NDIM(value)==1 && PyArray_Size(value)==arrdim && PyArray_ISNUMBER(value)){ \
+    memcpy((void*)self->pl.name, PyArray_DATA( (PyArrayObject*) PyArray_Cast( (PyArrayObject*)value,fkind) ),sizeof(ctype)*arrdim); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a conform array."); \
+    return -1; \
+  } \
+  return 0; \
+}
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
+{ \
+  PyObject *res; \
+  int nd = 1; \
+  npy_intp strides[1] = {length*sizeof(char)}; \
+  npy_intp dims[1] = {arrdim}; \
+  if(PyArray_Check(value) && PyArray_ISCONTIGUOUS(value) && PyArray_NDIM(value)==1 && PyArray_Size(value)==arrdim && PyArray_ISSTRING(value)){ \
+    res = PyArray_New(&PyArray_Type,nd,dims,fkind,strides,self->pl.name,length,NPY_WRITEABLE,NULL); \
+    PyArray_CastTo((PyArrayObject*)res,(PyArrayObject*)value); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a conform array of string."); \
+    return -1; \
+  } \
+  return 0; \
+}
 #include "shadow_oe.def"
 
+
 static PyMemberDef OE_members[] = {
-#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) {#name,pytype,offsetof(Shadow_OE,name),0,#name},
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) {#name,pytype,offsetof(Shadow_OE,pl.name),0,#name},
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue)
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) {#name,T_OBJECT_EX,offsetof(Shadow_OE,name),0,#name},
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) {#name,T_OBJECT_EX,offsetof(Shadow_OE,name),0,#name},
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) 
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) 
 #include "shadow_oe.def"
   {NULL}                                             /* Sentinel          */
 };
@@ -658,8 +361,10 @@ static PyGetSetDef OE_getseters[] = {
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
   {#name, (getter) OE_get_##name, (setter) OE_set_##name, #name, NULL},
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue)
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue)
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+  {#name, (getter) OE_get_##name, (setter) OE_set_##name, #name, NULL},
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+  {#name, (getter) OE_get_##name, (setter) OE_set_##name, #name, NULL},
 #include "shadow_oe.def"
   {NULL}                                             /* Sentinel          */
 };
@@ -667,7 +372,7 @@ static PyGetSetDef OE_getseters[] = {
 static PyTypeObject ShadowOEType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
-  "Shadow.OE",                                       /* tp_name           */
+  "OE",                                              /* tp_name           */
   sizeof ( Shadow_OE ),                              /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
   ( destructor ) OE_dealloc,                         /* tp_dealloc        */
@@ -706,6 +411,48 @@ static PyTypeObject ShadowOEType = {
   OE_new,                                            /* tp_new            */
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /***************************************************************************
  *         Shadow_Beam Python Object
  *
@@ -717,39 +464,27 @@ static PyTypeObject ShadowOEType = {
 
 static void Beam_dealloc ( Shadow_Beam* self )
 {
-  if ( self->rays!=NULL )
-    Py_DECREF ( self->rays );
+  Py_XDECREF ( self->rays );
   self->ob_type->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* Beam_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
 {
-  Shadow_Beam* self;
-  self = ( Shadow_Beam* ) type->tp_alloc ( type, 0 );
-  self->rays = NULL;
-
-  return ( PyObject* ) self;
+  return type->tp_alloc ( type, 0 );
 }
 
 static int Beam_init ( Shadow_Beam* self, PyObject* args, PyObject* kwds )
 {
+  self->rays = NULL;
   return 0;
 }
 
 static PyObject* Beam_load ( Shadow_Beam* self, PyObject* args )
 {
   int nCol, nPoint;
-  int nd = 2;
-  npy_intp dims[nd];
-  npy_intp strides[nd];
+  npy_intp dims[2];
   const char *FileName;
-
   FILE* TestFile;
-
-  dims[1] = 18;
-  strides[0] = 18*sizeof ( double );
-  strides[1] = sizeof ( double );
-
 
   if ( !PyArg_ParseTuple ( args, "s", &FileName ) ) {
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
@@ -767,15 +502,29 @@ static PyObject* Beam_load ( Shadow_Beam* self, PyObject* args )
   CShadowBeamGetDim ( &nCol, &nPoint, ( char* ) FileName );
 
   dims[0] = nPoint;
+  dims[1] = 18;
 
   if ( self->rays!=NULL )
     Py_DECREF ( self->rays );
-  self->rays = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, nd, dims, NPY_FLOAT64, strides, NULL, sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
-  Py_INCREF ( self->rays );
+  self->rays = ( PyArrayObject* ) PyArray_ZEROS(2, dims, NPY_FLOAT64, 0);
   CShadowBeamLoad ( ( double* ) ( self->rays->data ), nCol, nPoint, ( char* ) FileName );
-
   Py_RETURN_NONE;
 }
+
+static PyObject* beam_SetRayZeros(Shadow_Beam* self, PyObject* args)
+{
+  npy_int NRays;
+  npy_intp dims[2];
+  if(!PyArg_ParseTuple ( args, "i", &NRays )) { 
+    printf("rays not initialized\n"); 
+    Py_RETURN_NONE; 
+  }
+  dims[0] = NRays;
+  dims[1] = 18;
+  self->rays = ( PyArrayObject* ) PyArray_ZEROS(2, dims, NPY_FLOAT64, 0);
+  Py_RETURN_NONE;
+}
+
 
 static PyObject* Beam_write ( Shadow_Beam* self, PyObject* args )
 {
@@ -785,11 +534,10 @@ static PyObject* Beam_write ( Shadow_Beam* self, PyObject* args )
     PyErr_SetString ( PyExc_TypeError, "argument should be a string!" );
     return NULL;
   }
-  // file already exist warning?
 
   if ( self->rays==NULL ) {
     PyErr_SetString ( PyExc_TypeError, "rays is not set yet" );
-    return NULL;
+    Py_RETURN_NONE;
   }
 
   nPoint = self->rays->dimensions[0];
@@ -801,40 +549,34 @@ static PyObject* Beam_write ( Shadow_Beam* self, PyObject* args )
 
 static PyObject* Beam_genSource ( Shadow_Beam* self, PyObject* args )
 {
-  poolSource* src;
   Shadow_Source* pySrc = NULL;
-  int nd = 2;
-  npy_intp dims[nd];
-  npy_intp strides[nd];
+  npy_intp dims[2];
+  npy_intp strides[2];
 
   if ( !PyArg_ParseTuple ( args, "O", &pySrc ) ) {
     PyErr_SetString ( PyExc_TypeError, "Error passing argument" );
     return NULL;
   }
-  if ( !ShadowSource_CheckExact ( pySrc ) ) {
+  if ( !PyObject_TypeCheck ( pySrc, &ShadowSourceType ) ) {
     PyErr_SetString ( PyExc_TypeError, "the argument has to be a Shadow.Source instance" );
     return NULL;
   }
 
-  src = ( poolSource* ) malloc ( sizeof ( poolSource ) );
+  strides[0] = 18*sizeof ( double ); 
+  strides[1] = sizeof( double );
+  dims[0] = pySrc->pl.NPOINT; 
   dims[1] = 18;
-  strides[0] = 18*sizeof ( double );
-  strides[1] = sizeof ( double );
-  dims[0] = pySrc->NPOINT;
 
   if ( self->rays!=NULL )
     Py_DECREF ( self->rays );
-  self->rays = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, nd, dims, NPY_FLOAT64, strides, NULL, sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
+  self->rays = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, 2, dims, NPY_FLOAT64, strides, NULL, sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
 
-  PySourceToSource ( pySrc,src );
-  if ( ( pySrc->FDISTR==4 ) || ( pySrc->FSOURCE_DEPTH==4 ) || ( pySrc->F_WIGGLER>0 ) ) {
-    CShadowSourceSync ( src, ( double* ) ( self->rays->data ) );
+  if ( ( pySrc->pl.FDISTR==4 ) || ( pySrc->pl.FSOURCE_DEPTH==4 ) || ( pySrc->pl.F_WIGGLER>0 ) ) {
+    CShadowSourceSync ( &(pySrc->pl), ( double* ) ( self->rays->data ) );
   }
   else {
-    CShadowSourceGeom ( src, ( double* ) ( self->rays->data ) );
+    CShadowSourceGeom ( &(pySrc->pl), ( double* ) ( self->rays->data ) );
   }
-
-  free ( src );
 
   Py_RETURN_NONE;
 }
@@ -842,36 +584,28 @@ static PyObject* Beam_genSource ( Shadow_Beam* self, PyObject* args )
 static PyObject* Beam_traceOE ( Shadow_Beam* self, PyObject* args )
 {
   int nPoint;
-  int nCol;
   int iCount;
-  poolOE* oe1;
   Shadow_OE* pyOe = NULL;
-
 
   if ( !PyArg_ParseTuple ( args, "Oi", &pyOe, &iCount ) ) {
     PyErr_SetString ( PyExc_TypeError, "Error passing argument" );
-    return NULL;
+    Py_RETURN_NONE;
   }
-  if ( !ShadowOE_CheckExact ( pyOe ) ) {
+  if ( !PyObject_TypeCheck ( pyOe, &ShadowOEType ) ) {
     PyErr_SetString ( PyExc_TypeError, "the argument has to be a Shadow.OE instance" );
-    return NULL;
+    Py_RETURN_NONE;
   }
 
   if ( self->rays==NULL ) {
     PyErr_SetString ( PyExc_TypeError, "rays is empty" );
-    return NULL;
+    Py_RETURN_NONE;
   }
-
-  oe1 = ( poolOE* ) malloc ( sizeof ( poolOE ) );
   nPoint = self->rays->dimensions[0];
-  nCol = 18;
-  PyOEToOE ( pyOe,oe1 );
-  CShadowTraceOE ( oe1, ( double* ) ( self->rays->data ), nPoint, iCount );
-
-  free ( oe1 );
+  CShadowTraceOE ( &(pyOe->pl), ( double* ) ( self->rays->data ), nPoint, iCount );
 
   Py_RETURN_NONE;
 }
+
 
 static PyMemberDef Beam_members[] = {
   {"rays",T_OBJECT_EX,offsetof ( Shadow_Beam,rays ),0,"rays"},
@@ -883,17 +617,17 @@ static PyMethodDef Beam_methods[] = {
   {"write", ( PyCFunction ) Beam_write, METH_VARARGS, "write Shadow.Beam on a file" },
   {"genSource", ( PyCFunction ) Beam_genSource, METH_VARARGS, "generate rays from Source"},
   {"traceOE", ( PyCFunction ) Beam_traceOE, METH_VARARGS, "trace rays according to a given OE"},
-
+  {"SetRayZeros", ( PyCFunction ) beam_SetRayZeros, METH_VARARGS, "set member rays to zeros"},
   {NULL}                                             /* Sentinel          */
 };
 
 static PyTypeObject ShadowBeamType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
-  "Shadow.Beam",                                      /* tp_name           */
-  sizeof ( Shadow_Beam ),                             /* tp_basicsize      */
+  "Beam",                                            /* tp_name           */
+  sizeof ( Shadow_Beam ),                            /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
-  ( destructor ) Beam_dealloc,                        /* tp_dealloc        */
+  ( destructor ) Beam_dealloc,                       /* tp_dealloc        */
   0,                                                 /* tp_print          */
   0,                                                 /* tp_getattr        */
   0,                                                 /* tp_setattr        */
@@ -909,219 +643,66 @@ static PyTypeObject ShadowBeamType = {
   0,                                                 /* tp_setattro       */
   0,                                                 /* tp_as_buffer      */
   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,          /* tp_flags          */
-  "Beam object",                                      /* tp_doc            */
+  "Beam object",                                     /* tp_doc            */
   0,                                                 /* tp_traverse       */
   0,                                                 /* tp_clear          */
   0,                                                 /* tp_richcompare    */
   0,                                                 /* tp_weaklistoffset */
   0,                                                 /* tp_iter           */
   0,                                                 /* tp_iternext       */
-  Beam_methods,                                       /* tp_methods        */
-  Beam_members,                                       /* tp_members        */
+  Beam_methods,                                      /* tp_methods        */
+  Beam_members,                                      /* tp_members        */
   0,                                                 /* tp_getset         */
   0,                                                 /* tp_base           */
   0,                                                 /* tp_dict           */
   0,                                                 /* tp_descr_get      */
   0,                                                 /* tp_descr_set      */
   0,                                                 /* tp_dictoffset     */
-  ( initproc ) Beam_init,                             /* tp_init           */
+  ( initproc ) Beam_init,                            /* tp_init           */
   0,                                                 /* tp_alloc          */
-  Beam_new,                                           /* tp_new            */
-};
-
-/***************************************************************************
- *         Shadow_Image Python Object
- *
- *
- *
- *
- *
- ***************************************************************************/
-
-static void Image_dealloc ( Shadow_Image* self )
-{
-  if ( self->image!=NULL )
-    Py_DECREF ( self->image );
-  if ( self->intensity!=NULL )
-    Py_DECREF ( self->intensity );
-  self->ob_type->tp_free ( ( PyObject* ) self );
-}
-
-static PyObject* Image_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
-{
-  Shadow_Image* self;
-  self = ( Shadow_Image* ) type->tp_alloc ( type, 0 );
-  self->xmax = 5.0;
-  self->xmin = 0.0;
-  self->zmax = 5.0;
-  self->zmin = 0.0;
-  self->distance = 100.0;
-  self->npixel_x = 128;
-  self->npixel_z = 128;
-  self->image = NULL;
-  self->intensity = NULL;
-  return ( PyObject* ) self;
-}
-
-static int Image_init ( Shadow_Image* self, PyObject* args, PyObject* kwds )
-{
-  return 0;
-}
-
-static PyObject* Image_fresnel2D ( Shadow_Image* self, PyObject* args )
-{
-  Shadow_Beam* r;
-  int nPoint;
-  int i,j,k;
-
-  int nd = 3;
-  pixel *x;
-  pixel *z;
-
-
-  npy_intp dims[nd];
-  npy_intp strides[nd];
-
-  if ( !PyArg_ParseTuple ( args, "O", &r ) ) {
-    PyErr_SetString ( PyExc_TypeError, "Error passing argument" );
-    return NULL;
-  }
-
-  if ( !ShadowBeam_CheckExact ( r ) ) {
-    PyErr_SetString ( PyExc_TypeError, "the argument has to be a Shadow.Beam instance" );
-    return NULL;
-  }
-
-  if ( r->rays == NULL ) {
-    PyErr_SetString ( PyExc_TypeError, "rays field of Shadow.Beam instance is empty" );
-    return NULL;
-  }
-
-  dims[0] = self->npixel_z;
-  dims[1] = self->npixel_x;
-  dims[2] = 3;
-
-  strides[0] = dims[2]*dims[1]*2*sizeof ( double );
-  strides[1] = dims[2]*2*sizeof ( double );
-  strides[2] = 2*sizeof ( double );
-
-  if ( self->image!=NULL )
-    Py_DECREF ( self->image );
-  self->image = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, nd, dims, NPY_COMPLEX128, strides, NULL, 2*sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
-
-  nd = 2;
-
-  strides[0] = dims[1]*sizeof ( double );
-  strides[1] = sizeof ( double );
-
-  if ( self->intensity!=NULL )
-    Py_DECREF ( self->intensity );
-  self->intensity = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, nd, dims, NPY_FLOAT64, strides, NULL, sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
-
-  nPoint = r->rays->dimensions[0];
-
-  x = ( pixel* ) malloc ( sizeof ( pixel ) );
-  z = ( pixel* ) malloc ( sizeof ( pixel ) );
-
-  x->np = self->npixel_x;
-  x->up = self->xmax;
-  x->dn = self->xmin;
-
-  z->np = self->npixel_z;
-  z->up = self->zmax;
-  z->dn = self->zmin;
-
-  CShadowFFresnel2D ( ( double* ) ( r->rays->data ), nPoint, self->distance, ( dComplex* ) ( self->image->data ), x, z );
-
-  for ( i=0;i<self->npixel_z;i++ ) {
-    for ( j=0;j<self->npixel_x;j++ ) {
-      * ( ( double* ) ( PyArray_GETPTR2 ( self->intensity, i, j ) ) ) = 0.0;
-      for ( k=0;k<3;k++ ) {
-        * ( ( double* ) ( PyArray_GETPTR2 ( self->intensity, i, j ) ) ) +=
-          ( ( dComplex* ) ( PyArray_GETPTR3 ( self->image, i, j, k ) ) )->real *
-          ( ( dComplex* ) ( PyArray_GETPTR3 ( self->image, i, j, k ) ) )->real +
-          ( ( dComplex* ) ( PyArray_GETPTR3 ( self->image, i, j, k ) ) )->imag *
-          ( ( dComplex* ) ( PyArray_GETPTR3 ( self->image, i, j, k ) ) )->imag ;
-      }
-    }
-  }
-
-  free ( x );
-  free ( z );
-
-  Py_RETURN_NONE;
-}
-
-static PyMemberDef Image_members[] = {
-  {"xmax",T_DOUBLE,offsetof ( Shadow_Image,xmax ),0,ImageXmax_doc},
-  {"xmin",T_DOUBLE,offsetof ( Shadow_Image,xmin ),0,ImageXmin_doc},
-  {"zmax",T_DOUBLE,offsetof ( Shadow_Image,zmax ),0,ImageZmax_doc},
-  {"zmin",T_DOUBLE,offsetof ( Shadow_Image,zmin ),0,ImageZmin_doc},
-  {"distance",T_DOUBLE,offsetof ( Shadow_Image,distance ),0,ImageDistance_doc},
-  {"npixel_x",T_INT,offsetof ( Shadow_Image,npixel_x ),0,ImageNpixelX_doc},
-  {"npixel_z",T_INT,offsetof ( Shadow_Image,npixel_z ),0,ImageNpixelZ_doc},
-  {"image",T_OBJECT_EX,offsetof ( Shadow_Image,image ),0,ImageImage_doc},
-  {"intensity",T_OBJECT_EX,offsetof ( Shadow_Image,intensity ),0,ImageIntensity_doc},
-  {NULL}
+  Beam_new,                                          /* tp_new            */
 };
 
 
-static PyMethodDef Image_methods[] = {
-  {"fresnel2D" , ( PyCFunction ) Image_fresnel2D , METH_VARARGS, "create a diffraction diffraction image using a Shadow.Beam"},
-  {NULL}                                             /* Sentinel          */
-};
 
 
-static PyTypeObject ShadowImageType = {
-  PyObject_HEAD_INIT ( NULL )
-  0,                                                 /* ob_size           */
-  "Shadow.Image",                                    /* tp_name           */
-  sizeof ( Shadow_Image ),                           /* tp_basicsize      */
-  0,                                                 /* tp_itemsize       */
-  ( destructor ) Image_dealloc,                      /* tp_dealloc        */
-  0,                                                 /* tp_print          */
-  0,                                                 /* tp_getattr        */
-  0,                                                 /* tp_setattr        */
-  0,                                                 /* tp_compare        */
-  0,                                                 /* tp_repr           */
-  0,                                                 /* tp_as_number      */
-  0,                                                 /* tp_as_sequence    */
-  0,                                                 /* tp_as_mapping     */
-  0,                                                 /* tp_hash           */
-  0,                                                 /* tp_call           */
-  0,                                                 /* tp_str            */
-  0,                                                 /* tp_getattro       */
-  0,                                                 /* tp_setattro       */
-  0,                                                 /* tp_as_buffer      */
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,          /* tp_flags          */
-  Image_doc,                                         /* tp_doc            */
-  0,                                                 /* tp_traverse       */
-  0,                                                 /* tp_clear          */
-  0,                                                 /* tp_richcompare    */
-  0,                                                 /* tp_weaklistoffset */
-  0,                                                 /* tp_iter           */
-  0,                                                 /* tp_iternext       */
-  Image_methods,                                     /* tp_methods        */
-  Image_members,                                     /* tp_members        */
-  0,                                                 /* tp_getset         */
-  0,                                                 /* tp_base           */
-  0,                                                 /* tp_dict           */
-  0,                                                 /* tp_descr_get      */
-  0,                                                 /* tp_descr_set      */
-  0,                                                 /* tp_dictoffset     */
-  ( initproc ) Image_init,                           /* tp_init           */
-  0,                                                 /* tp_alloc          */
-  Image_new,                                         /* tp_new            */
-};
 
-/***************************************************************************
- *         Shadow general methods
- *
- *
- *
- *
- *
- ***************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static PyObject* saveBeam ( PyObject* self, PyObject* args )
 {
@@ -1136,7 +717,7 @@ static PyObject* saveBeam ( PyObject* self, PyObject* args )
     return NULL;
   }
 
-  if ( !ShadowBeam_CheckExact ( oldBeam ) ) {
+  if ( !PyObject_TypeCheck ( oldBeam, &ShadowBeamType ) ) {
     PyErr_SetString ( PyExc_TypeError, "the argument has to be a Shadow.Beam instance" );
     return NULL;
   }
@@ -1155,43 +736,261 @@ static PyObject* saveBeam ( PyObject* self, PyObject* args )
   return newBeam;
 }
 
+#define DOUBLE_TO_INT(in,out) out=_mm_cvttsd_si32(_mm_load_sd(&(in)));
+
+#define FLOAT_TO_INT(in,out)  out=_mm_cvttss_si32(_mm_load_ss(&(in)));
+
+static npy_int BinarySearch(npy_double x, npy_double *wl, npy_int n){
+  npy_int low, high;		/* range of elements to consider */
+  npy_int k;			/* middle element between low and high */
+  low = 0;
+  high = n-1;
+
+  while (high - low > 1) {
+    k = (low + high) / 2;
+    if (x < wl[k]) { high = k; } 
+    else if (x > wl[k+1]) { low = k; } 
+    else {
+      high = k;
+      low = k;
+    }
+  }
+  return low;
+}
+
+
+static PyObject* FastCDFfromZeroIndex(PyObject *self, PyObject *args){
+/* python related variable (input - output) */
+  PyArrayObject *arry, *x;
+  PyObject *arrR;
+  npy_intp *ydims, *xdims;
+  npy_int size, NE; 
+  npy_double *dataR;
+/* C internal variables */  
+  int i;
+  npy_int    x_in;
+  npy_double x_lo, x_up, y_lo, *tmpx, *tmpR;
+  if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &arry, 
+                                      &PyArray_Type, &x)) return NULL;
+/* set up dimensions  */
+  xdims = PyArray_DIMS(x);
+  ydims = PyArray_DIMS(arry); 
+  size  = xdims[0];
+  NE    = ydims[0];
+/* set up pointers    */
+  dataR = (npy_double*) malloc(size*sizeof(npy_double));
+/* build arrR */
+  arrR  = PyArray_SimpleNewFromData(1, xdims, NPY_FLOAT64, (void*) dataR);
+  PyArray_FLAGS(arrR) |= NPY_OWNDATA;
+/* cycle */
+  for(i=0;i<size;i++){
+    tmpx  = (npy_double*) PyArray_GETPTR1(x,i);
+    tmpR  = (npy_double*) PyArray_GETPTR1(arrR,i);
+    x_in  = BinarySearch(*tmpx, (npy_double*) PyArray_GETPTR1(arry,0), NE);
+    x_lo  = *( (npy_double*) PyArray_GETPTR1(arry,x_in) );
+    x_up  = *( (npy_double*) PyArray_GETPTR1(arry,x_in+1) );
+    y_lo  = (npy_double) x_in;
+   *tmpR  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);
+  }
+  return arrR;
+}
+
+
+
+static PyObject* FastCDFfromOneIndex(PyObject *self, PyObject *args){
+/* python related variable (input - output) */
+  PyArrayObject *arry, *index, *x;
+  PyObject *arrR;
+  npy_intp *ydims, *xdims;
+  npy_int size, NY; 
+  npy_double *dataR;
+/* C internal variables */  
+  int i;
+  npy_int    x_in, indx;
+  npy_double x_lo, x_up, y_lo, *tmpx, *tmpF, *tmpR; 
+  npy_double tmp1, tmp2, len1, len2;
+  if (!PyArg_ParseTuple(args, "O!O!O!", &PyArray_Type, &arry, 
+                                        &PyArray_Type, &index, 
+                                        &PyArray_Type, &x)) return NULL;
+/* set up dimensions  */
+  xdims = PyArray_DIMS(x);
+  ydims = PyArray_DIMS(arry); 
+  size  = xdims[0];
+  NY    = ydims[1];
+/* set up pointers    */
+  dataR = (npy_double*) malloc(size*sizeof(npy_double));
+/* build arrR */
+  arrR  = PyArray_SimpleNewFromData(1, xdims, NPY_FLOAT64, (void*) dataR); 
+  PyArray_FLAGS(arrR) |= NPY_OWNDATA;
+/* cycle */
+  for(i=0;i<size;i++){
+    tmpF  = (npy_double*) PyArray_GETPTR1(index,i);
+    tmpx  = (npy_double*) PyArray_GETPTR1(x,i);
+    tmpR  = (npy_double*) PyArray_GETPTR1(arrR,i);
+
+    DOUBLE_TO_INT(*tmpF,indx);
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR2(arry,indx,0),NY);
+    x_lo  = *( (npy_double*) PyArray_GETPTR2(arry,indx,x_in) );
+    x_up  = *( (npy_double*) PyArray_GETPTR2(arry,indx,x_in+1) );
+    y_lo  = (npy_double) x_in;
+    tmp1  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR2(arry,indx+1,0),NY);
+    x_lo  = *( (npy_double*) PyArray_GETPTR2(arry,indx+1,x_in) );
+    x_up  = *( (npy_double*) PyArray_GETPTR2(arry,indx+1,x_in+1) );
+    y_lo  = (npy_double) x_in;
+    tmp2  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);
+
+    len1  = (*tmpF) - (npy_double) indx;
+    len2  = len1 - 1.0;
+    if(len1 < 1.0e-16) {
+      len1 = 1.0;
+      len2 = 0.0;
+    }
+    else{
+      len1  = 1.0/len1/len1;
+      len2  = 1.0/len2/len2;
+    }
+
+   *tmpR  = (tmp1*len1 + tmp2*len2) / (len1+len2);
+  }
+  return arrR;
+}
+
+static PyObject* FastCDFfromTwoIndex(PyObject *self, PyObject *args){
+/* python related variable (input - output) */
+  PyArrayObject *arry, *index1, *index2, *x;
+  PyObject *arrR;
+  npy_intp *ydims, *xdims;
+  npy_int size, NX; 
+  npy_double *dataR;
+/* C internal variables */  
+  int i;
+  npy_int    x_in, ind1, ind2;
+  npy_double x_lo, x_up, y_lo, *tmpx, *tmpF1, *tmpF2, *tmpR;
+  npy_double tmp1, tmp2, tmp3, tmp4, len1, len2, len3, len4;
+  if (!PyArg_ParseTuple(args, "O!O!O!O!", &PyArray_Type, &arry, 
+                                          &PyArray_Type, &index1,
+                                          &PyArray_Type, &index2,
+                                          &PyArray_Type, &x)) return NULL;
+/* set up dimensions  */
+  xdims = PyArray_DIMS(x);
+  ydims = PyArray_DIMS(arry); 
+  size  = xdims[0];
+  NX    = ydims[2];
+  
+/* set up pointers    */
+  dataR = (npy_double*) malloc(size*sizeof(npy_double));
+/* build arrR */
+  arrR  = PyArray_SimpleNewFromData(1, xdims, NPY_FLOAT64, (void*) dataR);
+  PyArray_FLAGS(arrR) |= NPY_OWNDATA;
+/* cycle */
+  for(i=0;i<size;i++){
+    tmpF1 = (npy_double*) PyArray_GETPTR1(index1,i);
+    tmpF2 = (npy_double*) PyArray_GETPTR1(index2,i);
+    tmpx  = (npy_double*) PyArray_GETPTR1(x,i);
+    tmpR  = (npy_double*) PyArray_GETPTR1(arrR,i);
+
+    DOUBLE_TO_INT(*tmpF1, ind1);
+    DOUBLE_TO_INT(*tmpF2, ind2);
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR3(arry,ind1,ind2,0),NX);
+    x_lo  = *((npy_double*) PyArray_GETPTR3(arry,ind1,ind2,x_in));    
+    x_up  = *((npy_double*) PyArray_GETPTR3(arry,ind1,ind2,x_in+1));
+    y_lo  = (npy_double) x_in;
+    tmp1  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR3(arry,ind1,ind2+1,0),NX);
+    x_lo  = *((npy_double*) PyArray_GETPTR3(arry,ind1,ind2+1,x_in));
+    x_up  = *((npy_double*) PyArray_GETPTR3(arry,ind1,ind2+1,x_in+1));
+    y_lo  = (npy_double) x_in;
+    tmp2  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2,0),NX);
+    x_lo  = *((npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2,x_in));
+    x_up  = *((npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2,x_in+1));
+    y_lo  = (npy_double) x_in;
+    tmp3  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);    
+
+    x_in  = BinarySearch(*tmpx,(npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2+1,0),NX);
+    x_lo  = *((npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2+1,x_in));
+    x_up  = *((npy_double*) PyArray_GETPTR3(arry,ind1+1,ind2+1,x_in+1));
+    y_lo  = (npy_double) x_in;
+    tmp4  = y_lo + (*tmpx - x_lo) / (x_up - x_lo);    
+
+    len1  = (*tmpF1) - (npy_double) ind1;
+    len2  = (*tmpF2) - (npy_double) ind2;
+    len3  = len1 - 1.0;
+    len4  = len2 - 1.0;
+    if(len1 < FLT_EPSILON) {
+      len1 = 1.0;
+      len3 = 0.0;
+    }
+    else{
+      len1  = 1.0/len1/len1;
+      len3  = 1.0/len3/len3;
+    }
+    if(len2 < FLT_EPSILON){
+      len2 = 1.0;
+      len4 = 0.0;
+    }
+    else{
+      len2  = 1.0/len2/len2;
+      len4  = 1.0/len4/len4;
+    }
+
+   *tmpR  = (tmp1*len1*len2 + tmp2*len1*len4 + tmp3*len3*len2 + tmp4*len3*len4) / (len1*len2 + len1*len4 + len3*len2 + len3*len4);
+  }
+  return arrR;
+}
+
+
+
+
+
+
 /*  Shadow methods none  */
 
 static PyMethodDef Shadow_methods[] = {
-  {"saveBeam" , ( PyCFunction ) saveBeam , METH_VARARGS, "save Beam in a new instance Shadow.Beam"},
-  {NULL}                                             /* Sentinel          */
+  {"saveBeam" ,            ( PyCFunction ) saveBeam,             METH_VARARGS, "save Beam in a new instance Shadow.Beam"},
+  {"FastCDFfromZeroIndex", ( PyCFunction ) FastCDFfromZeroIndex, METH_VARARGS, NULL},
+  {"FastCDFfromOneIndex",  ( PyCFunction ) FastCDFfromOneIndex,  METH_VARARGS, NULL},
+  {"FastCDFfromTwoIndex",  ( PyCFunction ) FastCDFfromTwoIndex,  METH_VARARGS, NULL},
+  {NULL, NULL, 0, NULL}                              /* Sentinel          */
 };
-
 /*  module init function  */
 
 #ifndef PyMODINIT_FUNC /* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initShadow ( void )
+initShadowLib ( void )
 {
   _import_array();
   PyObject* m;
   ShadowSourceType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowSourceType ) < 0 )
+  if ( PyType_Ready ( &ShadowSourceType ) < 0 ){
+    printf("failed to load Source");
     return;
+  }
   ShadowOEType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowOEType ) < 0 )
+  if ( PyType_Ready ( &ShadowOEType ) < 0 ){
+    printf("failed to load OE");
     return;
+  }
   ShadowBeamType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowBeamType ) < 0 )
+  if ( PyType_Ready ( &ShadowBeamType ) < 0 ){
+    printf("failed to load Beam");
     return;
-  ShadowImageType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowImageType ) < 0 )
-    return;
+  }
 
-  m = Py_InitModule3 ( "Shadow", Shadow_methods, "Extension Module for Ray Tracing Sofware SHADOW" );
+  m = Py_InitModule3 ( "Shadow.ShadowLib", Shadow_methods, "Extension Module for Ray Tracing Sofware SHADOW" );
   Py_INCREF ( &ShadowSourceType );
   PyModule_AddObject ( m, "Source", ( PyObject * ) &ShadowSourceType );
   Py_INCREF ( &ShadowOEType );
   PyModule_AddObject ( m, "OE", ( PyObject * ) &ShadowOEType );
   Py_INCREF ( &ShadowBeamType );
   PyModule_AddObject ( m, "Beam", ( PyObject * ) &ShadowBeamType );
-  Py_INCREF ( &ShadowImageType );
-  PyModule_AddObject ( m, "Image", ( PyObject * ) &ShadowImageType );
 }
+

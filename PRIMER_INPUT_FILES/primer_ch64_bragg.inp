@@ -1,0 +1,55 @@
+$rm -f GAAS.PAR
+$rm -f rock_curve*
+
+
+bragg
+0
+5.65
+1,1,1
+GA
+AS
+0.14,27.162
+0.15,26.783
+0.16,26.406
+0.14,28.742
+0.15,28.307
+0.16,27.877
+11100
+11200
+10
+1
+0.979
+GAAS.PAR
+1
+3
+11160
+0
+0
+60
+200
+0
+0
+0
+
+$ls -lt  |head
+$cat GAAS.PAR
+$cat rock_curve.par
+
+
+
+$rm -f bragg.gpl
+$echo "set terminal x11 size 900,600  " >> bragg.gpl
+$echo "set xlabel 'Rock angle (microrads)'  " >> bragg.gpl
+$echo "set ylabel 'Reflectivity'  " >> bragg.gpl
+$echo "plot 'rock_curve.s' u 1:2 w lines, 'rock_curve.p' u 1:2 w lines " >> bragg.gpl
+!$echo "pause -1 'Press <Enter> to end graphic '  " >> bragg.gpl
+$echo "pause 3  " >> bragg.gpl
+
+$cat bragg.gpl
+
+$gnuplot bragg.gpl
+
+
+exit
+
+

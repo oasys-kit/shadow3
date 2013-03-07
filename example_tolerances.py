@@ -25,7 +25,7 @@ import numpy
 import copy
 
 import Shadow as sh
-import ShadowTools as st
+import Shadow.ShadowTools as st
 
 
 #

@@ -1,21 +1,26 @@
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+--------------------------------------------------------------------------------
      CRLs in SHADOW...   Beta version, still in development....
      
               version 1: 2012-01-27  srio@esrf.eu
               version 2: 2012-05-16  srio@esrf.eu
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+--------------------------------------------------------------------------------
 
+Contents:
 
-This is an example to run a CRL in SHADOW. 
+1 Geometry of a CRL.
+2 Example: Simulating the CRL of Snigirev et al. Nature 384, p49 (1996)
 
-Note: This example shows an optical system that contains only one CRL.
-      For the moment, it is not easy to insert a CRL in between other oe's.
+--------------------------------------------------------------------------------
 
+1) Geometry of a CRL.
+---------------------
+In SHADOW ONE lens is defined by TWO interfaces. 
 
-Eg: a CRL of TWO lenses or FOUR interfaces:
+A CRL (Compound refractive lens) is a stack of N lenses or 2N interfaces.
 
-                                                                          
+This graph shows a CRL of TWO lenses or FOUR interfaces:
+
                                                                           
                   *****************    ******************                 
                   *****************    ******************                 
@@ -45,16 +50,26 @@ Source      **       ***********           **********       **    Image
                             <--- ddV ----->
 <-------pp------------>                             <----- qq ------->
 
- p0: physical focal source-crl distance     
- q0: physical focal crl-image distance     
+The parameters that will be used to define the CRL are: 
+
  pp: focal source-crl distance     
  qq: focal crl-image distance    
  ddIn: lens thickness [along optical axis, in material] ?    
  ddV:  lens length [along optical axis, in vacuum] ?    
 
+In addition, one may define the focal distances (to define the interface shape and parameters): 
 
-Example 1: The CRL of Snigirev et al. Nature 384, p49 (1996)
-============================================================
+ p0: physical focal source-crl distance     
+ q0: physical focal crl-image distance     
+
+
+2) Example: Simulating the CRL of Snigirev et al. Nature 384, p49 (1996)
+------------------------------------------------------------------------
+
+This is an example to run a CRL in SHADOW. 
+
+Note: This example shows an optical system that contains only one CRL.
+      For the moment, it is not easy to insert a CRL in between other oe's.
 
 data: 
     source: 
@@ -68,6 +83,7 @@ data:
        ddIn = 25 um
        ddV = 2 R = 600 um
        Aluminium: n=1-delta; delta = 2.8e-6; mu=28cm^-1
+
     Distances:
        F = R/2/N/delta = 178.57 cm
           To obtain this F, we use (1/F=1/pp+1/qq):
@@ -76,6 +92,8 @@ data:
     
 
 STEP 1: Run the preprocessor (precrl) to create the SHADOW input file crl.01
+        You can answer the questions manually (after entering "shadow3 prerefl")
+        or use the following: 
 
 shadow3 < crl_snigirev1996.inp 
 
@@ -106,7 +124,7 @@ exit
 ---------------------  end crl_snigirev1996.inp --------------------------
 
 
-2) Run SHADOW (runcrl)
+STEP 2: Run SHADOW (runcrl)
 
 shadow3> runcrl
 File with source (default: begin.dat): begin.dat

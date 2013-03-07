@@ -1,0 +1,21 @@
+
+plotxy
+mirr.01
+0
+Flux on mirror
+1
+2
+0
+2
+15
+15
+7
+1
+1
+0
+
+
+$sed 's/pause -1/pause 3/' < plotxy.gpl > plotxy1.gpl
+$gnuplot plotxy1.gpl
+
+exit
