@@ -7243,6 +7243,15 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! C Start the loop through the beam
 ! C
 	DO 1099 ITIK=1,NPOINT
+
+
+if (check_perp_comp( ray(4,itik), ray(5,itik), ray(6,itik), &
+                     ray(7,itik), ray(8,itik), ray(9,itik), &
+                     ap(1,itik), ap(2,itik), ap(3,itik)) .gt. 1d-6) then 
+   print*,'MIRROR: Warning (before calculations): lack of perpendicularity in ray: ', itik
+end if
+
+
 ! C
 ! C Counts the "good" and "bad" rays
 ! C
@@ -8417,50 +8426,83 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 ! ** A_VEC will have the same components referred to the ray as before the
 ! ** diffraction. 
 
-     	 VVOUT(1)	=   RAY(4,ITIK)
-     	 VVOUT(2)	=   RAY(5,ITIK)
-     	 VVOUT(3)	=   RAY(6,ITIK)
-! D	WRITE	(24,*)	ITIK
-! D	WRITE	(24,*)	VNOR
-! D	WRITE	(24,*)	VTEMP
-! D	WRITE	(24,*)	A_VEC
-! D	WRITE	(24,*)	A_S
-! D	WRITE	(24,*)	A_P
-! C 
-! C The following IF block applies only to the GRATING case.
-! C The binormal is redefined in terms of the diffraction
-! C plane.
-! C
-     	IF (F_GRATING.NE.0.OR.F_BRAGG_A.EQ.1) THEN
-	  CALL	PROJ	(VVOUT,VNOR,VTEMP)
-	  CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
-	  CALL	SUM	(VTEMP,VVOUT,VTEMP)
-	  CALL	CROSS	(VTEMP,VNOR,AS_TEMP)
-     	 IF (M_FLAG.EQ.1) THEN
-	   CALL	DOT	(AS_VEC,AS_VEC,AS2)
-	   CALL	DOT	(AP_VEC,AP_VEC,AP2)
-	  IF (AS2.NE.0)	THEN
-     	    DO 899 I=1,3
- 899          AS_TEMP(I) = AS_VEC(I)
-	  ELSE
-	   DO 999 I=1,3
- 999	     AS_TEMP(I) = AP_TEMP(I)
-     	  END IF
-	 END IF
-     	  CALL	NORM  	(AS_TEMP,AS_TEMP)	! Local unit As vector
-	  CALL	CROSS	(AS_TEMP,VTEMP,AP_TEMP)
-	  CALL	NORM	(AP_TEMP,AP_TEMP)	! Local unit Ap vector
-     	  CALL	DOT	(AS_VEC,AS_VEC,RES)
-     	  RES	=    SQRT (RES)
-     	  CALL	SCALAR	(AS_TEMP,RES,AS_VEC)
-	  CALL	DOT	(AP_VEC,AP_VEC,RES)
-	  RES	=    SQRT (RES)
-	  CALL	SCALAR	(AP_TEMP,RES,AP_VEC)
-     	END IF
-     	CALL	PROJ	(AP_VEC,VNOR,VTEMP)
-	CALL	VECTOR	(VTEMP,AP_VEC,VTEMP)
-     	CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
-     	CALL	SUM	(AP_VEC,VTEMP,AP_VEC)
+      VVOUT(1) =   RAY(4,ITIK)
+      VVOUT(2) =   RAY(5,ITIK)
+      VVOUT(3) =   RAY(6,ITIK)
+!srio ! D	WRITE	(24,*)	ITIK
+!srio ! D	WRITE	(24,*)	VNOR
+!srio ! D	WRITE	(24,*)	VTEMP
+!srio ! D	WRITE	(24,*)	A_VEC
+!srio ! D	WRITE	(24,*)	A_S
+!srio ! D	WRITE	(24,*)	A_P
+!srio ! C 
+!srio ! C The following IF block applies only to the GRATING case.
+!srio ! C The binormal is redefined in terms of the diffraction
+!srio ! C plane.
+!srio ! C
+!srio      	IF (F_GRATING.NE.0.OR.F_BRAGG_A.EQ.1) THEN
+!srio 	  CALL	PROJ	(VVOUT,VNOR,VTEMP)
+!srio 	  CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
+!srio 	  CALL	SUM	(VTEMP,VVOUT,VTEMP)
+!srio 	  CALL	CROSS	(VTEMP,VNOR,AS_TEMP)
+!srio      	 IF (M_FLAG.EQ.1) THEN
+!srio 	   CALL	DOT	(AS_VEC,AS_VEC,AS2)
+!srio 	   CALL	DOT	(AP_VEC,AP_VEC,AP2)
+!srio 	  IF (AS2.NE.0)	THEN
+!srio      	    DO 899 I=1,3
+!srio  899          AS_TEMP(I) = AS_VEC(I)
+!srio 	  ELSE
+!srio 	   DO 999 I=1,3
+!srio  999	     AS_TEMP(I) = AP_TEMP(I)
+!srio      	  END IF
+!srio 	 END IF
+!srio      	  CALL	NORM  	(AS_TEMP,AS_TEMP)	! Local unit As vector
+!srio 	  CALL	CROSS	(AS_TEMP,VTEMP,AP_TEMP)
+!srio 	  CALL	NORM	(AP_TEMP,AP_TEMP)	! Local unit Ap vector
+!srio      	  CALL	DOT	(AS_VEC,AS_VEC,RES)
+!srio      	  RES	=    SQRT (RES)
+!srio      	  CALL	SCALAR	(AS_TEMP,RES,AS_VEC)
+!srio 	  CALL	DOT	(AP_VEC,AP_VEC,RES)
+!srio 	  RES	=    SQRT (RES)
+!srio 	  CALL	SCALAR	(AP_TEMP,RES,AP_VEC)
+!srio      	END IF
+!srio      	CALL	PROJ	(AP_VEC,VNOR,VTEMP)
+!srio 	CALL	VECTOR	(VTEMP,AP_VEC,VTEMP)
+!srio      	CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
+!srio      	CALL	SUM	(AP_VEC,VTEMP,AP_VEC)
+
+!--------------------------------------------------------------------------------
+
+! Electric vectors are changed to assure orthogonality with the new direction VVOUT
+! To conserve intensity, the moduli of Es and Ep must not change
+! AS_VEC and VVOUT are not orthogonal so a projection of S and P coordinates into the
+! new ones do not work as it may be a component of the electric field along VVOUT
+
+CALL CROSS_M_FLAG  (VVOUT,VNOR,AS_TEMP,M_FLAG) ! vector pp. to inc.pl.
+CALL DOT (AS_VEC,AS_VEC,AS2)
+CALL DOT (AP_VEC,AP_VEC,AP2)
+
+IF (M_FLAG.EQ.1) THEN
+ IF (AS2.NE.0) THEN
+   DO I=1,3
+     AS_TEMP(I) = AS_VEC(I)
+   END DO
+ ELSE
+  DO I=1,3
+   AS_TEMP(I) = AP_VEC(I)
+  END DO
+ END IF
+END IF
+
+CALL NORM   (AS_TEMP,AS_TEMP) ! Local unit As vector perp to vvout
+CALL CROSS (AS_TEMP,VVOUT,AP_TEMP)
+CALL NORM (AP_TEMP,AP_TEMP) ! Local unit Ap vector perp to vvout
+
+do i=1,3
+  as_vec(i) = as_temp(i) * sqrt(as2)
+  ap_vec(i) = ap_temp(i) * sqrt(ap2)
+end do
+!--------------------------------------------------------------------------------
 
 
       ! attenuation in lens media
@@ -8531,6 +8573,12 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
      	IF (RAY(10,ITIK).LT.0.0D0)	K_4 = K_4 + 1
 ! C Hard lost
 	IF (RAY(10,ITIK).LT.-1.0D6)	K_6 = K_6 + 1
+
+if (check_perp_comp( ray(4,itik), ray(5,itik), ray(6,itik), &
+                     ray(7,itik), ray(8,itik), ray(9,itik), &
+                     ap(1,itik), ap(2,itik), ap(3,itik)) .gt. 1d-6) then 
+   print*,'MIRROR: Warning (after calculations): lack of perpendicularity in ray: ', itik
+end if
 
  1099	CONTINUE
 ! C
@@ -12489,6 +12537,32 @@ IF(ALLOCATED( CSPL )) DEALLOCATE(CSPL)
 return
 End Subroutine presurface_translate
 
+!
+! Check perpendicularity of three vectors (the returned result must be zero)
+!
+real(kind=skr) FUNCTION check_perp_vect (v1,v2,v3)
+!
+implicit none
+real(kind=skr),dimension(3),intent(in)  :: v1,v2,v3
+!
+check_perp_vect = abs(dot_product(v1,v2)) + abs(dot_product(v1,v3)) + abs(dot_product(v2,v3))
+End Function check_perp_vect
+
+!
+!
+! Check perpendicularity of three vectors (given coordinates). The returned result must be zero.
+!
+real(kind=skr) FUNCTION check_perp_comp (v11,v12,v13,  v21,v22,v23, v31,v32,v33 )
+   !
+   implicit none
+   real(kind=skr),intent(in)  :: v11,v12,v13,v21,v22,v23,v31,v32,v33
+   real(kind=skr),dimension(3)   :: v1,v2,v3
+   !
+   v1=(/v11,v12,v13/)
+   v2=(/v21,v22,v23/)
+   v3=(/v31,v32,v33/)
+   check_perp_comp = check_perp_vect (v1,v2,v3)
+End Function check_perp_comp
 
 End Module shadow_kernel
 
