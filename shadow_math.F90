@@ -31,7 +31,7 @@ Module shadow_math
 !---- the vectorial calculus tools:   scalar, dot, cross, norm, vector, 
 !----                                 versor, proj, sum, vdist
 
-    public :: wran
+    public :: wran, mysqrt
     public :: rotate, spl_int, atan_2, gauss
     public :: scalar, dot, cross, norm, vector, versor, proj, sum, vdist
     public :: gnormal, rotvector, mfp, cross_m_flag
@@ -160,6 +160,25 @@ SUBROUTINE init_random_seed(iseed)
 
             DEALLOCATE(seed)
 END SUBROUTINE
+
+
+!
+! this is an implementation of the complex square root. 
+!
+! ideally, the Fortran compiler implements it, but it gives me 
+! "invalid memory reference" whan calling sqrt(FH*FH_BAR) in 
+! subroutine crystal in windows with gfortran 4.8.0 20130302
+!
+! the implementation follows the formula posted by Didier Piau in: 
+! http://math.stackexchange.com/questions/44406/how-do-i-get-the-square-root-of-a-complex-number
+
+complex(kind=skx) function mysqrt(z)
+   COMPLEX(KIND=skx) :: z,zout
+   real(kind=skr)    :: r,zr,zi 
+   r = abs(z)
+   mysqrt = sqrt(r) * (z+r)/abs(z+r) 
+end function mysqrt
+
 
 
 ! C+++

@@ -802,7 +802,7 @@ Contains
 ! C
 ! C---
 
-  Subroutine  CRYSTAL  (Q_PHOT, SIN_Q_ANG, SIN_Q_REF, SIN_BRG, &
+  Subroutine CRYSTAL (Q_PHOT, SIN_Q_ANG, SIN_Q_REF, SIN_BRG, &
        R_S, R_P,PHASE_S, PHASE_P, DEPHT_MFP_S, DEPHT_MFP_P,  &
        DELTA_REF, THETA_B, KWHAT)
     
@@ -967,7 +967,10 @@ Contains
        ! C srio, Added TEMPER here (95/01/19)
        FH 	= ( (GA * FA) + (GB * FB) )*TEMPER
        FH_BAR	= ( (GA_BAR * FA) + (GB_BAR * FB) )*TEMPER
-       STRUCT 	= SQRT(FH * FH_BAR) 
+       ! using mysqrt to avoid problems in windows. See mysqrt in
+       ! shadow_math module
+       ! STRUCT 	= SQRT(FH * FH_BAR) 
+       STRUCT = mySQRT(FH * FH_BAR) 
        ! C
        ! C computes refractive index.
        ! C
