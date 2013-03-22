@@ -18,6 +18,9 @@ Module shadow_math
     use shadow_globaldefinitions !, only : ski, skr, skc, sklen
     implicit none
 
+!! uncomment this for PENELOPE random mumber generator
+!!    integer(kind=4) ::  iseed1=2347,iseed2=2377
+
 !---- Everything is private unless explicitly made public ----!
     private
 
@@ -31,7 +34,7 @@ Module shadow_math
     public :: wran
     public :: rotate, spl_int, atan_2, gauss
     public :: scalar, dot, cross, norm, vector, versor, proj, sum, vdist
-    public :: gnorfunc, rotvector, mfp, cross_m_flag
+    public :: gnormal, rotvector, mfp, cross_m_flag
     public :: qsf,cubspl
     ! used in shadow_preprocessors: ibcccu, ibcdcu
     public :: ibcccu, ibcdcu
@@ -96,7 +99,7 @@ Contains
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment this part is for the built-in f95 random generator
 !!
-
+!!
      !write(*,*) " "
      !write(*,*) "WRAN: first: ",first
      !write(*,*) "WRAN: wran_counter: ",wran_counter
@@ -110,7 +113,7 @@ Contains
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !! Uncomment for Penelope random number generator
 !!
-
+!!
 !!           wran = RAND_PENELOPE(1.0D0)
 
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -682,6 +685,43 @@ END SUBROUTINE
         RETURN
         END SUBROUTINE GAUSS
 
+
+! C
+! C	SUBROUTINE GNORMAL
+! C
+! C     This subroutine give us a value following the gaussian
+! C	distribution law. We initialize the subroutine (flag negative) 
+! C	calling it with ARG the minimum and the maximun of the interval
+! C	in which we want the result. After that, we call again the 
+! C	subroutine with a flag no negative to have the result.
+! C
+! C
+! C
+SUBROUTINE GNORMAL (ARG,ISEED,IFLAG)
+
+        implicit none
+        integer(kind=ski), intent(in)    :: iflag
+        integer(kind=ski), intent(inout) :: iseed
+        real(kind=skr),    intent(out)   :: arg
+
+        real(kind=skr)    :: ymin=0.0,ymax=0.0  ! initialization implies "SAVE"
+        real(kind=skr)    :: yval
+        integer(kind=ski) :: ierr
+        !SAVE                YMIN, YMAX
+
+        IF (IFLAG.LT.0) THEN
+           IF (IFLAG.EQ.-2)  CALL GNORFUNC (ARG,YMIN)
+           IF (IFLAG.EQ.-1)  CALL GNORFUNC (ARG,YMAX)
+        ELSE
+           YVAL = YMIN + WRAN(ISEED)*(YMAX-YMIN)
+           CALL MDNRIS(YVAL,ARG,IERR)
+           !  IF (IERR.NE.0) CALL MSSG &
+           !  ('Error from GNORMAL','Value outside the interval',IERR) 
+           IF (IERR.NE.0) print *,'GNORMAL: Error from MDNRIS.'
+        END IF
+        RETURN
+End Subroutine gnormal
+
 ! C ++++
 ! C Subroutine GNORFUNC (Normal or gaussian probability distribution
 ! C function).
@@ -735,7 +775,6 @@ END SUBROUTINE
         END IF
         IF(X.LT.A+1.0D0) THEN
                 CALL GSER(GAMSER,A,X,GLN)
-                GAMMP=GAMSER
         ELSE
                 CALL GCF(GAMMCF,A,X,GLN)
                 GAMMP=1.0D0-GAMMCF
@@ -769,12 +808,18 @@ END SUBROUTINE
 ! C
 ! C
 ! C
-        SUBROUTINE GCF (GAMMCF,A,X,GLN)
+       SUBROUTINE GCF (GAMMCF,A,X,GLN)
 
-       implicit real(KIND=SKR)  (a-h,o-z)
-       implicit integer(KIND=SKI)  (i-n)
+       implicit none
+       !implicit real(KIND=SKR)  (a-h,o-z)
+       !implicit integer(KIND=SKI)  (i-n)
 
-       PARAMETER (ITMAX=100,EPS=3.D-7)
+       real(kind=skr)     :: gammcf, a, x, gln
+       real(kind=skr)     :: gold, a0, a1, b0, b1, fac, an, ana, anf, g
+       integer(kind=ski)  :: n,itmax=100
+       real(kind=skr)     :: eps=3.0d-7
+
+       !PARAMETER (ITMAX=100,EPS=3.D-7)
 
        GLN=GAMMLN(A)
        GOLD=0.D0
@@ -798,11 +843,11 @@ END SUBROUTINE
             GOLD=G
                 ENDIF
    11   CONTINUE
-       !PAUSE 'A too large, ITMAX too small'
+        !PAUSE 'A too large, ITMAX too small'
         print *,"A too large, ITMAX too small"
         read (*,*) 
-    1  GAMMCF=DEXP(-X+A*DLOG(X)-GLN)*G
-       RETURN
+    1   GAMMCF=DEXP(-X+A*DLOG(X)-GLN)*G
+        RETURN
         End Subroutine gcf
 
 ! C
@@ -842,9 +887,9 @@ END SUBROUTINE
 ! C
 ! C
 ! C
-        REAL(KIND=SKR) FUNCTION GAMMLN(XX)
+REAL(KIND=SKR) FUNCTION GAMMLN(XX)
 
-    real(KIND=SKR),intent(in)    :: XX
+       real(KIND=SKR),intent(in)       :: XX
        real(KIND=SKR),dimension(6)     :: COF
        real(KIND=SKR)                  :: STP,HALF,ONE,FPF,X,TMP,SER
        integer(KIND=SKI)               :: J
@@ -857,25 +902,33 @@ END SUBROUTINE
        TMP=X+FPF
        TMP=(X+HALF)*DLOG(TMP)-TMP
        SER=ONE
-       DO 11 J=1,6
+       DO J=1,6
                 X=X+ONE
                 SER=SER+COF(J)/X
-   11 CONTINUE
+       END DO
        GAMMLN=TMP+DLOG(STP*SER)
        RETURN
-        End Function gammln
+End Function gammln
 
 ! C ++++
 ! C
 ! C       Rotation a vector VIN an angle ALPHA around an AXIS vector
 ! C ----
-        SUBROUTINE ROTVECTOR (VIN,AXIS,ALPHA,VOUT)
+SUBROUTINE ROTVECTOR (VIN,AXIS,ALPHA,VOUT)
 
-        implicit real(KIND=SKR)  (a-h,o-z)
-        implicit integer(KIND=SKI)  (i-n)
+     implicit none
 
-      DIMENSION VIN(3),AXIS(3),VOUT(3)
-      DIMENSION VCTR0(3),VCTR1(3),VCTR2(3),VCTR3(3)
+     real(kind=skr),dimension(3),    intent(in)  :: vin,axis
+     real(kind=skr),                 intent(in)  :: alpha
+     real(kind=skr),dimension(3),    intent(out) :: vout
+
+     real(kind=skr),dimension(3) :: vctr0, vctr1, vctr2, vctr3
+     real(kind=skr)              :: axis_mod2, eta, sa, ca
+!   implicit real(KIND=SKR)  (a-h,o-z)
+!   implicit integer(KIND=SKI)  (i-n)
+!
+!      DIMENSION VIN(3),AXIS(3),VOUT(3)
+!      DIMENSION VCTR0(3),VCTR1(3),VCTR2(3),VCTR3(3)
 
                 CALL DOT(AXIS,AXIS,AXIS_MOD2)
                 CALL DOT(VIN,AXIS,ETA)
@@ -889,44 +942,49 @@ END SUBROUTINE
                 CALL SCALAR(VCTR1,CA,VCTR1)
                 CALL SUM(VCTR1,VCTR3,VCTR2)
                 CALL SUM(VCTR0,VCTR2,VOUT)
-                RETURN
-        End Subroutine rotvector
+     RETURN
+End Subroutine rotvector
 
 
 ! C ++++
 ! C SUBROUTINE MFP  (mean free path)
 ! C
-! C       This subroutine return a value following the exponential decay
+! C This subroutine return a value following the exponential decay
 ! C distribution law. We initialize the subroutine (flag negative) 
 ! C calling it with ARG the minimum and the maximun of the interval
-! C in which we want the result. After that, we call again the 
-! C subroutine with a flag no negative to have the result.
+! C in which we want the result. 
+! C Iflag=-1 initializes the minimum and iflag=-2 the maximum
+! C After that, we call again the subroutine with a non negative 
+! C flag to have the result.
 ! C
 ! C
 ! C ----
-        SUBROUTINE MFP (ARG,ISEED,IFLAG)
+       SUBROUTINE MFP (ARG,ISEED,IFLAG)
 
-     real(KIND=SKR)    :: arg
-       integer(KIND=SKI)    :: iflag, iseed
+       implicit none
 
-       real(KIND=SKR)          :: ymin,ymax, aa0, yval
+       real(kind=skr),     intent(inout) :: arg
+       integer(kind=ski),  intent(inout) :: iseed
+       integer(kind=ski),  intent(in)    :: iflag
 
-        !todo check this save
-        SAVE YMIN, YMAX
+       real(kind=skr)    :: ymin=0.0,ymax=0.0, aa0, yval
 
-                IF (IFLAG.LT.0) THEN
+       !todo check this save
+       !SAVE YMIN, YMAX
+
+       IF (IFLAG.LT.0) THEN
            IF (IFLAG.EQ.-2)  YMIN = 1.0D0 - DEXP(-ARG)
            IF (IFLAG.EQ.-1)  YMAX = 1.0D0 - DEXP(-ARG)
-                ELSE
+       ELSE
            AA0  = WRAN(ISEED)
            YVAL = YMIN + AA0*(YMAX-YMIN)
            IF ((YVAL.GT.1.0D0).OR.(YVAL.LT.0.0D0)) THEN
-             print *,'Error from MFP','Argument outside of [0,1] interval'
-          END IF
+               print *,'Error from MFP','Argument outside of [0,1] interval'
+           END IF
            ARG  = -LOG(1-YVAL)
-                END IF
-                RETURN
-        End Subroutine mfp
+       END IF
+       RETURN
+       End Subroutine mfp
 
 
 !C+++
@@ -970,10 +1028,19 @@ END SUBROUTINE
 !C     ..................................................................
 !C---
 SUBROUTINE QSF(H,Y,Z,NDIM)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+       implicit none
+       real(kind=skr),                  intent(in) :: h
+       real(kind=skr),dimension(ndim),  intent(in) :: y
+       real(kind=skr),dimension(ndim),  intent(out):: z
+       integer(kind=ski),               intent(in) :: ndim
 
-       DIMENSION  Y(NDIM),Z(NDIM)
+       !implicit real(kind=skr) (a-h,o-z)
+       !implicit integer(kind=ski)        (i-n)
+       !DIMENSION  Y(NDIM),Z(NDIM)
+       real(kind=skr)    :: sum1, aux1, sum2, aux2, aux, ht
+       integer(kind=ski) :: i
+
+ 
 !C
        HT=1.0D0/3.0D0*H
         IF(NDIM-5)7,8,1
@@ -1043,9 +1110,9 @@ SUBROUTINE QSF(H,Y,Z,NDIM)
    12  RETURN
 END SUBROUTINE QSF
 
-    !
-    !
-    !
+!
+!
+!
 
 !*******************************************************************************
 !C+++
@@ -1057,26 +1124,34 @@ END SUBROUTINE QSF
 SUBROUTINE SORT_SPL (XVEC,YVEC,ICOUNT)
 
         ! todo: remove implicits
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        !DIMENSION XVEC(ICOUNT),YVEC(ICOUNT)
 
-        DIMENSION XVEC(ICOUNT),YVEC(ICOUNT)
-        DO 11 I = 1, ICOUNT
+        implicit none
+        real(kind=skr),dimension(icount),   intent(inout) :: xvec, yvec
+        integer(kind=ski),                  intent(in)    :: icount
+
+        integer(kind=ski) :: i,j,imin
+        real(kind=skr)    :: amin,xtemp,ytemp
+
+
+        DO I = 1, ICOUNT
           IMIN = I
           AMIN = XVEC(I)
-          DO 21 J = I, ICOUNT
+          DO J = I, ICOUNT
             IF (XVEC(J).LT.AMIN) THEN
               AMIN = XVEC(J)
               IMIN = J
             END IF
-21   CONTINUE
+          END DO
           XTEMP  = XVEC(I)
           XVEC(I) = XVEC(IMIN)
           XVEC(IMIN) = XTEMP
           YTEMP  = YVEC(I)
           YVEC(I) = YVEC(IMIN)
           YVEC(IMIN) = YTEMP
-11 CONTINUE
+        END DO
         RETURN
 End Subroutine sort_spl 
 
@@ -1096,7 +1171,7 @@ End Subroutine sort_spl
 !C                       OF X(1) TO X(N). THE OTHER FOUR ROWS WILL BE
 !C                       FILLED UP WITH THE POLYNOMIAL COEFFICIENTS BY THIS
 !C                       PROGRAM.
-!C   IER=1(0), check (no check) for steep slope at the two ends.
+!C                IER=1(0), check (no check) for steep slope at the two ends.
 !C
 !C     OUTPUT     THE LAST FOUR ROWS OF G.
 !C                IER=1 FOR ERROR, =0 OTHERWISE.
@@ -1104,22 +1179,24 @@ End Subroutine sort_spl
 !C---       
 SUBROUTINE CUBSPL(G, Y, N, IER)
 
-        ! todo: remove implicits
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+      implicit none
+      integer(kind=ski),                intent(in)     :: n
+      integer(kind=ski),                intent(inout)  :: ier
+      real(kind=skr),dimension(5,N),    intent(inout)  :: G
+      real(kind=skr),dimension(N),      intent(inout)  :: Y
+
+      ! todo: remove implicits
+      !implicit real(kind=skr) (a-h,o-z)
+      !implicit integer(kind=ski)        (i-n)
 
       integer(kind=ski),dimension(2)   :: mpurge
+      integer(kind=ski)                :: I, j, itmp, iend, istart
+      real(kind=skr),dimension(N)      :: E1, E2
+      real(kind=skr)                   :: R, smin
 
 !srio danger
 !      REAL*8 G(5,N), Y(N), E1(NPOINT), E2(NPOINT), R
-      integer(kind=ski)                        :: I,IER,N
-      real(kind=skr),dimension(5,N)  :: G
-      real(kind=skr),dimension(N)         :: Y
 !danger      real(kind=kind(1.0d0)),dimension(NPOINT)    :: E1, E2
-
-      real(kind=skr),dimension(N)    :: E1, E2
-
-      real(kind=skr)                 :: R
 !      REAL*8 G(5,N), Y(N), E1(N_DIM), E2(N_DIM), R
 !      INTEGER I, IER, N
 !C
@@ -1146,42 +1223,44 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
         print *,'CUBSPL: At least 4 data points are needed for splines.',itmp
         STOP 'Aborted'
       END IF
-      DO 11 J = 1, N-1
+      DO J = 1, N-1
         IF (G(1,J).GT.G(1,J+1)) THEN
-          DO 21 I = 1, N
+          DO I = 1, N
             E1(I) = G(1,I)
             E2(I) = Y(I)
-21   CONTINUE
+          END DO
           CALL SORT_SPL (E1,E2,N)
-          DO 31 I = 1, N
+          DO I = 1, N
             G(1,I) = E1(I)
             Y(I) = E2(I)
-31   CONTINUE
+          END DO
           GO TO 101
         END IF
-11    CONTINUE
-101 SMIN = 1.0D+30
-          DO 41 I = 1, N-1 
-          E1(I) = G(1,I+1) - G(1,I)
+      END DO
+101   SMIN = 1.0D+30
 
-!C check for zero here ...
-!C   IF (E1(I).EQ.0.0) THEN
-!C     E1(I) = 1.0E-30
-!C   ENDIF
-!C end changes.  may need at a later date for special wigglers. clw
-!C 7/22/93
-! srio danger
-! uncommented this to solve the problem in wiggler interpolation 
-! shadow 2.3...
-! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
+      DO I = 1, N-1 
+         E1(I) = G(1,I+1) - G(1,I)
+
+         !C check for zero here ...
+         !C   IF (E1(I).EQ.0.0) THEN
+         !C     E1(I) = 1.0E-30
+         !C   ENDIF
+         !C end changes.  may need at a later date for special wigglers. clw
+         !C 7/22/93
+         ! srio danger
+         ! uncommented this to solve the problem in wiggler interpolation 
+         ! shadow 2.3...
+         ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
 
          if (e1(i).eq.0.0) then
            e1(i) = 1.0d-12
          endif
 !
-          E2(I) = (Y(I+1) - Y(I)) / E1(I)
-        SMIN = MIN(SMIN,ABS(E2(I)))
-41    CONTINUE
+         E2(I) = (Y(I+1) - Y(I)) / E1(I)
+         SMIN = MIN(SMIN,ABS(E2(I)))
+      END DO
+
       IF (IER.EQ.0) THEN
         ISTART = 1
         IEND = N
@@ -1194,24 +1273,25 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
 ! changed this to avoid problem in wiggler shadow 2.3....
 ! see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/compilation_fix2008-04-09.txt
 !51 IF (ABS(E2(I)).GT.SMIN*10) THEN
-51 IF (ABS(E2(I)).GT.SMIN) THEN
-          I = I + 1
-        GOTO 51
+
+51      IF (ABS(E2(I)).GT.SMIN) THEN
+            I = I + 1
+            GOTO 51
         END IF
         ISTART = I
         I = N - 1
 !srio danger
 ! changed this to avoid problem in wiggler shadow 2.3....
 !61 IF (ABS(E2(I)).GT.SMIN*10) THEN
-61 IF (ABS(E2(I)).GT.SMIN*1) THEN
+61     IF (ABS(E2(I)).GT.SMIN*1) THEN
           I = I - 1
         GOTO 61
-        END IF
+       END IF
         IEND = I
-        IF ((IEND-ISTART+1).LT.4) THEN
+       IF ((IEND-ISTART+1).LT.4) THEN
           ISTART = 1
           IEND =N
-        END IF
+       END IF
       END IF
 !C
 !C Start computing the spline coefficients.
@@ -1221,46 +1301,46 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
       G(5,ISTART) = ((E1(ISTART)+2.0D0*G(4,ISTART))*E1(ISTART+1)* &
         E2(ISTART)+(E1(ISTART)**2.0D0) &
                *E2(ISTART+1))/G(4,ISTART)          
-      DO 71 I = ISTART+1, IEND-1
+      DO I = ISTART+1, IEND-1
         G(2,I) = E1(I)
         G(3,I) = 2.0D0*(E1(I-1) + E1(I))
         G(4,I) = E1(I-1)
         G(5,I) = 3.0D0*(E1(I)*E2(I-1) + E1(I-1)*E2(I))
-71     CONTINUE
+      END DO
       G(2,IEND) = E1(IEND-1) + E1(IEND-2)
       G(3,IEND) = E1(IEND-2)
       G(5,IEND) = ((E1(IEND-1)+2.0D0*G(2,IEND))*E2(IEND-1)*E1(IEND-2)+ &
         (E1(IEND-1) &
                **2.0D0)*E2(IEND-2))/G(2,IEND)
-      DO 81 I = ISTART, IEND-1
+      DO I = ISTART, IEND-1
         R = G(2,I+1) / G(3,I)
         G(3,I+1) = G(3,I+1) - R*G(4,I)
         G(5,I+1) = G(5,I+1) - R*G(5,I)
-81    CONTINUE
+      END DO
       G(3,IEND) = G(5,IEND) / G(3,IEND)
-      DO 91 I = IEND-1, ISTART, -1
+      DO I = IEND-1, ISTART, -1
         G(3,I) = (G(5,I) - G(4,I)*G(3,I+1)) / G(3,I)
-91    CONTINUE
-      DO 141 I = ISTART, IEND-1
+      END DO
+      DO I = ISTART, IEND-1
         G(2,I) = Y(I)
         G(4,I) = (3.0D0*E2(I) - 2.0D0*G(3,I) - G(3,I+1)) / E1(I)
         G(5,I) = (-2.0D0*E2(I) + G(3,I) + G(3,I+1)) / (E1(I)**2.0D0)
-141     CONTINUE
+      END DO
 !C
 !C Use broken line instead at the two ends if slope are too steep.
 !C
-        DO 111 I = 1, ISTART-1
+      DO I = 1, ISTART-1
           G(2,I) = Y(I)
           G(3,I) = E2(I)
           G(4,I) = 0.0D0
           G(5,I) = 0.0D0
-111 CONTINUE
-        DO 121 I = IEND, N-1
+      END DO
+      DO I = IEND, N-1
           G(2,I) = Y(I)
           G(3,I) = E2(I)
           G(4,I) = 0.0D0
           G(5,I) = 0.0D0
-121 CONTINUE
+      END DO
       IER = 0
       RETURN
 End Subroutine cubspl
@@ -1285,6 +1365,7 @@ End Subroutine cubspl
 !C
       IMPLICIT DOUBLE PRECISION (A-H,O-Z), INTEGER*4 (I-N)
       PARAMETER (USCALE=1.0D0/2.147483563D9)
+! defined and initialized in the global definitions
 !C      COMMON/RSEED/ISEED1,ISEED2
 !C
       I1=ISEED1/53668
@@ -1352,24 +1433,24 @@ END FUNCTION RAND_PENELOPE
      IMPLICIT INTEGER(kind=ski) (I-N)
      INTEGER(kind=ski)          IER
 ! C                    SPECIFICATIONS FOR LOCAL VARIABLES
-       REAL(kind=skr)    A,B,X,Z,W,WI,SN,SD,F,Z2,RINFM,A1,A2,A3,B0,B1, &
+      REAL(kind=skr)    A,B,X,Z,W,WI,SN,SD,F,Z2,RINFM,A1,A2,A3,B0,B1, &
                        B2,B3,C0,C1,C2,C3,D0,D1,D2,E0,E1,E2,E3,F0,F1, &
                       F2,G0,G1,G2,G3,H0,H1,H2,SIGMA
       DATA              A1/-.5751703/,A2/-1.896513/,A3/-.5496261E-1/
-       DATA              B0/-.1137730/,B1/-3.293474/,B2/-2.374996/
-       DATA              B3/-1.187515/
-       DATA              C0/-.1146666/,C1/-.1314774/,C2/-.2368201/
-       DATA              C3/.5073975E-1/
-       DATA              D0/-44.27977/,D1/21.98546/,D2/-7.586103/
-       DATA              E0/-.5668422E-1/,E1/.3937021/,E2/-.3166501/
-       DATA              E3/.6208963E-1/
-       DATA              F0/-6.266786/,F1/4.666263/,F2/-2.962883/
-       DATA              G0/.1851159E-3/,G1/-.2028152E-2/
-       DATA              G2/-.1498384/,G3/.1078639E-1/
-       DATA              H0/.9952975E-1/,H1/.5211733/
-       DATA              H2/-.6888301E-1/
-       DATA              RINFM/1.7014E+38/
-       DATA              ONE/1.0d0/
+      DATA              B0/-.1137730/,B1/-3.293474/,B2/-2.374996/
+      DATA              B3/-1.187515/
+      DATA              C0/-.1146666/,C1/-.1314774/,C2/-.2368201/
+      DATA              C3/.5073975E-1/
+      DATA              D0/-44.27977/,D1/21.98546/,D2/-7.586103/
+      DATA              E0/-.5668422E-1/,E1/.3937021/,E2/-.3166501/
+      DATA              E3/.6208963E-1/
+      DATA              F0/-6.266786/,F1/4.666263/,F2/-2.962883/
+      DATA              G0/.1851159E-3/,G1/-.2028152E-2/
+      DATA              G2/-.1498384/,G3/.1078639E-1/
+      DATA              H0/.9952975E-1/,H1/.5211733/
+      DATA              H2/-.6888301E-1/
+      DATA              RINFM/1.7014E+38/
+      DATA              ONE/1.0d0/
 ! C                    FIRST EXECUTABLE STATEMENT
           IER = 0
         X = P
@@ -1486,13 +1567,13 @@ END FUNCTION RAND_PENELOPE
 ! C     REAL               EPS,G0,G1,G2,G3,H0,H1,H2,A,W,WI,SN,SD
 ! C     REAL               SIGMA,SQRT2,X,XINF
 ! C
-     DATA               XINF/1.7014E+38/
-     DATA               SQRT2/1.414214/
+    DATA               XINF/1.7014E+38/
+    DATA               SQRT2/1.414214/
     DATA               EPS/1.1921E-07/
-     DATA               G0/.1851159E-3/,G1/-.2028152E-2/
-     DATA               G2/-.1498384/,G3/.1078639E-1/
+    DATA               G0/.1851159E-3/,G1/-.2028152E-2/
+    DATA               G2/-.1498384/,G3/.1078639E-1/
     DATA               H0/.9952975E-1/,H1/.5211733/
-     DATA               H2/-.6888301E-1/
+    DATA               H2/-.6888301E-1/
 ! C                                  FIRST EXECUTABLE STATEMENT
      IER = 0
      IF (P .GT. 0.0 .AND. P .LT. 1.0) GO TO 5
@@ -1586,7 +1667,7 @@ END FUNCTION RAND_PENELOPE
 ! C
         SUBROUTINE ZRPOLY (A,NDEG,Z,IER)
 ! C                                  SPECIFICATIONS FOR ARGUMENTS
-     INTEGER(kind=ski)      NDEG, IER
+        INTEGER(kind=ski)      NDEG, IER
         REAL(kind=skr)     A(1),Z(1)
 ! C                                  SPECIFICATIONS FOR LOCAL VARIABLES
         INTEGER(kind=ski)       N,NN,J,JJ,I,NM1,ICNT,N2,L,NZ,NPI
@@ -1888,7 +1969,7 @@ END FUNCTION RAND_PENELOPE
 ! C                                                                       
     SUBROUTINE ZRPQLB (L2,NZ)
 ! C                                  SPECIFICATIONS FOR ARGUMENTS         
-     INTEGER(kind=ski)      L2,NZ
+       INTEGER(kind=ski)      L2,NZ
 ! C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
        INTEGER(kind=ski)      N,NN,J,ITYPE,I,IFLAG
        REAL(kind=skr)     ARE,BETAS,BETAV,ETA,OSS,OTS,OTV,OVV,RMRE,SS,    &
@@ -2043,8 +2124,8 @@ END FUNCTION RAND_PENELOPE
 ! C                                                                       
         SUBROUTINE ZRPQLC (UU,VV,NZ)
 ! C                                  SPECIFICATIONS FOR ARGUMENTS         
-     INTEGER(kind=ski)       NZ
-     REAL(kind=skr)     UU,VV
+       INTEGER(kind=ski)       NZ
+       REAL(kind=skr)     UU,VV
 ! C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
        INTEGER(kind=ski)       N,NN,J,I,ITYPE
        REAL(kind=skr)     ARE,EE,ETA,OMP,RELSTP,RMP,RMRE,T,ZM

@@ -4088,131 +4088,243 @@ End Subroutine msetup
 !C 			
 !C 			
 !C ---
-Subroutine MOSAIC (VVIN,VNOR,WAVEN,VNORG)
+Subroutine MOSAIC_old (VVIN,VNOR,WAVEN,VNORG)
 
-	implicit real(kind=skr) (a-e,g-h,o-z)
-	implicit integer(kind=ski)        (f,i-n)
+        !implicit real(kind=skr) (a-e,g-h,o-z)
+        !implicit integer(kind=ski)        (f,i-n)
 
-	DIMENSION 	VNORG(3),AA(3),AA1(3),VVIN(3),VNOR(3)
+        !DIMENSION         VNORG(3),AA(3),AA1(3),VVIN(3),VNOR(3)
+        implicit none
+        real(kind=skr),dimension(3),  intent(in)  :: vvin,vnor
+        real(kind=skr),               intent(in)  :: waven
+        real(kind=skr),dimension(3),  intent(out) :: vnorg
 
-	CALL DOT (VVIN,VNOR,SIN_VAL)
-     	SIN_VAL	=   ABS(SIN_VAL)
-	   R_LAMBDA = TWOPI/WAVEN *1.0D8
+        real(kind=skr)   :: sin_val, r_lambda, graze, sinn, dumm
+        real(kind=skr)   :: theta_b, cos_b, sin_b, tan_b, cos_val, tan_val, epsilon1
+        real(kind=skr)   :: argmax, argmin, xx, hh2, hhh, cos_xxx, xxx1
+        !real(kind=skr)   :: xxx
+        real(kind=skr),dimension(3)  :: aa, aa1
+        integer(kind=ski):: ipp
+
+        ! calculate incident angle
+        CALL DOT (VVIN,VNOR,SIN_VAL)
+        SIN_VAL        =   ABS(SIN_VAL)
+        R_LAMBDA = TWOPI/WAVEN *1.0D8
 ! *
 ! * next, compute the Bragg angle without index of refraction corrections
 ! *
-	  GRAZE =  ASIN(R_LAMBDA*0.5D-8/D_SPACING)
-	  SINN  =  SIN(GRAZE)
+          GRAZE =  ASIN(R_LAMBDA*0.5D-8/D_SPACING)
+          SINN  =  SIN(GRAZE)
 ! *
 ! * Compute now the correct Bragg angle (including N)
 ! *
-	  CALL CRYSTAL	(WAVEN,SINN,SINN,DUMM,DUMM,DUMM, &
-     			DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,ione)
+          CALL CRYSTAL (WAVEN,SINN,SINN,DUMM,DUMM,DUMM, &
+                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,ione)
 ! *
 ! * redefinition of bragg angle and incident angle. Now refered to 
 ! * the surfece normal
 ! *
-	THETA_B  =  PI/2 - THETA_B
-	COS_B   = COS(THETA_B)
-	SIN_B   = SIN(THETA_B)
-	TAN_B   = SIN_B/COS_B
-	SIN_VAL = SQRT(1-SIN_VAL**2)
-	COS_VAL = SQRT(1-SIN_VAL**2)
-	TAN_VAL = SIN_VAL/COS_VAL
-	EPSILON = -ASIN(SIN_VAL) + THETA_B   ! RADS.
+        THETA_B  =  PI/2 - THETA_B
+        COS_B   = COS(THETA_B)
+        SIN_B   = SIN(THETA_B)
+        TAN_B   = SIN_B/COS_B
+        SIN_VAL = SQRT(1-SIN_VAL**2)
+        COS_VAL = SQRT(1-SIN_VAL**2)
+        TAN_VAL = SIN_VAL/COS_VAL
+        EPSILON1 = -ASIN(SIN_VAL) + THETA_B   ! RADS.
+
 ! *
 ! * rotation of surface normal an angle epsilon around an axis
 ! * perpendicular to the surface normal and incident ray
 ! *
-	CALL CROSS (VVIN,VNOR,AA)
-	CALL ROTVECTOR (VNOR,AA,EPSILON,AA1)
+        CALL CROSS (VVIN,VNOR,AA)
+        CALL ROTVECTOR (VNOR,AA,EPSILON1,AA1)
 ! *
 ! * generation of a random spread angle XX fitting with Bragg law
 ! *
-	ARGMAX = (EPSILON + 2.0D0*THETA_B)/SPREAD_MOS
-	IF (EPSILON.GE.0) THEN
-	 ARGMIN = EPSILON/SPREAD_MOS
-	ELSE IF (EPSILON.LT.0) THEN
-	 ARGMIN = -EPSILON/SPREAD_MOS
-	END IF
-	CALL GNORMAL (ARGMIN,MOSAIC_SEED,i_two) 
-	CALL GNORMAL (ARGMAX,MOSAIC_SEED,i_one) 
-	CALL GNORMAL (XX,MOSAIC_SEED,izero)
+        ARGMAX = (EPSILON1 + 2.0D0*THETA_B)/SPREAD_MOS
+        IF (EPSILON1.GE.0) THEN
+         ARGMIN = EPSILON1/SPREAD_MOS
+        ELSE IF (EPSILON1.LT.0) THEN
+         ARGMIN = -EPSILON1/SPREAD_MOS
+        END IF
+        CALL GNORMAL (ARGMIN,MOSAIC_SEED,i_two) 
+        CALL GNORMAL (ARGMAX,MOSAIC_SEED,i_one) 
+        CALL GNORMAL (XX,MOSAIC_SEED,izero)
 ! *
 ! *if a ray comes very far from Bragg position, GNORMAL fails to
 ! *give a value in the correct interval, because it goes to infinity
 ! *Then we consider the most probably value for avoiding the code stops.
 ! *
-	IF ((XX.LT.ARGMIN).OR.(XX.GT.ARGMAX)) THEN 
-	XXX = 0
-	GO TO 444
-	END IF
+        IF ((XX.LT.ARGMIN).OR.(XX.GT.ARGMAX)) THEN 
+        !XXX = 0
+        XXX1 = 0
+        print *,'MOSAIC: Error retrieving Gaussian random number in the interval: ',argmin,argmax
+        GO TO 444
+        END IF
 
-	XX = SPREAD_MOS*XX
+        XX = SPREAD_MOS*XX
 ! *
 ! * rotation of AA1 an angle XXX around the incident ray axis VVIN
 ! * for having the normal we look for.
 ! *
-	HH2 = ABS(TAN_VAL - TAN_B)
-	HHH = SQRT(COS_B**(-2)+COS_VAL**(-2)-2*COS(XX)/COS_B/COS_VAL)
-	COS_XXX = (HHH**2-TAN_VAL**2-TAN_B**2)/(-2*TAN_VAL*TAN_B)
-	IF (ABS(COS_XXX).GT.1) CALL MSSG('Error in MOSAIC','cos>1',izero)
-	XXX = ACOS(COS_XXX)
-	XXX = ABS(XXX)
+        !HH2 = ABS(TAN_VAL - TAN_B)
+        !HHH = SQRT(COS_B**(-2)+COS_VAL**(-2)-2*COS(XX)/COS_B/COS_VAL)
+        !COS_XXX = (HHH**2-TAN_VAL**2-TAN_B**2)/(-2*TAN_VAL*TAN_B)
+        !IF (ABS(COS_XXX).GT.1) CALL MSSG('Error in MOSAIC','cos>1',izero)
+        !XXX = ACOS(COS_XXX)
+        !XXX = ABS(XXX)
+        xxx1 = (cos(xx) - cos_val*cos_b) / (sin_val*sin_b)
+        xxx1 = acos(xxx1)
 ! *next lines give the random direction (ccw or acw) for the rotation
-	IPP = MOSAIC_SEED
-	DUMM = WRAN (IPP)
-	IF (IPP.LT.0) XXX=-XXX
+!
+! note that random seed initialization is useless, as now WRAN only initializes 
+! once at the beginning of the run. Thus, MOSAIC_SEED is not considered. 
+        IPP = MOSAIC_SEED
+        DUMM = WRAN (IPP)
+!       IF (IPP.LT.0) XXX=-XXX
+        IF (DUMM.LT.0.5) THEN 
+           !XXX=-XXX
+           xxx1 = -xxx1
+        END IF
 
-444	CALL ROTVECTOR (AA1,VVIN,XXX,VNORG)
-    	CALL NORM (VNORG, VNORG)
-	RETURN 
+!test uniform distribution on beta: xxx1 = 2*pi*dumm 
+
+!xxx = xxx*abs(sin(xxx))
+!xxx = sin(xxx)
+
+!write (33,*) theta_b*180/pi, asin(sin_val)*180/pi,xx*180/pi,xxx*180/pi,xxx1*180/pi
+
+444     CALL ROTVECTOR (AA1,VVIN,xxx1,VNORG)
+        CALL NORM (VNORG, VNORG)
+        RETURN 
 ! *That's all. This part is done in MIRROR:
-! *  	  CALL PROJ (VVIN,VNORG,VTEMP)
-! *	  RAY(4,ITIK) 	= VVIN(1) - 2*VTEMP(1)
-! *	  RAY(5,ITIK) 	= VVIN(2) - 2*VTEMP(2)
-! *	  RAY(6,ITIK) 	= VVIN(3) - 2*VTEMP(3)
+! *            CALL PROJ (VVIN,VNORG,VTEMP)
+! *          RAY(4,ITIK)         = VVIN(1) - 2*VTEMP(1)
+! *          RAY(5,ITIK)         = VVIN(2) - 2*VTEMP(2)
+! *          RAY(6,ITIK)         = VVIN(3) - 2*VTEMP(3)
+End Subroutine mosaic_old
+
+!C +++
+!C 	SUBROUTINE	MOSAIC
+!C 
+!C 	PURPOSE 	To compute the individual normal of the
+!C 			mosaic piece inside the crystal
+!C 			with which the ray is reflected.
+!C 
+!C 	ALGORITHM	We force the normal to verify both the Bragg law
+!C 			and the gaussian distribution law around the 
+!C 			crystal surface normal.
+!C 
+!C 	INPUT		a) incident ray direction
+!C 			b) crystal surface normal
+!C 			c) energy of the ray
+!C 
+!C 	OUTPUT		a) the new normal for calculate the refl ray
+!C 			
+!C 			
+!C 			
+!C ---
+Subroutine MOSAIC (VVIN,VNOR,WAVEN,VNORG)
+
+        !implicit real(kind=skr) (a-e,g-h,o-z)
+        !implicit integer(kind=ski)        (f,i-n)
+
+        !DIMENSION         VNORG(3),AA(3),AA1(3),VVIN(3),VNOR(3)
+        implicit none
+        real(kind=skr),dimension(3),  intent(in)  :: vvin,vnor
+        real(kind=skr),               intent(in)  :: waven
+        real(kind=skr),dimension(3),  intent(out) :: vnorg
+
+        real(kind=skr)   :: sin_val, r_lambda, graze, sinn, dumm
+        real(kind=skr)   :: theta_b, cos_b, sin_b, tan_b, cos_val, tan_val, epsilon1
+        real(kind=skr)   :: argmax, argmin, xx , ss1, denom
+        real(kind=skr),dimension(3)  :: aa, aa1
+        integer(kind=ski):: ipp,m_flag
+
+! calculate incident angle
+        CALL DOT (VVIN,VNOR,SIN_VAL)
+        SIN_VAL        =   ABS(SIN_VAL)
+        R_LAMBDA = TWOPI/WAVEN *1.0D8
+! *
+! * next, compute the Bragg angle without index of refraction corrections
+! *
+          GRAZE =  ASIN(R_LAMBDA*0.5D-8/D_SPACING)
+          SINN  =  SIN(GRAZE)
+! *
+! * Compute now the correct Bragg angle (including N)
+! *
+          CALL CRYSTAL (WAVEN,SINN,SINN,DUMM,DUMM,DUMM, &
+                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,ione)
+! *
+! * Redefinition of bragg angle and incident angle. Now referred to 
+! * the surfece normal (from here, theta_b is called theta_D in 
+! * the mentioned paper, and the incident angle "VAL" is "alpha" in
+! * the paper. 
+! *
+        THETA_B  =  PI/2 - THETA_B
+        COS_B   = COS(THETA_B)
+        SIN_B   = SIN(THETA_B)
+        TAN_B   = SIN_B/COS_B
+        SIN_VAL = SQRT(1-SIN_VAL**2)
+        COS_VAL = SQRT(1-SIN_VAL**2)
+        TAN_VAL = SIN_VAL/COS_VAL
+        EPSILON1 = -ASIN(SIN_VAL) + THETA_B   ! RADS.
+
+! *
+! * rotation of surface normal an angle epsilon around an axis
+! * perpendicular to the surface normal and incident ray
+! *
+        CALL CROSS_m_flag (VVIN,VNOR,AA,m_flag)
+        call norm (aa, aa)
+        CALL ROTVECTOR (VNOR,AA,EPSILON1,AA1)
+
+! beta follows approximately a Gaussian distribution with 
+! sigma=spread_mos/sqrt(ss1) where ss1 is the coefficient of the series 
+! expansion of phi^2 as a function of beta^2 using the formula
+! cos(phi) = cos_val*cos_b+cos(beta) sin_cal*sin_b
+
+denom = Sqrt(1.0d0 - (Cos_b*Cos_val + Sin_b*Sin_val)**2)
+if (denom .eq. 0) then 
+  print *,'MOSAIC: Warning: failed to expansion coefficient.'
+  vnorg = aa1
+  return
+end if
+ss1 = (ACos(Cos_b*Cos_val + Sin_b*Sin_val)* Sin_b*Sin_val)/ denom
+
+! *
+! * generation of a random number XX (beta in the paper) following a Gaussian 
+! * distribution
+! *
+        ARGMIN = 0.0d0
+        ARGMAX = pi
+        CALL GNORMAL (ARGMIN,MOSAIC_SEED,i_two) 
+        CALL GNORMAL (ARGMAX,MOSAIC_SEED,i_one) 
+        CALL GNORMAL (XX,MOSAIC_SEED,izero)
+
+! next give the random direction (cw or ccw) for the rotation
+!
+! since shadow3, note that random seed initialization is useless, as now 
+! WRAN only initializes once at the beginning of the run. 
+! Thus, MOSAIC_SEED is not considered. 
+        IPP = MOSAIC_SEED
+        DUMM = WRAN (IPP)
+        IF (DUMM.LT.0.5) THEN 
+           XX=-XX
+        END IF
+        ! convert from sigma=1 to sigma=spread_mos/sqrt(ss1)
+        XX = (SPREAD_MOS/sqrt(ss1))*XX
+
+! *
+! * rotation of AA1 an angle XX around the incident ray axis VVIN
+! * for having the normal we look for.
+! *
+        CALL ROTVECTOR (AA1,VVIN,xx,VNORG)
+        CALL NORM (VNORG, VNORG)
+        RETURN 
 End Subroutine mosaic
 
 
-! C
-! C	SUBROUTINE GNORMAL
-! C
-! C       This subroutine give us a value following the gaussian
-! C	distribution law. We initialize the subroutine (flag negative) 
-! C	calling it with ARG the minimum and the maximun of the interval
-! C	in which we want the result. After that, we call again the 
-! C	subroutine with a flag no negative to have the result.
-! C
-! C
-! C
-SUBROUTINE GNORMAL (ARG,ISEED,IFLAG)
-
-! srio: in fact, this routine does not need the shadow_variables, so 
-! it could be placed elsewhere. However, it uses routines from 
-! math and math_imsl, so, by now, it can be left here. 
-
-     	!IMPLICIT	REAL*8		(A-H,O-Z)
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-e,g-h,o-z)
-	implicit integer(kind=ski)        (f,i-n)
-
-	SAVE		YMIN, YMAX
-
-	IF (IFLAG.LT.0) THEN
-	 IF (IFLAG.EQ.-2)  CALL GNORFUNC (ARG,YMIN)
-	 IF (IFLAG.EQ.-1)  CALL GNORFUNC (ARG,YMAX)
-	ELSE
-	 YVAL = YMIN + WRAN(ISEED)*(YMAX-YMIN)
-	 CALL MDNRIS(YVAL,ARG,IERR)
-	 !  IF (IERR.NE.0) CALL MSSG &
-         !  ('Error from GNORMAL','Value outside the interval',IERR) 
-	 IF (IERR.NE.0) THEN
- 	  CALL	MSSG ('CRYSTAL ','Incoming photon energy is out of range.',IERR)
-         END IF
-	END IF
-	RETURN
-End Subroutine gnormal
 
 ! C+++
 ! C	SUBROUTINE	READ_AXIS
@@ -6428,7 +6540,9 @@ IF (F_CRYSTAL.EQ.1) THEN
     ! C
     ! C Change units and FWHM->S.D. for the mosaic case
     ! C
-    IF (F_MOSAIC.EQ.1) SPREAD_MOS = SPREAD_MOS*TORAD/2.35D0
+    !IF (F_MOSAIC.EQ.1) SPREAD_MOS = SPREAD_MOS*TORAD/2.35D0
+    !more precisely:
+    IF (F_MOSAIC.EQ.1) SPREAD_MOS = SPREAD_MOS*TORAD/(2*sqrt(2*log(2.0d0)))
     ! C
     ! C Define diffraction order for asymmetric case
     ! C
@@ -7633,18 +7747,19 @@ end if
 ! C mosaic crystal calculation
 ! C
         IF (F_MOSAIC.EQ.1) THEN
-         WAVEN  =   RAY(11,ITIK)
-		 if (f_refrac.eq.0) then                     !bragg
-           CALL MOSAIC (VVIN,VNOR,WAVEN,VNORG)
-		 else if (f_refrac.eq.1) then                !laue
-		   call rotvector (vnor,x_vrs,pihalf,vtemp)
-		   call mosaic (vvin,vtemp,waven,vnorg)
-		 end if
-         CALL PROJ (VVIN,VNORG,VTEMP)
-	 DO 399 I=1,3
- 399	  VVOUT(I) = VVIN(I) - 2*VTEMP(I)
-          RAY(4,ITIK)  = VVOUT(1)
-           RAY(5,ITIK)  = VVOUT(2)
+            WAVEN  =   RAY(11,ITIK)
+            if (f_refrac.eq.0) then                     !bragg
+                CALL MOSAIC (VVIN,VNOR,WAVEN,VNORG)
+            else if (f_refrac.eq.1) then                !laue
+                call rotvector (vnor,x_vrs,pihalf,vtemp)
+                call mosaic (vvin,vtemp,waven,vnorg)
+            end if
+            CALL PROJ (VVIN,VNORG,VTEMP)
+            DO I=1,3
+                VVOUT(I) = VVIN(I) - 2*VTEMP(I)
+            END DO
+            RAY(4,ITIK)  = VVOUT(1)
+            RAY(5,ITIK)  = VVOUT(2)
             RAY(6,ITIK)  = VVOUT(3)
         END IF
 
@@ -8362,9 +8477,10 @@ end if
 	   IF (DEPTH_MFP.GT.1.0D-10) THEN
 	    ARG = THICKNESS/DEPTH_MFP/SIN_VAL
 	   ELSE
-	    ARG = 0
+	    ARG = 0.0d0
 	   END IF
-	   CALL MFP(0.0D0,MOSAIC_SEED,i_two)
+           tmp = 0.0d0
+	   CALL MFP(tmp,MOSAIC_SEED,i_two)
 	   CALL MFP(ARG,MOSAIC_SEED,i_one)
 	   CALL MFP(DEPTH_INC,MOSAIC_SEED,ione)
 	   DEPTH_INC = DEPTH_INC*DEPTH_MFP
