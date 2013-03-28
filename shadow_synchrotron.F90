@@ -2532,6 +2532,8 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C
     ! C Point source **
     ! C
+    xxx = 0.0d0
+    zzz = 0.0d0
     	GO TO 111
     
     2	CONTINUE

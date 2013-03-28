@@ -1005,7 +1005,7 @@ Contains
                /SIN(2*(ASIN(SIN_brg)))
           QP_MOSAIC = QS_MOSAIC*(COS(2.0D0*GRAZE))**2
           A_MOSAIC  = THICKNESS*ABSORP/SIN_Q_ANG
-          EP        = ASIN(SIN_brg) - THETA_B
+          EP        = abs(ASIN(SIN_brg) - THETA_B)
           OMEGA =(DEXP(-EP**2/2.0D0/SPREAD_MOS**2)) &
                /SQRT(TWOPI)/SPREAD_MOS
           AAS_MOSAIC = OMEGA*QS_MOSAIC/ABSORP
@@ -1103,7 +1103,8 @@ Contains
              ! C
              ! C s-polarization
              ! C
-             ctemp = cdsqrt(cry_q  + cry_z**2)
+             !ctemp = cdsqrt(cry_q  + cry_z**2)
+             ctemp = mysqrt(cry_q  + cry_z**2)
              br_x1 = (-1.0d0*cry_z+ctemp)/psi_hbar
              br_x2 = (-1.0d0*cry_z-ctemp)/psi_hbar
              br_delta1 = 0.5d0*(psi_0-cry_z+ctemp)
@@ -1140,7 +1141,8 @@ Contains
              ! C
              c_ppol = abs(cos(torad*2.0d0*graze))
              
-             ctemp = cdsqrt(cry_q*c_ppol**2  + cry_z**2)
+             !ctemp = cdsqrt(cry_q*c_ppol**2  + cry_z**2)
+             ctemp = mysqrt(cry_q*c_ppol**2  + cry_z**2)
              br_x1 = (-1.0d0*cry_z+ctemp)/(psi_hbar*c_ppol)
              br_x2 = (-1.0d0*cry_z-ctemp)/(psi_hbar*c_ppol)
              br_delta1 = 0.5d0*(psi_0-cry_z+ctemp)
@@ -1171,7 +1173,8 @@ Contains
              ! C
              ! C	r_p = (1.0d0/abs(cry_b))*rcp*dconjg(rcp)
              r_p1 = sqrt( (1.0d0/abs(cry_b))*rcp*dconjg(rcp) )
-             rcp = rcp/dsqrt(abs(cry_b))
+             !rcp = rcp/dsqrt(abs(cry_b))
+             rcp = rcp/sqrt(abs(cry_b))
              
           ELSE IF (F_REFRAC.EQ.0) THEN
              ! *
@@ -4863,10 +4866,14 @@ xmfv=0.0D0
 fv = Dcmplx(refv,xmfv)
 fs = rs2 - COS_REF2
 
-fo=cDsqrt(fo)
-fe=cDsqrt(fe)
-fv=cDsqrt(fv)
-fs=cDsqrt(fs)
+!fo=cDsqrt(fo)
+!fe=cDsqrt(fe)
+!fv=cDsqrt(fv)
+!fs=cDsqrt(fs)
+fo=mysqrt(fo)
+fe=mysqrt(fe)
+fv=mysqrt(fv)
+fs=mysqrt(fs)
 
 ! Fresnel formula "S" (in function of incidence angle and critical angle)
 ffe=(fe-fo)/(fe+fo)
@@ -4908,7 +4915,8 @@ do 1 j=1,n   ! n is the number of bilayers
          if(j.eq.1)go to 6
          ! even (botton) sublayer
          sigma_e2=mlroughness1(j)**2.0 !roughn. even layer
-         arg_e=FO*FE*sigma_e2/(CDSqrt(ro2)*CDSqrt(re2))
+         !arg_e=FO*FE*sigma_e2/(CDSqrt(ro2)*CDSqrt(re2))
+         arg_e=FO*FE*sigma_e2/(mysqrt(ro2)*mysqrt(re2))
          fnevot_e=cdexp(-prefact*arg_e)
          r=(ae**4)*(r+ffe*fnevot_e)/(r*ffe*fnevot_e+1.0)
          rp=(ae**4)*(rp+ffep*fnevot_e)/(rp*ffep*fnevot_e+1.0)
@@ -4917,7 +4925,8 @@ do 1 j=1,n   ! n is the number of bilayers
          go to 7
 6        continue  
          ! layer on top of substrate
-         arg_s=FE*FS*sigma_s2/(CDSqrt(re2)*CDSqrt(rs2))
+         !arg_s=FE*FS*sigma_s2/(CDSqrt(re2)*CDSqrt(rs2))
+         arg_s=FE*FS*sigma_s2/(mysqrt(re2)*mysqrt(rs2))
          fnevot_s=cdexp(-prefact*arg_s)
          r=(ae**4.0)*(r+ffs*fnevot_s)/(r*ffs*fnevot_s+1.0)
          rp=(ae**4.0)*(rp+ffsp*fnevot_s)/(rp*ffsp*fnevot_s+1.0)
@@ -4926,7 +4935,8 @@ do 1 j=1,n   ! n is the number of bilayers
 7        continue
          ! odd layer (top sublayer)
          sigma_o2=mlroughness2(j)**2.0 !roughn. odd layer
-         arg_o=FO*FE*sigma_o2/(CDSqrt(ro2)*CDSqrt(re2))
+         !arg_o=FO*FE*sigma_o2/(CDSqrt(ro2)*CDSqrt(re2))
+         arg_o=FO*FE*sigma_o2/(mysqrt(ro2)*mysqrt(re2))
          fnevot_o=cdexp(-prefact*arg_o)
          r=(ao**4.0)*(r+ffo*fnevot_o)/(r*ffo*fnevot_o+1.0)
          rp=(ao**4.0)*(rp+ffop*fnevot_o)/(rp*ffop*fnevot_o+1.0)
@@ -4937,7 +4947,8 @@ do 1 j=1,n   ! n is the number of bilayers
 !
 ! vacuum interface
 !
-arg_v=fo*fv*sigma_v2/CDSqrt(ro2)
+!arg_v=fo*fv*sigma_v2/CDSqrt(ro2)
+arg_v=fo*fv*sigma_v2/mysqrt(ro2)
 fnevot_v=cdexp(-prefact*arg_v)
 r=(r+ffv*fnevot_v)/(r*ffv*fnevot_v+1.0)
 !r=(r+ffv)/(r*ffv+1.0D0)
@@ -7242,6 +7253,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	!DOUBLE PRECISION	SCAT_FRAC,RGH_TMP1,RGH_TMP2
 	!DOUBLE PRECISION	ROUGH_RMS, SIN_VAL 
 
+
 ! C
 ! C Save some local large arrays to avoid overflowing stack.
 ! C
@@ -8262,7 +8274,6 @@ end if
 ! C
 	end if
 !sriodebug
-!write(33,*),'shadow3: ',ITIK, gscatter(1),gscatter(2) ,gscatter(3)
 ! ** 2. Projects the incoming vector on the scattering plane
 		IF (RAY(11,ITIK).NE.0.0D0) THEN
      		  Q_IN_MOD	=   RAY(11,ITIK)
@@ -8477,24 +8488,41 @@ end if
 	   ELSE IF (A_RND.GT.A_DEG) THEN
 	    DEPTH_MFP = DEPTH_MFP_P
 	   END IF
-	   IF (DEPTH_MFP.GT.1.0D-10) THEN
-	    ARG = THICKNESS/DEPTH_MFP/SIN_VAL
-	   ELSE
-	    ARG = 0.0d0
-	   END IF
-           tmp = 0.0d0
-	   CALL MFP(tmp,MOSAIC_SEED,i_two)
-	   CALL MFP(ARG,MOSAIC_SEED,i_one)
-	   CALL MFP(DEPTH_INC,MOSAIC_SEED,ione)
-	   DEPTH_INC = DEPTH_INC*DEPTH_MFP
-	   DO 699 I=1,3
- 699	    VTEMP(I) = PPOUT(I) + DEPTH_INC*VVIN(I)
-	   CALL INTERCEPT (VTEMP,VVOUT,DEPTH_REF,IFLAG)
-	   DO 799 I=1,3
- 799	    RAY(I,ITIK) = VTEMP(I) + DEPTH_REF*VVOUT(I)
-	   PHASE (1,ITIK) = PHASE (1,ITIK) + &
-             (DEPTH_INC+DEPTH_REF)*(1.0D0-DELTA_REF)
-	  END IF
+           ! very small, very large or "normal"
+           IF (DEPTH_MFP.LT.1.0D-10) THEN   ! no penetration
+              DEPTH_INC = 0.0d0
+           ELSE IF (DEPTH_MFP.GT. 10.0*thickness/sin_val) THEN  ! uniform penetration
+	      depth_inc = WRAN (MOSAIC_SEED)
+              depth_inc = depth_inc*thickness/sin_val 
+           ELSE
+             ARG = THICKNESS/DEPTH_MFP/SIN_VAL
+             tmp = 0.0d0
+             CALL MFP(tmp,MOSAIC_SEED,i_two)
+             CALL MFP(ARG,MOSAIC_SEED,i_one)
+             CALL MFP(DEPTH_INC,MOSAIC_SEED,ione)
+             DEPTH_INC = DEPTH_INC*DEPTH_MFP
+           ENDIF
+
+           if (depth_inc .gt. thickness/sin_val) then 
+             print *,'MIRROR: Warning: Overestimated penetration',depth_inc,thickness/sin_val
+           end if
+
+           if (depth_inc .gt. 0.0d0) then 
+               DO I=1,3
+                  VTEMP(I) = PPOUT(I) + DEPTH_INC*VVIN(I)
+               END DO
+               !srio debugging: for spherical crystals, we need the closest 
+               !interaction to the surface, and this is forced setting iflag=-1
+               iflag = -1 
+
+               CALL INTERCEPT (VTEMP,VVOUT,DEPTH_REF,IFLAG)
+               DO I=1,3
+                  RAY(I,ITIK) = VTEMP(I) + DEPTH_REF*VVOUT(I)
+               END DO
+               PHASE (1,ITIK) = PHASE (1,ITIK) + (DEPTH_INC+DEPTH_REF)*(1.0D0-DELTA_REF)
+           end if
+          END IF  ! end mosaic
+
 ! *
 ! *  Reset Johansson asymmetrical parameters to its original value
 ! *
@@ -11221,6 +11249,8 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C
           ! C Point source **
           ! C
+          xxx = 0.0d0
+          zzz = 0.0d0
           GO TO 111
     
 2         CONTINUE
