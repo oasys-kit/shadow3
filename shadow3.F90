@@ -31,7 +31,7 @@ PROGRAM  Shadow3
 
   
   character(len=sklen)     ::  inCommand,inCommandLow,arg,mode
-  integer(kind=ski)      :: numArg,indx,iErr,i_Device
+  integer(kind=ski)      :: numArg,indx,iErr,i_Device, itmp
 
  
 inCommand = "" 
@@ -229,7 +229,17 @@ SELECT CASE (inCommandLow)
   ! CRL beta 2011-12-22 srio@esrf.eu - NOT YET LISTED UNDER ?
   ! TODO: list and clean 
   CASE ("precrl")
-     CALL precrl()
+     print *,'PRECRL: Create a stack of lenses: '
+     print *,'0 - single CRL'
+     print *,'1 - transfocator (stack of CRLs)'
+     itmp  = irint('?>')
+     select case(itmp)
+       case (0) 
+          CALL precrl()
+       case (1) 
+          CALL pretransfocator()
+       case default
+     end select
      inCommand=""
   CASE ("runcrl")
      CALL runcrl(0)

@@ -8829,16 +8829,27 @@ end if
 	END IF
 
 
-     	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
-     	  CALL	FNAME	(FFILE, 'rmir', I_WHICH, izero)
-     	 IF (F_MOVE.EQ.1)   THEN
-     	   CALL ROT_BACK (RAY,AP)
-	   IFLAG	= 0
-     	   CALL	WRITE_OFF	(FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
-     	  IF (IERR.NE.0) CALL LEAVE ('MIRROR','Error writing RMIR',IERR)
-     	 END IF
-     	END IF
-     	WRITE(6,*) 'Exit from MIRROR'
+! bugged......
+!     	IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
+!     	  CALL	FNAME	(FFILE, 'rmir', I_WHICH, izero)
+!     	 IF (F_MOVE.EQ.1)   THEN
+!     	   CALL ROT_BACK (RAY,AP)
+!	   IFLAG	= 0
+!     	   CALL	WRITE_OFF	(FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
+!     	  IF (IERR.NE.0) CALL LEAVE ('MIRROR','Error writing RMIR',IERR)
+!     	 END IF
+!     	END IF
+
+IF (F_MOVE.EQ.1)   THEN
+    CALL ROT_BACK (RAY,AP)
+END IF
+IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
+    CALL FNAME (FFILE, 'rmir', I_WHICH, izero)
+    IFLAG = 0
+    CALL  WRITE_OFF      (FFILE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,izero,IERR)
+    IF (IERR.NE.0) CALL LEAVE ('MIRROR','Error writing RMIR',IERR)
+END IF
+        WRITE(6,*) 'Exit from MIRROR'
 ! D	CLOSE (23)
 
 	END IF

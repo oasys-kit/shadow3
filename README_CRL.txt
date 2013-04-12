@@ -4,12 +4,14 @@
      
               version 1: 2012-01-27  srio@esrf.eu
               version 2: 2012-05-16  srio@esrf.eu
+              version 3: 2013-04-11  srio@esrf.eu  transfocator added
 --------------------------------------------------------------------------------
 
 Contents:
 
 1 Geometry of a CRL.
 2 Example: Simulating the CRL of Snigirev et al. Nature 384, p49 (1996)
+3 Transfocators
 
 --------------------------------------------------------------------------------
 
@@ -48,19 +50,19 @@ Source      **       ***********           **********       **    Image
                         <-->
                         ddIn
                             <--- ddV ----->
-<-------pp------------>                             <----- qq ------->
+<-------p0------------>                             <----- q0 ------->
 
 The parameters that will be used to define the CRL are: 
 
+ p0: physical distance from source plane (or continuation plane) to CRL's first interface 
+ q0: physical distance from last interface of the CRL to the image plane (or continuation plane)
+ ddIn: lens thickness [along optical axis, in material] 
+ ddV:  lens length [along optical axis, in vacuum] 
+
+In addition, one may define the focal distances (needed to compute the interface shape and parameters): 
+
  pp: focal source-crl distance     
  qq: focal crl-image distance    
- ddIn: lens thickness [along optical axis, in material] ?    
- ddV:  lens length [along optical axis, in vacuum] ?    
-
-In addition, one may define the focal distances (to define the interface shape and parameters): 
-
- p0: physical focal source-crl distance     
- q0: physical focal crl-image distance     
 
 
 2) Example: Simulating the CRL of Snigirev et al. Nature 384, p49 (1996)
@@ -100,6 +102,7 @@ shadow3 < crl_snigirev1996.inp
 where: 
 ---------------------  start crl_snigirev1996.inp --------------------------
 precrl
+0
 1
 1
 0
@@ -149,3 +152,63 @@ Use the corresponding Lens interface shape:
  5 - Plane
  7 - Hyperboloid
 
+
+
+
+3) Transfocators
+----------------
+
+A transfocator is made of a stack of blocks, each block is a CRL that may contain a different 
+number of lenses (by adding or substrcting lenses). To run SHADOW for transfocator, the "precrl"
+preprocessor can accept an input file with an easy condensed syntax. 
+
+For creating the input file, it is suggested first to create a template by doing: 
+
+ shadow3> precrl
+ PRECRL: Create a stack of lenses: 
+ 0 - single CRL
+ 1 - transfocator (stack of CRLs)
+ ?>  1
+  
+ The transfocator stack of CRLs must be defined in "transfocator definition" file: 
+ 0 - Create a "transfocator definition" template file
+ 1 - Load a "transfocator definition" input file
+ ?>  0
+ File name to dump template (default: mytransfocator.dat): 
+  "transfocator definition" file written to disk: mytransfocator.dat
+  modify it and re-run "precrl"
+
+
+The created file mytransfocator.dat contains a header with the documentation. 
+
+#  Geometry of a single CRL within a transfocator
+#                     .                  .                                 
+#              |      .*********+++++++++.       |          
+#              |      . *******  +++++++ .       |            
+#              |      .  *****    +++++  .       |            
+#              |      .   ***      +++   .       |            
+#              |      .   ***      +++   .       |            
+#              |      .   ***      +++   .       |            
+#              |      .  *****    +++++  .       |            
+#              |      . *******  +++++++ .       |           
+#              |      .*********+++++++++.       |            
+#                     .   <->            .
+#                     . crl_interThickness
+#                     .<-------><------->.
+#                     .          crl_thickness
+#              |<---->.                  .<----->|
+#       crl_fs_before .                  .crl_fs_after
+#
+#
+
+NOTES ON GEOMETRY: 
+
+   - The crl_thickness of the single-lens in transfocator corresponds to ddIn+ddV in CRL's geometry.
+   - crl_interThickness in trasfocator is equal to ddIn in CRLs.
+   - The crl_fs_before in transfocator corresponds to p0+0.5*ddV n CRLs (and crl_fs_after=q0+0.5*qq).
+   - The inputs for the transfocator have less flexibility than the CRL, in the sense that 
+     only external definition of the lens (radius, sizes) is possible, and the only way to 
+     define the refraction is using the preprocessor prerefl.
+     
+
+------------------------------------------------------------------------

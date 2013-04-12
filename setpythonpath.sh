@@ -8,8 +8,8 @@
 #needed for python/shadow
 #export  LD_LIBRARY_PATH=/scisoft/xop2.3/extensions/shadowvui/shadow3:"${LD_LIBRARY_PATH}"
 #export  PYTHONPATH=/scisoft/xop2.3/extensions/shadowvui/shadow3/:"${PYTHONPATH}"
-export  LD_LIBRARY_PATH=/users/srio/GIT/shadow3/ #:"${LD_LIBRARY_PATH}"
-export  PYTHONPATH=/users/srio/GIT/shadow3/build/lib.linux-x86_64-2.7 #:"${PYTHONPATH}"
+export  LD_LIBRARY_PATH=/scisoft/users/srio/Working/rt/3CODES/shadow3/ #:"${LD_LIBRARY_PATH}"
+export  PYTHONPATH=/scisoft/users/srio/Working/rt/3CODES/shadow3/build/lib.linux-x86_64-2.7 #:"${PYTHONPATH}"
 
 #needed for python/xraylib
 export  LD_LIBRARY_PATH=/users/srio/xraylib-2.16.0/src/.libs:"${LD_LIBRARY_PATH}"
