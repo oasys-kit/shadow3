@@ -575,6 +575,8 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     ticket.fwhmx = fwhmx
     ticket.fwhmy = fwhmy
   ticket.intensity = col4[t].sum()
+  ticket.averagex = numpy.average( col1[t] )
+  ticket.averagey = numpy.average( col2[t] )
   ticket.intensityinslit = intensityinslit
   return ticket  
   
