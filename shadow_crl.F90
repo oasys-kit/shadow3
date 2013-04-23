@@ -820,7 +820,7 @@ End SUbroutine runcrl
     Integer(kind=ski) :: ns
     type(GfType) :: gf
     
-    Logical :: iOut
+    Logical :: iOut, iOut2
     Integer(kind=ski) :: i, j
     Character(len=3) :: stmp, stmp2
     
@@ -863,6 +863,50 @@ End SUbroutine runcrl
       iOut = GfGetValue(gf,"RWIDX2("//trim(stmp)//")",arrOE(i)%RWIDX2).and.iOut
       iOut = GfGetValue(gf,"RLEN1("//trim(stmp)//")",arrOE(i)%RLEN1).and.iOut
       iOut = GfGetValue(gf,"RLEN2("//trim(stmp)//")",arrOE(i)%RLEN2).and.iOut
+
+      ! CRL movements (optional)
+      iOut2 = GfIsDefined(gf,"F_MOVE("//trim(stmp)//")")
+      if (iOut2 .eqv. .true.) then 
+         iOut = GfGetValue(gf,"F_MOVE("//trim(stmp)//")",arrOE(i)%F_MOVE)
+         print *,"CRL movements defined for oe:  ",stmp
+
+         iOut = GfIsDefined(gf,"X_ROT("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"X_ROT("//trim(stmp)//")",arrOE(i)%X_ROT)
+            print *,"Found X_ROT: ",arrOE(i)%X_ROT
+         end if
+
+         iOut = GfIsDefined(gf,"Y_ROT("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"Y_ROT("//trim(stmp)//")",arrOE(i)%Y_ROT)
+            print *,"Found Y_ROT: ",arrOE(i)%Y_ROT
+         end if
+
+         iOut = GfIsDefined(gf,"Z_ROT("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"Z_ROT("//trim(stmp)//")",arrOE(i)%Z_ROT)
+            print *,"Found Z_ROT: ",arrOE(i)%Z_ROT
+         end if
+
+         iOut = GfIsDefined(gf,"OFFX("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"OFFX("//trim(stmp)//")",arrOE(i)%OFFX)
+            print *,"Found OFFX: ",arrOE(i)%OFFX
+         end if
+
+         iOut = GfIsDefined(gf,"OFFY("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"OFFY("//trim(stmp)//")",arrOE(i)%OFFY)
+            print *,"Found OFFY: ",arrOE(i)%OFFY
+         end if
+
+         iOut = GfIsDefined(gf,"OFFZ("//trim(stmp)//")")
+         if (iOut .eqv. .true.) then 
+            iOut = GfGetValue(gf,"OFFZ("//trim(stmp)//")",arrOE(i)%OFFZ)
+            print *,"Found OFFZ: ",arrOE(i)%OFFZ
+         end if
+
+      end if
     End Do
   End Subroutine ReadCRL
 

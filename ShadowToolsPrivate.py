@@ -126,6 +126,8 @@ def plotxy_CheckArg(beam,cols1,cols2,nbins,nbins_h,level,xrange,yrange,nolost,ti
 
 
 def setGoodRange(col):
+  if col.size == 0:
+      return [-1,1]
   rmin = min(col)
   rmax = max(col)
   if rmin>0.0:
