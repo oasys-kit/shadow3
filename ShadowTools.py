@@ -299,7 +299,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     if yrange==None: yrange = [0.0, numpy.max(hw)*1.1]
   fwhm = None
   if calfwhm==1:
-    fwhm, tf, ti = stp.calcFWHM(h,bins[1]-bins[0])
+    fwhm, tf, ti = stp.calcFWHM(hw,bins[1]-bins[0])
     axHist.plot([bins[ti],bins[tf+1]],[max(h)*0.5,max(h)*0.5],'x-')
     print "fwhm = ", fwhm
   if write==1: stp.Histo1_write(title,bins,h,hw,col,beam,ref-1)  
@@ -319,7 +319,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     figure.show()  
   
   ticket = Histo1_Ticket()    
-  ticket.histogram = h
+  ticket.histogram = hw
   ticket.bin_center = bins[:-1]+(bins[1]-bins[0])*0.5
   ticket.bin_left = bins[:-1] 
   ticket.figure = figure
@@ -329,6 +329,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   ticket.ytitle = ytitle
   ticket.title = title
   ticket.fwhm = fwhm
+  ticket.intensity = w[t].sum()
   return ticket
  
 
@@ -361,6 +362,8 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
      calfwhm :
            0   don't compute the fwhm
            1   compute the fwhm and draw it
+           2   in addition to calfwhm=1, it computes now the intensity in a
+               slit of FWHM_h x FWHM_v
      contour  :
            0   scatter plot
            1   contour, black & white, only counts (without intensity)

@@ -342,6 +342,9 @@ SELECT CASE (inCommandLow)
   CASE ("presurface_translate")
      CALL presurface_translate()
      inCommand=""
+  CASE ("wiggler_spectrum")
+     CALL wiggler_spectrum()
+     inCommand=""
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 
         CALL SYSTEM( inCommand(2:sklen) )

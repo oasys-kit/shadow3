@@ -5,7 +5,7 @@
 # customize it to your needs...
 #
 
-MYSHADOWDIR=/scisoft/users/srio/Working/rt/3CODES/shadow3
+MYSHADOWDIR=/scisoft/xop2.3/extensions/shadowvui/shadow3
 MYXRAYLIBDIR=/users/srio/xraylib-2.16.0
 MYSRWDIR=/users/srio/GIT/trunk.r226
 

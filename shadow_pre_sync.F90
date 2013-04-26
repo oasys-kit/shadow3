@@ -62,6 +62,7 @@ Module shadow_Pre_Sync
     public ::  epath   ! wiggler+undulator
     public ::  nphoton ! wiggler
     public ::  undul_set, undul_phot, undul_cdf  ! undulator
+    public ::  wiggler_spectrum ! wiggler
 
 
     !---- List of private functions ----!
@@ -2698,5 +2699,163 @@ SUBROUTINE Undul_Cdf
         PRINT *,'File (namelist) written to disk: uphot.nml'
 
 END SUBROUTINE Undul_Cdf
+
+
+
+! +++
+!         SUBROUTINE      WIGGLER_SPECTRUM
+! 
+!         PURPOSE         To take the output from EPATH and compute the no. of
+!                         photons generated along the trajectory. The output is
+!                         a file containing the energy spectrum of the wiggler
+! 
+!         NOTE            Everything is in SHADOW's referance frame.
+! ---
+
+subroutine wiggler_spectrum
+        implicit none
+
+        integer(kind=ski)                 ::  N_DIM=10000
+        real(kind=skr),dimension(10000)   ::  Y,BETAY,X,BETAX,CURV,PHOT_NUM,PHOT_CDF
+        real(kind=skr),dimension(10000)   ::  Z,BETAZ,DS,S, DX, DY, DZ
+        real(kind=skr),dimension(1001)    ::  TAUX,TAUY,TAUZ, BX,BY,BZ, ENX,ENY,ENZ
+        character(len=sklen)              ::  INFILE,OUTFILE
+        real(kind=skr)                    ::  pnum,rad,bener,emin,emax,gamma1,step
+        real(kind=skr)                    ::  phot_min,phot_max,eloopmin, eloopmax, estep 
+        real(kind=skr)                    ::  r_intens, energy, deltae, coeff, ang_nim
+        real(kind=skr)                    ::  ang_num, curv_max, curv_min, tot_num
+        integer(kind=ski)                 ::  iflag,i_wig,nstep, i_units, np, i, ii
+! 
+!  Read in the CDF of G0, and generated the spline coefficients.
+! 
+        IFLAG        = -1
+        CALL        NPHOTONcalc (PNUM,RAD,BENER,EMIN,EMAX,IFLAG)
+! 
+        WRITE(6,*) ' '
+        WRITE(6,*) '************************ WIGGLER RADIATION *************************'
+        WRITE(6,*) '************************ ENERGY SPECTRUM   *************************'
+        WRITE(6,*) ' '
+        INFILE        = RSTRING ('Name of input file : ')
+!         
+!         (I_WIG.EQ.1) implies normal wiggler.
+!         (I_WIG.EQ.2) implies elliptical wiggler.
+! 
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Type of Wiggler.'
+        WRITE(6,*) 'Enter:'
+        WRITE(6,*) 'for normal wiggler   [1]'
+        WRITE(6,*) 'for elliptical wiggler [2]'
+        I_WIG=IRINT('Then? ')
+! 
+        OPEN (20,FILE=INFILE,STATUS='OLD')
+! 
+        DO 99 I = 1, N_DIM+1
+          READ (20,*,END=101) X(I),Y(I),Z(I),BETAX(I),BETAY(I),BETAZ(I),CURV(I)
+ 99        CONTINUE
+        STOP         'Too many points from input file.'
+101        NP        = I - 1
+        CLOSE        (20)
+        WRITE(6,*) 'Read ',NP,' points from input file.'
+        STEP        = SQRT((Y(2)-Y(1))**2 + (X(2)-X(1))**2 + (Z(2)-Z(1))**2)
+! 
+!  Compute gamma and the beam energy
+! 
+        gamma1        = 1/SQRT(1-(BETAY(1)**2)-(BETAX(1)**2)-(BETAZ(1)**2))
+        BENER        = gamma1*(9.109D-31)*(2.998d8**2)/(1.602e-19)*1.0d-9
+         WRITE(6,*) 'Beam energy (GeV) = ',BENER
+! 
+!  Figure out the limit of photon energy.
+! 
+        CURV_MAX        = 0.0D0
+        CURV_MIN        = 1.0D20
+        DO 199 I = 1, NP
+          CURV_MAX        = MAX(ABS(CURV(I)),CURV_MAX)
+          CURV_MIN        = MIN(ABS(CURV(I)),CURV_MIN)
+ 199        CONTINUE
+        WRITE(6,*) 'Radius of curvature (max.) = ',1/CURV_MIN,' m'
+        WRITE(6,*) '                    (min.) = ',1/CURV_MAX,' m'
+        PHOT_MIN        = TOANGS*3.0D0*gamma1**3/4.0D0/PI/1.0D10*CURV_MIN
+        PHOT_MAX        = TOANGS*3.0D0*gamma1**3/4.0D0/PI/1.0D10*CURV_MAX
+        WRITE(6,*) 'Critical Energy (max.) = ',PHOT_MAX,' eV'
+        WRITE(6,*) '                (min.) = ',PHOT_MIN,' eV'
+!         WRITE(6,*) 'Use photon energy between ',
+!      $                PHOT_MAX*10,' eV and ',PHOT_MIN*1.0D-5,' eV'
+! 
+        ELOOPMIN= RNUMBER ('Initial photon energy [ eV ] : ')
+        ELOOPMAX= RNUMBER ('Final photon energy [ eV ]   : ')
+        ESTEP        = RNUMBER ('Step  [ eV ]   : ')
+        OUTFILE        = RSTRING ('Name of output file : ')
+        WRITE(6,*) 'Units for the result file:'
+        WRITE(6,*) '  eV, Phot/sec/eV     [1]'
+        WRITE(6,*) '  eV, Phot/sec/0.1%bw [2]'
+        WRITE(6,*) '  eV, Watts/eV        [3]'
+        WRITE(6,*) '  eV, Watts/0.1%bw    [4]'
+        I_UNITS=IRINT(' Then? ')
+        R_INTENS= RNUMBER ('Electron beam current [mA]  : ')
+        open (33, file=outfile, status='unknown')
+! 
+!  starts the loop in energy
+! 
+        nstep = (eloopmax-eloopmin)/estep + 1
+        !do 555 energy=eloopmin,eloopmax,estep
+        do 555 ii=1,nstep
+        energy = eloopmin + (ii-1)*estep
+        if (i_units.eq.1) then 
+          deltae = 0.5D0
+          coeff  = 1.0D0
+        else if (i_units.eq.2) then 
+          deltae = 0.5D0*0.001*energy
+          coeff  = 1.0D0
+        else if (i_units.eq.3) then 
+          deltae = 0.5D0
+          coeff  = energy*1.602189D-19
+        else if (i_units.eq.4) then 
+          deltae = 0.5D0*0.001*energy
+          coeff  = energy*1.602189D-19
+        endif
+        emin = energy-deltae
+        emax = energy+deltae
+! 
+!  NPHOTON computes the no. of photons per mrad (ANG_NUM) at each point.  
+!  It is then used to generate the no. of photons per axial length (PHOT_NUM)
+!  along the trajectory S.
+! 
+        DO 299 I = 1, NP
+          IF (ABS(CURV(I)).LT.1.0D-10) THEN
+            ANG_NUM        = 0.0D0        
+          ELSE
+            RAD        = ABS(1.0D0/CURV(I))
+            IFLAG = 1
+            CALL        NPHOTONcalc (ANG_NUM,RAD,BENER,EMIN,EMAX,IFLAG)
+          END IF
+          PHOT_NUM(I) = ANG_NUM*ABS(CURV(I))*SQRT(1+(BETAX(I)/BETAY(I))**2+ &
+                       (BETAZ(I)/BETAY(I))**2)*1.0D3
+299     CONTINUE
+! 
+!  Computes CDF of the no. of photon along the trajectory S.
+!  In the elliptical case, the entire traversed path length (DS) is computed.
+!  In the normal case, only the component (Y) in the direction of propagation
+!  is computed.
+! 
+         DO 399 I = 2, NP
+        IF (I_WIG.EQ.2) THEN
+          DS(1) = 0.0D0
+                DX(I) = X(I) - X(I-1)
+                DY(I) = Y(I) - Y(I-1)
+                DZ(I) = Z(I) - Z(I-1)
+                DS(I) = SQRT(DX(I)**2 + DY(I)**2 + DZ(I)**2) + DS(I-1)
+           PHOT_CDF(I)        = PHOT_CDF(I-1) + (PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(DS(I) - DS(I-1))
+        ELSE
+           PHOT_CDF(I)        = PHOT_CDF(I-1) + (PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(Y(I) - Y(I-1))
+        END IF
+ 399     CONTINUE
+         TOT_NUM        = PHOT_CDF(NP)
+         WRITE(6,*)  energy,coeff*TOT_NUM*R_INTENS
+         WRITE(33,*) energy,coeff*TOT_NUM*R_INTENS
+555        continue
+        close(33)
+
+end subroutine wiggler_spectrum
+
 
 End Module shadow_Pre_Sync
