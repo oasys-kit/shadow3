@@ -322,7 +322,7 @@ SELECT CASE (inCommandLow)
      !print *,'                    : input_source pre_mlayer grade_mlayer'
      print *,'                    : input_source pre_mlayer '
      print *,'                    : make_id epath nphoton undul_set undul_phot undul_cdf' 
-     print *,'                    : mkdatafiles' 
+     print *,'                    : jntpscalc mkdatafiles' 
      print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
@@ -344,6 +344,9 @@ SELECT CASE (inCommandLow)
      inCommand=""
   CASE ("wiggler_spectrum")
      CALL wiggler_spectrum()
+     inCommand=""
+  CASE ("jntpscalc")
+     CALL jntpscalc()
      inCommand=""
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 

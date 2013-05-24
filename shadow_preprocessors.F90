@@ -36,7 +36,7 @@ Module shadow_PreProcessors
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public ::  presurface   
-    public ::  prerefl,pre_mlayer,grade_mlayer,bragg
+    public ::  prerefl,pre_mlayer,grade_mlayer,bragg,jntpscalc
 ! to create optical library files
     public ::  genlib, WriteF12LibIndex
 
@@ -2375,6 +2375,168 @@ SUBROUTINE BRAGG
 	IF (I_AGAIN.EQ.1) GO TO 30
 20	CONTINUE
 END SUBROUTINE Bragg
+
+
+!c
+!c Program to prepare a file containing a joint 2D Gaussian power spectrum.
+!c
+SUBROUTINE JNTPSCALC
+implicit none
+        !IMPLICIT        REAL*8          (A-E,G-H,O-Z)
+        !IMPLICIT        INTEGER*4       (F,I-N)
+
+real(kind=skr)    :: X, Y, FXY, SIGX, SIGY
+real(kind=skr)    :: TY, TX, NORM, FXMAX, FYMAX
+real(kind=skr)    :: X0, Y0, conv
+real(kind=skr)    :: xstart,xend,xstep,ystart,yend,ystep
+integer(kind=ski) :: npointsx,npointsy,i_kind,i,j
+integer(kind=ski),parameter     :: N_DIM=10000
+real(kind=skr),dimension(N_DIM) ::    fx(N_DIM),fy(N_DIM),yy(N_DIM)
+character(len=sklen) :: file1,outfile
+
+        WRITE(6,*) 'File to use for output to SHADOW? '
+        READ(5,1001) outfile
+        OPEN (41,FILE=outfile,STATUS='UNKNOWN')
+1001        FORMAT (A)
+
+        WRITE(6,*) ' Please, input kind of Power Spectral Density you'
+        WRITE(6,*) ' want to generate: '
+        WRITE(6,*) ' [1] Gaussian power spectrum                   '
+        WRITE(6,*) ' [2] PSD from a profile with normal statistics and'
+        WRITE(6,*) '     Gaussian corr function'
+        WRITE(6,*) ' [3] PSD from a profile with normal statistics and'
+        WRITE(6,*) '     Exponential corr function'
+        WRITE(6,*) ' [4] PSD along Y from a data file and gaussian '
+        WRITE(6,*) '     along X'
+        READ(5,*) i_kind
+!c
+!c input parameters
+!c
+        if (i_kind.eq.1.or.i_kind.eq.2.or.i_kind.eq.3) then
+          WRITE(6,*) 'Number of points in y (along the mirror) and in'
+          WRITE(6,*) 'x (transversal): ? '
+          READ(5,*) npointsy,npointsx
+          WRITE(6,*) 'input start value and end value along Y axis : '
+          READ(5,*) ystart,yend
+          WRITE(6,*) 'input start value and end value along X axis : '
+          READ(5,*) xstart,xend
+          xstep = (xend - xstart)/float(npointsx-1)
+          ystep = (yend - ystart)/float(npointsy-1)
+        else if (i_kind.eq.4) then
+          WRITE(6,*) 'File with the PSD function (two columns) '
+          read (5,3333) file1
+3333        format(a)
+          WRITE(6,*) 'conversion factor from your units to cm [eg. 1e-4 from microns]:'
+          READ(5,*) conv
+          conv = 1.0D0/conv
+          WRITE(6,*) 'Number of points in x (along the mirror) ? '
+          READ(5,*) npointsx
+          WRITE(6,*) 'input start value and end value along X axis : '
+          READ(5,*) xstart,xend
+          xstep = (xend - xstart)/float(npointsx-1)
+          WRITE(6,*) 'input correlation lenght [microns] along X axis:'
+          READ(5,*) tx
+          tx   = tx*1.0d-4
+        endif
+
+        if (i_kind.eq.1) then
+         WRITE(6,*) 'input sigma along Y and X directions'
+         WRITE(6,*) '[frequency, cm-1] : '
+         READ(5,*) sigy,sigx
+         WRITE(6,*) 'input center along Y and X directions : '
+         READ(5,*) y0,x0
+        elseif (i_kind.eq.2.or.i_kind.eq.3) then
+         WRITE(6,*) 'for PSD in Y direction (along the mirror)'
+         WRITE(6,*) 'input roughness rms [Angstroms] and correlation length [microns]:'
+         READ(5,*) sigy,ty
+         WRITE(6,*) 'for PSD in X direction (transversal direction)'
+         WRITE(6,*) 'input roughness rms [Angstroms] and correlation length [microns]:'
+         READ(5,*) sigx,tx
+         sigx = sigx*1.0d-8
+         sigy = sigy*1.0d-8
+         tx   = tx*1.0d-4
+         ty   = ty*1.0d-4
+        endif
+!c
+!c prepare the PSD along Y and X
+!c
+        if (i_kind.eq.4) then
+        open (23,file=file1,status='old')
+          fymax = 0.0d0
+          do 121,i=1,N_DIM
+            read(21,*,end=122) yy(i),fy(i)
+                yy(i) = conv*yy(i)
+                WRITE(6,*) yy(i),fy(i)
+                if (fy(i).gt.fymax) fymax = fy(i)
+121          continue
+122        continue
+          close (23)
+          npointsy = i-1
+          ystart = yy(1)
+          yend   = yy(npointsy)
+        else
+        y = ystart
+        fymax = 0.0d0
+        do 22,i=1,npointsy
+          if (i_kind.eq.1) then
+            fy(i)=(1/(sqrt(2*pi)*sigy))*exp(-0.5d0*((y-y0)/sigy)**2)
+          else if (i_kind.eq.2) then 
+            fy(i)=sigy**2*sqrt(pi)*ty*exp(-(ty*y/2.0d0)**2)
+          else if (i_kind.eq.3) then
+                fy(i)= 2*pi*((sigy*ty)**2)*sqrt( 1.0d0/((1+(ty*y)*(ty*y))**3) )
+          endif
+          if (fy(i).gt.fymax) fymax=fy(i)
+          y = y + ystep
+22        continue
+        endif
+!c
+        x = xstart
+        fxmax = 0.0d0
+        do 11,i=1,npointsx
+          if (i_kind.eq.1) then
+            fx(i)=(1/(sqrt(2*pi)*sigx))*exp(-0.5d0*((x-x0)/sigx)**2)
+          else if (i_kind.eq.2)   then
+            fx(i)=sigx**2*sqrt(pi)*tx*exp(-(tx*x/2.0d0)**2)
+          else if (i_kind.eq.3)   then
+            fx(i)= 2*pi*((sigx*tx)**2)*sqrt( 1.0d0/((1+(tx*x)*(tx*x))**3) )
+          endif
+          if (fx(i).gt.fxmax) fxmax=fx(i)
+          x = x + xstep
+11        continue
+!c
+!c
+!c write output file
+!c
+        write (41,*) npointsx
+        write (41,*) xstart
+        write (41,*) xstep
+        write (41,*) npointsy
+        write (41,*) ystart
+        write (41,*) ystep
+!c
+        norm = 1/fxmax/fymax
+        write(6,*) 'pi: ',pi
+        write(6,*) 'sigx: ',sigx
+        write(6,*) 'sigy: ',sigy
+        write(6,*) 'npointsx: ',npointsx
+        write(6,*) 'xstart: ',xstart
+        write(6,*) 'xstep: ',xstep
+        write(6,*) 'npointsy: ',npointsy
+        write(6,*) 'ystart: ',ystart
+        write(6,*) 'ystep: ',ystep
+        WRITE(6,*) 'fxmax: ',fxmax
+        WRITE(6,*) 'fymax: ',fymax
+        WRITE(6,*) 'Normalization factor is: ',norm
+        DO 222 j = 1,npointsy
+        DO 111 i = 1,npointsx
+        FXY = FX(i)*FY(j)
+        WRITE (41,*) norm*FXY
+        FXY = 0
+  111        CONTINUE
+  222        CONTINUE
+        CLOSE (41)
+
+END SUBROUTINE JNTPSCALC
 
 !
 !

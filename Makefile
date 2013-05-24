@@ -222,7 +222,7 @@ libstatic: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	#ar cr libshadow3c.a shadow_bind_c.o $(OBJFMODULES)
 	#ar cr libshadow3c++.a shadow_bind_c.o shadow_bind_cpp.o $(OBJFMODULES)
 
-idl: shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
+idl: lib shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
 	$(CC) $(CFLAGS) -c shadow_bind_idl_loader.c
 	$(CC) $(CFLAGS) -c shadow_bind_idl.c
 	$(CC) $(LIBFLAGS) -o shadow_bind_idl$(SO) -L. -lshadow3c shadow_bind_idl_loader.o shadow_bind_idl.o

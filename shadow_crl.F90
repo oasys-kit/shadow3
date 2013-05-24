@@ -292,7 +292,8 @@ Subroutine precrl
             ELSE
               f = 1.0/(1.0/qq+1.0/pp)
               R = ns*f*delta
-              R = -R   ! change sign: first interface must be concave
+              !debugging srio@esrf.eu 20130515 R>0 in shadow means concave
+              !R = -R   ! change sign: first interface must be concave
             ENDIF
           else ! external/user defined
               f = R/delta/ns ! TODO: calculate for ellipse/hyperbola
@@ -309,7 +310,7 @@ Subroutine precrl
           ccc(1) = 1.0D0
           ccc(2) = 1.0D0
           ccc(3) = 1.0D0
-          ccc(9) = 2.0*R
+          ccc(9) = -2.0*R
         
         case (2) !ellipsoid 
             if (f_ext_local.eq.0) then ! internal/calculated
@@ -1015,8 +1016,8 @@ Subroutine pretransfocator
       write(25,'(a)') "#"
       write(25,'(a)') "#"
       write(25,'(a)') "# Data for ESRF-ID11 (e.g. Baltser et al. http://dx.doi.org/10.1117/12.893343 )"
-      write(25,'(a)') "16  4 0 200d-4  -1.0 1d-1 50d-4 1d-1  3150  0     Be.dat"
-      write(25,'(a)') "21  4 0 200d-4  -1.0 2d-1 50d-4 1d-1  0     1000  Al.dat"
+      write(25,'(a)') "16  4 0 200e-4  -1.0 1e-1 50e-4 1e-1  3150  0     Be.dat"
+      write(25,'(a)') "21  4 0 200e-4  -1.0 2e-1 50e-4 1e-1  0     1000  Al.dat"
 
       CLOSE (UNIT=25)
       print *,' "transfocator definition" file written to disk: '//trim(crl_file)
@@ -1105,8 +1106,6 @@ Subroutine pretransfocator
 
     !Cylindical 
     fcyl_local = crl_cylindrical
-    cil_ang_local = 0.0D0
-    if (fcyl_local .eq. 2) cil_ang_local=90.0
 
     ! Number of interfaces NS (Number of lenses=NS/2) 
     ns = crl_nlenses*2
@@ -1248,7 +1247,8 @@ DO i=1+iaccumulated,ns+iaccumulated
           ccc(1) = 1.0D0
           ccc(2) = 1.0D0
           ccc(3) = 1.0D0
-          ccc(9) = 2.0*R
+          !fixed minus sign srio@esrf.eu 20130524
+          ccc(9) = -2.0*R
         
         case (2) !ellipsoid 
             AFOCI =  SQRT( AXMAJ**2-AXMIN**2 )
@@ -1426,6 +1426,8 @@ DO i=1+iaccumulated,ns+iaccumulated
       ! is cylindrical?
       !
       IF (fcyl_local.ge.1) THEN 
+        cil_ang_local = 0.0D0
+        if (fcyl_local .eq. 2) cil_ang_local=90.0
        ! C
        ! C Set to zero the coeff. involving X for the cylinder case, after
        ! C projecting the surface on the desired plane.

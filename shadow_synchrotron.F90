@@ -2634,6 +2634,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C
     ! C No depth case.
     ! C
+    YYY = 0.0d0
     110	 GO TO 550
     ! C
     ! C Uniform depth distribution

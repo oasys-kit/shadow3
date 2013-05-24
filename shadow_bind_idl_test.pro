@@ -7,14 +7,14 @@
 ; ShadowVUI->Load Example Workspace->From Example Dir.
 ;
 
-spawn,'./gen_source start.00'
-spawn,'./trace3 -t'
-tmp=readsh('begin.dat')
-tmp2=readsh('star.01')
+;spawn,'./gen_source start.00'
+;spawn,'./trace3 -t'
+tmp=readsh('../begin.dat')
+tmp2=readsh('../star.01')
 ray=0
 
 
-a0=READ_GFILE('start.00')
+a0=READ_GFILE('../start.00')
 IF ((a0.FDISTR EQ 4) OR (a0.FSOURCE_DEPTH EQ 4) OR (a0.F_WIGGLER GT 0)) THEN BEGIN
   ray = gensourcesync(a0)
 ENDIF ELSE BEGIN

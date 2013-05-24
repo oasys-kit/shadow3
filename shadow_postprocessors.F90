@@ -4002,19 +4002,21 @@ subroutine sysplot
 ! terminal mode
 !
 IF (IMODE.EQ.1) THEN
-             WRITE(6,*)'Bidimensional [ 0 ] or 3d plot [ 1 ] ?'
+             WRITE(6,*)'Bidimensional [ 0 ] or 3d plot [ 1 **not yet working** ] ?'
              READ(5,*)KDIM
-             WRITE(6,*)'How many mirrors ?'
+             WRITE(6,*)'How many optical elements ?'
              READ(5,*)NMIRR
              WRITE(6,*) 'How many rays [ suggest no more than 200 (500 max) ] ?'
              READ(5,*)  NPOINT
              WRITE(6,*)'Optaxis file ?'
-             READ (5,1000) FILEAXIS
-             WRITE(6,*)'Source file and (final) image file ?'
-             READ (5,1000) FILESOUR,FILEIMAGE
+             READ (5,'(a)') FILEAXIS
+             WRITE(6,*)'Source file ?'
+             READ (5,'(a)') FILESOUR
+             WRITE(6,*)'Image (final) file ?'
+             READ (5,'(a)') FILEIMAGE
              DO I=1,NMIRR
-               WRITE(6,*)'Mirror N. ',I,' ?'
-               READ (5,1000)        FILES(I)
+               WRITE(6,*)'Optical element N. ',I,' ?'
+               READ (5,'(a)')        FILES(I)
              END DO
              IFLAG        =  IYES ('Plot all the losses too [ Y/N ] ? ' )
              IF (KDIM.EQ.0) THEN
@@ -4030,18 +4032,18 @@ ELSE
              READ (20,*) KDIM
              READ (20,*) NMIRR
              READ (20,*) NPOINT,IFLAG
-             READ (20,1000) FILEAXIS
+             READ (20,'(a)') FILEAXIS
 !C  DELETE 1 LEADING BLANK SPACE FROM FILENAME
          TEMP = FILEAXIS
          FILEAXIS = TEMP(2: )
-         READ (20,1000) FILESOUR
+         READ (20,'(a)') FILESOUR
          TEMP = FILESOUR
          FILESOUR = TEMP(2: )
-         READ (20,1000) FILEIMAGE
+         READ (20,'(a)') FILEIMAGE
          TEMP = FILEIMAGE
          FILEIMAGE = TEMP(2: )
          DO I=1,NMIRR
-            READ (20,1000) FILES(I)
+            READ (20,'(a)') FILES(I)
             TEMP = FILES(I)
             FILES(I) = TEMP(2: )
          END DO

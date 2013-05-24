@@ -84,7 +84,7 @@ data:
        R=300 um
        ddIn = 25 um
        ddV = 2 R = 600 um
-       Aluminium: n=1-delta; delta = 2.8e-6; mu=28cm^-1
+       Aluminium: n=1-delta=0.99999720 ; delta = 2.8e-6; mu=28cm^-1 (density=2.7 g/cm3)
 
     Distances:
        F = R/2/N/delta = 178.57 cm
@@ -107,19 +107,19 @@ precrl
 1
 0
 60
-1
+0
+1.0000000
 0.9999972
 0.0
 28.0
 3000
 189.87342
-0
-3000
-189.87342
+1
+300e-4
 0
 25e-4
 600e-4
-3
+0
 crl.01
 
 exit
@@ -210,5 +210,11 @@ NOTES ON GEOMETRY:
      only external definition of the lens (radius, sizes) is possible, and the only way to 
      define the refraction is using the preprocessor prerefl.
      
+Example: the following line creates the input for Snigirev's lens discussd in previous section: 
+
+# Data for CRL of Snigirev et al. Nature 384, p49 (1996)
+30  4 1 300e-4  -1.0 600e-4 25e-4 625e-4  3000  189.87 Al5_55.dat
+
+
 
 ------------------------------------------------------------------------
