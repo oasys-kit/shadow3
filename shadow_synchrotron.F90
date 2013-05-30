@@ -1744,25 +1744,28 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-e,g-h,o-z)
-	implicit integer(kind=ski)        (f,i-n)
+    implicit real(kind=skr) (a-e,g-h,o-z)
+    implicit integer(kind=ski)        (f,i-n)
 
     integer(kind=ski), intent(in)                         :: npoint1
     real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
     type (poolSource), intent(inout)                     ::  pool00
 
     ! C
-    	INTEGER(kind=ski)         :: IOFORM
-    	INTEGER(kind=ski)         :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
+    integer(kind=ski)         :: IOFORM
+    integer(kind=ski)         :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
     ! C
-    	CHARACTER(len=80)       :: ERRMSG
+    ! C
+
+    !CHARACTER(len=80)       :: ERRMSG
+    character(len=sklen)       :: errmsg
     
     
     !!srio for SR, force 18 columns
 
 
     !! needed for calling source_bound
-       real(kind=skr),dimension(3)     :: XDUM, YDUM
+       real(kind=skr),dimension(3)  :: XDUM, YDUM
     
        real(kind=skr),dimension(3)  :: DIREC,AP_VEC,E_TEMP,SB_POS
        real(kind=skr),dimension(3)  :: VTEMP,A_VEC,A_TEMP, E_BEAM
@@ -1772,24 +1775,25 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     
        real(kind=skr),dimension(10)  :: SIGXL,SIGZL
     
-            real(kind=skr), dimension(5,5001) :: seed_y,y_x,y_xpri, &
+       real(kind=skr), dimension(5,5001) :: seed_y,y_x,y_xpri, &
                            y_z,y_zpri,y_curv,y_path
-            real(kind=skr), dimension(5001) :: y_temp,c_temp,x_temp, &
+       real(kind=skr), dimension(5001) :: y_temp,c_temp,x_temp, &
                            z_temp, ang_temp, p_temp, ang2_temp, abd2_temp 
     
     
-            real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
-            real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
+       real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
+       real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
 
-            real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
-            real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
-            real(kind=skr),dimension(51)       :: CDFW,UENER
-            real(kind=skr),dimension(10)       :: RELINT,PRELINT
-            real(kind=skr),dimension(4)        :: II,DX,PHI_INT
-            real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
+       real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
+       real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
+       real(kind=skr),dimension(51)       :: CDFW,UENER
+       real(kind=skr),dimension(10)       :: RELINT,PRELINT
+       real(kind=skr),dimension(4)        :: II,DX,PHI_INT
+       real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
+   
+       integer(kind=ski) :: n_rej=0, k_rej=0
     
-            integer(kind=ski) :: n_rej=0, k_rej=0
-    
+       real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
     ! C
     ! C Save the *big* arrays so it will:
     ! C  -- zero out the elements.

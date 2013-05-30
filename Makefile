@@ -257,7 +257,7 @@ clean:
 	/bin/rm -f version.txt
 	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp
 	/bin/rm -f shadow3$(EXE) example_shadow_format
-	/bin/rm -f example01_f95 example01_c example01_cpp 
+	/bin/rm -f example01_f95 example01_c example01_cpp example02_f95
 	/bin/rm -f example_standalone_mirror
 	/bin/rm -f shadow_version.h
 	/bin/rm -rf build *.pyc

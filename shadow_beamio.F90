@@ -185,6 +185,7 @@ contains
  	 		case (13)
  	  			do i=1,NPOINT
  	    			read (unit=lun, iostat=iErr) (ray(j,i), j=1,12), phase(1,i)
+
             		if (iErr /= 0) then
        	    			iErr = 2
                 		print *, "RBEAM Error reading file: "//trim(fname)

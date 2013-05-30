@@ -6653,7 +6653,6 @@ if (f_roughness.eq.1) then
     ierr = 0
     ! Csrio       call pspect (0,0,iseed,ierr,ipsflag)
     CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
-
     if (ierr.ne.0) call leave ('Error on return from PSPECT','SETSOUR',izero)
     if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
 end if
@@ -8232,8 +8231,8 @@ end if
 ! C
 		IPSFLAG = 1
 		IERR = 0
-! Csrio		CALL PSPECT (X1,X2,ISTAR1,IERR,IPSFLAG)
-	      CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
+!!              CALL PSPECT (X1,X2,ISTAR1,IERR,IPSFLAG)
+            CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
 
 		IF (IERR.NE.0) CALL LEAVE  &
      		('MIRROR', 'Error on return from PSPECT', izero)
@@ -8875,80 +8874,87 @@ End Subroutine mirror1
 SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-e,g-h,o-z)
-	implicit integer(kind=ski)        (f,i-n)
+        ! implicit real(kind=skr) (a-e,g-h,o-z)
+        ! implicit integer(kind=ski)        (f,i-n)
+        implicit none
 
-     	!CHARACTER*80	ARG,RSTRING, INFILE
-	!CHARACTER*80	FILESOURCE
-	character(len=*),intent(in out)  :: OUTP
-	!!!character(len=512) :: FILESOURCE,arg,infile
-	character(len=sklen)  :: FILESOURCE
-!!!srio
-	character(len=sklen)  :: infile
-	character(len=sklen) :: arg
-	LOGICAL		IRET
-	!INTEGER		IPASS
-	!DATA 	IPASS	/ 0 /
-        !SAVE		IPASS
+        character(len=*),intent(in out)  :: OUTP
+        integer(kind=ski),intent(in out) :: iFlag
+        integer(kind=ski),intent(out)    :: iTerminate
+
+        character(len=sklen)  :: FILESOURCE
+        character(len=sklen)  :: infile
+        character(len=sklen)  :: arg
+        LOGICAL               :: IRET
+        !INTEGER                IPASS
+        !DATA         IPASS        / 0 /
+        !SAVE                IPASS
         !integer(kind=ski)            :: iTerminate
         integer(kind=ski),save       :: ipass=0
+
+
+        !integer(kind=ski)            :: iTerminate, iFlag
+        integer(kind=ski)            :: irestart, irest, f_new, iwhat, idumm, iend, nold
+
+
 ! C
 ! C Clears all variable to avoid cross talks
 ! C
 ! srio: MOVED TO TRACE LEVEL
-!     	CALL	RESET
+!             CALL        RESET
 
 ! C
 ! C Tests for continuation or new optical system
 ! C
+        iTerminate = 0
 
-     	IF (IFLAG.EQ.0) THEN
-     	 WRITE(6,*)'Mode selected is: '//trim(OUTP)
-     	 WRITE(6,*)' '
-      	 WRITE(6,*)'Options: to start anew                 [ 0 ] ' 
-	 WRITE(6,*)'            to restart from a given OE [ 1 ] '
-     	 WRITE(6,*)' '
-      	 IRESTART 	=   IRINT ('Then ? ')
-     	 WRITE(6,*)' '
-      	 IF (IRESTART.EQ.0) THEN
-     	   IFLAG = 1
-      	 ELSE
-      	   IREST =   IRINT ('Previous element number: ')
-      	   CALL	READ_AXIS  (IREST)
-      	   IFLAG =   IREST + 1
-     	   FILESOURCE = RSTRING ('Image file of the previous OE ? ')
-      	   F_NEW = 0
-      	 END IF
-     	ELSE
+        IF (IFLAG.EQ.0) THEN
+          WRITE(6,*)'Mode selected is: '//trim(OUTP)
+          WRITE(6,*)' '
+          WRITE(6,*)'Options: to start anew                 [ 0 ] ' 
+          WRITE(6,*)'            to restart from a given OE [ 1 ] '
+          WRITE(6,*)' '
+          IRESTART = IRINT ('Then ? ')
+          WRITE(6,*)' '
+          IF (IRESTART.EQ.0) THEN
+            IFLAG = 1
+          ELSE
+            IREST =   IRINT ('Previous element number: ')
+            CALL READ_AXIS  (IREST)
+            IFLAG = IREST + 1
+            FILESOURCE = RSTRING ('Image file of the previous OE ? ')
+            F_NEW = 0
+          END IF
+        ELSE
 ! C
 ! C Increments counter
 ! C
-     	  IFLAG = IFLAG + 1
-	END IF
-     	
+          IFLAG = IFLAG + 1
+        END IF
+             
 ! C
 ! C Parses for matches
 ! C
-	IF ((OUTP.EQ.'menu').OR.(OUTP.EQ.'systemfile'))  THEN
+IF ((OUTP.EQ.'menu').OR.(OUTP.EQ.'systemfile'))  THEN
 ! C-------------------------------------------------------------
 ! C
 ! C   MENU  case
 ! C
-	IF (IPASS.EQ.0) THEN
-	   OPEN (37, FILE='systemfile.dat', STATUS='old', IOSTAT=IWHAT)
+        IF (IPASS.EQ.0) THEN
+          OPEN (37, FILE='systemfile.dat', STATUS='old', IOSTAT=IWHAT)
 ! C
 ! C
 ! C First call; must seek the files list
 ! C
 ! C Tests if files found; if not, return to main program
 ! C
-	    IF (IWHAT.NE.0) THEN
-		CALL  LEAVE  ('SWITCH_INP-E-error:', 'systemfile.dat not found', &
-     			  idumm)
-     	    ELSE
-		IPASS = 1
-     	    END IF
-	END IF ! (IPASS.EQ.0)
+          IF (IWHAT.NE.0) THEN
+              CALL  LEAVE  ('SWITCH_INP-E-error:', 'systemfile.dat not found', &
+                               idumm)
+          ELSE
+              IPASS = 1
+          END IF
+        END IF ! (IPASS.EQ.0)
 ! C
 ! C System file found and opened succesfully; read in OE filename
 ! C
@@ -8965,136 +8971,109 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C read in NAMELIST block
 ! C
         IDUMM = 0
-	IF (IFLAG.GT.1) THEN
-	     NOLD	= NPOINT
-     	     CALL RWNAME (INFILE,'R_OE', IDUMM)
-	     NPOINT	= NOLD
-	ELSE
-     	     CALL RWNAME (INFILE,'R_OE', IDUMM)
-	END IF
+        IF (IFLAG.GT.1) THEN
+          NOLD = NPOINT
+          CALL RWNAME (INFILE,'R_OE', IDUMM)
+          NPOINT = NOLD
+        ELSE
+          CALL RWNAME (INFILE,'R_OE', IDUMM)
+        END IF
 
 
-     	IF (IDUMM.NE.0) THEN
-     	     WRITE(6,*)'Error reading from file '//trim(INFILE)
-     	     CALL LEAVE ('SWITCH_INP', 'Check contents of SYSTEMFILE',IDUMM)
-     	END IF
-	GO TO 2000
+        IF (IDUMM.NE.0) THEN
+          WRITE(6,*)'Error reading from file '//trim(INFILE)
+          CALL LEAVE ('SWITCH_INP', 'Check contents of SYSTEMFILE',IDUMM)
+        END IF
+        GO TO 2000
+END IF ! (OUTP.EQ.'MENU')
 
-     	END IF ! (OUTP.EQ.'MENU')
 ! C
 ! C This cannot be a MENU case
 ! C
 
-	IF (IFLAG.GT.1) THEN
+        IF (IFLAG.GT.1) THEN
           print *,''
-     	  IDUMM	=   IYES ('Do you want to change input mode ? ')
+          IDUMM        =   IYES ('Do you want to change input mode ? ')
           print *,''
-     	  IF (IDUMM.EQ.1) THEN
-10     	    WRITE(6,*)'Enter 1 for PROMPT, 2 for BATCH, 3 for SYSTEMFILE'
-     	    IDUMM = IRINT ('Then ? ')
-     	   IF (IDUMM.EQ.1) THEN
-     	     OUTP = 'prompt'
-     	   ELSE IF (IDUMM.EQ.2) THEN
-     	     OUTP = 'batch'
-     	   ELSE IF (IDUMM.EQ.3) THEN
-     	     OUTP = 'systemfile'
-     	   ELSE
-     	     WRITE(6,*)'What ?? '
-     	     GO TO 10
-     	   END IF
-     	  END IF
-	END IF
+            IF (IDUMM.EQ.1) THEN
+10            WRITE(6,*)'Enter 1 for PROMPT, 2 for BATCH, 3 for SYSTEMFILE'
+              IDUMM = IRINT ('Then ? ')
+              IF (IDUMM.EQ.1) THEN
+                OUTP = 'prompt'
+              ELSE IF (IDUMM.EQ.2) THEN
+                OUTP = 'batch'
+              ELSE IF (IDUMM.EQ.3) THEN
+                OUTP = 'systemfile'
+              ELSE
+                WRITE(6,*)'What ?? '
+                GO TO 10
+              END IF
+            END IF
+        END IF
 
-     	IF (OUTP.EQ.'prompt') THEN
+IF (OUTP.EQ.'prompt') THEN
 ! C--------------------------------------------------------------
-! C     	 
+! C              
 ! C   PROMPT  CASE
 ! C
 ! C IFLAG represents the OE #
 ! C
-     	CALL	INPUT_OE (IFLAG,iTerminate)
+          CALL        INPUT_OE (IFLAG,iTerminate)
 ! C
-     	ELSE IF (OUTP.EQ.'batch') THEN
+ELSE IF (OUTP.EQ.'batch') THEN
 ! C
 ! C--------------------------------------------------------------
 ! C
 ! C   NAMELIST CASE
 ! C
 ! C
-     	  INFILE = RSTRING ('Input file [ EXIT terminates OS ] ?')
+          INFILE = RSTRING ('Input file [ EXIT terminates OS ] ?')
 ! C
 ! C If ^Z detected, assumes end of system
 ! C
-!csrio     	 IF (INFILE(1:5).EQ.'EXIT'.OR.INFILE(1:5).EQ.'exit') THEN 
-     	 IF (INFILE.EQ.'EXIT'.OR.INFILE.EQ.'exit') THEN 
-           !STOP
-           iTerminate=1
-	   RETURN
-         END IF
+!csrio              IF (INFILE(1:5).EQ.'EXIT'.OR.INFILE(1:5).EQ.'exit') THEN 
+          IF (INFILE.EQ.'EXIT'.OR.INFILE.EQ.'exit') THEN 
+            !STOP
+            iTerminate=1
+            RETURN
+          END IF
 ! C
 ! C Valid element; read in NAMELIST block
 ! C
-     	  IDUMM	= 0
-	  IF (IFLAG.GT.1) THEN
-	    NOLD	= NPOINT
-     	    CALL RWNAME (INFILE,'R_OE', IDUMM)
-	    NPOINT	= NOLD
-	  ELSE
-     	    CALL RWNAME (INFILE,'R_OE', IDUMM)
-	  END IF
-     	  IF (IDUMM.NE.0) CALL LEAVE &
-     	   ('SWITCH_INP','Error reading from file ',IDUMM)
+          IDUMM        = 0
+          IF (IFLAG.GT.1) THEN
+            NOLD = NPOINT
+            CALL RWNAME (INFILE,'R_OE', IDUMM)
+            NPOINT = NOLD
+          ELSE
+            CALL RWNAME (INFILE,'R_OE', IDUMM)
+          END IF
+          IF (IDUMM.NE.0) CALL LEAVE &
+                ('SWITCH_INP','Error reading from file ',IDUMM)
 ! C
-     	ELSE
+ELSE
 ! C
 ! C------------------------------------------------------------------
 ! C
 ! C   UNRECOGNIZED  INPUT
 ! C
-     	  WRITE(6,*)'ERROR:: string was: ',OUTP
-     	  WRITE(6,*)'ERROR:: SHADOW not activated properly.'
-     	  CALL LEAVE ('SWITCH_INP','Error in MENU_STAT',izero)
-     	END IF
-! C+++
-! C Check for last minute changes of mind
-! C
-! C     	I_ANSW = IYES ('Do you want to modify some inputs ? ')
-! C     	IF (I_ANSW.NE.0) THEN
-! C     	  I_ANSW = IYES ('Do you want a typing of the NAMELIST file ? ')
-! C     	 IF (I_ANSW.EQ.1) THEN
-! C     	   IDUMM = 1
-! C     	   CALL RWNAME ( 'TT:','W_OE', IDUMM)
-! C     	 END IF
-! C112	  TYPE 
-! C     $*,'Enter now the new values. The NAMELIST block name is $TOTAL'
-! C     	  IDUMM = 0
-! C     	  CALL RWNAME ( 'TT:','R_OE', IDUMM)
-! C     	 IF (IDUMM.LT.0) THEN
-! C   	   CALL	LIB$ERASE_PAGE (5,1)
-! C  	   WRITE(6,*)'NAMELIST error. '
-! C     	   WRITE(6,*)'Enter:  0 to keep going (ignore error)'
-! C     	   WRITE(6,*)'        1 to restart NAMELIST'
-! C     	   WRITE(6,*)'        2 to EXIT (i.e. STOP)'
-! C     	   I_ANSW = IRINT ('Then ? ')
-! C     	  IF (I_ANSW.EQ.2) STOP
-! C     	  IF (I_ANSW.EQ.0) RETURN
-! C     	  IF (I_ANSW.EQ.1) GO TO 112
-! C     	 END IF
-! C     	END IF
-! C---
+          WRITE(6,*)'ERROR:: string was: ',OUTP
+          WRITE(6,*)'ERROR:: SHADOW not activated properly.'
+          CALL LEAVE ('SWITCH_INP','Error in MENU_STAT',izero)
+END IF
 ! C
 ! C
-2000	CONTINUE
+2000        CONTINUE
 ! C 
 ! C If restart from the middle of an OS, then the source files should be the ones
 ! C specified in the beginning of this subroutine.
 ! C
-	IF (IRESTART.EQ.1) 	  FILE_SOURCE	= FILESOURCE
+        IF (IRESTART.EQ.1) FILE_SOURCE = FILESOURCE
 ! C
 ! C Data are ready; can start execution
 ! C
-     	RETURN
-1000	FORMAT (A)
+RETURN
+1000 FORMAT (A)
 End Subroutine switch_inp
 
 
@@ -10866,11 +10845,6 @@ End Subroutine input_source1
 SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     
     
-    ! IMPLICIT	REAL*8		(A-E,G-H,O-Z)
-    ! IMPLICIT	INTEGER*4	(F,I-N)
-    !IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-    !IMPLICIT INTEGER(kind=ski)        (F,I-N)
- 
     implicit    real(kind=skr)          (a-e,g-h,o-z)
     implicit    integer(kind=ski)       (f,i-n)
     
@@ -10878,61 +10852,27 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     type (poolSource), intent(in out) :: pool00
     real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
 
-    ! C
-    integer(kind=ski)		ioform
-    !!srio
-    INTEGER(kind=ski)		C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
-    !<> CHARACTER*(*)	infile, FNAME
+    integer(kind=ski) :: ioform
+    integer(kind=ski) :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
     character(len=sklen)       :: infile, FNAME
-    ! C
-    CHARACTER*80	ERRMSG
+    character(len=sklen)       :: errmsg
     
-    
-    !!	DIMENSION	BEGIN(12,N_DIM), PHASE(3,N_DIM), AP(3,N_DIM)
-    !!<> real(kind=skr), dimension(:,:), allocatable :: begin,phase,ap
-    !! needed for calling source_bound
-    real(kind=skr), dimension(3)                :: XDUM, YDUM
-    
-    
-    
-    !!	DIMENSION 	DIREC(3),AP_VEC(3),E_TEMP(3),SB_POS(3), &
-    !!     			VTEMP(3),GRID(6,N_DIM),A_VEC(3),A_TEMP(3), &
-    !!     			E_BEAM(3)
-    DIMENSION 	DIREC(3),AP_VEC(3),E_TEMP(3),SB_POS(3), &
-         VTEMP(3),A_VEC(3),A_TEMP(3), E_BEAM(3)
-    !<> real(kind=skr), dimension(:,:), allocatable :: grid
+    real(kind=skr), dimension(3)  :: XDUM, YDUM
+    real(kind=skr), dimension(3)  ::  DIREC,AP_VEC,E_TEMP,SB_POS,VTEMP,A_VEC,A_TEMP,E_BEAM
     real(kind=skr), dimension(6,npoint1)  :: grid
+    real(kind=skr), dimension(10) :: SIGXL,SIGZL
     
+    real(kind=skr)  ::   YRAN,DPS_RAN1,DPS_RAN2
+    real(kind=skr)  ::   TMP_A,TMP_B,DPS_RAN3
     
-    DIMENSION	SIGXL(10),SIGZL(10)
-    
-    !!	REAL*8		SEED_Y(5,N_DIM),Y_X(5,N_DIM),Y_XPRI(5,N_DIM), &
-    !!                       Y_Z(5,N_DIM),Y_ZPRI(5,N_DIM), &
-    !!     			Y_CURV(5,N_DIM),Y_PATH(5,N_DIM)
-    !!	REAL*8		Y_TEMP(N_DIM),C_TEMP(N_DIM),X_TEMP(N_DIM), &
-    !!     			Z_TEMP(N_DIM),ANG_TEMP(N_DIM),P_TEMP(N_DIM), &
-    !!                       ANG2_TEMP(N_DIM)
-    
-    !!        real(kind=skr), dimension(:,:), allocatable :: seed_y,y_x,y_xpri, &
-    !!                       y_z,y_zpri,y_curv,y_path
-    
-    !!        real(kind=skr), dimension(:), allocatable :: y_temp,c_temp,x_temp, &
-    !!                       z_temp, ang_temp, p_temp, ang2_temp, abd2_temp 
-    
-    
-    DOUBLE PRECISION YRAN,DPS_RAN1,DPS_RAN2
-    DOUBLE PRECISION TMP_A,TMP_B,DPS_RAN3
-    
-    !!srio	DIMENSION	CDFX(31,31,51),CDFZ(31,51),CDFW(51)
-    !!srio	DIMENSION	D_POL(31,31,51)
-    !!srio	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-    DIMENSION	JI(2),DZ(2),THE_INT(2)
-    DIMENSION	II(4),DX(4),PHI_INT(4)
-    
-    DIMENSION	RELINT(10),PRELINT(10)
+    real(kind=skr),dimension(2)  :: JI,DZ,THE_INT
+    real(kind=skr),dimension(4)  :: II,DX,PHI_INT
+    real(kind=skr),dimension(10) :: RELINT,PRELINT
     
     integer(kind=ski) :: n_rej=0, k_rej=0
     
+    real(kind=skr)    :: xxx=0,yyy=0,zzz=0
+
     ! C
     ! C Save the *big* arrays so it will:
     ! C  -- zero out the elements.
@@ -10961,9 +10901,6 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
 
     ISTAT = 0
     IDUMM = 0
-    !<> call rwname(infile,'R_SOUR',iFlag)
-    !call gfload_source (infile, idumm)
-    !<> IF (IFLAG.NE.0) CALL LEAVE ('SHADOW-SOURCE1','Failed to read input file: '//infile,idumm)
     !! PROVISIONAL STUFF...
     IF ((FDISTR.EQ.4).OR.(FSOURCE_DEPTH.EQ.4).OR.(F_WIGGLER.GT.0)) THEN
        ITMP=1
@@ -10979,28 +10916,28 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C First figure out the number of columns written out for each ray.
     ! C
     IF (F_POLAR.EQ.1) THEN
-       NCOL	= 18
+       NCOL = 18
     ELSE IF (F_OPD.EQ.1) THEN
-       NCOL	= 13
+       NCOL = 13
     ELSE
-       NCOL	= 12
+       NCOL = 12
     END IF
     
-    RAD_MIN	= ABS(R_MAGNET)
-    RAD_MAX	= ABS(R_MAGNET)
+    RAD_MIN = ABS(R_MAGNET)
+    RAD_MAX = ABS(R_MAGNET)
     
     IF (FSOUR.EQ.3) THEN
        EPSI_XOLD = EPSI_X
        EPSI_ZOLD = EPSI_Z
        IF (SIGMAX.NE.0.0D0) THEN
-          EPSI_X	=   EPSI_X/SIGMAX
+          EPSI_X =   EPSI_X/SIGMAX
        ELSE
-          EPSI_X	=   0.0D0
+          EPSI_X =   0.0D0
        END IF
        IF (SIGMAZ.NE.0.0D0) THEN
-          EPSI_Z	=   EPSI_Z/SIGMAZ
+          EPSI_Z =   EPSI_Z/SIGMAZ
        ELSE
-          EPSI_Z	=   0.0D0
+          EPSI_Z =   0.0D0
        END IF
     END IF
     
@@ -11020,7 +10957,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C
     IF ( F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
        ITMP=-1
-       CALL 	SOURCE_BOUND (XDUM,YDUM,ITMP)
+       CALL  SOURCE_BOUND (XDUM,YDUM,ITMP)
     END IF
     ! C
     ! C tests for grids
@@ -11051,105 +10988,105 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ! C The next two assignments are just for convenience of the original program 
        ! C structure.
        ! C
-       FSOUR	= 4
+       FSOUR = 4
        FDISTR = 7
     END IF
     
     IF (F_PHOT.EQ.1) THEN
        IF (F_COLOR.EQ.1) THEN
-          PHOTON(1)	=   TOANGS/PHOTON(1)
+          PHOTON(1) =   TOANGS/PHOTON(1)
        ELSE IF (F_COLOR.EQ.2.OR.F_COLOR.EQ.4) THEN
           DO  21 I=1,N_COLOR
-             PHOTON(I)	=   TOANGS/PHOTON(I)
+             PHOTON(I) =   TOANGS/PHOTON(I)
 21        CONTINUE
        ELSE IF (F_COLOR.EQ.3) THEN
           DO 31 I=1,2
-             PHOTON(I)	=   TOANGS/PHOTON(I)
+             PHOTON(I) =   TOANGS/PHOTON(I)
 31        CONTINUE
        END IF
     END IF
 102 CONTINUE
     
     IF (FDISTR.NE.5) THEN
-       NMOM	= IDO_VX * IDO_VZ
+       NMOM = IDO_VX * IDO_VZ
     ELSE
-       NMOM	= (N_CONE * N_CIRCLE) 
+       NMOM = (N_CONE * N_CIRCLE) 
        IDO_VX = N_CIRCLE
        IDO_VZ = N_CONE
     END IF
-    NSPACE	= IDO_X_S * IDO_Y_S * IDO_Z_S
+    NSPACE = IDO_X_S * IDO_Y_S * IDO_Z_S
     
     IF (FGRID.EQ.0) THEN
-       NTOTAL	= NPOINT
+       NTOTAL = NPOINT
     ELSE IF (FGRID.EQ.1) THEN
-       NTOTAL	= NSPACE * NMOM
+       NTOTAL = NSPACE * NMOM
     ELSE IF (FGRID.EQ.2) THEN
-       NTOTAL	= NSPACE * NPOINT
+       NTOTAL = NSPACE * NPOINT
     ELSE IF (FGRID.EQ.3) THEN
-       NTOTAL	= NPOINT * NMOM
+       NTOTAL = NPOINT * NMOM
     ELSE IF (FGRID.EQ.4) THEN
-       NTOTAL	= IDO_XL * NPOINT * IDO_ZL * NPOINT
+       NTOTAL = IDO_XL * NPOINT * IDO_ZL * NPOINT
     ELSE IF (FGRID.EQ.5) THEN
-       NTOTAL	= IDO_XL * IDO_XN * IDO_ZL * IDO_ZN
+       NTOTAL = IDO_XL * IDO_XN * IDO_ZL * IDO_ZN
     END IF
     
     ITMP=0
-    IF (NTOTAL.LE.0)	CALL LEAVE ('SOURCE','NPOINT = 0',ITMP)
-    !!     	IF (NTOTAL.GT.N_DIM)	CALL LEAVE ('SOURCE','Too many rays.',ITMP)
+    IF (NTOTAL.LE.0) CALL LEAVE ('SOURCE','NPOINT = 0',ITMP)
+    !!      IF (NTOTAL.GT.N_DIM) CALL LEAVE ('SOURCE','Too many rays.',ITMP)
     ! C
     ! C Compute the steps and iteration count limits for the grid generation.
     ! C
-    IF (IDO_X_S.GT.1)	STEP_X	= 1.0D0/(IDO_X_S - 1)
-    IF (IDO_Y_S.GT.1)	STEP_Y	= 1.0D0/(IDO_Y_S - 1)
-    IF (IDO_Z_S.GT.1)	STEP_Z	= 1.0D0/(IDO_Z_S - 1)
-    IF (IDO_VX.GT.1)	STEP_VX	= 1.0D0/(IDO_VX - 1)
-    IF (IDO_VZ.GT.1)	STEP_VZ	= 1.0D0/(IDO_VZ - 1)
-    IF (IDO_XN.GT.1)	STEP_XN = 1.0D0/(IDO_XN - 1)
-    IF (IDO_ZN.GT.1)	STEP_ZN = 1.0D0/(IDO_ZN - 1)
-    CL_X	= (IDO_X_S - 1) / 2.0D0
-    CL_Y	= (IDO_Y_S - 1) / 2.0D0
-    CL_Z	= (IDO_Z_S - 1) / 2.0D0
-    CL_VX	= (IDO_VX - 1) / 2.0D0
-    CL_VZ	= (IDO_VZ - 1) / 2.0D0
-    CL_XN	= (IDO_XN - 1) / 2.0D0
-    CL_ZN	= (IDO_ZN - 1) / 2.0D0
+    IF (IDO_X_S.GT.1) STEP_X = 1.0D0/(IDO_X_S - 1)
+    IF (IDO_Y_S.GT.1) STEP_Y = 1.0D0/(IDO_Y_S - 1)
+    IF (IDO_Z_S.GT.1) STEP_Z = 1.0D0/(IDO_Z_S - 1)
+    IF (IDO_VX.GT.1) STEP_VX = 1.0D0/(IDO_VX - 1)
+    IF (IDO_VZ.GT.1) STEP_VZ = 1.0D0/(IDO_VZ - 1)
+    IF (IDO_XN.GT.1) STEP_XN = 1.0D0/(IDO_XN - 1)
+    IF (IDO_ZN.GT.1) STEP_ZN = 1.0D0/(IDO_ZN - 1)
+    CL_X = (IDO_X_S - 1) / 2.0D0
+    CL_Y = (IDO_Y_S - 1) / 2.0D0
+    CL_Z = (IDO_Z_S - 1) / 2.0D0
+    CL_VX = (IDO_VX - 1) / 2.0D0
+    CL_VZ = (IDO_VZ - 1) / 2.0D0
+    CL_XN = (IDO_XN - 1) / 2.0D0
+    CL_ZN = (IDO_ZN - 1) / 2.0D0
     ! C
     ! C First fill out a "typical" part of the GRID direction.
     ! C
-    INDEXMOM	= 0	
+    INDEXMOM = 0 
     IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
        DO 41 I = 1, NPOINT
-       GRID (4,I)	= WRAN (ISTAR1)
-       GRID (6,I)	= WRAN (ISTAR1)
+       GRID (4,I) = WRAN (ISTAR1)
+       GRID (6,I) = WRAN (ISTAR1)
 41     CONTINUE
-       INDEXMOM	= NPOINT
+       INDEXMOM = NPOINT
     ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
-    !!srio 	  DO 51 C_VX = -CL_VX, CL_VX
+    !!srio  DO 51 C_VX = -CL_VX, CL_VX
        DO 51 C_VX = -INT(CL_VX), INT(CL_VX)
-    !!srio 	    DO 61 C_VZ = -CL_VZ, CL_VZ
+    !!srio  DO 61 C_VZ = -CL_VZ, CL_VZ
           DO 61 C_VZ = -INT(CL_VZ), INT(CL_VZ)
 !!print *,'C_VX C_VZ: ',C_VX ,C_VZ
-             INDEXMOM	= INDEXMOM + 1
-             GRID (4,INDEXMOM)	= C_VX * STEP_VX + 0.5D0
-             GRID (6,INDEXMOM)	= C_VZ * STEP_VZ + 0.5D0
+             INDEXMOM = INDEXMOM + 1
+             GRID (4,INDEXMOM) = C_VX * STEP_VX + 0.5D0
+             GRID (6,INDEXMOM) = C_VZ * STEP_VZ + 0.5D0
 61        CONTINUE
 51     CONTINUE
        ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
-    	  DO 71 I = 1, IDO_XL
+          DO 71 I = 1, IDO_XL
              IF (FGRID.EQ.4) THEN
                 DO 81 J = 1, NPOINT
-                   INDEXMOM		= INDEXMOM + 1
-                   GRID(1,INDEXMOM)	= SIGXL(I)
-                   GRID(2,INDEXMOM)	= WRAN (ISTAR1)
-                   GRID(4,INDEXMOM)	= WRAN (ISTAR1)
+                   INDEXMOM = INDEXMOM + 1
+                   GRID(1,INDEXMOM) = SIGXL(I)
+                   GRID(2,INDEXMOM) = WRAN (ISTAR1)
+                   GRID(4,INDEXMOM) = WRAN (ISTAR1)
 81              CONTINUE
              ELSE
-          !!srio	      DO 91 C_XN = -CL_XN, CL_XN
+          !!srio DO 91 C_XN = -CL_XN, CL_XN
                 DO 91 C_XN = -INT(CL_XN), INT(CL_XN)
-                   INDEXMOM		= INDEXMOM + 1
-                   GRID(1,INDEXMOM)	= SIGXL(I)
-                   GRID(2,INDEXMOM)	= WRAN (ISTAR1)
-                   GRID(4,INDEXMOM)	= C_XN * STEP_XN + 0.5D0
+                   INDEXMOM = INDEXMOM + 1
+                   GRID(1,INDEXMOM) = SIGXL(I)
+                   GRID(2,INDEXMOM) = WRAN (ISTAR1)
+                   GRID(4,INDEXMOM) = C_XN * STEP_XN + 0.5D0
 91              CONTINUE
              END IF
 71        CONTINUE
@@ -11159,83 +11096,83 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C
        INDEXSPA = 0
        IF (FGRID.EQ.0) THEN
-    	  DO 103 I = 1, NPOINT
-          GRID (1,I)	= WRAN (ISTAR1)
-          GRID (2,I)	= WRAN (ISTAR1)
-          GRID (3,I)	= WRAN (ISTAR1)
-103	  CONTINUE
-    	  INDEXSPA = NPOINT
+          DO 103 I = 1, NPOINT
+          GRID (1,I) = WRAN (ISTAR1)
+          GRID (2,I) = WRAN (ISTAR1)
+          GRID (3,I) = WRAN (ISTAR1)
+103 CONTINUE
+          INDEXSPA = NPOINT
        ELSE IF (FGRID.EQ.3) THEN
           DO 113 I = 1, NPOINT
              TEMPX = WRAN (ISTAR1)
              TEMPY = WRAN (ISTAR1)
              TEMPZ = WRAN (ISTAR1)
              DO 121 J = 1, INDEXMOM
-                INDEXSPA	= INDEXSPA + 1
-                GRID(1,INDEXSPA)	= TEMPX
-                GRID(2,INDEXSPA)	= TEMPY
-                GRID(3,INDEXSPA)	= TEMPZ
-                GRID(4,INDEXSPA)	= GRID (4,J)
-                GRID(6,INDEXSPA)	= GRID (6,J)
+                INDEXSPA = INDEXSPA + 1
+                GRID(1,INDEXSPA) = TEMPX
+                GRID(2,INDEXSPA) = TEMPY
+                GRID(3,INDEXSPA) = TEMPZ
+                GRID(4,INDEXSPA) = GRID (4,J)
+                GRID(6,INDEXSPA) = GRID (6,J)
 121          CONTINUE
 113       CONTINUE
        ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-          !!srio	  DO 131 C_X = -CL_X, CL_X
-          !!srio	    DO 141 C_Y = -CL_Y, CL_Y
-          !!srio	      DO 151 C_Z = -CL_Z, CL_Z
-    	  DO 131 C_X = -INT(CL_X), INT(CL_X)
+          !!srio DO 131 C_X = -CL_X, CL_X
+          !!srio DO 141 C_Y = -CL_Y, CL_Y
+          !!srio DO 151 C_Z = -CL_Z, CL_Z
+          DO 131 C_X = -INT(CL_X), INT(CL_X)
              DO 141 C_Y = -INT(CL_Y), INT(CL_Y)
-    	        DO 151 C_Z = -INT(CL_Z), INT(CL_Z)
-    		   DO 161 J = 1, INDEXMOM
-                      INDEXSPA	= INDEXSPA + 1
-                      GRID (1,INDEXSPA)	= C_X * STEP_X + 0.5D0
-                      GRID (2,INDEXSPA)	= C_Y * STEP_Y + 0.5D0
-                      GRID (3,INDEXSPA)	= C_Z * STEP_Z + 0.5D0
-                      GRID (4,INDEXSPA)	= GRID (4,J)
-                      GRID (6,INDEXSPA)	= GRID (6,J)
+                DO 151 C_Z = -INT(CL_Z), INT(CL_Z)
+                   DO 161 J = 1, INDEXMOM
+                      INDEXSPA = INDEXSPA + 1
+                      GRID (1,INDEXSPA) = C_X * STEP_X + 0.5D0
+                      GRID (2,INDEXSPA) = C_Y * STEP_Y + 0.5D0
+                      GRID (3,INDEXSPA) = C_Z * STEP_Z + 0.5D0
+                      GRID (4,INDEXSPA) = GRID (4,J)
+                      GRID (6,INDEXSPA) = GRID (6,J)
 161                CONTINUE
 151             CONTINUE
 141          CONTINUE
 131       CONTINUE
        ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
-    	  DO 171 I = 1, IDO_ZL
+          DO 171 I = 1, IDO_ZL
              IF (FGRID.EQ.4) THEN
-    	        DO 181 J = 1, NPOINT
-    	           TEMP = WRAN (ISTAR1)
-    	           DO 191 K = 1, IDO_XL*NPOINT
-                      INDEXSPA		= INDEXSPA + 1
-    	              GRID(1,INDEXSPA)	= GRID(1,K)
-    		      GRID(2,INDEXSPA)	= GRID(2,K)
-                      GRID(4,INDEXSPA)	= GRID(4,K)
-                      GRID(3,INDEXSPA)	= SIGZL(I)
-                      GRID(6,INDEXSPA)	= TEMP
+                DO 181 J = 1, NPOINT
+                   TEMP = WRAN (ISTAR1)
+                   DO 191 K = 1, IDO_XL*NPOINT
+                      INDEXSPA = INDEXSPA + 1
+                      GRID(1,INDEXSPA) = GRID(1,K)
+                      GRID(2,INDEXSPA) = GRID(2,K)
+                      GRID(4,INDEXSPA) = GRID(4,K)
+                      GRID(3,INDEXSPA) = SIGZL(I)
+                      GRID(6,INDEXSPA) = TEMP
 191                CONTINUE
 181             CONTINUE
              ELSE
-    !!srio	      DO 201 C_ZN = -CL_ZN, CL_ZN
+    !!srio DO 201 C_ZN = -CL_ZN, CL_ZN
                 DO 201 C_ZN = -INT(CL_ZN), INT(CL_ZN)
-                   TEMP	= C_ZN * STEP_ZN + 0.5D0
+                   TEMP = C_ZN * STEP_ZN + 0.5D0
                    DO 211 K = 1, IDO_XL*IDO_XN
-                      INDEXSPA		= INDEXSPA + 1
-                      GRID(1,INDEXSPA)	= GRID(1,K)
-                      GRID(2,INDEXSPA)	= GRID(2,K)
-                      GRID(4,INDEXSPA)	= GRID(4,K)
-                      GRID(3,INDEXSPA)	= SIGZL(I)
-                      GRID(6,INDEXSPA)	= TEMP
+                      INDEXSPA = INDEXSPA + 1
+                      GRID(1,INDEXSPA) = GRID(1,K)
+                      GRID(2,INDEXSPA) = GRID(2,K)
+                      GRID(4,INDEXSPA) = GRID(4,K)
+                      GRID(3,INDEXSPA) = SIGZL(I)
+                      GRID(6,INDEXSPA) = TEMP
 211                CONTINUE
 201             CONTINUE
-    	     END IF
-171	  CONTINUE
-       END IF	
+             END IF
+171       CONTINUE
+       END IF
        ! C
        ! C---------------------------------------------------------------------
        ! C           POSITIONS
        ! C
        ! C
-       KK	=   0
-       MM	=   0
+       KK =   0
+       MM =   0
        DO 10000 ITIK=1,NTOTAL
-          KK	=  KK + 1
+          KK =  KK + 1
           !IF (KK.EQ.250) THEN
           IF (KK.EQ.NTOTAL/20) THEN
              !ITOTRAY = KK + MM*250
@@ -11268,8 +11205,8 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C
           ! C Rectangular source 
           ! C
-          XXX 		= (-1.0D0 + 2.0D0*GRID(1,ITIK))*WXSOU/2
-          ZZZ 		= (-1.0D0 + 2.0D0*GRID(3,ITIK))*WZSOU/2
+          XXX  = (-1.0D0 + 2.0D0*GRID(1,ITIK))*WXSOU/2
+          ZZZ  = (-1.0D0 + 2.0D0*GRID(3,ITIK))*WZSOU/2
           GO TO 111
     
 3         CONTINUE
@@ -11278,13 +11215,13 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C Uses a transformation algorithm to generate a uniform variate distribution
           ! C
           IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-             PHI		= TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
+             PHI = TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
           ELSE
-             PHI 		= TWOPI*GRID(1,ITIK)
+             PHI  = TWOPI*GRID(1,ITIK)
           END IF
-          RADIUS 		= SQRT(GRID(3,ITIK))
-          XXX 		= WXSOU*RADIUS*COS(PHI)
-          ZZZ 		= WZSOU*RADIUS*SIN(PHI)
+          RADIUS  = SQRT(GRID(3,ITIK))
+          XXX  = WXSOU*RADIUS*COS(PHI)
+          ZZZ  = WZSOU*RADIUS*SIN(PHI)
           GO TO 111
           
 4         CONTINUE
@@ -11292,13 +11229,13 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C Gaussian -- In order to accomodate the generation nof finite emittance
           ! C beams, we had to remove the 'grid' case.
           ! C 
-          ARG_X 		= GRID(1,ITIK)
-          ARG_Z 		= GRID(3,ITIK)
+          ARG_X  = GRID(1,ITIK)
+          ARG_Z  = GRID(3,ITIK)
           ! C
           ! C Compute the actual distance (EPSI_W*) from the orbital focus
           ! C
-          EPSI_WX		= EPSI_DX + EPSI_PATH
-          EPSI_WZ		= EPSI_DZ + EPSI_PATH
+          EPSI_WX = EPSI_DX + EPSI_PATH
+          EPSI_WZ = EPSI_DZ + EPSI_PATH
           CALL GAUSS (SIGMAX, EPSI_X, EPSI_WX, XXX, E_BEAM(1), istar1)
           CALL GAUSS (SIGMAZ, EPSI_Z, EPSI_WZ, ZZZ, E_BEAM(3), istar1)
           GO TO 111
@@ -11308,14 +11245,14 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C Ellipses in phase space (spatial components).
           ! C
           IF (FGRID.EQ.4) THEN
-             PHI_X		= TWOPI * GRID(4,ITIK)
-             PHI_Z		= TWOPI * GRID(6,ITIK)
+             PHI_X = TWOPI * GRID(4,ITIK)
+             PHI_Z = TWOPI * GRID(6,ITIK)
           ELSE
-             PHI_X		= TWOPI * GRID(4,ITIK) * (IDO_XN-1) / IDO_XN
-             PHI_Z		= TWOPI * GRID(6,ITIK) * (IDO_ZN-1) / IDO_ZN
+             PHI_X = TWOPI * GRID(4,ITIK) * (IDO_XN-1) / IDO_XN
+             PHI_Z = TWOPI * GRID(6,ITIK) * (IDO_ZN-1) / IDO_ZN
           END IF
-          XXX		= GRID(1,ITIK)*SIGMAX*COS(PHI_X)
-          ZZZ		= GRID(3,ITIK)*SIGMAZ*COS(PHI_Z)
+          XXX = GRID(1,ITIK)*SIGMAX*COS(PHI_X)
+          ZZZ = GRID(3,ITIK)*SIGMAZ*COS(PHI_Z)
           GO TO 111
           
 7         CONTINUE
@@ -11337,17 +11274,17 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
           ! C
           ! C Uniform depth distribution
           ! C
-220       YYY 		= (-1.0D0 + 2.0D0*GRID(2,ITIK))*WYSOU/2
+220       YYY  = (-1.0D0 + 2.0D0*GRID(2,ITIK))*WYSOU/2
           GO TO 550
           ! C
           ! C Gaussian depth distribution 
           ! C
-330       ARG_Y 		= GRID(2,ITIK)
+330       ARG_Y  = GRID(2,ITIK)
           
           CALL MDNRIS (ARG_Y,YYY,IER)
-    	  IF (IER.NE.0) WRITE(6,*)'Warning ! Error in YYY,MNDRIS (SOURCE)'
+          IF (IER.NE.0) WRITE(6,*)'Warning ! Error in YYY,MNDRIS (SOURCE)'
        
-       YYY 		= YYY*SIGMAY
+       YYY = YYY*SIGMAY
        
        GO TO 550
 440    CONTINUE
@@ -11360,7 +11297,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ! C
        ! C
 101    CONTINUE
-       I_CHANGE	= 1
+       I_CHANGE = 1
        GO TO (11,11,33,44,55,44,77), FDISTR
        
 11     CONTINUE
@@ -11369,23 +11306,23 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ! C
        ! C   Distinction not ready yet. Not important for small apertures 
        ! C
-       XMAX1 		=   TAN(HDIV1)
-       XMAX2		= - TAN(HDIV2)
-       ZMAX1		=   TAN(VDIV1)
-       ZMAX2		= - TAN(VDIV2)
-       XRAND 		= (GRID(4,ITIK)*(XMAX1 - XMAX2) + XMAX2)
-       ZRAND 		= (GRID(6,ITIK)*(ZMAX1 - ZMAX2) + ZMAX2)
-       THETAR 		= ATAN(SQRT(XRAND**2+ZRAND**2))
-       CALL 	ATAN_2 (ZRAND,XRAND,PHIR)
-       DIREC(1) 	= COS(PHIR)*SIN(THETAR)
-       DIREC(2) 	= COS(THETAR)
-       DIREC(3) 	= SIN(PHIR)*SIN(THETAR)
-       ! C     	ARG	=   GRID(6,ITIK)*(SIN(VDIV1) + SIN(VDIV2)) - SIN(VDIV2)
-       ! C     	PHIR	=   GRID(4,ITIK)*(HDIV1 + HDIV2) - HDIV1
-       ! C     	THETAR  =   ASIN(ARG)
-       ! C     	DIREC(1)	=   SIN(PHIR)*COS(THETAR)
-       ! C     	DIREC(2)	=   COS(PHIR)*COS(THETAR)
-       ! C     	DIREC(3)	=   SIN(THETAR)
+       XMAX1  =   TAN(HDIV1)
+       XMAX2 = - TAN(HDIV2)
+       ZMAX1 =   TAN(VDIV1)
+       ZMAX2 = - TAN(VDIV2)
+       XRAND  = (GRID(4,ITIK)*(XMAX1 - XMAX2) + XMAX2)
+       ZRAND  = (GRID(6,ITIK)*(ZMAX1 - ZMAX2) + ZMAX2)
+       THETAR  = ATAN(SQRT(XRAND**2+ZRAND**2))
+       CALL  ATAN_2 (ZRAND,XRAND,PHIR)
+       DIREC(1)  = COS(PHIR)*SIN(THETAR)
+       DIREC(2)  = COS(THETAR)
+       DIREC(3)  = SIN(PHIR)*SIN(THETAR)
+       ! C      ARG =   GRID(6,ITIK)*(SIN(VDIV1) + SIN(VDIV2)) - SIN(VDIV2)
+       ! C      PHIR =   GRID(4,ITIK)*(HDIV1 + HDIV2) - HDIV1
+       ! C      THETAR  =   ASIN(ARG)
+       ! C      DIREC(1) =   SIN(PHIR)*COS(THETAR)
+       ! C      DIREC(2) =   COS(PHIR)*COS(THETAR)
+       ! C      DIREC(3) =   SIN(THETAR)
        GO TO 1111
        
 33     CONTINUE
@@ -11397,19 +11334,19 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ! C distribution onto an ideal image plane, independent in x and z. This 
        ! C approximation will not break down for large sigma.
        ! C
-       ARG_VX 		= GRID(4,ITIK)
-       ARG_VZ 		= GRID(6,ITIK)
+       ARG_VX  = GRID(4,ITIK)
+       ARG_VZ  = GRID(6,ITIK)
        
        CALL MDNRIS (ARG_VX,DIR_X,IER)
        IF (IER.NE.0) WRITE(6,*) 'Warning !Error in DIR_X:MNDRIS(SOURCE)'
        
-       DIREC(1) 	= DIR_X*SIGDIX
+       DIREC(1)  = DIR_X*SIGDIX
        
        CALL MDNRIS (ARG_VZ,DIR_Z,IER)
        IF (IER.NE.0) WRITE(6,*)'Warning !Error in DIR_Z:MNDRIS(SOURCE)'
        
-       DIREC(3) 	= DIR_Z*SIGDIZ
-       DIREC(2) 	= 1.0D0
+       DIREC(3)  = DIR_Z*SIGDIZ
+       DIREC(2)  = 1.0D0
        
        CALL NORM (DIREC,DIREC)
        
@@ -11420,20 +11357,20 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
 55     CONTINUE
        ! C   Now generates a set of rays along a cone centered about the normal,
        ! C   plus a ray along the normal itself.
-       ! C     	
+       ! C      
        IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
-    	  ANGLE	=   TWOPI*GRID(4,ITIK)*(IDO_VX-1)/IDO_VX
+          ANGLE =   TWOPI*GRID(4,ITIK)*(IDO_VX-1)/IDO_VX
     ELSE
-       ANGLE	=   TWOPI*GRID(4,ITIK)
+       ANGLE =   TWOPI*GRID(4,ITIK)
     END IF
     ! C temp fix -- 16 Jan 1987
-    ! C     	  ANG_CONE	=   CONE_MIN + 
-    ! C     $			(CONE_MAX - CONE_MIN)*GRID(6,ITIK)
-    ANG_CONE	=   COS(CONE_MIN) - GRID(6,ITIK)*(COS(CONE_MIN)-COS(CONE_MAX))
-    ANG_CONE	=  ACOS(ANG_CONE)
-    DIREC(1)	=   SIN(ANG_CONE)*COS(ANGLE)
-    DIREC(2)	=   COS(ANG_CONE)
-    DIREC(3)	=   SIN(ANG_CONE)*SIN(ANGLE)
+    ! C      ANG_CONE =   CONE_MIN + 
+    ! C     $ (CONE_MAX - CONE_MIN)*GRID(6,ITIK)
+    ANG_CONE =   COS(CONE_MIN) - GRID(6,ITIK)*(COS(CONE_MIN)-COS(CONE_MAX))
+    ANG_CONE =  ACOS(ANG_CONE)
+    DIREC(1) =   SIN(ANG_CONE)*COS(ANGLE)
+    DIREC(2) =   COS(ANG_CONE)
+    DIREC(3) =   SIN(ANG_CONE)*SIN(ANGLE)
     ! C
     GO TO 1111
     
@@ -11441,11 +11378,11 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C
     ! C Ellipses in phase space (momentum components).
     ! C
-    ANGLEX		= GRID(1,ITIK)*SIGDIX*SIN(PHI_X)
-    ANGLEV		= GRID(3,ITIK)*SIGDIZ*SIN(PHI_Z)
-    DIREC(1)	= SIN(ANGLEX)
-    DIREC(3)	= SIN(ANGLEV)
-    DIREC(2)	= SQRT(1.0D0 - DIREC(1)**2 - DIREC(3)**2)
+    ANGLEX = GRID(1,ITIK)*SIGDIX*SIN(PHI_X)
+    ANGLEV = GRID(3,ITIK)*SIGDIZ*SIN(PHI_Z)
+    DIREC(1) = SIN(ANGLEX)
+    DIREC(3) = SIN(ANGLEV)
+    DIREC(2) = SQRT(1.0D0 - DIREC(1)**2 - DIREC(3)**2)
     GO TO 1111
     
 1111 CONTINUE
@@ -11462,43 +11399,43 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C   the module ALADDIN, so that it is possible to take into account the
     ! C   angular dependence of the source polarization.
     ! C
-    A_VEC(1)		=   1.0D0
-    A_VEC(2)		=   0.0D0
-    A_VEC(3)		=   0.0D0
+    A_VEC(1) =   1.0D0
+    A_VEC(2) =   0.0D0
+    A_VEC(3) =   0.0D0
     ! C
     ! C   Rotate A_VEC so that it will be perpendicular to DIREC and with the
     ! C   right components on the plane.
     ! C 
-    CALL	CROSS	(A_VEC,DIREC,A_TEMP)
-    CALL	CROSS	(DIREC,A_TEMP,A_VEC)
-    CALL	NORM	(A_VEC,A_VEC)
-    CALL	CROSS	(A_VEC,DIREC,AP_VEC)
-    CALL	NORM	(AP_VEC,AP_VEC)
+    CALL CROSS (A_VEC,DIREC,A_TEMP)
+    CALL CROSS (DIREC,A_TEMP,A_VEC)
+    CALL NORM (A_VEC,A_VEC)
+    CALL CROSS (A_VEC,DIREC,AP_VEC)
+    CALL NORM (AP_VEC,AP_VEC)
     
     IF (F_POLAR.EQ.1) THEN
        ! C
        ! C   WaNT A**2 = AX**2 + AZ**2 = 1 , instead of A_VEC**2 = 1 .
        ! C
-       DENOM	= SQRT(1.0D0 - 2.0D0*POL_DEG + 2.0D0*POL_DEG**2)
-       AX	= POL_DEG/DENOM
-       CALL	SCALAR	(A_VEC,AX,A_VEC)
+       DENOM = SQRT(1.0D0 - 2.0D0*POL_DEG + 2.0D0*POL_DEG**2)
+       AX = POL_DEG/DENOM
+       CALL SCALAR (A_VEC,AX,A_VEC)
        ! C
        ! C   Same procedure for AP_VEC
        ! C
-       AZ	= (1-POL_DEG)/DENOM
-       CALL	SCALAR 	(AP_VEC,AZ,AP_VEC)
+       AZ = (1-POL_DEG)/DENOM
+       CALL SCALAR  (AP_VEC,AZ,AP_VEC)
     ELSE
     END IF
     ! C
     ! C Now the phases of A_VEC and AP_VEC.
     ! C
     IF (F_COHER.EQ.1) THEN
-       PHASEX	= 0.0D0
+       PHASEX = 0.0D0
     ELSE
-       PHASEX	= WRAN(ISTAR1) * TWOPI
+       PHASEX = WRAN(ISTAR1) * TWOPI
     END IF
-    PHASEZ		= PHASEX + POL_ANGLE*I_CHANGE
-    GO TO (2020,2030,2040,2045)	F_COLOR
+    PHASEZ = PHASEX + POL_ANGLE*I_CHANGE
+    GO TO (2020,2030,2040,2045) F_COLOR
     
 2010 CONTINUE
     ! C
@@ -11510,63 +11447,63 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C
     ! CSingle line. 
     ! C
-    Q_WAVE	=   TWOPI*PHOTON(1)/TOCM
+    Q_WAVE =   TWOPI*PHOTON(1)/TOCM
     GO TO 2050
     
 2030 CONTINUE
     ! C
     ! C Several photon energies (up to 10) with same relative intensities.
     ! C
-    N_TEST	=   WRAN (ISTAR1)*N_COLOR + 1
-    Q_WAVE	=   TWOPI*PHOTON(N_TEST)/TOCM
+    N_TEST =   WRAN (ISTAR1)*N_COLOR + 1
+    Q_WAVE =   TWOPI*PHOTON(N_TEST)/TOCM
     GO TO 2050
     
 2040 CONTINUE
     ! C
     ! C Box photon distribution
     ! C
-    PHOT_CH	=   PHOTON(1) + (PHOTON(2) - PHOTON(1))*WRAN(ISTAR1)
-    Q_WAVE	=   TWOPI*PHOT_CH/TOCM
+    PHOT_CH =   PHOTON(1) + (PHOTON(2) - PHOTON(1))*WRAN(ISTAR1)
+    Q_WAVE =   TWOPI*PHOT_CH/TOCM
     GO TO 2050
     
 2045 CONTINUE
     ! C
     ! C Several photon energies (up to 10) with different relative intensities.
     ! C
-    RELINT(1)	=	RL1
-    RELINT(2)	=	RL2
-    RELINT(3)	=	RL3
-    RELINT(4)	=	RL4
-    RELINT(5)	=	RL5
-    RELINT(6)	=	RL6
-    RELINT(7)	=	RL7
-    RELINT(8)	=	RL8
-    RELINT(9)	=	RL9
-    RELINT(10)	=	RL10
+    RELINT(1) = RL1
+    RELINT(2) = RL2
+    RELINT(3) = RL3
+    RELINT(4) = RL4
+    RELINT(5) = RL5
+    RELINT(6) = RL6
+    RELINT(7) = RL7
+    RELINT(8) = RL8
+    RELINT(9) = RL9
+    RELINT(10) = RL10
     
     ! C
-    ! C	Normalize so that each energy has a probability and so that the sum 
-    ! C	of the probabilities of all the energies is 1.
+    ! C Normalize so that each energy has a probability and so that the sum 
+    ! C of the probabilities of all the energies is 1.
     ! C
     
     TMP_A = 0
     DO 2046 J=1,N_COLOR
-       TMP_A = TMP_A + RELINT(J) 	
-2046 CONTINUE	
+       TMP_A = TMP_A + RELINT(J)  
+2046 CONTINUE 
     DO 2047 J=1,N_COLOR
        RELINT(J)=RELINT(J)/TMP_A
 2047 CONTINUE
           
        ! C
-       ! C	Arrange the probabilities so that they comprise the (0,1) interval,
-       ! C	e.g. (energy1,0.3), (energy2, 0.1), (energy3, 0.6) is translated to
-       ! C	0.0, 0.3, 0.4, 1.0. Then a random number falling in an interval
-       ! C	assigned to a certain energy results in the ray being assigned that
-       ! C	photon energy.
+       ! C Arrange the probabilities so that they comprise the (0,1) interval,
+       ! C e.g. (energy1,0.3), (energy2, 0.1), (energy3, 0.6) is translated to
+       ! C 0.0, 0.3, 0.4, 1.0. Then a random number falling in an interval
+       ! C assigned to a certain energy results in the ray being assigned that
+       ! C photon energy.
        ! C
     TMP_B = 0
     DO 2048 J=1,N_COLOR
-       TMP_B = TMP_B + RELINT(J)	
+       TMP_B = TMP_B + RELINT(J) 
        PRELINT(J) = TMP_B
 2048 CONTINUE
           
@@ -11574,7 +11511,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     IF (DPS_RAN3.GE.0.AND.DPS_RAN3.LE.PRELINT(1)) THEN
        Q_WAVE = TWOPI*PHOTON(1)/TOCM
     END IF
-    		
+     
     DO 2049 J=2,N_COLOR
        IF (DPS_RAN3.GT.PRELINT(J-1).AND.DPS_RAN3.LE.PRELINT(J)) THEN
           Q_WAVE = TWOPI*PHOTON(J)/TOCM
@@ -11588,28 +11525,28 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! C Create the final array 
     ! C
 2050 CONTINUE
-    ray (1,ITIK) 	=   XXX
-    ray (2,ITIK) 	=   YYY
-    ray (3,ITIK) 	=   ZZZ
-    ray (4,ITIK) 	=    DIREC(1)
-    ray (5,ITIK) 	=    DIREC(2)
-    !!srioTest BEGIN (5,ITIK) 	=    1.0D0
-    ray (6,ITIK) 	=    DIREC(3)
-    ray (7,ITIK)	=   A_VEC(1)
-    !!srioTest BEGIN (7,ITIK)	=   1.0D0
-    ray (8,ITIK)	=   A_VEC(2)
-    ray (9,ITIK)	=   A_VEC(3)
-    ray (10,ITIK)	=   1.0D0
-    ray (11,ITIK)	=   Q_WAVE
-    !!srio                BEGIN (12,ITIK)	=   FLOAT (ITIK)
-    ray (12,ITIK)	=   dble(ITIK)
+    ray (1,ITIK)  =   XXX
+    ray (2,ITIK)  =   YYY
+    ray (3,ITIK)  =   ZZZ
+    ray (4,ITIK)  =    DIREC(1)
+    ray (5,ITIK)  =    DIREC(2)
+    !!srioTest BEGIN (5,ITIK)  =    1.0D0
+    ray (6,ITIK)  =    DIREC(3)
+    ray (7,ITIK) =   A_VEC(1)
+    !!srioTest BEGIN (7,ITIK) =   1.0D0
+    ray (8,ITIK) =   A_VEC(2)
+    ray (9,ITIK) =   A_VEC(3)
+    ray (10,ITIK) =   1.0D0
+    ray (11,ITIK) =   Q_WAVE
+    !!srio                BEGIN (12,ITIK) =   FLOAT (ITIK)
+    ray (12,ITIK) =   dble(ITIK)
     IF (F_POLAR.EQ.1) THEN
-       ray (13,ITIK)	=   0.0D0
-       ray (14,ITIK)  	=   PHASEX
-       ray (15,ITIK)  	=   PHASEZ
-       ray (16,ITIK)	=   AP_VEC(1)
-       ray (17,ITIK)	=   AP_VEC(2)
-       ray (18,ITIK)	=   AP_VEC(3)
+       ray (13,ITIK) =   0.0D0
+       ray (14,ITIK)   =   PHASEX
+       ray (15,ITIK)   =   PHASEZ
+       ray (16,ITIK) =   AP_VEC(1)
+       ray (17,ITIK) =   AP_VEC(2)
+       ray (18,ITIK) =   AP_VEC(3)
     END IF
 
     ! C
@@ -11625,7 +11562,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        IF (ITEST.LT.0) THEN
           K_REJ = K_REJ + 1
           N_REJ = N_REJ + 1
-          ! C     	   WRITE(6,*) 'itest ===',ITEST
+          ! C      WRITE(6,*) 'itest ===',ITEST
           !IF (K_REJ.EQ.500) THEN
 
 
