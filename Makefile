@@ -147,6 +147,7 @@ FMODULES = \
 	shadow_beamio.F90 \
 	shadow_math.F90 \
 	shadow_variables.F90 \
+	shadow_roughness.F90 \
 	shadow_kernel.F90 \
 	shadow_synchrotron.F90 \
 	shadow_pre_sync.F90 \

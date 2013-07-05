@@ -1,4 +1,3 @@
- $totoe
  fmirr	=             5 - mirror surface: spherical (1), elliptical (2),
  			  toroidal (3), parabolical (4), plane (5),
 			  codling slit (6), hyperbolical (7), cone (8),
@@ -380,4 +379,3 @@
  oe_number	=             0 - the rest of the variables are filled
  idummy	=             0           in during OE generation.
  dummy	=  0.0000000000000000E+00
- $end

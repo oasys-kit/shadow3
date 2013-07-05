@@ -348,6 +348,10 @@ SELECT CASE (inCommandLow)
   CASE ("jntpscalc")
      CALL jntpscalc()
      inCommand=""
+  !undocumented, for test purposes only
+  CASE ("pspect_test")
+     CALL pspect_test()
+     inCommand=""
   CASE DEFAULT
      IF (inCommand(1:1) == "$") THEN 
         CALL SYSTEM( inCommand(2:sklen) )

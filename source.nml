@@ -1,4 +1,3 @@
- $tsour
  fdistr	=             2 - defines source angle distribution types:
 			  Available options are: flat(1),uniform(2),
 			  gaussian(3), synchrotron(4), conical(5), exact
@@ -163,4 +162,3 @@
  idummy	=             0		    source generation and recorded in
  dummy	=  0.0000000000000000E+00   END.00 file.  They should be left
  f_new	=             0             alone.
- $end

@@ -31,6 +31,7 @@ Module shadow_kernel
   	use shadow_beamio
   	use shadow_math
   	use shadow_variables
+  	use shadow_roughness
 	use shadow_globaldefinitions !, only : ski, skr, skc
 
   	implicit none
@@ -6525,11 +6526,11 @@ SUBROUTINE SETSOUR
 !    implicit real(kind=skr) (a-e,g-h,o-z)
 !    implicit integer(kind=ski)        (f,i-n)
 
-real(kind=skr)   :: q_phot,sinn,sinm,graze,theta_b,deflec
-real(kind=skr)   :: sinbeta,theta_t
-real(kind=skr)   :: cosx,sinx,cosy,siny,cosz,sinz
-real(kind=skr)   :: dumm1=0,zero=0.0
-integer(kind=ski)          :: ipsflag,ierr
+real(kind=skr)    :: q_phot,sinn,sinm,graze,theta_b,deflec
+real(kind=skr)    :: sinbeta,theta_t
+real(kind=skr)    :: cosx,sinx,cosy,siny,cosz,sinz
+real(kind=skr)    :: dumm1=0,zero=0.0,tmp
+integer(kind=ski) :: ipsflag,ierr
 
 
 WRITE(6,*) 'Call to SETSOUR'
@@ -6651,9 +6652,8 @@ END IF
 if (f_roughness.eq.1) then
     ipsflag = -1
     ierr = 0
-    ! Csrio       call pspect (0,0,iseed,ierr,ipsflag)
-    CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
-    if (ierr.ne.0) call leave ('Error on return from PSPECT','SETSOUR',izero)
+    call pspect (tmp,tmp,ierr,ipsflag, file_rough)
+    if (ierr.ne.0) call leave ('Error on return from roughness: PSPECT','SETSOUR',izero)
     if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
 end if
 ! C
@@ -8229,13 +8229,12 @@ end if
 ! C	A random scattering vector of length and direction specified in
 ! C	a power spectral density file is used. VERSION FOR A PLANE MIRROR.
 ! C
-		IPSFLAG = 1
-		IERR = 0
-!!              CALL PSPECT (X1,X2,ISTAR1,IERR,IPSFLAG)
-            CALL LEAVE ('ROUGHNESS','Not yet implemented in Shadow3',izero)
+            IPSFLAG = 1
+            IERR = 0
+            CALL PSPECT (X1,X2,IERR,IPSFLAG,file_rough)
 
 		IF (IERR.NE.0) CALL LEAVE  &
-     		('MIRROR', 'Error on return from PSPECT', izero)
+     		('MIRROR', 'Error on return from roughness: PSPECT', izero)
 	IF (WRAN(ISTAR1).LT.0.5D0) X1 = -X1
 	IF (WRAN(ISTAR1).LT.0.5D0) X2 = -X2
  	RH_DENS = SQRT (X1**2 + X2**2)
