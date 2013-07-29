@@ -6026,8 +6026,17 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 
 ! ** This will compute the transmission coefficient.
      	IF (I_ABS(I_WHAT).EQ.1) THEN
+! bug found Peter Sondhauss peter.sondhauss@maxlab.lu.se 2013-07029
+! there is a call to the subroutine REFLEC with a wrong setting of the flag 
+! K_WHAT (last parameter). K_WHAT was set to be zero (izero), which is the 
+! setting for initialization, i.e. reading of the file with dielectric 
+! constants.  I have set K_WHAT to the value of 2 (transmission), or better 
+! itwo. Now Shadow3 runs fast again, and the reflectivity values correspond 
+! to those of the old Shadow version.
+     	 !CALL	REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
+     	 !		 DUM,ATTEN,izero)
      	 CALL	REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
-     			 DUM,ATTEN,izero)
+     			 DUM,ATTEN,itwo)
      	END IF
 ! ** Saves the results
      	OUT(1,J)  =   UX_1
@@ -7264,6 +7273,18 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	IF (F_KOMA.NE.1) THEN
      	  WRITE(6,*) 'Call to MIRROR'
 	END IF
+
+! 
+! skip calculations for an empty o.e.
+! note that the element is empty, but the optical axes are changed accordingly
+! the specified directions.
+!
+! added srio@esrf.eu 2013-07-29 for implementing MONTEL systems
+!
+    if (f_refrac.EQ.2) then 
+       print *,'MIRROR1: Warning: Empty element (no mirr.xx file)'
+       goto 99999
+    endif
 
 ! C
 	IF (F_KOMA.EQ.1.AND.F_DOT.EQ.1) THEN
@@ -8725,7 +8746,7 @@ if (check_perp_comp( ray(4,itik), ray(5,itik), ray(6,itik), &
    print*,'MIRROR: Warning (after calculations): lack of perpendicularity in ray: ', itik
 end if
 
- 1099	CONTINUE
+ 1099	CONTINUE  ! end loop on number of rays
 ! C
 ! C Kumakhov case skips the file writing ...
 ! C
@@ -8767,9 +8788,9 @@ end if
 	K_6	=   NPOINT - K_6
 
      	IF (K_2.NE.0) THEN
-     	EFF_GEOM  =  DBLE(K_3)/DBLE(K_2)
+     	  EFF_GEOM  =  DBLE(K_3)/DBLE(K_2)
      	ELSE
-     	END IF
+     	  END IF
      	IF (F_REFLEC.EQ.1) THEN
      	  ABS_REF_S 	=  (EFF_REF_S/K_6)
      	  ABS_REF_P 	=  (EFF_REF_P/K_6)
@@ -8781,22 +8802,22 @@ end if
      	END IF
         ! srio@esrf.eu 20110412 avoid writing effic.xx if FWRITE=3
         IF (FWRITE.NE.3) THEN
-     	CALL	FNAME	(FFILE, 'effic', I_WHICH, izero)
-	OPEN (UNIT=20,FILE=FFILE,STATUS='UNKNOWN')
-	REWIND (20)
-     	IF (K_2.EQ.0)	WRITE (20,3000)
-	WRITE (20,2000) NPOINT,K_2,K_5,I_WHICH,EFF_GEOM
-     	IF (F_REFLEC.EQ.1) THEN
-     	  WRITE (20,2010) ABS_REF_S,ABS_REF_P,ABS_REF
-     	ELSE IF (F_REFLEC.EQ.2) THEN
-     	  WRITE (20,2020) ABS_REF
-     	END IF
-        IF (F_ROUGHNESS.EQ.1) THEN
-           WRITE(20,2040) krough_count2,krough_count
-        END IF
-     	IF (F_REFLEC.NE.0) WRITE (20,2030) OVERALL
-	CLOSE (20)
-        END IF
+     	  CALL	FNAME	(FFILE, 'effic', I_WHICH, izero)
+	  OPEN (UNIT=20,FILE=FFILE,STATUS='UNKNOWN')
+	  REWIND (20)
+     	  IF (K_2.EQ.0)	WRITE (20,3000)
+	  WRITE (20,2000) NPOINT,K_2,K_5,I_WHICH,EFF_GEOM
+     	  IF (F_REFLEC.EQ.1) THEN
+     	    WRITE (20,2010) ABS_REF_S,ABS_REF_P,ABS_REF
+     	  ELSE IF (F_REFLEC.EQ.2) THEN
+     	    WRITE (20,2020) ABS_REF
+     	  END IF
+          IF (F_ROUGHNESS.EQ.1) THEN
+             WRITE(20,2040) krough_count2,krough_count
+          END IF
+     	  IF (F_REFLEC.NE.0) WRITE (20,2030) OVERALL
+	  CLOSE (20)
+        END IF ! fwrite
 
 3000	FORMAT (1X,'WATCH OUT !! NO GOOD RAYS IN INPUT !!')
 2000	FORMAT (1X,'Of a total of ',I6,' rays, of which ',I6,' formed ', &
@@ -8824,7 +8845,7 @@ end if
 2525      WRITE(55,*) ANGLE(1,J),ANGLE(2,J),ANGLE(3,J),ANGLE(4,J)
         CLOSE(55)
 	
-	END IF
+	END IF  ! write angle
 
 
 ! bugged......
@@ -8841,6 +8862,8 @@ end if
 IF (F_MOVE.EQ.1)   THEN
     CALL ROT_BACK (RAY,AP)
 END IF
+
+
 IF ((FWRITE.EQ.0).OR.(FWRITE.EQ.1)) THEN
     CALL FNAME (FFILE, 'rmir', I_WHICH, izero)
     IFLAG = 0
@@ -8850,7 +8873,8 @@ END IF
         WRITE(6,*) 'Exit from MIRROR'
 ! D	CLOSE (23)
 
-	END IF
+	END IF  ! no koma?
+99999 continue  ! come here of f_refrac=2 (empty oe)
 
 End Subroutine mirror1
 
