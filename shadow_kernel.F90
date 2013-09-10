@@ -8673,7 +8673,8 @@ end do
 
       ! attenuation in lens media
       rr_reflectivity = 1.0D0
-      IF (F_REFRAC.EQ.1) THEN 
+      ! debugging srio@esrf.eu 20130910 added f_crystal.ne.0
+      IF ( (F_REFRAC.EQ.1) .and. (F_CRYSTAL.EQ.0) ) THEN 
          IF (ABS(rr_attenuation_obj).GT.1e-15) THEN
            ! for amplitudes use sqrt(reflectivity)
            !rr_reflectivity = sqrt(exp(-ABS(r_attenuation_obj*TPAR)))
