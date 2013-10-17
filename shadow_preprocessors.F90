@@ -1201,7 +1201,7 @@ SUBROUTINE Pre_Mlayer
           !call grade_mlayer(FGRADE)
           !FGRADE = RSTRING(' ')
           call grade_mlayer(fgrade)
-          WRITE(20,*) trim(FGRADE)
+          WRITE(20,'(a)') trim(FGRADE)
         ELSE IF (IGRADE.EQ.2) THEN
           WRITE(6,*) 'A second degree polynomial fit of the thickness grading'
           WRITE(6,*) 'must be available:'
@@ -1243,89 +1243,91 @@ SUBROUTINE Grade_Mlayer(outfile)
 
         character(len=sklen),intent(out) :: OUTFILE
         character(len=sklen) :: INFILE
-     	real(kind=skr),dimension(2,101,2,101) :: CSPL 
-     	real(kind=skr),dimension(20602)       :: WK 
-     	real(kind=skr),dimension(101)         :: X,Y
-     	real(kind=skr),dimension(101,101)     :: F
+        real(kind=skr),dimension(2,101,2,101) :: CSPL 
+        real(kind=skr),dimension(20602)       :: WK 
+        real(kind=skr),dimension(101)         :: X,Y
+        real(kind=skr),dimension(101,101)     :: F
 
-	WRITE(6,*) 'For a graded multilayer, you will specify the '
+        WRITE(6,*) 'For a graded multilayer, you will specify the '
         WRITE(6,*) 'factor MULTIPLYING the thickness'
-     	WRITE(6,*) 't and the gamma ratio, across the optical surface.'
-     	WRITE(6,*) 'In PRE_MLAYER, you have already defined the nominal'
+        WRITE(6,*) 't and the gamma ratio, across the optical surface.'
+        WRITE(6,*) 'In PRE_MLAYER, you have already defined the nominal'
         WRITE(6,*) ' t and gamma AT THE ORIGIN.  Here you will specify'
-	WRITE(6,*) 'their multiplication factor F(x,y).  For non-graded'
-	WRITE(6,*) 'multilayer, F(x,y) = 1.0.'
-	WRITE(6,*) '***************************************************'
+        WRITE(6,*) 'their multiplication factor F(x,y).  For non-graded'
+        WRITE(6,*) 'multilayer, F(x,y) = 1.0.'
+        WRITE(6,*) '***************************************************'
 
-	ITER	= 1
-     	OUTFILE	=   RSTRING ('Enter file-name for output: ')
-     	OPEN (21, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
-	REWIND (21)
+        ITER      = 1
+        OUTFILE      =   RSTRING ('Enter file-name for output: ')
+        OPEN (21, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
+        REWIND (21)
 
-15	WRITE(6,*) ' '
-	IF (ITER.EQ.1) THEN
-     	  INFILE = RSTRING ('File containing the t factor mesh : ')
-	ELSE
-	  INFILE = RSTRING ('File containing the gamma factor mesh : ')
-	END IF
+15      WRITE(6,*) ' '
+        IF (ITER.EQ.1) THEN
+          INFILE = RSTRING ('File containing the t factor mesh : ')
+        ELSE
+          INFILE = RSTRING ('File containing the gamma factor mesh : ')
+        END IF
 
-     	OPEN	(20, FILE=INFILE, STATUS='OLD', IOSTAT = IERR)
+        ! 20130917 srio@esrf.eu changed unit 20->40 because 20 is open in
+        ! pre_mlayer...
+        OPEN (40, FILE=INFILE, STATUS='OLD', IOSTAT = IERR)
 
-     	IF (IERR.NE.0) THEN
-     	  WRITE(6,*) 'Cannot access ',INFILE
-     	  IWHAT = IYES ('Retry ? ')
-     	 IF (IWHAT.EQ.1) GOTO 15
-     	  CALL EXIT
-     	END IF
-     	READ (20,*) NX, NY
-!     	IF (NX.GT.101.OR.NY.GT.101) THEN
-!     	  WRITE(6,*) 'Arrays too large. Maximum allowed is 101 points.'
-!     	  STOP 'Please retry with smaller arrays.'
-!     	END IF
-     	IF (NX.LT.4.OR.NY.LT.4) THEN
-     	  WRITE(6,*) 'Not enough points to define arrays. Must be at', &
-      		' least 4 points in each direction.'
-     	  STOP 'Please retry with larger arrays.'
-     	END IF
-     	WRITE(6,*) 'Setting up ',NX,' by ',NY,' array.'
+        IF (IERR.NE.0) THEN
+          WRITE(6,*) 'Cannot access ',INFILE
+          IWHAT = IYES ('Retry ? ')
+          IF (IWHAT.EQ.1) GOTO 15
+          CALL EXIT
+        END IF
+        READ (40,*) NX, NY
+!        IF (NX.GT.101.OR.NY.GT.101) THEN
+!        WRITE(6,*) 'Arrays too large. Maximum allowed is 101 points.'
+!        STOP 'Please retry with smaller arrays.'
+!        END IF
+        IF (NX.LT.4.OR.NY.LT.4) THEN
+          WRITE(6,*) 'Not enough points to define arrays. Must be at', &
+                 ' least 4 points in each direction.'
+          STOP 'Please retry with larger arrays.'
+        END IF
+        WRITE(6,*) 'Setting up ',NX,' by ',NY,' array.'
 !C
 !C Reads in Y array
 !C
-     	READ (20,*) (Y(I),I=1,NY)
+        READ (40,*) (Y(I),I=1,NY)
 !C
 !C Now read X and F arrays
 !C
-     	DO I=1,NX
-     	  READ (20,*) X(I),(F(I,J),J=1,NY)
-     	END DO
-     	CLOSE (20)
-     	WRITE(6,*) 'Array read correctly. Compute spline.'
+        DO I=1,NX
+          READ (40,*) X(I),(F(I,J),J=1,NY)
+        END DO
+        CLOSE (40)
+        WRITE(6,*) 'Array read correctly. Compute spline.'
 !C
 !C Call IMSL routine to compute spline
 !C
         iTmp=101
-     	CALL	IBCCCU ( F, X, NX, Y, NY, CSPL, iTmp, WK, IER)
-     	IF (IER.EQ.132) THEN
-     	  WRITE(6,*) 'The X and/or Y array are not ordered properly.',  &
+        CALL   IBCCCU ( F, X, NX, Y, NY, CSPL, iTmp, WK, IER)
+        IF (IER.EQ.132) THEN
+          WRITE(6,*) 'The X and/or Y array are not ordered properly.',  &
        'Please check data in '//trim(INFILE)
-     	 CALL EXIT
-     	END IF
-     	WRITE(6,*) 'Spline succesfully completed.'
-     	 WRITE (21)	NX, NY
-     	 WRITE (21)	X,Y
-	 DO 299 I = 1, NX
-	 DO 299 J = 1, NY
-     	 WRITE (21)	CSPL(1,I,1,J), CSPL(1,I,2,J),  &
-      		CSPL(2,I,1,J), CSPL(2,I,2,J)
-299	 CONTINUE
+          CALL EXIT
+        END IF
+        WRITE(6,*) 'Spline succesfully completed.'
+        WRITE (21)   NX, NY
+        WRITE (21)   X,Y
+        DO 299 I = 1, NX
+          DO 299 J = 1, NY
+          WRITE (21)   CSPL(1,I,1,J), CSPL(1,I,2,J),  &
+             CSPL(2,I,1,J), CSPL(2,I,2,J)
+299     CONTINUE
 
-	IF (ITER.EQ.1) THEN
-	  ITER   = 2
-	  GO TO 15
-	END IF
-	CLOSE	(21)
-     	WRITE(6,*) 'Task completed. Spline stored in ',OUTFILE
-     	RETURN
+        IF (ITER.EQ.1) THEN
+          ITER   = 2
+          GO TO 15
+        END IF
+        CLOSE (21)
+        WRITE(6,*) 'Task completed. Spline stored in ',OUTFILE
+        RETURN
 END SUBROUTINE Grade_Mlayer
 
 !

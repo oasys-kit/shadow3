@@ -176,7 +176,12 @@ complex(kind=skx) function mysqrt(z)
    COMPLEX(KIND=skx) :: z,zout
    real(kind=skr)    :: r,zr,zi 
    r = abs(z)
-   mysqrt = sqrt(r) * (z+r)/abs(z+r) 
+   if (abs(z+r) .eq. 0) then 
+      print*,'mysqrt: warning calculation using intrinsic function'
+      mysqrt = cdsqrt(z)
+   else
+      mysqrt = sqrt(r) * (z+r)/abs(z+r) 
+   endif
 end function mysqrt
 
 

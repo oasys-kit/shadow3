@@ -289,13 +289,13 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     return 
   if ref==0:
     ytitle = 'counts ' + ytitle
-    h,bins,patches = axHist.hist(x[t],bins=nbins,histtype='step',alpha=0.5)
+    h,bins,patches = axHist.hist(x[t],bins=nbins,range=xrange,histtype='step',alpha=0.5)
     if yrange==None: yrange = [0.0, numpy.max(h)*1.1]
     hw=h
   if ref>=22: 
     ytitle = (stp.getLabel(ref-1))[0] + ' ' + ytitle
-    h,bins = numpy.histogram(x[t],bins=nbins)
-    hw,bins,patches = axHist.hist(x[t],bins=nbins,histtype='step',alpha=0.5,weights=w[t])
+    h,bins = numpy.histogram(x[t],range=xrange,bins=nbins)
+    hw,bins,patches = axHist.hist(x[t],range=xrange, bins=nbins,histtype='step',alpha=0.5,weights=w[t])
     if yrange==None: yrange = [0.0, numpy.max(hw)*1.1]
   fwhm = None
   if calfwhm==1:
@@ -497,11 +497,11 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   binx = numpy.linspace(xrange[0],xrange[1],nbins_h)
   biny = numpy.linspace(yrange[0],yrange[1],nbins_h)
   if contour==0 or contour==1 or contour==3 or contour==5:
-    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,histtype='step',color='k')
-    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,orientation='horizontal',histtype='step',color='k')
+    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,histtype='step',color='k')
+    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,orientation='horizontal',histtype='step',color='k')
   if contour==2 or contour==4 or contour==6:
-    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,weights=col4[t],histtype='step',color='b')
-    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,weights=col4[t],orientation='horizontal',histtype='step',color='b')
+    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,weights=col4[t],histtype='step',color='b')
+    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,weights=col4[t],orientation='horizontal',histtype='step',color='b')
   for tl in axHistx.get_xticklabels(): tl.set_visible(False)
   for tl in axHisty.get_yticklabels(): tl.set_visible(False)
   for tt in axHisty.get_xticklabels():

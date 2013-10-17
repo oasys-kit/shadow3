@@ -327,7 +327,7 @@ SELECT CASE (inCommandLow)
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
      print *,'                    : retrace minmax reflag histo3'
-     print *,'                    : prerefl_test'
+     print *,'                    : prerefl_test, pre_mlayer_scan'
      print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
@@ -338,6 +338,9 @@ SELECT CASE (inCommandLow)
      inCommand="?"
   CASE ("prerefl_test")
      CALL prerefl_test()
+     inCommand=""
+  CASE ("pre_mlayer_scan")
+     CALL pre_mlayer_scan()
      inCommand=""
   CASE ("presurface_translate")
      CALL presurface_translate()

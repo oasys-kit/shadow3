@@ -388,12 +388,14 @@ Module shadow_kernel
   ! public :: rwname
   !---- List of public overloaded functions ----!
   !---- List of public subroutines ----!
-  	public :: rwname, input_source1, sourceGeom, source_bound
-  	public :: reset, switch_inp, trace_step
+        public :: rwname, input_source1, sourceGeom, source_bound
+        public :: reset, switch_inp, trace_step
 
-  	public :: PoolOEToGlobal,PoolSourceToGlobal
-  	public :: GlobalToPoolOE,GlobalToPoolSource
-  	public :: traceoe,Shadow3Trace,presurface_translate
+        public :: PoolOEToGlobal,PoolSourceToGlobal
+        public :: GlobalToPoolOE,GlobalToPoolSource
+        public :: traceoe,Shadow3Trace
+        ! these routines should be moved to shadow_postprocessors
+        public :: presurface_translate, prerefl_test, pre_mlayer_scan
   
   
   !---- List of private functions ----!
@@ -4456,7 +4458,8 @@ SAVE        QMIN, QMAX, QSTEP, DEPTH0, NREFL, TFILM, &
             DELTA_E,BETA_E, &
             DELTA_O,BETA_O, &
             TSPL,TX,TY,PDS, &
-            GSPL,GX,GY
+            GSPL,GX,GY, &
+            NTX, NTY, NGX, NGY  ! added srio@esrf.eu 20130917
 ! C
 ! C Initialization call. The ZF1,ZF2 values do NOT correspond to the F1,F2
 ! C atomic scattering factors, as they contain a more complex form:
@@ -4752,6 +4755,7 @@ IF (K_WHAT.EQ.1) THEN
         ELSE
         END IF
 
+
         CALL FRESNEL  (TFACT,GFACT,NPAIR,SIN_REF,COS_POLE,XLAM, &
                          R_S,R_P,PHASES,PHASEP)
     END IF
@@ -4825,6 +4829,7 @@ End Subroutine reflec
 !c----------------------------------------------------------------------------
 !c----------------------------------------------------------------------------
 
+
 subroutine FRESNEL (tfact,gfact,n,sin_ref,cos_pole,xlam,ans, anp,phaseS,phaseP)
 
 implicit none
@@ -4844,9 +4849,18 @@ real(kind=skr)     ::  sigma_o2,sigma_e2,sigma_s2,sigma_v2
 complex(kind=skx)  ::  arg_o,arg_e,arg_s,arg_v
 complex(kind=skx)  ::  fnevot_o,fnevot_e,fnevot_s,fnevot_v
 real(kind=skr)     ::  prefact
+
+!--------------------------------------
+! another way...
+!complex(kind=skx)  ::  ro,re,rs,sin_tra,cos_tra,qo2,qe2
+!complex(kind=skx)  ::  sin_s,cos_s,sin_o,cos_o,sin_e,cos_e
+!real(kind=skr)     ::  cos_ref
+!--------------------------------------
+
+
 ! C
 
-! "i" cpmplex
+! "i" opmplex
 ci=(0.0D0,1.0D0)
 
 ! (refraction index "odd,even,substrate")**2 
@@ -4886,6 +4900,45 @@ ffep=(fe/re2-fo/ro2)/(fe/re2+fo/ro2)
 ffop=-ffep
 ffvp=(fv-fo/ro2)/(fv+fo/ro2)
 ffsp=(fe/re2-fs/rs2)/(fe/re2+fs/rs2)
+
+!-----------------------------------
+! another way
+! ro=(1.0D0-delo-ci*beto)
+! re=(1.0D0-dele-ci*bete)
+! rs=(1.0D0-dels-ci*bets)
+! 
+! ! 
+! cos_ref = sqrt(1.0D0-sin_ref**2)   ! in vacuum 
+! !!! snell (top to bottom propagation)
+! cos_o = (1.0D0/ro)*cos_ref  ! in odd medium
+! cos_e = (ro/re)*cos_o       ! in even medium
+! cos_s = (re/rs)*cos_e       ! in substrate medium
+! 
+! sin_o = mysqrt(1.0d0 - cos_o**2)
+! sin_e = mysqrt(1.0d0 - cos_e**2)
+! sin_s = mysqrt(1.0d0 - cos_s**2)
+! 
+! ! even->odd interface
+! ffe =  (re*sin_e - ro*sin_o)/ &  ! e->o
+!        (re*sin_e + ro*sin_o)
+! ffo=-ffe
+! ffv = (sin_ref - ro*sin_o )/ &   ! v->o
+!       (sin_ref + ro*sin_o )
+! ! even->substrate interface
+! ffs = (re*sin_e - rs*sin_s )/ &  ! e->s
+!       (re*sin_e + rs*sin_s)
+! 
+! ! p-polarization
+! ffep = (re*sin_o - ro*sin_e)/ &  ! e->o
+!        (re*sin_o + ro*sin_e)
+! 
+! ffop=-ffep
+! ffvp = (sin_o - ro*sin_ref )/&   !v->o
+!        (sin_o + ro*sin_ref )
+! 
+! ffsp = (re*sin_s - rs*sin_e )/ &  ! e->s
+!        (re*sin_s + rs*sin_e)
+!-----------------------------------
 
 ! reflectivity initialization
 r=(0.0D0,0.0D0)
@@ -4964,7 +5017,8 @@ rp=(rp+ffvp*fnevot_v)/(rp*ffvp*fnevot_v+1.0)
 pp = Dimag(r)
 qq = Dreal(r)
 CALL ATAN_2(PP,QQ,PHASES)       ! S phase change in units of radians
-rp=(rp+ffvp)/(rp*ffvp+1.0D0)
+!! removed srio@esrf.eu 20131017 in conflict with change in 2012-06-07
+!! rp=(rp+ffvp)/(rp*ffvp+1.0D0)
 anp=cDabs(rp)
 ! C      anp=anp**2
 
@@ -12486,10 +12540,11 @@ end select
 return
 End Subroutine get_refraction_index
 
-!
-!
-!
 
+
+!
+! PREREFL_TEST
+!
 !
 ! this is a very simple routine that displays the refraction index obtained from
 ! a file created by prerefl. 
@@ -12498,7 +12553,7 @@ End Subroutine get_refraction_index
 !
 ! limitations: only (new) ascii files from prerefl are accepted 
 !
-! todo: move to shadow_preprocessors (needs direct access to file, nit using 
+! todo: move to shadow_preprocessors (needs direct access to file, not using 
 !                                    get_refraction_index() )
 SUBROUTINE prerefl_test ()
 
@@ -12547,6 +12602,138 @@ RETURN
 End Subroutine prerefl_test
 
 
+!
+! PRE_MLAYER_SCAN
+!
+
+!
+! this is a simple routine that computes the multilayer reflectivity
+! with a multilayer defined in a file created by pre_mlayer.
+!
+! It can be used for testing pre_mlayer, or for simple calculations of 
+! ML reflectivity.
+!
+! todo: move to shadow_preprocessors (needs direct access to file, not using 
+!                                    get_refraction_index() )
+!
+SUBROUTINE pre_mlayer_scan ()
+
+implicit none
+
+integer(kind=ski)           :: k_what, iscan=0, thetaN=1, energyN=1
+integer(kind=ski)           :: i,j, iErr
+real(kind=skr)              :: wnum
+real(kind=skr)              :: energy1=0.0, theta1=0.0, energy2=0.0, theta2=0.0
+real(kind=skr)              :: energy=0.0, theta=0.0, energyS = 0.0,thetaS = 0.0
+real(kind=skr),dimension(3) :: pin
+real(kind=skr)              :: sin_ref, cos_pole
+real(kind=skr)              :: r_s, r_p, phaseS, phaseP, absor
+character(len=sklen)        :: fileOut 
+
+! initializa some variables
+F_REFL = 2
+pin(1) = 0.0
+pin(2) = 0.0
+pin(3) = 0.0
+fileOut = "pre_mlayer_scan.dat"
+
+!
+! input section
+!
+print *,"   pre_mlayer_scan: calculates reflectivity of a multilayer"
+print *,"                 using a file created by the pre_mlayer preprocessor."
+print *,"   "
+FILE_REFL  = RSTRING("File Name (from pre_mlayer): ")
+!file_refl = "morawe.dat"
+
+energyN = irint(' Number of energy points (1 for angle-scan): ')
+thetaN = irint(' Number of anglular points (1 for energy-scan): ')
+!energyN = 1
+!thetaN = 5000
+
+if (energyN .GT. 1) then 
+     !energy1 = 12400.0
+     !energy2 = 24800.0
+     energy1 = rnumber("Photon energy from [eV]: ")
+     energy2 = rnumber("              to [eV]: ")
+else
+     !energy1 = 17800.0
+     energy1 = rnumber("Photon energy [eV]: ")
+endif
+
+if (thetaN .GT. 1) then 
+     !theta1 = 0.05
+     !theta2 = 3.0
+     theta1 = rnumber("Incident grazing angle from [deg]: ")
+     theta2 = rnumber("                       to [deg]: ")
+else
+     !theta1 = 0.75
+     theta1 = rnumber("Incident grazing angle [deg]: ")
+endif
+
+
+! calculations
+
+! initialization (read file)
+k_what = 0 
+sin_ref = 0.0
+cos_pole = 1.0
+wnum = twopi*energy1/tocm
+CALL REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S,PHASEP,PHASES,ABSOR,K_WHAT)
+
+!calculate
+k_what=1
+if (energyN .GT. 1) energyS = (energy2-energy1)/float(energyN-1)
+if (thetaN .GT. 1) thetaS = (theta2-theta1)/float(thetaN-1)
+
+if ((energyN .GT. 1) .or. (thetaN .GT. 1) ) then
+  OPEN  (23,FILE=fileOut,STATUS='unknown', FORM='FORMATTED', IOSTAT=iErr)
+  write(23,'(a)') "#F "//trim(fileOut)
+  write(23,'(a)') " "
+  write(23,'(a)') "#S 1 pre_mlater_test results"
+  write(23,'(a)') "#N 4" 
+  write(23,'(a)') "#L energy[eV]  grazingAngle [deg]  R_S  R_P"
+endif
+
+do i=1,thetaN
+  do j=1,energyN
+    theta = theta1+ float(i-1)*thetaS
+    energy = energy1+ float(j-1)*energyS
+    sin_ref = sin ( theta * pi/180) 
+    wnum = twopi*energy/tocm
+    CALL REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S,PHASEP,PHASES,ABSOR,K_WHAT)
+
+    if ( (thetaN .eq. 1) .and. (energyN .eq. 1) ) then
+       print *,"------------------------------------------------------------------------"
+       print *,"Inputs: "
+       print *,"   pre_mlayer file: "//trim(FILE_REFL)//" gives for E=",energy1,"eV: "
+       print *,"   energy [eV]:                       ",energy
+       print *,"   grazing angle [deg]:               ",theta
+       print *,"   wavelength [A]:                    ",(1d0/wnum)*twopi*1e+8
+       print *,"   wavenumber (2 pi/lambda) [cm^-1]:  ",wnum
+       print *,"Outputs: "
+       print *,"   R_S:                          ",R_S
+       print *,"   R_P:                          ",R_P
+       print *,"------------------------------------------------------------------------"
+    else
+      write(23,*) energy,theta,r_s,r_p
+    endif
+  end do
+end do
+
+!print outputs
+
+!cleaning
+k_what=2
+CALL REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S,PHASEP,PHASES,ABSOR,K_WHAT)
+
+if ((energyN .GT. 1) .or. (thetaN .GT. 1) ) then
+  CLOSE  (23)
+  print *,"File "//trim(fileOut)//" written to disk. "
+endif
+
+RETURN
+End Subroutine pre_mlayer_scan
 
 ! C+++
 ! C	SUBROUTINE	presurface_translate
@@ -12572,7 +12759,7 @@ End Subroutine prerefl_test
 SUBROUTINE presurface_translate ()
 
 
-! C This routine now takes an additional parameter SERR which indiates
+! C This routine now takes an additional parameter SERR which indicates
 ! C whether errors occur when calculating the ray's intersection with the
 ! C mirror as specified by a PRESURFACE spline file.
 
