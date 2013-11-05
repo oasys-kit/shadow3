@@ -1567,16 +1567,22 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 !C Re-scale PSEED so that it only cover the range EMIN to EMAX.
 !C
 
-	  EMIN	= PHOTON(1)/C_PHOT
-	  IF (EMIN.LT.PHOT_SPLINE(1,1))	EMIN = PHOT_SPLINE(1,1)
-	  EMAX	= PHOTON(2)/C_PHOT
-	  IF (EMAX.GT.PHOT_SPLINE(1,IINT_1))	EMAX = PHOT_SPLINE(1,IINT_1)
+          EMIN = PHOTON(1)/C_PHOT
+          EMAX = PHOTON(2)/C_PHOT
+          !IF (EMIN.LT.PHOT_SPLINE(1,1)) EMIN = PHOT_SPLINE(1,1)
+          !IF (EMAX.GT.PHOT_SPLINE(1,IINT_1)) EMAX = PHOT_SPLINE(1,IINT_1)
+          IF (     (EMIN.LT.PHOT_SPLINE(1,1)) &
+              .OR. (EMIN.GT.PHOT_SPLINE(1,IINT_1))  ) &
+              EMIN = PHOT_SPLINE(1,1)
+          IF (     (EMAX.GT.PHOT_SPLINE(1,IINT_1)) &
+              .OR. (EMAX.LT.PHOT_SPLINE(1,1))   ) &
+              EMAX = PHOT_SPLINE(1,IINT_1)
 
-	  CALL SPL_INT (PHOT_SPLINE,IINT_1,EMIN,CMIN,IER)
-	  CALL SPL_INT (PHOT_SPLINE,IINT_1,EMAX,CMAX,IER)
-	  PSEED	= CMIN + PSEED*(CMAX-CMIN)
-	  CALL SPL_INT (PHOT_INV,IINT_1,PSEED,PE,IER)
-          WAVE_NO	= TWOPI*PE/R_LAM*CORREC			!cm-1
+          CALL SPL_INT (PHOT_SPLINE,IINT_1,EMIN,CMIN,IER)
+          CALL SPL_INT (PHOT_SPLINE,IINT_1,EMAX,CMAX,IER)
+          PSEED = CMIN + PSEED*(CMAX-CMIN)
+          CALL SPL_INT (PHOT_INV,IINT_1,PSEED,PE,IER)
+          WAVE_NO = TWOPI*PE/R_LAM*CORREC     !cm-1
 	END IF
 !C For the angle, first find the indices of 'neighboring erergy' on XPHOT
 	IPE	= IMAX_2 - (EX_UPP - LOG10(PE))/EX_STEP/IST
@@ -1743,232 +1749,252 @@ End Subroutine white
 SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
 
-        ! todo: remove implicits
-    implicit real(kind=skr) (a-e,g-h,o-z)
-    implicit integer(kind=ski)        (f,i-n)
+! todo: remove implicits
+implicit real(kind=skr) (a-e,g-h,o-z)
+implicit integer(kind=ski)        (f,i-n)
 
-    integer(kind=ski), intent(in)                         :: npoint1
-    real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
-    type (poolSource), intent(inout)                     ::  pool00
+integer(kind=ski), intent(in)                         :: npoint1
+real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
+type (poolSource), intent(inout)                     ::  pool00
 
-    ! C
-    integer(kind=ski)         :: IOFORM
-    integer(kind=ski)         :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
-    ! C
-    ! C
+integer(kind=ski)         :: IOFORM
+integer(kind=ski)         :: C_X,C_Y,C_Z,C_VX,C_VZ,C_XN,C_ZN
 
-    !CHARACTER(len=80)       :: ERRMSG
-    character(len=sklen)       :: errmsg
+character(len=sklen)       :: errmsg
     
-    
-    !!srio for SR, force 18 columns
+!!srio for SR, force 18 columns
 
 
-    !! needed for calling source_bound
-       real(kind=skr),dimension(3)  :: XDUM, YDUM
+!! needed for calling source_bound
+real(kind=skr),dimension(3)  :: XDUM, YDUM
     
-       real(kind=skr),dimension(3)  :: DIREC,AP_VEC,E_TEMP,SB_POS
-       real(kind=skr),dimension(3)  :: VTEMP,A_VEC,A_TEMP, E_BEAM
+real(kind=skr),dimension(3)  :: DIREC,AP_VEC,E_TEMP,SB_POS
+real(kind=skr),dimension(3)  :: VTEMP,A_VEC,A_TEMP, E_BEAM
 
-       real(kind=skr), dimension(6,NPOINT1) :: grid
+real(kind=skr), dimension(6,NPOINT1) :: grid
     
     
-       real(kind=skr),dimension(10)  :: SIGXL,SIGZL
+real(kind=skr),dimension(10)  :: SIGXL,SIGZL
     
-       real(kind=skr), dimension(5,5001) :: seed_y,y_x,y_xpri, &
-                           y_z,y_zpri,y_curv,y_path
-       real(kind=skr), dimension(5001) :: y_temp,c_temp,x_temp, &
-                           z_temp, ang_temp, p_temp, ang2_temp, abd2_temp 
-    
-    
-       real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
-       real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
+! insertion device arrays
+real(kind=skr), dimension(:,:),allocatable :: seed_y,y_x,y_xpri, y_z,y_zpri
+real(kind=skr), dimension(:,:),allocatable :: y_curv,y_path
 
-       real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
-       real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
-       real(kind=skr),dimension(51)       :: CDFW,UENER
-       real(kind=skr),dimension(10)       :: RELINT,PRELINT
-       real(kind=skr),dimension(4)        :: II,DX,PHI_INT
-       real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
+real(kind=skr),dimension(:),allocatable :: y_temp,c_temp,x_temp,z_temp,ang_temp
+real(kind=skr),dimension(:),allocatable :: p_temp,ang2_temp,abd2_temp 
+    
+    
+real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
+real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
+
+real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
+real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
+real(kind=skr),dimension(51)       :: CDFW,UENER
+real(kind=skr),dimension(10)       :: RELINT,PRELINT
+real(kind=skr),dimension(4)        :: II,DX,PHI_INT
+real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
    
-       integer(kind=ski) :: n_rej=0, k_rej=0
+integer(kind=ski) :: n_rej=0, k_rej=0
     
-       real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
-    ! C
-    ! C Save the *big* arrays so it will:
-    ! C  -- zero out the elements.
-    ! C  -- put in the global heap.
-    ! C
-    !!	SAVE		BEGIN, PHASE, AP, &
-    !!      			DIREC,AP_VEC,E_TEMP,SB_POS,&
-    !!     			GRID,A_VEC,A_TEMP,E_BEAM,&
-    !!     			SIGXL,SIGZL,&
-    !!     			SEED_Y,Y_X,Y_XPRI,Y_Z,Y_ZPRI,&
-    !!     			Y_CURV,Y_PATH,&
-    !!     			Y_TEMP,C_TEMP,X_TEMP,Z_TEMP,&
-    !!     			ANG_TEMP,P_TEMP,ANG2_TEMP
-    
-    !srio      	DATA  SQRT_2  /1.4142135623730950488016887D0/
-    
-    
-    ! load gfile (moved from gen_source)
-    
-    !
-    ! put inputs (pool) into global variables
-    !
-    !todo: work without globals!!!!
-    CALL PoolSourceToGlobal(pool00)
-
-    
-         	ISTAT = 0
-         	IDUMM = 0
-    
-         	KREJ = 0
-         	NREJ = 0
-    ! C
-    ! C Sets up some variables needed for the rest of the routine
-    ! C
-    ! C First figure out the number of columns written out for each ray.
-    ! C
-    	IF (F_POLAR.EQ.1) THEN
-    	  NCOL	= 18
-    	ELSE IF (F_OPD.EQ.1) THEN
-    	  NCOL	= 13
-    	ELSE
-    	  NCOL	= 12
-    	END IF
-    
-    
-    	IF (F_WIGGLER.EQ.1) THEN
-     ! C
-     ! C Normal wigger case:
-     ! C read in the wiggler trajectory, tangent and radius, and other parameters
-     ! C
-     	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
-     	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
+real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
 
 
-     	  DO 13 I = 1, NP_TRAJ
-     	    READ (29)	XIN,YIN,SEEDIN,ANGIN,CIN
-     ! C+++
-     ! C The program will build the splines for generating the stocastic source.
-     ! C the splines are defined by:
-     ! C
-     ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
-     ! C
-     ! C which is valid between the interval X(I) and X(I+1)
-     ! C
-     ! C We define the 5 arrays:
-     ! C    Y_X(5,N)    ---> X(Y)
-     ! C    Y_XPRI(5,N) ---> X'(Y)
-     ! C    Y_CURV(5,N) ---> CURV(Y)
-     ! C    Y_PATH(5,N) ---> PATH(Y)
-     ! C    F(1,N) contains the array of Y values where the nodes are located.
-     ! C+++
-     	    Y_TEMP(I)	= YIN*CONV_FACT			! Convert to user units
-     	    X_TEMP(I)	= XIN*CONV_FACT			! Convert to user units
-     	    SEED_Y(1,I)	= SEEDIN
-     	    ANG_TEMP(I)	= ANGIN
-     	    C_TEMP(I)	= CIN
-     	    P_TEMP(I)	= (I-1)*PATH_STEP*CONV_FACT	! Convert to user units
-     ! C
-     ! C Array initialization:
-     ! C
-     	    Y_X(1,I)	= Y_TEMP(I)
-     	    Y_XPRI(1,I)	= Y_TEMP(I)
-     	    Y_CURV(1,I)	= Y_TEMP(I)
-     	    Y_PATH(1,I)	= Y_TEMP(I)
-     13	  CONTINUE   ! end loop on trajectrory points
-     	  CLOSE	(29)
 
-     ! C
-     ! C Generate the (5) splines. Notice that the nodes are always in the first
-     ! C element already.
-     ! C      Y_X     : on input, first row contains nodes.
-     ! C      X_TEMP  : input array to which to fit the splines
-     ! C      NP_TRAJ : # of spline points
-     ! C      IER     : status flag
-     ! C On output:
-     ! C      Y_X(1,*)    : spline nodes
-     ! C      Y_X(2:5,*)  : spline coefficients (relative to X_TEMP)
-     ! C
-     	  NP_SY	= NP_TRAJ
-     	  IER	= 1
-     ! C*************************************
+! load gfile (moved from gen_source)
+    
+!
+! put inputs (pool) into global variables
+!
+!todo: work without globals!!!!
+CALL PoolSourceToGlobal(pool00)
 
-     	  CALL	PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
-     	  IER	= 0
-     	  CALL	CUBSPL	(Y_X,    X_TEMP,   NP_TRAJ, IER)
-     	  IER	= 0
-     	  CALL	CUBSPL	(Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
-     	  IER	= 0
-     	  CALL	CUBSPL	(Y_CURV, C_TEMP,   NP_TRAJ, IER)
-     	  IER	= 0
-     	  CALL	CUBSPL	(Y_PATH, P_TEMP,   NP_TRAJ, IER)
-     ! C+++
-     ! C Compute the path length to the middle (origin) of the wiggler.
-     ! C We need to know the "center" of the wiggler coordinate.
-     ! C input:     Y_PATH  ---> spline array
-     ! C            NP_TRAJ ---> # of points
-     ! C            Y_TRAJ  ---> calculation point (ind. variable)
-     ! C output:    PATH0   ---> value of Y_PATH at X = Y_TRAJ. If
-     ! C                         Y_TRAJ = 0, then PATH0 = 1/2 length 
-     ! C                         of trajectory.
-     ! C+++
-     	  Y_TRAJ	= 0.0D0
-     	  CALL	SPL_INT	(Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
-     ! C
-     ! C These flags are set because of the original program structure.
-     ! C
-      	F_PHOT		= 0
-       	F_COLOR		= 3
-     ! C	FGRID		= 0
-       	FSOUR		= 3
-       	FDISTR		= 4
-    	ELSE IF (F_WIGGLER.EQ.3) THEN
+    
+ISTAT = 0
+IDUMM = 0
+   
+KREJ = 0
+NREJ = 0
+! C
+! C Sets up some variables needed for the rest of the routine
+! C
+! C First figure out the number of columns written out for each ray.
+! C
+IF (F_POLAR.EQ.1) THEN
+        NCOL = 18
+ELSE IF (F_OPD.EQ.1) THEN
+        NCOL = 13
+ELSE
+        NCOL = 12
+END IF
+    
+    
+IF (F_WIGGLER.EQ.1) THEN
+    ! C
+    ! C Normal wigger case:
+    ! C read in the wiggler trajectory, tangent and radius, and other parameters
+    ! C
+    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
+    READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
+
+    !array allocation
+    allocate( y_temp(NP_TRAJ) )
+    allocate( c_temp(NP_TRAJ) )
+    allocate( x_temp(NP_TRAJ) )
+    allocate( z_temp(NP_TRAJ) )
+    allocate( ang_temp(NP_TRAJ) )
+    allocate( p_temp(NP_TRAJ) )
+    allocate( ang2_temp(NP_TRAJ) )
+    allocate( abd2_temp(NP_TRAJ) )
+
+    allocate( seed_y(5,NP_TRAJ) )
+    allocate( y_x(5,NP_TRAJ) )
+    allocate( y_xpri(5,NP_TRAJ) )
+    allocate( y_z(5,NP_TRAJ) )
+    allocate( y_zpri(5,NP_TRAJ) )
+    allocate( y_curv(5,NP_TRAJ) )
+    allocate( y_path(5,NP_TRAJ) )
+     
+
+    DO 13 I = 1, NP_TRAJ
+        READ (29) XIN,YIN,SEEDIN,ANGIN,CIN
+        ! C+++
+        ! C The program will build the splines for generating the stocastic source.
+        ! C the splines are defined by:
+        ! C
+        ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
+        ! C
+        ! C which is valid between the interval X(I) and X(I+1)
+        ! C
+        ! C We define the 5 arrays:
+        ! C    Y_X(5,N)    ---> X(Y)
+        ! C    Y_XPRI(5,N) ---> X'(Y)
+        ! C    Y_CURV(5,N) ---> CURV(Y)
+        ! C    Y_PATH(5,N) ---> PATH(Y)
+        ! C    F(1,N) contains the array of Y values where the nodes are located.
+        ! C+++
+        Y_TEMP(I)   = YIN*CONV_FACT ! Convert to user units
+        X_TEMP(I)   = XIN*CONV_FACT ! Convert to user units
+        SEED_Y(1,I) = SEEDIN
+        ANG_TEMP(I) = ANGIN
+        C_TEMP(I)   = CIN
+        P_TEMP(I)   = (I-1)*PATH_STEP*CONV_FACT ! Convert to user units
+        ! C
+        ! C Array initialization:
+        ! C
+        Y_X(1,I)    = Y_TEMP(I)
+        Y_XPRI(1,I) = Y_TEMP(I)
+        Y_CURV(1,I) = Y_TEMP(I)
+        Y_PATH(1,I) = Y_TEMP(I)
+    13 CONTINUE   ! end loop on trajectrory points
+    CLOSE (29)
+
+    ! C
+    ! C Generate the (5) splines. Notice that the nodes are always in the first
+    ! C element already.
+    ! C      Y_X     : on input, first row contains nodes.
+    ! C      X_TEMP  : input array to which to fit the splines
+    ! C      NP_TRAJ : # of spline points
+    ! C      IER     : status flag
+    ! C On output:
+    ! C      Y_X(1,*)    : spline nodes
+    ! C      Y_X(2:5,*)  : spline coefficients (relative to X_TEMP)
+    ! C
+    NP_SY = NP_TRAJ
+    IER = 1
+    ! C*************************************
+
+    CALL PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
+    IER = 0
+    CALL CUBSPL (Y_X,    X_TEMP,   NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_CURV, C_TEMP,   NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_PATH, P_TEMP,   NP_TRAJ, IER)
+    ! C+++
+    ! C Compute the path length to the middle (origin) of the wiggler.
+    ! C We need to know the "center" of the wiggler coordinate.
+    ! C input:     Y_PATH  ---> spline array
+    ! C            NP_TRAJ ---> # of points
+    ! C            Y_TRAJ  ---> calculation point (ind. variable)
+    ! C output:    PATH0   ---> value of Y_PATH at X = Y_TRAJ. If
+    ! C                         Y_TRAJ = 0, then PATH0 = 1/2 length 
+    ! C                         of trajectory.
+    ! C+++
+    Y_TRAJ = 0.0D0
+    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
+    ! C
+    ! C These flags are set because of the original program structure.
+    ! C
+    F_PHOT  = 0
+    F_COLOR  = 3
+    ! C FGRID  = 0
+    FSOUR  = 3
+    FDISTR  = 4
+ELSE IF (F_WIGGLER.EQ.3) THEN
     ! C
     ! C Elliptical wiggler case:
     ! C
-    	  OPEN	(29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
-    	  READ	(29)	NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
-    	  DO 14 I = 1, NP_TRAJ
-    	    READ (29) XIN,YIN,ZIN,SEEDIN,ANGIN1,ANGIN2,CIN	
-    ! C+++
-    ! C The program will build the splines for generating the stocastic source.
-    ! C the splines are defined by:
-    ! C
-    ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
-    ! C
-    ! C which is valid between the interval X(I) and X(I+1)
-    ! C
-    ! C We define the 7 arrays:
-    ! C    Y_X(5,N)    ---> X(Y)
-    ! C    Y_XPRI(5,N) ---> X'(Y)
-    ! C    Y_Z(5,N)    ---> Z(Y)
-    ! C    Y_ZPRI(5,N) ---> Z'(Y)
-    ! C    Y_CURV(5,N) ---> CURV(Y)
-    ! C    Y_PATH(5,N) ---> PATH(Y)
-    ! C    F(1,N) contains the array of Y values where the nodes are located.
-    ! C+++
-    	    Y_TEMP(I)	= YIN*CONV_FACT			! Convert to user units
-    	    X_TEMP(I)	= XIN*CONV_FACT			! Convert to user units
-    	    Z_TEMP(I)	= ZIN*CONV_FACT			! Convert to user units
-    	    SEED_Y(1,I)	= SEEDIN
-    	    ANG_TEMP(I)= ANGIN1
-    	    ANG2_TEMP(I)= ANGIN2
-    	    C_TEMP(I)	= CIN
-    	    P_TEMP(I)	= (I-1)*PATH_STEP*CONV_FACT	! Convert to user units
-    ! C
-    ! C Array initialization:
-    ! C
-    	    Y_X(1,I)	= Y_TEMP(I)
-    	    Y_XPRI(1,I)	= Y_TEMP(I)
-    	    Y_Z(1,I)	= Y_TEMP(I)
-    	    Y_ZPRI(1,I)	= Y_TEMP(I)
-    	    Y_CURV(1,I)	= Y_TEMP(I)
-    	    Y_PATH(1,I)	= Y_TEMP(I)
+    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
+    READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
+ 
+    !array allocation
+    allocate( y_temp(NP_TRAJ) )
+    allocate( c_temp(NP_TRAJ) )
+    allocate( x_temp(NP_TRAJ) )
+    allocate( z_temp(NP_TRAJ) )
+    allocate( ang_temp(NP_TRAJ) )
+    allocate( p_temp(NP_TRAJ) )
+    allocate( ang2_temp(NP_TRAJ) )
+    allocate( abd2_temp(NP_TRAJ) )
+
+    allocate( seed_y(5,NP_TRAJ) )
+    allocate( y_x(5,NP_TRAJ) )
+    allocate( y_xpri(5,NP_TRAJ) )
+    allocate( y_z(5,NP_TRAJ) )
+    allocate( y_zpri(5,NP_TRAJ) )
+    allocate( y_curv(5,NP_TRAJ) )
+    allocate( y_path(5,NP_TRAJ) )
+     
+    DO 14 I = 1, NP_TRAJ
+        READ (29) XIN,YIN,ZIN,SEEDIN,ANGIN1,ANGIN2,CIN 
+        ! C+++
+        ! C The program will build the splines for generating the stocastic source.
+        ! C the splines are defined by:
+        ! C
+        ! C      Y(X) = G(2,I)+X(I)*(G(3,I)+X(I)*(G(4,I)+X(I)*G(5,I)))
+        ! C
+        ! C which is valid between the interval X(I) and X(I+1)
+        ! C
+        ! C We define the 7 arrays:
+        ! C    Y_X(5,N)    ---> X(Y)
+        ! C    Y_XPRI(5,N) ---> X'(Y)
+        ! C    Y_Z(5,N)    ---> Z(Y)
+        ! C    Y_ZPRI(5,N) ---> Z'(Y)
+        ! C    Y_CURV(5,N) ---> CURV(Y)
+        ! C    Y_PATH(5,N) ---> PATH(Y)
+        ! C    F(1,N) contains the array of Y values where the nodes are located.
+        ! C+++
+        Y_TEMP(I) = YIN*CONV_FACT! Convert to user units
+        X_TEMP(I) = XIN*CONV_FACT! Convert to user units
+        Z_TEMP(I) = ZIN*CONV_FACT! Convert to user units
+        SEED_Y(1,I) = SEEDIN
+        ANG_TEMP(I) = ANGIN1
+        ANG2_TEMP(I) = ANGIN2
+        C_TEMP(I) = CIN
+        P_TEMP(I) = (I-1)*PATH_STEP*CONV_FACT! Convert to user units
+        ! C
+        ! C Array initialization:
+        ! C
+        Y_X(1,I) = Y_TEMP(I)
+        Y_XPRI(1,I) = Y_TEMP(I)
+        Y_Z(1,I) = Y_TEMP(I)
+        Y_ZPRI(1,I) = Y_TEMP(I)
+        Y_CURV(1,I) = Y_TEMP(I)
+        Y_PATH(1,I) = Y_TEMP(I)
     14	  CONTINUE
-    	  CLOSE	(29)
+    CLOSE (29)
     ! C
     ! C Generate the (7) splines. Notice that the nodes are always in the first
     ! C element already.
@@ -1981,22 +2007,22 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C      Y_X(2:5,*) (or Y_Z(2:5,*)) : spline coefficients (relative to
     ! C                                   X_TEMP (or Z_TEMP))
     ! C
-    	  NP_SY	= NP_TRAJ
-    	  IER	= 1
+    NP_SY = NP_TRAJ
+    IER = 1
     ! C*************************************
-    	  CALL	PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_X,    X_TEMP,   NP_TRAJ, IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_Z,    Z_TEMP,   NP_TRAJ, IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_ZPRI, ANG2_TEMP, NP_TRAJ, IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_CURV, C_TEMP,   NP_TRAJ, IER)
-    	  IER	= 0
-    	  CALL	CUBSPL	(Y_PATH, P_TEMP,   NP_TRAJ, IER)
+    CALL PIECESPL(SEED_Y, Y_TEMP,   NP_SY,   IER)
+    IER = 0
+    CALL CUBSPL (Y_X,    X_TEMP,   NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_Z,    Z_TEMP,   NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_XPRI, ANG_TEMP, NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_ZPRI, ANG2_TEMP, NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_CURV, C_TEMP,   NP_TRAJ, IER)
+    IER = 0
+    CALL CUBSPL (Y_PATH, P_TEMP,   NP_TRAJ, IER)
     ! C+++
     ! C Compute the path length to the middle (origin) of the wiggler.
     ! C We need to know the "center" of the wiggler coordinate.
@@ -2007,17 +2033,17 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C                         Y_TRAJ = 0, then PATH0 = 1/2 length 
     ! C                         of trajectory.
     ! C+++
-    	  Y_TRAJ	= 0.0D0
-    	  CALL	SPL_INT	(Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
+    Y_TRAJ = 0.0D0
+    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, PATH0, IER)
     ! C
     ! C These flags are set because of the original program structure.
     ! C
-     	F_PHOT		= 0
-      	F_COLOR		= 3
-    ! C	FGRID		= 0
-      	FSOUR		= 3
-      	FDISTR		= 4
-    	ELSE IF (F_WIGGLER.EQ.2) THEN
+    F_PHOT  = 0
+    F_COLOR  = 3
+    ! C FGRID  = 0
+    FSOUR  = 3
+    FDISTR  = 4
+ELSE IF (F_WIGGLER.EQ.2) THEN
     ! C
     ! C Uudulator case : first read in the CDF's and degree of polarization.
     ! C
@@ -2025,328 +2051,334 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     !!srio 	  OPEN	(30, FILE=FILE_TRAJ, STATUS='OLD',
     !!srio      $	  	FORM='UNFORMATTED', READONLY)
     !!srio #else
-    	  OPEN	(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='UNFORMATTED')
+    OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='UNFORMATTED')
     !!srio #endif
-    	  READ	(30)	NE,NT,NP,IANGLE
+    READ(30) NE,NT,NP,IANGLE
     
-    	  DO 17 K = 1,NE
-    17	     READ  	(30)	UENER(K)
-    	  DO 27 K = 1,NE
-    	     DO 27 J = 1,NT
-    27	        READ   	(30)   	UTHETA(J,K)
-    	  DO 37 K = 1,NE
-    	     DO 37 J = 1,NT
-    		DO 37 I = 1,NP
-    37	           READ	(30)	UPHI(I,J,K)
+    DO 17 K = 1,NE
+    17     READ  (30)UENER(K)
+
+    DO 27 K = 1,NE
+    DO 27 J = 1,NT
+    27        READ   (30)   UTHETA(J,K)
+
+    DO 37 K = 1,NE
+    DO 37 J = 1,NT
+    DO 37 I = 1,NP
+    37           READ(30)UPHI(I,J,K)
     
-    	  DO 47 K = 1,NE
-    47	     READ   	(30) 	CDFW(K)
-    	  DO 57 K = 1,NE
-    	     DO 57 J = 1,NT
-    57	        READ	(30)	CDFZ(J,K)
-    	  DO 67 K = 1,NE
-    	     DO 67 J = 1,NT
-    		DO 67 I = 1,NP
-    67	           READ	(30)	CDFX(I,J,K)
+    DO 47 K = 1,NE
+    47     READ   (30) CDFW(K)
+
+    DO 57 K = 1,NE
+    DO 57 J = 1,NT
+    57        READ(30)CDFZ(J,K)
+
+    DO 67 K = 1,NE
+    DO 67 J = 1,NT
+    DO 67 I = 1,NP
+    67           READ(30)CDFX(I,J,K)
     
-    	  DO 87 K = 1,NE
-    	     DO 87 J = 1,NT
-    		DO 87 I = 1,NP
-    87	  	   READ	(30)	D_POL(I,J,K)
+    DO 87 K = 1,NE
+    DO 87 J = 1,NT
+    DO 87 I = 1,NP
+    87     READ(30)D_POL(I,J,K)
     
-    	  CLOSE	(30)
+    CLOSE(30)
     ! C
     ! C These flags are set because of the original program structure.
     ! C
-    	  F_PHOT	= 0
-    	  F_COLOR	= 3
-    ! C	  FGRID		= 0
-    	  FSOUR		= 3
-    	  F_COHER	= 1
-     	ELSE
-     	  RAD_MIN	= ABS(R_MAGNET)
-     	  RAD_MAX	= ABS(R_MAGNET)
-     	END IF
-    ! C
-    ! C Prepares some SR variables; the vertical divergence replaces the emittance
-    ! C
-         	IF (FDISTR.EQ.4.OR.FDISTR.EQ.6) THEN
-    	  F_COHER = 0
-    	  IF (R_ALADDIN.LT.0.0D0) THEN
-    	    POL_ANGLE = -90.0D0
-    	  ELSE
-    	    POL_ANGLE = 90.0D0
-    	  END IF
-    	END IF
-    	POL_ANGLE     =   TORAD*POL_ANGLE
-    ! C
-    ! C Saved values of emittance that user inputs.  Write these out to 
-    ! C namelist instead of EPSI/SIGMA.  6/25/93 clw.
-    ! C
+    F_PHOT= 0
+    F_COLOR= 3
+    ! C  FGRID= 0
+    FSOUR= 3
+    F_COHER= 1
+ELSE
+    RAD_MIN= ABS(R_MAGNET)
+    RAD_MAX= ABS(R_MAGNET)
+END IF
+
+! C
+! C Prepares some SR variables; the vertical divergence replaces the emittance
+! C
+IF (FDISTR.EQ.4.OR.FDISTR.EQ.6) THEN
+    F_COHER = 0
+    IF (R_ALADDIN.LT.0.0D0) THEN
+        POL_ANGLE = -90.0D0
+    ELSE
+        POL_ANGLE = 90.0D0
+    END IF
+END IF
+POL_ANGLE     =   TORAD*POL_ANGLE
+! C
+! C Saved values of emittance that user inputs.  Write these out to 
+! C namelist instead of EPSI/SIGMA.  6/25/93 clw.
+! C
     
-         	IF (FSOUR.EQ.3) THEN
-    	  EPSI_XOLD = EPSI_X
-    	  EPSI_ZOLD = EPSI_Z
-    	  IF (SIGMAX.NE.0.0D0) THEN
-    	    EPSI_X	=   EPSI_X/SIGMAX
-    	  ELSE
-    	    EPSI_X	=   0.0D0
-    	  END IF
-    	  IF (SIGMAZ.NE.0.0D0) THEN
-    	    EPSI_Z	=   EPSI_Z/SIGMAZ
-    	  ELSE
-    	    EPSI_Z	=   0.0D0
-    	  END IF
-         	END IF
+IF (FSOUR.EQ.3) THEN
+    EPSI_XOLD = EPSI_X
+    EPSI_ZOLD = EPSI_Z
+    IF (SIGMAX.NE.0.0D0) THEN
+        EPSI_X =   EPSI_X/SIGMAX
+    ELSE
+        EPSI_X =   0.0D0
+    END IF
+    IF (SIGMAZ.NE.0.0D0) THEN
+        EPSI_Z =   EPSI_Z/SIGMAZ
+    ELSE
+        EPSI_Z =   0.0D0
+    END IF
+END IF
     
-         	PHOTON(1) = PH1
-         	PHOTON(2) = PH2
-         	PHOTON(3) = PH3
-         	PHOTON(4) = PH4
-         	PHOTON(5) = PH5
-         	PHOTON(6) = PH6
-         	PHOTON(7) = PH7
-         	PHOTON(8) = PH8
-         	PHOTON(9) = PH9
-         	PHOTON(10) = PH10
+PHOTON(1) = PH1
+PHOTON(2) = PH2
+PHOTON(3) = PH3
+PHOTON(4) = PH4
+PHOTON(5) = PH5
+PHOTON(6) = PH6
+PHOTON(7) = PH7
+PHOTON(8) = PH8
+PHOTON(9) = PH9
+PHOTON(10) = PH10
+! C
+! C sets up the acceptance/rejection method for optimizing source
+! C notice that this is acceptable ONLY for random sources
+! C
+IF ( F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
+    ITMP=-1
+    CALL SOURCE_BOUND (XDUM,YDUM,ITMP)
+END IF
+! C
+! C tests for grids
+! C
+IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
+    SIGXL(1) = SIGXL1
+    SIGXL(2) = SIGXL2
+    SIGXL(3) = SIGXL3
+    SIGXL(4) = SIGXL4
+    SIGXL(5) = SIGXL5
+    SIGXL(6) = SIGXL6
+    SIGXL(7) = SIGXL7
+    SIGXL(8) = SIGXL8
+    SIGXL(9) = SIGXL9
+    SIGXL(10) = SIGXL10
     ! C
-    ! C sets up the acceptance/rejection method for optimizing source
-    ! C notice that this is acceptable ONLY for random sources
-    ! C
-         	IF ( F_BOUND_SOUR.GT.0 .AND. FGRID.EQ.0 ) THEN
-                  ITMP=-1
-         	  CALL 	SOURCE_BOUND (XDUM,YDUM,ITMP)
-         	END IF
-    ! C
-    ! C tests for grids
-    ! C
-    	IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
-    	  SIGXL(1) = SIGXL1
-    	  SIGXL(2) = SIGXL2
-    	  SIGXL(3) = SIGXL3
-    	  SIGXL(4) = SIGXL4
-    	  SIGXL(5) = SIGXL5
-    	  SIGXL(6) = SIGXL6
-    	  SIGXL(7) = SIGXL7
-    	  SIGXL(8) = SIGXL8
-    	  SIGXL(9) = SIGXL9
-    	  SIGXL(10) = SIGXL10
-    ! C
-    	  SIGZL(1) = SIGZL1
-    	  SIGZL(2) = SIGZL2
-    	  SIGZL(3) = SIGZL3
-    	  SIGZL(4) = SIGZL4
-    	  SIGZL(5) = SIGZL5
-    	  SIGZL(6) = SIGZL6
-    	  SIGZL(7) = SIGZL7
-    	  SIGZL(8) = SIGZL8
-    	  SIGZL(9) = SIGZL9
-    	  SIGZL(10) = SIGZL10
+    SIGZL(1) = SIGZL1
+    SIGZL(2) = SIGZL2
+    SIGZL(3) = SIGZL3
+    SIGZL(4) = SIGZL4
+    SIGZL(5) = SIGZL5
+    SIGZL(6) = SIGZL6
+    SIGZL(7) = SIGZL7
+    SIGZL(8) = SIGZL8
+    SIGZL(9) = SIGZL9
+    SIGZL(10) = SIGZL10
     ! C
     ! C The next two assignments are just for convenience of the original program 
     ! C structure.
     ! C
-    	  FSOUR	= 4
-    	  FDISTR = 7
-    	END IF
+    FSOUR = 4
+    FDISTR = 7
+END IF
     
-    	IF (F_PHOT.EQ.1) THEN
-    	  IF (F_COLOR.EQ.1) THEN
-    	    PHOTON(1)	=   TOANGS/PHOTON(1)
-    	  ELSE IF (F_COLOR.EQ.2.OR.F_COLOR.EQ.4) THEN
-    	    DO  21 I=1,N_COLOR
-    	      PHOTON(I)	=   TOANGS/PHOTON(I)
-    21	    CONTINUE
-    	  ELSE IF (F_COLOR.EQ.3) THEN
-    	    DO 31 I=1,2
-    	      PHOTON(I)	=   TOANGS/PHOTON(I)
-    31	    CONTINUE
-         	  END IF
-         	END IF
-    ! C
-    ! C If the S.R. case has been chosen, set up the subroutine for the
-    ! C  vertical distribution.
-    ! C
-    	IF (FDISTR.EQ.6) THEN
-           itmp = -1
-           CALL ALADDIN1 (DUMMY,DUMMY,itmp,IER)
+IF (F_PHOT.EQ.1) THEN
+    IF (F_COLOR.EQ.1) THEN
+        PHOTON(1) =   TOANGS/PHOTON(1)
+    ELSE IF (F_COLOR.EQ.2.OR.F_COLOR.EQ.4) THEN
+         DO  21 I=1,N_COLOR
+             PHOTON(I) =   TOANGS/PHOTON(I)
+         21  CONTINUE
+    ELSE IF (F_COLOR.EQ.3) THEN
+         DO 31 I=1,2
+             PHOTON(I) =   TOANGS/PHOTON(I)
+         31 CONTINUE
+    END IF
+END IF
+! C
+! C If the S.R. case has been chosen, set up the subroutine for the
+! C  vertical distribution.
+! C
+IF (FDISTR.EQ.6) THEN
+    itmp = -1
+    CALL ALADDIN1 (DUMMY,DUMMY,itmp,IER)
+END IF
+IF (FDISTR.EQ.4)  THEN 
+    i0 = 0
+    CALL WHITE (RAD_MIN,RAD_MAX,DUMMY,DUMMY,DUMMY,DUMMY,DUMMY,i0)
+END IF
+! C
+! C Calculate the total number of rays.
+! C
+102 CONTINUE
+    
+IF (FDISTR.NE.5) THEN
+    NMOM = IDO_VX * IDO_VZ
+ELSE
+    NMOM = (N_CONE * N_CIRCLE) 
+    IDO_VX = N_CIRCLE
+    IDO_VZ = N_CONE
+END IF
+NSPACE = IDO_X_S * IDO_Y_S * IDO_Z_S
+    
+IF (FGRID.EQ.0) THEN
+    NTOTAL = NPOINT
+ELSE IF (FGRID.EQ.1) THEN
+    NTOTAL = NSPACE * NMOM
+ELSE IF (FGRID.EQ.2) THEN
+    NTOTAL = NSPACE * NPOINT
+ELSE IF (FGRID.EQ.3) THEN
+    NTOTAL = NPOINT * NMOM
+ELSE IF (FGRID.EQ.4) THEN
+    NTOTAL = IDO_XL * NPOINT * IDO_ZL * NPOINT
+ELSE IF (FGRID.EQ.5) THEN
+    NTOTAL = IDO_XL * IDO_XN * IDO_ZL * IDO_ZN
+END IF
+    
+ITMP=0
+IF (NTOTAL.LE.0) CALL LEAVE ('SOURCE','NPOINT = 0',ITMP)
+!!      IF (NTOTAL.GT.N_DIM) CALL LEAVE ('SOURCE','Too many rays.',ITMP)
+! C
+! C Compute the steps and iteration count limits for the grid generation.
+! C
+IF (IDO_X_S.GT.1) STEP_X  = 1.0D0/(IDO_X_S - 1)
+IF (IDO_Y_S.GT.1) STEP_Y  = 1.0D0/(IDO_Y_S - 1)
+IF (IDO_Z_S.GT.1) STEP_Z  = 1.0D0/(IDO_Z_S - 1)
+IF (IDO_VX.GT.1)  STEP_VX = 1.0D0/(IDO_VX - 1)
+IF (IDO_VZ.GT.1)  STEP_VZ = 1.0D0/(IDO_VZ - 1)
+IF (IDO_XN.GT.1)  STEP_XN = 1.0D0/(IDO_XN - 1)
+IF (IDO_ZN.GT.1)  STEP_ZN = 1.0D0/(IDO_ZN - 1)
+CL_X  = (IDO_X_S - 1) / 2.0D0
+CL_Y  = (IDO_Y_S - 1) / 2.0D0
+CL_Z  = (IDO_Z_S - 1) / 2.0D0
+CL_VX = (IDO_VX - 1) / 2.0D0
+CL_VZ = (IDO_VZ - 1) / 2.0D0
+CL_XN = (IDO_XN - 1) / 2.0D0
+CL_ZN = (IDO_ZN - 1) / 2.0D0
+! C
+! C First fill out a "typical" part of the GRID direction.
+! C
+INDEXMOM = 0 
+IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
+     DO 41 I = 1, NPOINT
+         GRID (4,I) = WRAN (ISTAR1)
+         GRID (6,I) = WRAN (ISTAR1)
+     41 CONTINUE
+     INDEXMOM = NPOINT
+ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
+     !!srio DO 51 C_VX = -CL_VX, CL_VX
+     DO 51 C_VX = -INT(CL_VX), INT(CL_VX)
+         !!srio  DO 61 C_VZ = -CL_VZ, CL_VZ
+         DO 61 C_VZ = -INT(CL_VZ), INT(CL_VZ)
+             INDEXMOM = INDEXMOM + 1
+             GRID (4,INDEXMOM) = C_VX * STEP_VX + 0.5D0
+             GRID (6,INDEXMOM) = C_VZ * STEP_VZ + 0.5D0
+         61 CONTINUE
+     51 CONTINUE
+     ! C IF (FDISTR.EQ.5) THEN
+     ! C INDEXMOM = INDEXMOM + 1
+     ! C GRID (4,INDEXMOM) = 0.0D0
+     ! C GRID (6,INDEXMOM) = -1.0D0
+     ! C END IF
+ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
+     DO 71 I = 1, IDO_XL
+         IF (FGRID.EQ.4) THEN
+             DO 81 J = 1, NPOINT
+                 INDEXMOM= INDEXMOM + 1
+                 GRID(1,INDEXMOM)= SIGXL(I)
+                 GRID(2,INDEXMOM)= WRAN (ISTAR1)
+                 GRID(4,INDEXMOM)= WRAN (ISTAR1)
+             81 CONTINUE
+         ELSE
+             !!srio      DO 91 C_XN = -CL_XN, CL_XN
+             DO 91 C_XN = -INT(CL_XN), INT(CL_XN)
+                 INDEXMOM= INDEXMOM + 1
+                 GRID(1,INDEXMOM)= SIGXL(I)
+                 GRID(2,INDEXMOM)= WRAN (ISTAR1)
+                 GRID(4,INDEXMOM)= C_XN * STEP_XN + 0.5D0
+             91 CONTINUE
+         END IF
+     71   CONTINUE
+END IF
+! C
+! C Now fill out the entire GRID.
+! C
+INDEXSPA = 0
+IF (FGRID.EQ.0) THEN
+    DO 103 I = 1, NPOINT
+        GRID (1,I) = WRAN (ISTAR1)
+        GRID (2,I) = WRAN (ISTAR1)
+        GRID (3,I) = WRAN (ISTAR1)
+    103 CONTINUE
+    INDEXSPA = NPOINT
+ELSE IF (FGRID.EQ.3) THEN
+    DO 113 I = 1, NPOINT
+        TEMPX = WRAN (ISTAR1)
+        TEMPY = WRAN (ISTAR1)
+        TEMPZ = WRAN (ISTAR1)
+        DO 121 J = 1, INDEXMOM
+            INDEXSPA = INDEXSPA + 1
+            GRID(1,INDEXSPA) = TEMPX
+            GRID(2,INDEXSPA) = TEMPY
+            GRID(3,INDEXSPA) = TEMPZ
+            GRID(4,INDEXSPA) = GRID (4,J)
+            GRID(6,INDEXSPA) = GRID (6,J)
+        121 CONTINUE
+    113   CONTINUE
+ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
+    DO 131 C_X = -INT(CL_X), INT(CL_X)
+        DO 141 C_Y = -INT(CL_Y), INT(CL_Y)
+            DO 151 C_Z = -INT(CL_Z), INT(CL_Z)
+                DO 161 J = 1, INDEXMOM
+                    INDEXSPA = INDEXSPA + 1
+                    GRID (1,INDEXSPA) = C_X * STEP_X + 0.5D0
+                    GRID (2,INDEXSPA) = C_Y * STEP_Y + 0.5D0
+                    GRID (3,INDEXSPA) = C_Z * STEP_Z + 0.5D0
+                    GRID (4,INDEXSPA) = GRID (4,J)
+                    GRID (6,INDEXSPA) = GRID (6,J)
+                161 CONTINUE
+            151 CONTINUE
+        141 CONTINUE
+    131   CONTINUE
+ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
+    DO 171 I = 1, IDO_ZL
+        IF (FGRID.EQ.4) THEN
+            DO 181 J = 1, NPOINT
+                TEMP = WRAN (ISTAR1)
+                DO 191 K = 1, IDO_XL*NPOINT
+                    INDEXSPA  = INDEXSPA + 1
+                    GRID(1,INDEXSPA) = GRID(1,K)
+                    GRID(2,INDEXSPA) = GRID(2,K)
+                    GRID(4,INDEXSPA) = GRID(4,K)
+                    GRID(3,INDEXSPA) = SIGZL(I)
+                    GRID(6,INDEXSPA) = TEMP
+                191 CONTINUE
+            181 CONTINUE
+        ELSE
+            !!srio       DO 201 C_ZN = -CL_ZN, CL_ZN
+            DO 201 C_ZN = -INT(CL_ZN), INT(CL_ZN)
+                TEMP = C_ZN * STEP_ZN + 0.5D0
+                DO 211 K = 1, IDO_XL*IDO_XN
+                    INDEXSPA  = INDEXSPA + 1
+                    GRID(1,INDEXSPA) = GRID(1,K)
+                    GRID(2,INDEXSPA) = GRID(2,K)
+                    GRID(4,INDEXSPA) = GRID(4,K)
+                    GRID(3,INDEXSPA) = SIGZL(I)
+                    GRID(6,INDEXSPA) = TEMP
+                211         CONTINUE
+            201       CONTINUE
         END IF
-        IF (FDISTR.EQ.4)  THEN 
-           i0 = 0
-           CALL WHITE (RAD_MIN,RAD_MAX,DUMMY,DUMMY,DUMMY,DUMMY,DUMMY,i0)
-        END IF
-    ! C
-    ! C Calculate the total number of rays.
-    ! C
-    102	CONTINUE
-    
-    	IF (FDISTR.NE.5) THEN
-    	  NMOM	= IDO_VX * IDO_VZ
-    	ELSE
-    	  NMOM	= (N_CONE * N_CIRCLE) 
-    	  IDO_VX = N_CIRCLE
-    	  IDO_VZ = N_CONE
-    	END IF
-    	NSPACE	= IDO_X_S * IDO_Y_S * IDO_Z_S
-    
-    	IF (FGRID.EQ.0) THEN
-    	  NTOTAL	= NPOINT
-    	ELSE IF (FGRID.EQ.1) THEN
-    	  NTOTAL	= NSPACE * NMOM
-    	ELSE IF (FGRID.EQ.2) THEN
-    	  NTOTAL	= NSPACE * NPOINT
-    	ELSE IF (FGRID.EQ.3) THEN
-    	  NTOTAL	= NPOINT * NMOM
-    	ELSE IF (FGRID.EQ.4) THEN
-    	  NTOTAL	= IDO_XL * NPOINT * IDO_ZL * NPOINT
-    	ELSE IF (FGRID.EQ.5) THEN
-    	  NTOTAL	= IDO_XL * IDO_XN * IDO_ZL * IDO_ZN
-    	END IF
-    
-            ITMP=0
-         	IF (NTOTAL.LE.0)	CALL LEAVE ('SOURCE','NPOINT = 0',ITMP)
-    !!     	IF (NTOTAL.GT.N_DIM)	CALL LEAVE ('SOURCE','Too many rays.',ITMP)
-    ! C
-    ! C Compute the steps and iteration count limits for the grid generation.
-    ! C
-    	IF (IDO_X_S.GT.1)	STEP_X	= 1.0D0/(IDO_X_S - 1)
-    	IF (IDO_Y_S.GT.1)	STEP_Y	= 1.0D0/(IDO_Y_S - 1)
-    	IF (IDO_Z_S.GT.1)	STEP_Z	= 1.0D0/(IDO_Z_S - 1)
-    	IF (IDO_VX.GT.1)	STEP_VX	= 1.0D0/(IDO_VX - 1)
-    	IF (IDO_VZ.GT.1)	STEP_VZ	= 1.0D0/(IDO_VZ - 1)
-    	IF (IDO_XN.GT.1)	STEP_XN = 1.0D0/(IDO_XN - 1)
-    	IF (IDO_ZN.GT.1)	STEP_ZN = 1.0D0/(IDO_ZN - 1)
-    	CL_X	= (IDO_X_S - 1) / 2.0D0
-    	CL_Y	= (IDO_Y_S - 1) / 2.0D0
-    	CL_Z	= (IDO_Z_S - 1) / 2.0D0
-    	CL_VX	= (IDO_VX - 1) / 2.0D0
-    	CL_VZ	= (IDO_VZ - 1) / 2.0D0
-    	CL_XN	= (IDO_XN - 1) / 2.0D0
-    	CL_ZN	= (IDO_ZN - 1) / 2.0D0
-    ! C
-    ! C First fill out a "typical" part of the GRID direction.
-    ! C
-    	INDEXMOM	= 0	
-    	IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
-    	  DO 41 I = 1, NPOINT
-    	    GRID (4,I)	= WRAN (ISTAR1)
-    	    GRID (6,I)	= WRAN (ISTAR1)
-    41	  CONTINUE
-    	  INDEXMOM	= NPOINT
-    	ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
-    !!srio 	  DO 51 C_VX = -CL_VX, CL_VX
-    	  DO 51 C_VX = -INT(CL_VX), INT(CL_VX)
-    !!srio 	    DO 61 C_VZ = -CL_VZ, CL_VZ
-    	    DO 61 C_VZ = -INT(CL_VZ), INT(CL_VZ)
-    	      INDEXMOM	= INDEXMOM + 1
-    	      GRID (4,INDEXMOM)	= C_VX * STEP_VX + 0.5D0
-    	      GRID (6,INDEXMOM)	= C_VZ * STEP_VZ + 0.5D0
-    61	    CONTINUE
-    51	  CONTINUE
-    ! C	  IF (FDISTR.EQ.5) THEN
-    ! C	    INDEXMOM = INDEXMOM + 1
-    ! C	    GRID (4,INDEXMOM)	= 0.0D0
-    ! C	    GRID (6,INDEXMOM)	= -1.0D0
-    ! C	  END IF
-    	ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
-    	  DO 71 I = 1, IDO_XL
-    	    IF (FGRID.EQ.4) THEN
-    	      DO 81 J = 1, NPOINT
-    	        INDEXMOM		= INDEXMOM + 1
-    	        GRID(1,INDEXMOM)	= SIGXL(I)
-    	        GRID(2,INDEXMOM)	= WRAN (ISTAR1)
-    	        GRID(4,INDEXMOM)	= WRAN (ISTAR1)
-    81	      CONTINUE
-    	    ELSE
-    !!srio	      DO 91 C_XN = -CL_XN, CL_XN
-    	      DO 91 C_XN = -INT(CL_XN), INT(CL_XN)
-    	        INDEXMOM		= INDEXMOM + 1
-    	        GRID(1,INDEXMOM)	= SIGXL(I)
-    	        GRID(2,INDEXMOM)	= WRAN (ISTAR1)
-    	        GRID(4,INDEXMOM)	= C_XN * STEP_XN + 0.5D0
-    91 	      CONTINUE
-    	    END IF
-    71 	  CONTINUE
-    	END IF
-    ! C
-    ! C Now fill out the entire GRID.
-    ! C
-    	INDEXSPA = 0
-    	IF (FGRID.EQ.0) THEN
-    	  DO 103 I = 1, NPOINT
-    	    GRID (1,I)	= WRAN (ISTAR1)
-    	    GRID (2,I)	= WRAN (ISTAR1)
-    	    GRID (3,I)	= WRAN (ISTAR1)
-    103	  CONTINUE
-    	  INDEXSPA = NPOINT
-    	ELSE IF (FGRID.EQ.3) THEN
-    	  DO 113 I = 1, NPOINT
-    	    TEMPX = WRAN (ISTAR1)
-    	    TEMPY = WRAN (ISTAR1)
-    	    TEMPZ = WRAN (ISTAR1)
-    	    DO 121 J = 1, INDEXMOM
-    	      INDEXSPA	= INDEXSPA + 1
-    	      GRID(1,INDEXSPA)	= TEMPX
-    	      GRID(2,INDEXSPA)	= TEMPY
-    	      GRID(3,INDEXSPA)	= TEMPZ
-    	      GRID(4,INDEXSPA)	= GRID (4,J)
-    	      GRID(6,INDEXSPA)	= GRID (6,J)
-    121	    CONTINUE
-    113	  CONTINUE
-    	ELSE IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-    	  DO 131 C_X = -INT(CL_X), INT(CL_X)
-    	    DO 141 C_Y = -INT(CL_Y), INT(CL_Y)
-    	      DO 151 C_Z = -INT(CL_Z), INT(CL_Z)
-    		DO 161 J = 1, INDEXMOM
-    	      	  INDEXSPA	= INDEXSPA + 1
-    	      	  GRID (1,INDEXSPA)	= C_X * STEP_X + 0.5D0
-    	      	  GRID (2,INDEXSPA)	= C_Y * STEP_Y + 0.5D0
-    		  GRID (3,INDEXSPA)	= C_Z * STEP_Z + 0.5D0
-    		  GRID (4,INDEXSPA)	= GRID (4,J)
-    		  GRID (6,INDEXSPA)	= GRID (6,J)
-    161		CONTINUE
-    151	      CONTINUE
-    141	    CONTINUE
-    131	  CONTINUE
-    	ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
-    	  DO 171 I = 1, IDO_ZL
-    	    IF (FGRID.EQ.4) THEN
-    	      DO 181 J = 1, NPOINT
-    	        TEMP = WRAN (ISTAR1)
-    	        DO 191 K = 1, IDO_XL*NPOINT
-    	          INDEXSPA		= INDEXSPA + 1
-    	          GRID(1,INDEXSPA)	= GRID(1,K)
-    		      GRID(2,INDEXSPA)	= GRID(2,K)
-    	          GRID(4,INDEXSPA)	= GRID(4,K)
-    	          GRID(3,INDEXSPA)	= SIGZL(I)
-    	          GRID(6,INDEXSPA)	= TEMP
-    191	        CONTINUE
-    181	      CONTINUE
-    	    ELSE
-    !!srio	      DO 201 C_ZN = -CL_ZN, CL_ZN
-    	      DO 201 C_ZN = -INT(CL_ZN), INT(CL_ZN)
-    	        TEMP	= C_ZN * STEP_ZN + 0.5D0
-    	        DO 211 K = 1, IDO_XL*IDO_XN
-    	          INDEXSPA		= INDEXSPA + 1
-    	          GRID(1,INDEXSPA)	= GRID(1,K)
-    		  	  GRID(2,INDEXSPA)	= GRID(2,K)
-    	          GRID(4,INDEXSPA)	= GRID(4,K)
-    	          GRID(3,INDEXSPA)	= SIGZL(I)
-    	          GRID(6,INDEXSPA)	= TEMP
-    211	        CONTINUE
-    201	      CONTINUE
-    	    END IF
-    171	  CONTINUE
-    	END IF	
+    171   CONTINUE
+END IF
+
+KK = 0
+MM = 0
+
+DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C
     ! C---------------------------------------------------------------------
     ! C           POSITIONS
     ! C
     ! C
-         KK = 0
-         MM = 0
-
-         DO 10000 ITIK=1,NTOTAL
                 KK = KK + 1
                 !IF (KK.EQ.250) THEN
                 IF (KK.EQ.NTOTAL/20) THEN
@@ -2582,11 +2614,11 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     ! C For normal wiggler, XXX is perpendicular to the electron trajectory at 
     ! C the point defined by (X_TRAJ,Y_TRAJ,0).
     ! C
-    	IF (F_WIGGLER.EQ.1) THEN
+    IF (F_WIGGLER.EQ.1) THEN
     	  YYY	= Y_TRAJ - XXX*SIN(ANGLE)
     	  XXX	= X_TRAJ + XXX*COS(ANGLE)
     	  GO TO 550
-    	ELSE IF (F_WIGGLER.EQ.2) THEN
+    ELSE IF (F_WIGGLER.EQ.2) THEN
     	  ANGLEX	= E_BEAM(1) + PHI
     !! 	  ANGLEV	= E_BEAM(3) + THETA
     !! warning: use this inestead
@@ -2596,7 +2628,7 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
     	  DIREC(3)	= TAN(ANGLEV)/COS(ANGLEX)
     	  CALL	NORM	(DIREC,DIREC)
     	  GO TO 1111	  
-            ELSE IF (F_WIGGLER.EQ.3) THEN
+    ELSE IF (F_WIGGLER.EQ.3) THEN
               VTEMP(1) = XXX
               VTEMP(2) = 0.0D0
               VTEMP(3) = ZZZ
@@ -2606,7 +2638,9 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
               XXX=X_TRAJ + VTEMP(1)
               YYY=Y_TRAJ + VTEMP(2)
               ZZZ=Z_TRAJ + VTEMP(3)
-    	END IF
+              !added srio@esrf.eu 20131105
+              go to 550
+    END IF
     	GO TO 111
     
     5 	CONTINUE
@@ -3052,27 +3086,29 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
           GOTO 10001
        END IF
     END IF
-10000       CONTINUE
+10000       CONTINUE   ! end loop on number of rays (ITIK)
     
 10005 continue
-    IFLAG = 0
-    IF (FSOUR.EQ.3) THEN
-       ! C
-       ! C Reset EPSI_X and EPSI_Z to the values input by the user.
-       ! C
-       EPSI_X = EPSI_XOLD
-       EPSI_Z = EPSI_ZOLD
-    ENDIF
+
+
+IFLAG = 0
+IF (FSOUR.EQ.3) THEN
+    ! C
+    ! C Reset EPSI_X and EPSI_Z to the values input by the user.
+    ! C
+    EPSI_X = EPSI_XOLD
+    EPSI_Z = EPSI_ZOLD
+ENDIF
     
-    !
-    ! put global variables into pool 
-    !
-    !TODO: work without globals!!!!
-    CALL GlobalToPoolSource(pool00)
+!
+! put global variables into pool 
+!
+!TODO: work without globals!!!!
+CALL GlobalToPoolSource(pool00)
 
 
-    ntotalpoint = N_REJ+NPOINT
-    if (n_rej .gt. 0) then
+ntotalpoint = N_REJ+NPOINT
+if (n_rej .gt. 0) then
       WRITE(6,*)'----------------------------------------------------------------'
       WRITE(6,*)'  source optimization (rejection, variance reduction) used: '
       WRITE(6,*)N_REJ+NPOINT,   '   total number of rays have been created.'
@@ -3080,14 +3116,32 @@ SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
       WRITE(6,*)N_REJ,          '                  rejected.'
       WRITE(6,*)real(N_REJ+NPOINT)/real(NPOINT), '      created/accepted ratio.'
       WRITE(6,*)'----------------------------------------------------------------'
-    endif
+endif
 
-    WRITE(6,*)'Exit from SOURCE'
-    RETURN
-    End Subroutine SOURCESYNC
-    !
-    !
-    !
+! deallocate arrays (wiggler)
+if (allocated(seed_y)) deallocate( seed_y)
+if (allocated(y_x)) deallocate( y_x)
+if (allocated(y_xpri)) deallocate( y_xpri)
+if (allocated(y_z)) deallocate( y_z)
+if (allocated(y_zpri)) deallocate( y_zpri)
+if (allocated(y_curv)) deallocate( y_curv)
+if (allocated(y_path)) deallocate( y_path)
+if (allocated(y_temp)) deallocate( y_temp)
+if (allocated(c_temp)) deallocate( c_temp)
+if (allocated(x_temp)) deallocate( x_temp)
+if (allocated(z_temp)) deallocate( z_temp)
+if (allocated(ang_temp)) deallocate( ang_temp)
+if (allocated(p_temp)) deallocate( p_temp)
+if (allocated(ang2_temp)) deallocate( ang2_temp)
+if (allocated(abd2_temp )) deallocate( abd2_temp)
+
+WRITE(6,*)'Exit from SOURCE'
+RETURN
+
+End Subroutine SOURCESYNC
+!
+!
+!
 
     
 !C+++

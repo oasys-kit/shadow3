@@ -100,28 +100,35 @@ Module shadow_Pre_Sync
 !C
 !C--
 SUBROUTINE EPath(i_device)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
 
-	CHARACTER(len=sklen) :: OUTFILE,UNOUTFILE,PARFILE,TRAJFILE
-     	CHARACTER(len=sklen) :: UNEXAM
-	DIMENSION 	XOFZ(1001),Z(1001),TOFZ(1001),YOFZ(1001)
-	DIMENSION 	BETAX(1001), BETAZ(1001),BETAY(1001)
-	DIMENSION	YX(1001),YT(1001),CURV(1001),YY(1001)
-	DIMENSION	EXOFZ(1001),EZ(1001),ETOFZ(1001)
-	DIMENSION	EBETAX(1001),EBETAZ(1001)
-        DIMENSION       VEL(3),ACC(3)
-        DIMENSION       B(3),EN(3),T(3)
-        DIMENSION       TAUX(1001),TAUY(1001),TAUZ(1001)
-        DIMENSION       ENX(1001),ENY(1001),ENZ(1001)
-        DIMENSION       BX(1001),BY(1001),BZ(1001)
+        CHARACTER(len=sklen) :: OUTFILE,UNOUTFILE,PARFILE,TRAJFILE
+        CHARACTER(len=sklen) :: UNEXAM
+        real(kind=skr),dimension(1001) :: XOFZ,Z,TOFZ,YOFZ
+        real(kind=skr),dimension(1001) :: BETAX, BETAZ,BETAY
+        real(kind=skr),dimension(1001) :: YX,YT,CURV,YY
+        real(kind=skr),dimension(1001) :: EXOFZ,EZ,ETOFZ
+        real(kind=skr),dimension(1001) :: EBETAX,EBETAZ
+        real(kind=skr),dimension(3)    :: VEL,ACC
+        real(kind=skr),dimension(3)    :: B,EN,T
+        real(kind=skr),dimension(1001) :: TAUX,TAUY,TAUZ
+        real(kind=skr),dimension(1001) :: ENX,ENY,ENZ
+        real(kind=skr),dimension(1001) :: BX,BY,BZ
+
+        real(kind=skr)    ::  b0x, b1x, b2x, bbb, beta02, betaxmax, betaymax, bf
+        real(kind=skr)    ::  c, c2, c3, con, d2dxd2dy, d2xdz2, d2ydz2, dnum, dxdz, dydz
+        real(kind=skr)    ::  e, emc, ener, h, oldener, phi, phif, rb0, rkx, rlen_pi, rm
+        real(kind=skr)    ::  start_len, ttt, u_kvec, xmax, xtemp, zcorr, zf
+
+        integer(kind=ski) ::  i_device, i, i_wig, j, nc, nfile
 !
 ! srio: writes also epath.nml for further use these parameters 
 ! in urgent_cdf
 !
 
-	NAMELIST	/EPATH1/	I_DEVICE, N0, RLAU, OLDENER, &
-                                 RK, RKX, RLEN
+        NAMELIST /EPATH1/  I_DEVICE, N0, RLAU, OLDENER, RK, RKX, RLEN
 !C
 !C
 !C For unix, we cannot set symbol for the parent process to communicate
@@ -133,79 +140,80 @@ SUBROUTINE EPath(i_device)
 !C calls this program.
 !C
 
-!TODO: change this with latest NIST data
-	c  = 2.998D8		!speed of light, m/s
-	rm = 9.109D-31		!electron rest mass  kg
-	e  = 1.602D-19		!electron charge, C
-	h  = 6.626D-34		!Planck's constant   joules*sec
+!TO DO: change this with latest NIST data
+!        c  = 2.998D8        !speed of light, m/s
+!        rm = 9.109D-31      !electron rest mass  kg
+!        e  = 1.602D-19      !electron charge, C
+!        h  = 6.626D-34      !Planck's constant   joules*sec
+!DONE srio@esrf.eu 20131105
+        c  = 2.99792458D8     !speed of light, m/s
+        rm = 9.10938291D-31   !electron rest mass  kg
+        e  = 1.602176565D-19  !electron charge, C
+        h  = 6.62606957D-34   !Planck's constant   joules*sec
 
-	c2 = e/(TWOPI*rm*c)	!unit(coul*sec/(kg*m))
+        c2 = e/(TWOPI*rm*c)   !unit(coul*sec/(kg*m))
 ! srio moved this to upper level
 !!c
 !!c	Specify Undulator
 !!c
-	IF ((I_DEVICE /= 1) .and. (I_DEVICE /= 2)) THEN
-     	WRITE(6,*) ' '
-     	WRITE(6,*) 'Type of Insertion Device.'
-     	WRITE(6,*) 'Enter: '
-     	WRITE(6,*) 'for wiggler   (large K)      [ 1 ]'
-     	WRITE(6,*) 'for undulator (small K)      [ 2 ]'
-     	I_DEVICE = IRINT ('Then ? ')
+        IF ((I_DEVICE /= 1) .and. (I_DEVICE /= 2)) THEN
+            WRITE(6,*) ' '
+            WRITE(6,*) 'Type of Insertion Device.'
+            WRITE(6,*) 'Enter: '
+            WRITE(6,*) 'for wiggler   (large K)      [ 1 ]'
+            WRITE(6,*) 'for undulator (small K)      [ 2 ]'
+            I_DEVICE = IRINT ('Then ? ')
         END IF
-     	WRITE(6,*) ' '
-     	!WRITE(6,*) '----------------------------------------------------------------------'
-     	!WRITE(6,*) ' '
-     	!WRITE(6,*) ' '
-     	WRITE(6,*) 'Define Insertion Device parameters:'
-     	WRITE(6,*) ' '
-     	if (i_device.eq.1) then
-	  n0  	=  irint  ('Enter number of periods : ')
+        WRITE(6,*) ' '
+        !WRITE(6,*) '----------------------------------------------------------------------'
+        !WRITE(6,*) ' '
+        !WRITE(6,*) ' '
+        WRITE(6,*) 'Define Insertion Device parameters:'
+        WRITE(6,*) ' '
+        if (i_device.eq.1) then
+            n0 = irint  ('Enter number of periods : ')
 !C
 !C       (I_WIG.EQ.1) implies normal wiggler
 !C       (I_WIG.EQ.2) implies elliptical wiggler
 !C
-	WRITE(6,*) ' '
-	WRITE(6,*) 'Type of Wiggler.'
-	WRITE(6,*) 'Enter: '
-	WRITE(6,*) 'for normal wiggler     [1]'
-	WRITE(6,*) 'for elliptical wiggler [2]'
-        I_WIG = IRINT ('Then ? ')
-	end if
-	rlau = rnumber('      wavelength of insertion device (m) : ')
-       if (i_wig.eq.2) then
-	RK   	=  rnumber('   deflection parameter KY for the vertical field conponent: ')
-	RKX     =  rnumber &
-      ('   deflection parameter KX for the horizontal field ' // &
-      'component: ')
-       else
-	RK   	=  rnumber('      deflection parameter K : ')
-       end if
-	ener   	=  rnumber('      electron energy (GeV) : ')
-	WRITE(6,*) '      Enter the number of points to be used in', &
-       ' the trajectory calculation.'
-	np   	=  irint  ('      ( max = 1001, suggested 101 ) : ')
-	Rb0	=  rnumber('End correction field factor (0-1) : ')
+            WRITE(6,*) ' '
+            WRITE(6,*) 'Type of Wiggler.'
+            WRITE(6,*) 'Enter: '
+            WRITE(6,*) 'for normal wiggler     [1]'
+            WRITE(6,*) 'for elliptical wiggler [2]'
+            I_WIG = IRINT ('Then ? ')
+        end if
+        rlau = rnumber('      wavelength of insertion device (m) : ')
+        if (i_wig.eq.2) then
+            RK = rnumber('   deflection parameter KZ for the vertical field conponent: ')
+            RKX = rnumber('   deflection parameter KX for the horizontal field component: ')
+        else
+            RK = rnumber('      deflection parameter K : ')
+        end if
+        ener =  rnumber('      electron energy (GeV) : ')
+        WRITE(6,*) '      Enter the number of points to be used in the trajectory calculation.'
+        np  =  irint  ('      ( max = 1001, suggested 101 ) : ')
+        Rb0 =  rnumber('End correction field factor (0-1) : ')
 !c	Electron Trajectory Parameters
 !c
-     	WRITE(6,*) ' '
-     	WRITE(6,*) ' '
-	WRITE(6,*) 'Two files will be created. One will contain a ', &
-      ' record of the parameters used in the calculation, the other', &
-      ' the trajectory itself. The names of the files can be specified', &
-      ' by the user, e.g., xshwig.par and xshwig.traj.'
-     	WRITE(6,*) ' '
-     	WRITE(6,*) 'Output files specification:'
-     	WRITE(6,*) ' '
-     	parfile	  = rstring('      Name for parameter file: ')
-     	if (i_device.eq.1) then
-	TRAJFILE  = RSTRING('      Name for WIGGLER trajectory file: ')
-     	else
-	  unoutfile = rstring &
-      	   	   ('      Name for UNDULATOR trajectory file: ')
-	  nfile     = IYES('      Do you want a plottable file [ Y/N ] ? ')
-     	 if (nfile.eq.1) unexam = rstring ('      Name for plottable file: ')
-	END IF
-     	WRITE(6,*) ' '
+        WRITE(6,*) ' '
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Two files will be created. One will contain a ', &
+            ' record of the parameters used in the calculation, the other', &
+            ' the trajectory itself. The names of the files can be specified', &
+            ' by the user, e.g., xshwig.par and xshwig.traj.'
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Output files specification:'
+        WRITE(6,*) ' '
+        parfile     = rstring('      Name for parameter file: ')
+        if (i_device.eq.1) then
+            TRAJFILE  = RSTRING('      Name for WIGGLER trajectory file: ')
+        else
+            unoutfile = rstring('      Name for UNDULATOR trajectory file: ')
+            nfile     = IYES('      Do you want a plottable file [ Y/N ] ? ')
+            if (nfile.eq.1) unexam = rstring ('      Name for plottable file: ')
+        end if
+        WRITE(6,*) ' '
 !c
 !c
 !c	Compute General Parameters
@@ -221,386 +229,391 @@ SUBROUTINE EPath(i_device)
 !c	b0	peak magnetic field (Tesla)
 !c       b0x     trasverse peak magnetic field (Tesla)(i_wig.eq.2)
 !c
-!c	in the following we will be using the PEAK value of B0 explicitely.
+!c   in the following we will be using the PEAK value of B0 explicitely.
 !c
-     	OLDENER = ENER			!GeV
-	ENER    = E*ENER*1.0D9		!CHANGE UNITS (TO JOULE)
-	GA0     = ENER/RM/C**2		!Gamma_0, in electron rest mass
-     					!energy (mc^2) units,
-     					!adimensional
-	RLEN   = N0*RLAU
-	BETA02 = 1.0D0 - (RM*C**2/ENER)**2
-	BETA0  = SQRT(BETA02)
-	B0     = RK*(TWOPI*RM*C*BETA0)/E/RLAU
-       if (i_wig.eq.2) then
-        B0X    = RKX*(TWOPI*RM*C*BETA0)/E/RLAU
-       end if
-!C	RK     = E/(TWOPI*RM*C*BETA0)*B0*RLAU !As defined by S.Krinsky; reduces
-!C					      !to simpler form when v ~ c
-	RLA1   = RLAU/(2*GA0**2)*(1.D0 +(RK**2)/2)
-	ENERGY1= H*C/RLA1		!units (joules)
-	emc = e/(ga0*rm*c)		!units ( coul*sec/(kg*m) )
-	betaxmax  = -emc*b0*rlau/twopi	!constant used in external function
-	betaymax  = -emc*b0x*rlau/twopi	!constant used in external function
-	U_KVEC  = twopi/rlau		!   "			"
-	RLEN_PI  = pi*rlen/rlau		!   "			"
-	betax0 = 0.0d0 
-       if (i_wig.eq.2) then
-        betay0 = 0.0d0
-       end if
-	betaz0 = sqrt (beta02)
+        OLDENER = ENER         !GeV
+        ENER    = E*ENER*1.0D9      !CHANGE UNITS (TO JOULE)
+        GA0     = ENER/RM/C**2      !Gamma_0, in electron rest mass
+                                    !energy (mc^2) units,
+                                    !adimensional
+        RLEN   = N0*RLAU
+        BETA02 = 1.0D0 - (RM*C**2/ENER)**2
+        BETA0  = SQRT(BETA02)
+        B0     = RK*(TWOPI*RM*C*BETA0)/E/RLAU
+        if (i_wig.eq.2) then
+            B0X = RKX*(TWOPI*RM*C*BETA0)/E/RLAU
+        end if
+!C   RK     = E/(TWOPI*RM*C*BETA0)*B0*RLAU !As defined by S.Krinsky; reduces
+!C                     !to simpler form when v ~ c
+        RLA1   = RLAU/(2*GA0**2)*(1.D0 +(RK**2)/2)
+        ENERGY1= H*C/RLA1      !units (joules)
+        emc    = e/(ga0*rm*c)      !units ( coul*sec/(kg*m) )
+        betaxmax  = -emc*b0*rlau/twopi   !constant used in external function
+        betaymax  = -emc*b0x*rlau/twopi   !constant used in external function
+        U_KVEC  = twopi/rlau      !   "         "
+        RLEN_PI  = pi*rlen/rlau      !   "         "
+        betax0 = 0.0d0 
+        if (i_wig.eq.2) then
+            betay0 = 0.0d0
+        end if
+        betaz0 = sqrt (beta02)
 !C
 !C np must be an odd number for Simpson rule.
 !C
-	i 	= np/2
-	np 	= i*2 + 1
+        i = np/2
+        np = i*2 + 1
 !C
 !C Write out parameter file
 !C
-     	OPEN	(20, FILE=PARFILE, STATUS='UNKNOWN')
-	REWIND  (20)
-     	 WRITE (20,*) 'Parameters used for run creating'
-     	IF (I_DEVICE.EQ.1) THEN
-     	 WRITE (20,*) 'WIGGLER case. Trajectory stored in:'
-     	 WRITE (20,*) TRAJFILE
-     	 WRITE (20,*) 'Number of periods               = ',N0
-     	ELSE
-     	 WRITE (20,*) 'UNDULATOR case. Trajectory stored in:'
-     	 WRITE (20,*) UNOUTFILE
-     	 if (nfile.eq.1) then
-     	 WRITE (20,*) 'and in (formatted file): '
-     	 WRITE (20,*) UNEXAM
-     	 end if
-     	 WRITE (20,*) 'The UNDULATOR case uses 1 period only.'
-     	END IF
-     	 WRITE (20,*) '------   INPUT    ---------'
-     	 WRITE (20,*) 'Insertion device  Wavel.  [ m ] = ',RLAU
-     	 WRITE (20,*) 'Beam Energy             [ GeV ] = ',OLDENER
-     	 WRITE (20,*) 'K                               = ',RK
-        IF (I_WIG.EQ.2) THEN
-         WRITE (20,*) 'KX                              = ',RKX
+        OPEN   (20, FILE=PARFILE, STATUS='UNKNOWN')
+        REWIND  (20)
+        WRITE (20,*) 'Parameters used for run creating'
+        IF (I_DEVICE.EQ.1) THEN
+            WRITE (20,*) 'WIGGLER case. Trajectory stored in:'
+            WRITE (20,*) TRAJFILE
+            WRITE (20,*) 'Number of periods               = ',N0
+        ELSE
+            WRITE (20,*) 'UNDULATOR case. Trajectory stored in:'
+            WRITE (20,*) UNOUTFILE
+            if (nfile.eq.1) then
+                WRITE (20,*) 'and in (formatted file): '
+                WRITE (20,*) UNEXAM
+            end if
+            WRITE (20,*) 'The UNDULATOR case uses 1 period only.'
         END IF
-	 WRITE (20,*) 'Field correction factor         = ',rb0
-     	 WRITE (20,*) '------   OUTPUT    ---------'
-     	 WRITE (20,*) 'Gamma                           = ',GA0
+        WRITE (20,*) '------   INPUT    ---------'
+        WRITE (20,*) 'Insertion device  Wavel.  [ m ] = ',RLAU
+        WRITE (20,*) 'Beam Energy             [ GeV ] = ',OLDENER
+        WRITE (20,*) 'K                               = ',RK
         IF (I_WIG.EQ.2) THEN
-     	 WRITE (20,*) 'Vertical Peak Magnetic field   [ Tesla ] = ',B0
-         WRITE (20,*) 'Horizontal Peak Magnetic Field [ Tesla ] = ',B0X
+            WRITE (20,*) 'KX                              = ',RKX
+        END IF
+        WRITE (20,*) 'Field correction factor         = ',rb0
+        WRITE (20,*) '------   OUTPUT    ---------'
+        WRITE (20,*) 'Gamma                           = ',GA0
+        IF (I_WIG.EQ.2) THEN
+            WRITE (20,*) 'Vertical Peak Magnetic field   [ Tesla ] = ',B0
+            WRITE (20,*) 'Horizontal Peak Magnetic Field [ Tesla ] = ',B0X
         ELSE 
-     	 WRITE (20,*) 'Peak Magnetic field   [ Tesla ] = ',B0
+            WRITE (20,*) 'Peak Magnetic field   [ Tesla ] = ',B0
         END IF
-     	 WRITE (20,*) 'Fundamental              [ Ev ] = ',ENERGY1/E
-     	 WRITE (20,*) 'Fundamental       [ Angstroms ] = ',RLA1*1.0d10
-     	 XTEMP	=  186.0D0/(10.D0*B0*OLDENER**2)
-     	 WRITE (20,*) 'Equivalent SR C.W.     [ Angs ] = ',XTEMP
-     	 WRITE (20,*) '              C.E.       [ eV ] = ',TOANGS/XTEMP
-     	CLOSE (20)
-	print *,'File written to disk: '//trim(parFile)
+        WRITE (20,*) 'Fundamental              [ Ev ] = ',ENERGY1/E
+        WRITE (20,*) 'Fundamental       [ Angstroms ] = ',RLA1*1.0d10
+        XTEMP   =  186.0D0/(10.D0*B0*OLDENER**2)
+        WRITE (20,*) 'Equivalent SR C.W.     [ Angs ] = ',XTEMP
+        WRITE (20,*) '              C.E.       [ eV ] = ',TOANGS/XTEMP
+        CLOSE (20)
+        print *,'File written to disk: '//trim(parFile)
 
 !
 ! srio: writes also epath.nml for further use these parameters 
 ! in urgent_cdf
 !
-	OPEN	(21, FILE='epath.nml', STATUS='UNKNOWN')
-	WRITE	(21, NML=EPATH1)
-	CLOSE	(21)
-	print *,'File written to disk: epath.nml'
+        OPEN   (21, FILE='epath.nml', STATUS='UNKNOWN')
+        WRITE   (21, NML=EPATH1)
+        CLOSE   (21)
+        print *,'File written to disk: epath.nml'
 
 
 !C
-!C	Calculate x, y, t as functions of z
+!C   Calculate x, y, t as functions of z
 !C       Initial values of parameters for both wiggler cases.
 !C
-		if (i_device.eq.1) then			!Wiggler
-!C
-      	Z(1)	 = 0.0D0
-       if (i_wig.eq.2) then                  !Elliptical Wiggler
-        BETAX(1) = BETAX0
-        BETAY(1) = BETAYMAX
-        BETAZ(1) = SQRT(BETA0**2-BETAX(1)**2-BETAY(1)**2)
-        XOFZ(1)  =0.0D0
-        YOFZ(1)  =0.0D0
-        TOFZ(1)  =0.0D0
-        YX(1)    = BETAX(1)/BETAZ(1)
-        YY(1)    = BETAY(1)/BETAZ(1)
-        YT(1)    = 1/BETAZ(1)
-        DXDZ     = BETAX(1)/BETAZ(1)
-        DYDZ     = BETAY(1)/BETAZ(1)
-        D2XDZ2   = BETAZ(1)**4
-        D2DXD2DY = (BETAZ(1)*BETAY(1))**2
-        DNUM     = SQRT(D2XDZ2+D2DXD2DY)*EMC*B0/(BETAZ(1)**3)
-        CURV(1)  = DNUM/(1.0D0+DXDZ**2+DYDZ**2)**1.5D0
-	VEL(1)   = DXDZ
-	VEL(2)   = DYDZ
-	VEL(3)   = 1.0D0
-	CALL NORM (VEL,T)
-	TAUX(1)  = T(1)
-	TAUY(1)  = T(2)
-	TAUZ(1)  = T(3)
-	ACC(1)   = -EMC*B0*BETAZ(1)
-	ACC(2)   = 0.0D0 
-	ACC(3)   = 0.0D0
-	CALL CROSS (VEL,ACC,B)
-	CALL NORM (B,B)
-	BX(1)    = B(1)
-	BY(1)    = B(2)
-	BZ(1)    = B(3)
-	CALL CROSS (B,T,EN)
-	ENX(1)    = EN(1)
-	ENY(1)    = EN(2)
-	ENZ(1)    = EN(3)
-       ELSE                    !Normal Wiggler
-!C        BETAX(1) = 0.0D0
-        BETAX(1) = BETAX0
-	BETAZ(1) = SQRT(BETA0**2-BETAX(1)**2)
-     	XOFZ(1)  = 0.0D0
-     	TOFZ(1)  = 0.0D0
-	YX(1)	 = BETAX(1)/BETAZ(1)
-	YT(1)	 = 1/BETAZ(1)
-	DXDZ     = BETAX(1)/BETAZ(1)
-	D2XDZ2   = BETA0**2/(BETAZ(1)**3)*EMC*B0
-	CURV(1)  = D2XDZ2/(1.0D0+DXDZ**2)**1.5D0
-       END IF
-!C
-!C  Loop generates trajectory from Z=0 to rlau.
-!C  The base vectors T, B, and N of the edges of a trihedron
-!C  moving along the trajectory define the coordinate system for
-!C  the cross field wiggler.
-!C
-    	ZSTEP = RLAU/(NP-1)
-	WRITE(6,*) ' '
-     	WRITE(6,*) 'Trajectory Calculations begins.'
-	WRITE(6,*) ' '
-	DO 19 I  = 2,NP
-	   Z(I) = Z(1) + (I-1)*ZSTEP
-!C
-!C  Calculate betax, betay, betaz as functions of z (here z is the 
-!C  direction of propagation).
-!C
-          IF (I_WIG.EQ.2)  THEN
-           BETAX(I) = BETAXMAX*SIN(U_KVEC*Z(I)) + BETAX0
-           BETAY(I) = BETAYMAX*COS(U_KVEC*Z(I)) + BETAY0
-           BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2-BETAY(I)**2)
-           YX(I)    = BETAX(I)/BETAZ(I)
-           YY(I)    = BETAY(I)/BETAZ(I)
-           YT(I)    = 1.0D0/BETAZ(I)
-           DXDZ     = BETAX(I)/BETAZ(I)
-           DYDZ     = BETAY(I)/BETAZ(I)
-           D2XDZ2   = (BETAZ(I)*B0*COS(TWOPI*Z(I)/RLAU))**2
-           D2YDZ2   = (BETAZ(I)*B0X*SIN(TWOPI*Z(I)/RLAU))**2
-           D2DXD2DY = (BETAX(I)*B0X*SIN(TWOPI*Z(I)/RLAU)+BETAY(I)*B0* &
-           COS(TWOPI*Z(I)/RLAU))**2
-           DNUM     = SQRT(D2XDZ2+D2YDZ2+D2DXD2DY)/(BETAZ(I)**2)*EMC
-           CURV(I)  = DNUM/(1.0D0+DXDZ**2+DYDZ**2)**1.5D0
-      	   VEL(1)   = DXDZ
-	   VEL(2)   = DYDZ
-	   VEL(3)   = 1.0D0
-	   CALL NORM (VEL,T)
-	   TAUX(I)  = T(1)
-	   TAUY(I)  = T(2)
-	   TAUZ(I)  = T(3)
-	   ACC(1)   = -EMC*B0*BETAZ(I)*COS(TWOPI*Z(I)/RLAU)/BETAZ(I)
-	   ACC(2)   = EMC*B0*BETAZ(I)*SIN(TWOPI*Z(I)/RLAU)/BETAZ(I) 
-	   ACC(3)   = 0.0D0
-	   CALL CROSS (VEL,ACC,B)
-	   CALL NORM (B,B)
-	   BX(I)    = B(1)
-	   BY(I)    = B(2)
-	   BZ(I)    = B(3)
-	   CALL CROSS (B,T,EN)
-	   ENX(I)    = EN(1)
-	   ENY(I)    = EN(2)
-	   ENZ(I)    = EN(3)
-!C          TAU=SQRT(TAUX(I)**2+TAUY(I)**2+TAUZ(I)**2)
-!C           BI=SQRT(BX(I)**2+BY(I)**2+BZ(I)**2)
-!C          ENNE=SQRT(ENX(I)**2+ENY(I)**2+ENZ(I)**2)
-!C
+if (i_device.eq.1) then         !Wiggler
+        !C
+        Z(1)    = 0.0D0
+        if (i_wig.eq.2) then                  !Elliptical Wiggler
+            BETAX(1) = BETAX0
+            BETAY(1) = BETAYMAX
+            BETAZ(1) = SQRT(BETA0**2-BETAX(1)**2-BETAY(1)**2)
+            XOFZ(1)  =0.0D0
+            YOFZ(1)  =0.0D0
+            TOFZ(1)  =0.0D0
+            YX(1)    = BETAX(1)/BETAZ(1)
+            YY(1)    = BETAY(1)/BETAZ(1)
+            YT(1)    = 1/BETAZ(1)
+            DXDZ     = BETAX(1)/BETAZ(1)
+            DYDZ     = BETAY(1)/BETAZ(1)
+            D2XDZ2   = BETAZ(1)**4
+            D2DXD2DY = (BETAZ(1)*BETAY(1))**2
+            DNUM     = SQRT(D2XDZ2+D2DXD2DY)*EMC*B0/(BETAZ(1)**3)
+            CURV(1)  = DNUM/(1.0D0+DXDZ**2+DYDZ**2)**1.5D0
+            VEL(1)   = DXDZ
+            VEL(2)   = DYDZ
+            VEL(3)   = 1.0D0
+            CALL NORM (VEL,T)
+            TAUX(1)  = T(1)
+            TAUY(1)  = T(2)
+            TAUZ(1)  = T(3)
+            ACC(1)   = -EMC*B0*BETAZ(1)
+            ACC(2)   = 0.0D0 
+            ACC(3)   = 0.0D0
+            CALL CROSS (VEL,ACC,B)
+            CALL NORM (B,B)
+            BX(1)    = B(1)
+            BY(1)    = B(2)
+            BZ(1)    = B(3)
+            CALL CROSS (B,T,EN)
+            ENX(1)    = EN(1)
+            ENY(1)    = EN(2)
+            ENZ(1)    = EN(3)
+        else                    !Normal Wiggler
+            !C  BETAX(1) = 0.0D0
+            BETAX(1) = BETAX0
+            BETAZ(1) = SQRT(BETA0**2-BETAX(1)**2)
+            XOFZ(1)  = 0.0D0
+            TOFZ(1)  = 0.0D0
+            YX(1) = BETAX(1)/BETAZ(1)
+            YT(1) = 1/BETAZ(1)
+            DXDZ     = BETAX(1)/BETAZ(1)
+            D2XDZ2   = BETA0**2/(BETAZ(1)**3)*EMC*B0
+            CURV(1)  = D2XDZ2/(1.0D0+DXDZ**2)**1.5D0
+        end if
+        !C
+        !C  Loop generates trajectory from Z=0 to rlau.
+        !C  The base vectors T, B, and N of the edges of a trihedron
+        !C  moving along the trajectory define the coordinate system for
+        !C  the cross field wiggler.
+        !C
+        ZSTEP = RLAU/(NP-1)
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Trajectory Calculations begins.'
+        WRITE(6,*) ' '
+        DO I  = 2,NP
+            Z(I) = Z(1) + (I-1)*ZSTEP
+            !C
+            !C  Calculate betax, betay, betaz as functions of z (here z is the 
+            !C  direction of propagation).
+            !C
+            IF (I_WIG.EQ.2)  THEN
+                BETAX(I) = BETAXMAX*SIN(U_KVEC*Z(I)) + BETAX0
+                BETAY(I) = BETAYMAX*COS(U_KVEC*Z(I)) + BETAY0
+                BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2-BETAY(I)**2)
+                YX(I)    = BETAX(I)/BETAZ(I)
+                YY(I)    = BETAY(I)/BETAZ(I)
+                YT(I)    = 1.0D0/BETAZ(I)
+                DXDZ     = BETAX(I)/BETAZ(I)
+                DYDZ     = BETAY(I)/BETAZ(I)
+                D2XDZ2   = (BETAZ(I)*B0*COS(TWOPI*Z(I)/RLAU))**2
+                D2YDZ2   = (BETAZ(I)*B0X*SIN(TWOPI*Z(I)/RLAU))**2
+                D2DXD2DY = (BETAX(I)*B0X*SIN(TWOPI*Z(I)/RLAU)+BETAY(I)*B0* &
+                COS(TWOPI*Z(I)/RLAU))**2
+                DNUM     = SQRT(D2XDZ2+D2YDZ2+D2DXD2DY)/(BETAZ(I)**2)*EMC
+                CURV(I)  = DNUM/(1.0D0+DXDZ**2+DYDZ**2)**1.5D0
+                VEL(1)   = DXDZ
+                VEL(2)   = DYDZ
+                VEL(3)   = 1.0D0
+                CALL NORM (VEL,T)
+                TAUX(I)  = T(1)
+                TAUY(I)  = T(2)
+                TAUZ(I)  = T(3)
+                ACC(1)   = -EMC*B0*BETAZ(I)*COS(TWOPI*Z(I)/RLAU)/BETAZ(I)
+                ACC(2)   = EMC*B0*BETAZ(I)*SIN(TWOPI*Z(I)/RLAU)/BETAZ(I) 
+                ACC(3)   = 0.0D0
+                CALL CROSS (VEL,ACC,B)
+                CALL NORM (B,B)
+                BX(I)    = B(1)
+                BY(I)    = B(2)
+                BZ(I)    = B(3)
+                CALL CROSS (B,T,EN)
+                ENX(I)    = EN(1)
+                ENY(I)    = EN(2)
+                ENZ(I)    = EN(3)
+                !C  TAU=SQRT(TAUX(I)**2+TAUY(I)**2+TAUZ(I)**2)
+                !C  BI=SQRT(BX(I)**2+BY(I)**2+BZ(I)**2)
+                !C  ENNE=SQRT(ENX(I)**2+ENY(I)**2+ENZ(I)**2)
+                !C
           ELSE
-	   BETAX(I) = BETAXMAX*SIN(U_KVEC*Z(I)) + BETAX0
-	   BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2)
-	   YX(I)    = BETAX(I)/BETAZ(I)
-	   YT(I)    = 1.0D0/BETAZ(I)
-	   DXDZ	    = BETAX(I)/BETAZ(I)
-	   D2XDZ2   = BETA0**2/(BETAZ(I)**3)*EMC*B0*COS(TWOPI*Z(I)/RLAU)
-	   CURV(I)  = D2XDZ2/(1.0D0+DXDZ**2)**1.5D0
-	  ENDIF
-19	CONTINUE
+                BETAX(I) = BETAXMAX*SIN(U_KVEC*Z(I)) + BETAX0
+                BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2)
+                YX(I)    = BETAX(I)/BETAZ(I)
+                YT(I)    = 1.0D0/BETAZ(I)
+                DXDZ     = BETAX(I)/BETAZ(I)
+                D2XDZ2   = BETA0**2/(BETAZ(I)**3)*EMC*B0*COS(TWOPI*Z(I)/RLAU)
+                CURV(I)  = D2XDZ2/(1.0D0+DXDZ**2)**1.5D0
+          ENDIF
+        END DO 
+!19	CONTINUE
 !C
-	IF (I_WIG.EQ.2) THEN 
-	   CALL QSF ( ZSTEP,YX,XOFZ,NP)
-	   CALL QSF ( ZSTEP,YY,YOFZ,NP)
-           CALL QSF ( ZSTEP,YT,TOFZ,NP)
-	ELSE
-     	   CALL QSF ( ZSTEP,YX,XOFZ,NP)
-     	   CALL QSF ( ZSTEP,YT,TOFZ,NP)
-	END IF
+        IF (I_WIG.EQ.2) THEN 
+            CALL QSF ( ZSTEP,YX,XOFZ,NP)
+            CALL QSF ( ZSTEP,YY,YOFZ,NP)
+            CALL QSF ( ZSTEP,YT,TOFZ,NP)
+        ELSE
+            CALL QSF ( ZSTEP,YX,XOFZ,NP)
+            CALL QSF ( ZSTEP,YT,TOFZ,NP)
+        END IF
 !C
 !C Write out trajectory file in SHADOW's frame. To transform to SHADOW frame, 
 !C -X -> X, Y -> Z, Z -> Y. All periods are written out.
 !C
-	WRITE(6,*) ' '
-     	WRITE(6,*) 'Calculation Completed. File out results.'     	
-	WRITE(6,*) ' '
-	   OPEN	(40,FILE=TRAJFILE,STATUS='UNKNOWN')
-	   REWIND (40)
-	   DO 49 J = 1, N0
-	     START_LEN	= ((J-1)-N0*0.5D0)*RLAU
-	     DO 59 I = 1, NP-1
-          IF (I_WIG.EQ.2) THEN
-               WRITE    (40,*) &
-                -XOFZ(I),Z(I)+START_LEN,YOFZ(I), &
-                -BETAX(I),BETAZ(I),BETAY(I),CURV(I)
-           ELSE
-	       WRITE	(40,*)	 &
-      		-XOFZ(I),Z(I)+START_LEN,0.0d0, &
-      		-BETAX(I),BETAZ(I),0.0d0,CURV(I)
-          ENDIF
-59	     CONTINUE
-49	   CONTINUE
-          IF (I_WIG.EQ.2) THEN
-               WRITE    (40,*) &
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Calculation Completed. File out results.'     
+        WRITE(6,*) ' '
+        OPEN        (40,FILE=TRAJFILE,STATUS='UNKNOWN')
+        REWIND (40)
+        !DO 49 J = 1, N0
+        DO J = 1, N0
+             START_LEN        = ((J-1)-N0*0.5D0)*RLAU
+             !DO 59 I = 1, NP-1
+             DO I = 1, NP-1
+                 IF (I_WIG.EQ.2) THEN
+                     WRITE    (40,*) &
+                        -XOFZ(I),Z(I)+START_LEN,YOFZ(I), &
+                        -BETAX(I),BETAZ(I),BETAY(I),CURV(I)
+                 ELSE
+                     WRITE        (40,*)         &
+                      -XOFZ(I),Z(I)+START_LEN,0.0d0, &
+                      -BETAX(I),BETAZ(I),0.0d0,CURV(I)
+                 ENDIF
+             END DO 
+!59           CONTINUE
+        END DO 
+!49      CONTINUE
+        IF (I_WIG.EQ.2) THEN
+            WRITE (40,*) &
                 -XOFZ(NP),Z(NP)+START_LEN,YOFZ(NP), &
                 -BETAX(NP),BETAZ(NP),BETAY(NP),CURV(NP)
-           ELSE
-	       WRITE	(40,*)	 &
-      		-XOFZ(NP),Z(NP)+START_LEN,0.0d0, &
-      		-BETAX(NP),BETAZ(NP),0.0d0,CURV(NP)
-          ENDIF
-	   CLOSE	(40)
-	print *,'File written to disk: '//trim(trajFile)
+        ELSE
+            WRITE (40,*)         &
+                -XOFZ(NP),Z(NP)+START_LEN,0.0d0, &
+                -BETAX(NP),BETAZ(NP),0.0d0,CURV(NP)
+        ENDIF
+        CLOSE (40)
+        print *,'File written to disk: '//trim(trajFile)
 
-	RETURN
+        RETURN
 !C
-		else if (i_device.eq.2) then		!Undulator
-!C
-!C	write to file for use in ERAD
-!C
-	 OPEN (32,FILE=UNOUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
-	 REWIND (32)
-	 WRITE(32) N0,RLAU,ENERGY1
-	 WRITE(32) RLA1,RK,GA0,BETA0
-	 WRITE(32) BETAX0,BETAY0,BETAZ0
-	 WRITE(32) B0,ENER,RLEN,NP,rb0
-	 WRITE(32) PHI_E,THE_E
+else if (i_device.eq.2) then    !Undulator
+        !C
+        !C	write to file for use in ERAD
+        !C
+        OPEN (32,FILE=UNOUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
+        REWIND (32)
+        WRITE(32) N0,RLAU,ENERGY1
+        WRITE(32) RLA1,RK,GA0,BETA0
+        WRITE(32) BETAX0,BETAY0,BETAZ0
+        WRITE(32) B0,ENER,RLEN,NP,rb0
+        WRITE(32) PHI_E,THE_E
 !C
 !C (N-1) periods assume ideal sinusoidal field and trajectory.
 !C
-	c3	= -e/(ga0*rm*c)*rlau/twopi
-	Z0	= RLAU/2.0D0
-	ZSTEP	= RLAU/(NP-1)
+        c3        = -e/(ga0*rm*c)*rlau/twopi
+        Z0        = RLAU/2.0D0
+        ZSTEP        = RLAU/(NP-1)
+        !C
+        !DO 95 I        = 1,NP
+        DO I = 1,NP
+           Z(I)        = (I-1)*ZSTEP
+           BETAX(I) = C3*B0*SIN(U_KVEC*Z(I))
+           BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2)
+           YT(I)    = 1/BETAZ(I)
+           YX(I)    = BETAX(I)/BETAZ(I)
+        END DO
+!95        CONTINUE
 !C
-	DO 95 I	= 1,NP
-	   Z(I)	= (I-1)*ZSTEP
+        CALL QSF (ZSTEP,YX,XOFZ,NP)
+        CALL QSF (ZSTEP,YT,TOFZ,NP)
 
-	   BETAX(I) = C3*B0*SIN(U_KVEC*Z(I))
-!C
-	   BETAZ(I) = SQRT(BETA0**2-BETAX(I)**2)
-	   YT(I)    = 1/BETAZ(I)
-	   YX(I)    = BETAX(I)/BETAZ(I)
-95	CONTINUE
-!C
-	CALL QSF (ZSTEP,YX,XOFZ,NP)
-	CALL QSF (ZSTEP,YT,TOFZ,NP)
-
-	TAU = (TOFZ(NP) - TOFZ(1))/C
+        TAU = (TOFZ(NP) - TOFZ(1))/C
 !C
 !C The two ends of the undulator are combined into the remaining (one)
 !C period, with the length of RLAU (1+sqrt(2)).
 !C
 
-	c3	= -e/(ga0*rm*c)*rlau/twopi
-	ZF      = RLAU/4.0D0
-	ZCORR	= SQRT(2.0D0)*RLAU/4.0D0
-	EZ0	= ZF + ZCORR
-	EZSTEP  = 2*EZ0/(NP-1)
-	BF      = -B0/SQRT(2.0D0)
-!C
-	PHIF     = U_KVEC*ZF
-!C
-	DO 29 I  = 1,NP
-	   EZ(I)  = -EZ0 + ( I-1 )*EZSTEP
-!C
-!C include modifications for fringe field.
-!C
-	   PHI = U_KVEC*EZ(I)
-	   IF (ABS(EZ(I)).GT.ZF) THEN
-		con = c3*b0/2.0d0
-		B1X = C3*BF/SQRT(2.0D0)* &
-      			( -COS(SQRT(2.0D0)*(ABS(PHI)-PHIF)) ) + con
-		IF (EZ(I).LT.0.0)	B1X = -B1X
-		B2X = C3*B0*SIN(U_KVEC*EZ(I))
+        c3        = -e/(ga0*rm*c)*rlau/twopi
+        ZF        = RLAU/4.0D0
+        ZCORR     = SQRT(2.0D0)*RLAU/4.0D0
+        EZ0       = ZF + ZCORR
+        EZSTEP  = 2*EZ0/(NP-1)
+        BF      = -B0/SQRT(2.0D0)
 
-		IF (ABS(EZ(I)).GT.(2.0D0*ZF)) THEN
-		   EBETAX(I)	= RB0*B1X
-		ELSE
-		   EBETAX(I)	= RB0*B1X + (1.0D0-RB0)*B2X
-		ENDIF
+        PHIF    = U_KVEC*ZF
 
-	   ELSE
-		EBETAX(I) = C3*B0*SIN( U_KVEC*EZ(I) )
-	   END IF
+        !DO 29 I  = 1,NP
+        DO I  = 1,NP
+            EZ(I)  = -EZ0 + ( I-1 )*EZSTEP
+ !C
+ !C include modifications for fringe field.
+ !C
+            PHI = U_KVEC*EZ(I)
+            IF (ABS(EZ(I)).GT.ZF) THEN
+                con = c3*b0/2.0d0
+                B1X = C3*BF/SQRT(2.0D0)* &
+                               ( -COS(SQRT(2.0D0)*(ABS(PHI)-PHIF)) ) + con
+                IF (EZ(I).LT.0.0)        B1X = -B1X
+                B2X = C3*B0*SIN(U_KVEC*EZ(I))
+ 
+                IF (ABS(EZ(I)).GT.(2.0D0*ZF)) THEN
+                    EBETAX(I)        = RB0*B1X
+                ELSE
+                    EBETAX(I)        = RB0*B1X + (1.0D0-RB0)*B2X
+                ENDIF
+            ELSE
+                 EBETAX(I) = C3*B0*SIN( U_KVEC*EZ(I) )
+            END IF
+            EBETAZ(I) = SQRT(BETA0**2-EBETAX(I)**2)
+            YT(I)    = 1/EBETAZ(I)
+            YX(I)    = EBETAX(I)/EBETAZ(I)
+        END DO
+!29	CONTINUE
 !C
-	   EBETAZ(I) = SQRT(BETA0**2-EBETAX(I)**2)
-	   YT(I)    = 1/EBETAZ(I)
-	   YX(I)    = EBETAX(I)/EBETAZ(I)
-29	CONTINUE
+        CALL QSF ( EZSTEP,YX,EXOFZ,NP)
+        CALL QSF ( EZSTEP,YT,ETOFZ,NP)
+           
+        ETAU = ( ETOFZ(NP) - ETOFZ(1) )/C
+        NC        = (NP+1)/2.0D0
+        XMAX = EXOFZ(NC)                ! maximum fluctuation in X.
 !C
-     	   CALL QSF ( EZSTEP,YX,EXOFZ,NP)
-     	   CALL QSF ( EZSTEP,YT,ETOFZ,NP)
-	   
-	   ETAU = ( ETOFZ(NP) - ETOFZ(1) )/C
-	   NC	= (NP+1)/2.0D0
-	   XMAX = EXOFZ(NC)		! maximum fluctuation in X.
-!C
-	   WRITE(32) TAU,Z0,ZSTEP
-	  DO 69 I = 1, NP
-	   WRITE(32) XOFZ(I)+XMAX,0.0d0,Z(I)
-	   WRITE(32) BETAX(I),0.0d0,BETAZ(I)
-	   WRITE(32) TOFZ(I)/C,1.0D0 -BETAZ(I)
-69	  CONTINUE
-     	 WRITE(6,*) parfile
-	  
-	  WRITE(32) ETAU,EZ0,EZSTEP,NC
+        WRITE(32) TAU,Z0,ZSTEP
+        DO 69 I = 1, NP
+            WRITE(32) XOFZ(I)+XMAX,0.0d0,Z(I)
+            WRITE(32) BETAX(I),0.0d0,BETAZ(I)
+            WRITE(32) TOFZ(I)/C,1.0D0 -BETAZ(I)
+69      CONTINUE
+        WRITE(6,*) parfile
+          
+        WRITE(32) ETAU,EZ0,EZSTEP,NC
 !C
 !C The first RLAU/2 (approx.) of the undulator:
 !C
-	DO 25 I = 1,NC
-	  WRITE(32) EXOFZ(I),0.0D0,EZ(I)	!X,Y,Z
-	  WRITE(32) EBETAX(I),0.0D0,EBETAZ(I)	!BETAX,BETAY,BETAZ
-	  WRITE(32) ETOFZ(I)/C-0.5D0*ETAU,1.0D0-EBETAZ(I)
-25	CONTINUE
+        DO 25 I = 1,NC
+            WRITE(32) EXOFZ(I),0.0D0,EZ(I)        !X,Y,Z
+            WRITE(32) EBETAX(I),0.0D0,EBETAZ(I)        !BETAX,BETAY,BETAZ
+            WRITE(32) ETOFZ(I)/C-0.5D0*ETAU,1.0D0-EBETAZ(I)
+25      CONTINUE
 !C
 !C The last RLAU/2 (approx.) of the undulator:
 !C
-	DO 35 I = NC,NP
-	  WRITE(32) EXOFZ(I),0.0D0,EZ(I)	!X,Y,Z
-	  WRITE(32) EBETAX(I),0.0D0,EBETAZ(I)	!BETAX,BETAY,BETAZ
-	  WRITE(32) ETOFZ(I)/C-0.D05*ETAU,1.0D0-EBETAZ(I)
-35	CONTINUE
+        DO 35 I = NC,NP
+            WRITE(32) EXOFZ(I),0.0D0,EZ(I)             !X,Y,Z
+            WRITE(32) EBETAX(I),0.0D0,EBETAZ(I)        !BETAX,BETAY,BETAZ
+            WRITE(32) ETOFZ(I)/C-0.D05*ETAU,1.0D0-EBETAZ(I)
+35      CONTINUE
 
-	CLOSE(32)
-	print *,'File written to disk: '//trim(unOutFile)
+        CLOSE(32)
+        print *,'File written to disk: '//trim(unOutFile)
 !C
-	  IF (NFILE.EQ.1) THEN
-     	 WRITE(6,*) unexam
-     	    open (33, file=unexam, status='unknown')
-	    rewind(33)
-		DO 79 I = 1, NP
-     	      TTT = ETOFZ(I)/C
-     	      BBB = 1.0D0 - EBETAZ(I)
-	      WRITE(33,1010) EXOFZ(I), EBETAX(I), EZ(I), BBB, TTT
-79	        CONTINUE
-	  END IF
-         print *,'File written to disk: '//trim(unExam)
-     	END IF
-	CLOSE(33)
-	!CLOSE(32)
-1000	FORMAT (4(1X,G19.12))
-1010	FORMAT (5(1X,G19.12))
-1070	FORMAT (7(1X,G19.12))
+        IF (NFILE.EQ.1) THEN
+            WRITE(6,*) unexam
+            open (33, file=unexam, status='unknown')
+            rewind(33)
+            DO 79 I = 1, NP
+                TTT = ETOFZ(I)/C
+                BBB = 1.0D0 - EBETAZ(I)
+                WRITE(33,1010) EXOFZ(I), EBETAX(I), EZ(I), BBB, TTT
+79          CONTINUE
+        END IF
+        print *,'File written to disk: '//trim(unExam)
+END IF
+        CLOSE(33)
+        !CLOSE(32)
+1000    FORMAT (4(1X,G19.12))
+1010    FORMAT (5(1X,G19.12))
+1070    FORMAT (7(1X,G19.12))
 1090    FORMAT (9(1X,G19.12))
 
-	RETURN
+        RETURN
 END SUBROUTINE EPath
 
 !
@@ -632,92 +645,104 @@ END SUBROUTINE EPath
 !C                       everything is all right; if (IFLAG.NE.0), error status.
 !C---
 SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
 
-     	REAL(kind=skr) 	PHOT_INV(5,1010),Y(1010)
-	REAL(kind=skr)	EMAX,EMIN,CMAX,CMIN,CDIFF
-     	
-	CHARACTER(len=sklen) :: SRDISTR
-	SAVE	PHOT_INV,NP
+        real(kind=skr),intent(in)        :: RAD, BENER, EIMIN, EIMAX
+        integer(kind=ski),intent(inout)  :: IFLAG
+        real(kind=skr),intent(out)       :: TOT_NUM
+
+        real(kind=skr),dimension(5,1010) :: PHOT_INV
+        real(kind=skr),dimension(1010)   :: Y
+        real(kind=skr)                   :: EMAX,EMIN,CMAX,CMIN,CDIFF
+
+        real(kind=skr)    :: c_phot, ex_low, ex_upp, ex_step, gamma1
+        real(kind=skr)    :: pnum, ang_num, r_lam
+        integer(kind=ski) :: i, np, icol, ier, izero
+             
+        CHARACTER(len=sklen) :: SRDISTR
+        SAVE        PHOT_INV,NP
 !C
 !C Define the useful parameters
 !C
-	EX_LOW	= -5.0D0	
-	EX_UPP	= 2.0D0
-	EX_STEP	= (EX_UPP - EX_LOW)*1.0D-3
-	
-	IF (IFLAG.EQ.-1) THEN
-!C
-!C Get the data file path using either SHADOW$DATA or Unix SHADOW_DATA_DIR
-!C environment variable. Also, check for existence in the routine itself.
-!C
-	  IFLAG = 1
-          SRDISTR=""
-	  CALL DATAPATH ('SRDISTR', SRDISTR, IFLAG) 
-	  IF (IFLAG.NE.0) THEN
-            print *,'File not found: SRDISTR. Creating it!'
-	    !CALL LEAVE ('NPhotonCalc', 'SRDISTR file not found', IFLAG)
-            call srcdf
-	    SRDISTR = "SRDISTR"
-	  ENDIF
-     	  OPEN	(20, FILE=SRDISTR, STATUS='OLD',FORM='UNFORMATTED')
-	  READ 	(20)	ICOL,NP
-!C
-!C Reads in the total flux distribution
-!C
-	  DO 99 I = NP, 1, -1
-	    READ	(20)	PHOT_INV(1,I),Y(I)
-	    Y(I)	= 1.0D0 - Y(I)
- 99	  CONTINUE
-	  CLOSE 	(20)
-!C
-!C Produces the inverted cdf curve of photon energy
-!C
-	  CALL CUBSPL  (PHOT_INV,Y,NP,IER)
-	  RETURN
-	ELSE
-!C
-!C Calculate the appropriate index for EIMAX and EIMIN
-!C
-	  GAMMA	= 1957.0D0*BENER
-	  R_LAM	= 4.0D0*PI*RAD/3.0D0/GAMMA**3*1.0D10	!Angstroms
-	  C_PHOT= TOANGS/R_LAM
-	  EMIN	= EIMIN/C_PHOT
-	  EMAX	= EIMAX/C_PHOT
-!C
-!C Interpolate for the probability between EMIN and EMAX.
-!C
-	  IF (EMAX.GT.10.0D0**EX_UPP) THEN
-	    CMAX = 1.0D0
-	  ELSE IF (EMAX.LT.10.0D0**EX_LOW) THEN
-            iZero=0
-	    CALL LEAVE ('NPhotonCalc','Maximum photon energy is too small.',iZero)
-	    IFLAG	= -1
-	    RETURN
-	  ELSE
-	    CALL SPL_INT (PHOT_INV,NP,EMAX,CMAX,IER)
-	  END IF
-	  IF (EMIN.GT.10.0D0**EX_UPP) THEN
-	    CMIN = 1.0D0
-	  ELSE IF (EMIN.LT.10.0D0**EX_LOW) THEN
-            iZero=0
-	    CALL LEAVE ('NPhotonCalc','Minimum photon energy is too small.',iZero)
-	    IFLAG	= -1
-	    RETURN
-	  ELSE
-	    CALL SPL_INT (PHOT_INV,NP,EMIN,CMIN,IER)
-	  END IF
-	  CDIFF	= CMAX - CMIN
-!C
-!C G0_TOT is the total area of the G0 curve.
-!C TOT_NUM is the Photons/sec/mA/mrad between EMIN and EMAX.
-!C
-	  CDIFF		= CDIFF * 5.097721285019080D0
-	  TOT_NUM	= CDIFF * 1.013D6 * TOANGS * GAMMA 
-	  IFLAG	= 1
-	  RETURN
-	END IF
+        EX_LOW   = -5.0D0        
+        EX_UPP   = 2.0D0
+        EX_STEP  = (EX_UPP - EX_LOW)*1.0D-3
+        
+        IF (IFLAG.EQ.-1) THEN
+            !C
+            !C Get the data file path using either SHADOW$DATA or Unix SHADOW_DATA_DIR
+            !C environment variable. Also, check for existence in the routine itself.
+            !C
+            IFLAG = 1
+            SRDISTR=""
+            CALL DATAPATH ('SRDISTR', SRDISTR, IFLAG) 
+            IF (IFLAG.NE.0) THEN
+                print *,'File not found: SRDISTR. Creating it!'
+                !CALL LEAVE ('NPhotonCalc', 'SRDISTR file not found', IFLAG)
+                call srcdf
+                SRDISTR = "SRDISTR"
+            ENDIF
+            OPEN (20, FILE=SRDISTR, STATUS='OLD',FORM='UNFORMATTED')
+            READ (20) ICOL,NP
+            !C
+            !C Reads in the total flux distribution
+            !C
+            !DO 99 I = NP, 1, -1
+            DO I = NP, 1, -1
+                READ (20) PHOT_INV(1,I),Y(I)
+                Y(I) = 1.0D0 - Y(I)
+            END DO
+            !99  CONTINUE
+            CLOSE (20)
+            !C
+            !C Produces the inverted cdf curve of photon energy
+            !C
+            CALL CUBSPL(PHOT_INV,Y,NP,IER)
+            RETURN
+        ELSE
+            !C
+            !C Calculate the appropriate index for EIMAX and EIMIN
+            !C
+            gamma1       = 1957.0D0*BENER
+            R_LAM       = 4.0D0*PI*RAD/3.0D0/gamma1**3*1.0D10        !Angstroms
+            C_PHOT      = TOANGS/R_LAM
+            EMIN        = EIMIN/C_PHOT
+            EMAX        = EIMAX/C_PHOT
+            !C
+            !C Interpolate for the probability between EMIN and EMAX.
+            !C
+            IF (EMAX.GT.10.0D0**EX_UPP) THEN
+                CMAX = 1.0D0
+            ELSE IF (EMAX.LT.10.0D0**EX_LOW) THEN
+                iZero = 0
+                CALL LEAVE ('NPhotonCalc','Maximum photon energy is too small.',iZero)
+                IFLAG = -1
+                RETURN
+            ELSE
+                CALL SPL_INT (PHOT_INV,NP,EMAX,CMAX,IER)
+            END IF
+            IF (EMIN.GT.10.0D0**EX_UPP) THEN
+                CMIN = 1.0D0
+            ELSE IF (EMIN.LT.10.0D0**EX_LOW) THEN
+                iZero = 0
+                CALL LEAVE ('NPhotonCalc','Minimum photon energy is too small.',iZero)
+                IFLAG = -1
+                RETURN
+            ELSE
+                CALL SPL_INT (PHOT_INV,NP,EMIN,CMIN,IER)
+            END IF
+            CDIFF = CMAX - CMIN
+            !C
+            !C G0_TOT is the total area of the G0 curve.
+            !C TOT_NUM is the Photons/sec/mA/mrad between EMIN and EMAX.
+            !C
+            CDIFF    = CDIFF * 5.097721285019080D0
+            TOT_NUM  = CDIFF * 1.013D6 * TOANGS * gamma1 
+            IFLAG    = 1
+            RETURN
+        END IF
 END SUBROUTINE NPhotonCalc
 
 !C+++
@@ -730,142 +755,207 @@ END SUBROUTINE NPhotonCalc
 !C	NOTE		Everything is in SHADOW's referance frame.
 !C---
 SUBROUTINE NPhoton
-	!IMPLICIT	REAL*8	(A-H,O-Z)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !IMPLICIT   REAL*8   (A-H,O-Z)
+        implicit none
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
 
-	INTEGER(kind=ski),PARAMETER :: 	N_DIM=10000
-	DIMENSION	Y(N_DIM),BETAY(N_DIM),X(N_DIM),BETAX(N_DIM)
-	DIMENSION	CURV(N_DIM),PHOT_NUM(N_DIM),PHOT_CDF(N_DIM)
-	DIMENSION	Z(N_DIM),BETAZ(N_DIM),DS(N_DIM),S(N_DIM)
-	DIMENSION	DX(N_DIM), DY(N_DIM), DZ(N_DIM)
-        DIMENSION       TAUX(1001),TAUY(1001),TAUZ(1001)
-        DIMENSION       BX(1001),BY(1001),BZ(1001)
-        DIMENSION       ENX(1001),ENY(1001),ENZ(1001)
-	CHARACTER(len=sklen) :: INFILE,OUTFILE
-!C
-!C Read in the CDF of G0, and generated the spline coefficients.
-!C
-	IFLAG	= -1
-	CALL	NPhotonCalc (PNUM,RAD,BENER,EMIN,EMAX,IFLAG)
-!C
-	WRITE(6,*) ' '
-	WRITE(6,*) '************************ WIGGLER RADIATION ',&
-      '*************************'
-	WRITE(6,*) ' '
-	INFILE	= RSTRING ('Name of input file with electron trajectory: ')
-!C	
-!C	(I_WIG.EQ.1) implies normal wiggler.
-!C	(I_WIG.EQ.2) implies elliptical wiggler.
-!C
+        !integer(kind=ski),parameter     ::  N_DIM=10000
+        real(kind=skr),dimension(:),allocatable ::  Y,BETAY,X,BETAX
+        real(kind=skr),dimension(:),allocatable ::  CURV,PHOT_NUM,PHOT_CDF
+        real(kind=skr),dimension(:),allocatable ::  Z,BETAZ,DS,S
+        real(kind=skr),dimension(:),allocatable ::  DX, DY, DZ
+        !real(kind=skr),dimension(1001)  ::  TAUX,TAUY,TAUZ
+        !real(kind=skr),dimension(1001)  ::  BX,BY,BZ
+        !real(kind=skr),dimension(1001)  ::  ENX,ENY,ENZ
+        character(len=sklen)            ::  INFILE,OUTFILE
+
+        real(kind=skr)    :: ang_num, angle, angle1, angle2, bener, cdf, curv_max, curv_min
+        real(kind=skr)    :: gamma1, phot_max, phot_min, pnum, rad, step, tot_num
+        real(kind=skr)    :: tmp
+        integer(kind=ski) :: i, i_wig, iflag
+
+        !C
+        !C Read in the CDF of G0, and generated the spline coefficients.
+        !C
+        IFLAG   = -1
+        CALL   NPhotonCalc (PNUM,RAD,BENER,EMIN,EMAX,IFLAG)
+
+        WRITE(6,*) ' '
+        WRITE(6,*) '************************ WIGGLER RADIATION *************************'
+        WRITE(6,*) ' '
+        INFILE   = RSTRING ('Name of input file with electron trajectory: ')
+        !C        
+        !C        (I_WIG.EQ.1) implies normal wiggler.
+        !C        (I_WIG.EQ.2) implies elliptical wiggler.
+        !C
         WRITE(6,*) ' '
         WRITE(6,*) 'Type of Wiggler.'
         WRITE(6,*) 'Enter:'
         WRITE(6,*) 'for normal wiggler   [1]'
         WRITE(6,*) 'for elliptical wiggler [2]'
         I_WIG=IRINT('Then? ')
-	OPEN	(20,FILE=INFILE,STATUS='OLD')
-!C
-	DO 99 I = 1, N_DIM+1
-	  READ	(20,*,END=101)	X(I),Y(I),Z(I),BETAX(I),BETAY(I), &
-      	  	BETAZ(I),CURV(I)
- 99	CONTINUE
-	STOP 	'NPhoton: Too many points from input file.'
-101	NP	= I - 1
-	CLOSE	(20)
-	WRITE(6,*) 'Read ',NP,' points from input file.'
-	STEP	= SQRT((Y(2)-Y(1))**2 + (X(2)-X(1))**2 + (Z(2)-Z(1))**2)
-!C
-!C Compute gamma and the beam energy
-!C
-	GAMMA	= 1/SQRT(1-(BETAY(1)**2)-(BETAX(1)**2)-(BETAZ(1)**2))
-	BENER	= GAMMA*(9.109D-31)*(2.998d8**2)/(1.602d-19)*1.0d-9
- 	WRITE(6,*) 'Beam energy (GeV) = ',BENER
-!C
-!C Figure out the limit of photon energy.
-!C
-	CURV_MAX	= 0.0D0
-	CURV_MIN	= 1.0D20
-	DO 199 I = 1, NP
-	  CURV_MAX	= MAX(ABS(CURV(I)),CURV_MAX)
-	  CURV_MIN	= MIN(ABS(CURV(I)),CURV_MIN)
- 199	CONTINUE
-	WRITE(6,*) 'Radius of curvature (max.) = ',1/CURV_MIN,' m'
-	WRITE(6,*) '                    (min.) = ',1/CURV_MAX,' m'
-	PHOT_MIN	= TOANGS*3.0D0*GAMMA**3/4.0D0/PI/1.0D10*CURV_MIN
-	PHOT_MAX	= TOANGS*3.0D0*GAMMA**3/4.0D0/PI/1.0D10*CURV_MAX
-	WRITE(6,*) 'Critical Energy (max.) = ',PHOT_MAX,' eV'
-	WRITE(6,*) '                (min.) = ',PHOT_MIN,' eV'
-!C	WRITE(6,*) 'Use photon energy between ',
-!C     $		PHOT_MAX*10,' eV and ',PHOT_MIN*1.0D-5,' eV'
-!C
-	EMIN	= RNUMBER ('Initial photon energy [ eV ] : ')
-	EMAX	= RNUMBER ('Final photon energy [ eV ]   : ')
-	OUTFILE	= RSTRING ('Name of output file : ')
-!C
-!C NPhotonCalc computes the no. of photons per mrad (ANG_NUM) at each point.  
-!C It is then used to generate the no. of photons per axial length (PHOT_NUM)
-!C along the trajectory S.
-!C
-	DO 299 I = 1, NP
-	  IF (ABS(CURV(I)).LT.1.0D-10) THEN
-	    ANG_NUM	= 0.0D0	
-	  ELSE
-	    RAD	= ABS(1.0D0/CURV(I))
-	    IFLAG = 1
-	    CALL	NPhotonCalc (ANG_NUM,RAD,BENER,EMIN,EMAX,IFLAG)
-	  END IF
-	  PHOT_NUM(I) =  &
+
+
+
+        ! first scan the file to get the number of points
+        OPEN   (20,FILE=INFILE,STATUS='OLD')
+        I = 0
+        DO WHILE (.true.) 
+            READ (20,*,END=11)   tmp,tmp,tmp,tmp,tmp,tmp,tmp
+            I = I + 1
+        END DO 
+11      NP   = I 
+        CLOSE   (20)
+        WRITE(6,*) 'Found ',NP,' points from input file : '//trim(infile)
+
+        
+        ! allocate arrays
+        allocate( Y(NP) )
+        allocate( BETAY(NP) )
+        allocate( X(NP) )
+        allocate( BETAX(NP) )
+        allocate( CURV(NP) )
+        allocate( PHOT_NUM(NP) )
+        allocate( PHOT_CDF(NP) )
+        allocate( Z(NP) )
+        allocate( BETAZ(NP) )
+        allocate( DS(NP) )
+        allocate( S(NP) )
+        allocate( DX(NP) )
+        allocate( DY(NP) )
+        allocate( DZ(NP) )
+
+
+        OPEN   (20,FILE=INFILE,STATUS='OLD')
+
+        !  DO 99 I = 1, N_DIM+1
+        ! DO I = 1, N_DIM+1
+        DO I = 1, NP
+            !READ (20,*,END=101)   X(I),Y(I),Z(I),BETAX(I),BETAY(I),BETAZ(I),CURV(I)
+            READ (20,*)   X(I),Y(I),Z(I),BETAX(I),BETAY(I),BETAZ(I),CURV(I)
+        END DO 
+        ! 99        CONTINUE
+!        STOP    'NPhoton: Too many points from input file.'
+!101     NP   = I - 1
+        CLOSE   (20)
+        WRITE(6,*) 'Read ',NP,' points from input file: '//trim(infile)
+
+        STEP   = SQRT((Y(2)-Y(1))**2 + (X(2)-X(1))**2 + (Z(2)-Z(1))**2)
+
+        !C
+        !C Compute gamma and the beam energy
+        !C
+        gamma1   = 1/SQRT(1-(BETAY(1)**2)-(BETAX(1)**2)-(BETAZ(1)**2))
+        BENER   = gamma1*(9.109D-31)*(2.998d8**2)/(1.602d-19)*1.0d-9
+         WRITE(6,*) 'Beam energy (GeV) = ',BENER
+        !C
+        !C Figure out the limit of photon energy.
+        !C
+        CURV_MAX   = 0.0D0
+        CURV_MIN   = 1.0D20
+        !DO 199 I = 1, NP
+        DO I = 1, NP
+            CURV_MAX   = MAX(ABS(CURV(I)),CURV_MAX)
+            CURV_MIN   = MIN(ABS(CURV(I)),CURV_MIN)
+        END DO 
+        !199        CONTINUE
+        WRITE(6,*) 'Radius of curvature (max.) = ',1/CURV_MIN,' m'
+        WRITE(6,*) '                    (min.) = ',1/CURV_MAX,' m'
+        PHOT_MIN   = TOANGS*3.0D0*gamma1**3/4.0D0/PI/1.0D10*CURV_MIN
+        PHOT_MAX   = TOANGS*3.0D0*gamma1**3/4.0D0/PI/1.0D10*CURV_MAX
+        WRITE(6,*) 'Critical Energy (max.) = ',PHOT_MAX,' eV'
+        WRITE(6,*) '                (min.) = ',PHOT_MIN,' eV'
+        !C        WRITE(6,*) 'Use photon energy between ',
+        !C     $           PHOT_MAX*10,' eV and ',PHOT_MIN*1.0D-5,' eV'
+        !C
+        EMIN   = RNUMBER ('Initial photon energy [ eV ] : ')
+        EMAX   = RNUMBER ('Final photon energy [ eV ]   : ')
+        OUTFILE   = RSTRING ('Name of output file : ')
+        !C
+        !C NPhotonCalc computes the no. of photons per mrad (ANG_NUM) at each point.  
+        !C It is then used to generate the no. of photons per axial length (PHOT_NUM)
+        !C along the trajectory S.
+        !C
+        !DO 299 I = 1, NP
+        DO I = 1, NP
+          IF (ABS(CURV(I)).LT.1.0D-10) THEN
+            ANG_NUM   = 0.0D0   
+          ELSE
+            RAD   = ABS(1.0D0/CURV(I))
+            IFLAG = 1
+            CALL   NPhotonCalc (ANG_NUM,RAD,BENER,EMIN,EMAX,IFLAG)
+          END IF
+          PHOT_NUM(I) =  &
             ANG_NUM*ABS(CURV(I))*SQRT(1+(BETAX(I)/BETAY(I))**2+ &
           (BETAZ(I)/BETAY(I))**2)*1.0D3
-299     CONTINUE
-!C
-!C Computes CDF of the no. of photon along the trajectory S.
-!C In the elliptical case, the entire traversed path length (DS) is computed.
-!C In the normal case, only the component (Y) in the direction of propagation
-!C is computed.
-!C
-	 DO 399 I = 2, NP
-	IF (I_WIG.EQ.2) THEN
-	  DS(1) = 0.0D0
-		DX(I) = X(I) - X(I-1)
-		DY(I) = Y(I) - Y(I-1)
-		DZ(I) = Z(I) - Z(I-1)
-		DS(I) = SQRT(DX(I)**2 + DY(I)**2 + DZ(I)**2) + DS(I-1)
-!C          WRITE(6,*)  DS(I)
-	   PHOT_CDF(I)	= PHOT_CDF(I-1) +  &
-      		(PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(DS(I) - DS(I-1))
-!C          WRITE(6,*) PHOT_CDF(I)
-	ELSE
-	   PHOT_CDF(I)	= PHOT_CDF(I-1) +  &
-      		(PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(Y(I) - Y(I-1))
-	END IF
- 399     CONTINUE
-	 TOT_NUM	= PHOT_CDF(NP)
-	 WRITE(6,*) 'Total no.of photons = ',TOT_NUM
+        END DO 
+        !299     CONTINUE
+        !C
+        !C Computes CDF of the no. of photon along the trajectory S.
+        !C In the elliptical case, the entire traversed path length (DS) is computed.
+        !C In the normal case, only the component (Y) in the direction of propagation
+        !C is computed.
+        !C
+        !DO 399 I = 2, NP
+        DO I = 2, NP
+        IF (I_WIG.EQ.2) THEN
+            DS(1) = 0.0D0
+            DX(I) = X(I) - X(I-1)
+            DY(I) = Y(I) - Y(I-1)
+            DZ(I) = Z(I) - Z(I-1)
+            DS(I) = SQRT(DX(I)**2 + DY(I)**2 + DZ(I)**2) + DS(I-1)
+            PHOT_CDF(I)   = PHOT_CDF(I-1) +  &
+                (PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(DS(I) - DS(I-1))
+        ELSE
+            PHOT_CDF(I)   = PHOT_CDF(I-1) +  &
+                (PHOT_NUM(I-1) + PHOT_NUM(I))*0.5D0*(Y(I) - Y(I-1))
+        END IF
+        ! 399     CONTINUE
+        END DO 
+        TOT_NUM   = PHOT_CDF(NP)
+        WRITE(6,*) 'Total no.of photons = ',TOT_NUM
 !C
 !C Creates the binary file that serves as input to SHADOW.
 !C
-	 OPEN	(21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
-	 REWIND	(21)
-	 WRITE	(21) NP,STEP,BENER,1.0D0/CURV_MAX, &
-      		1.0D0/CURV_MIN,EMIN,EMAX
-	 DO 499 I = 1, NP
-	   CDF		= PHOT_CDF(I)/TOT_NUM
-         IF (I_WIG.EQ.2) THEN
-           ANGLE1               = ATAN2 (BETAX(I),BETAY(I))
-           ANGLE2               = ASIN  (BETAZ(I))
-           WRITE        (21)    X(I),Y(I),Z(I),CDF,ANGLE1,ANGLE2, &
-                                CURV(I)
-         ELSE
-	   ANGLE		= ATAN2 (BETAX(I),BETAY(I))
-	   WRITE	(21)	X(I),Y(I),CDF,ANGLE,CURV(I)
-!C
-         ENDIF
- 499	 CONTINUE
-	CLOSE	(21)
-	print *,'File written to disk: '//trim(outFile)
-	RETURN
+        OPEN   (21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
+        REWIND   (21)
+        WRITE   (21) NP,STEP,BENER,1.0D0/CURV_MAX, &
+                 1.0D0/CURV_MIN,EMIN,EMAX
+        !DO 499 I = 1, NP
+        DO I = 1, NP
+            CDF      = PHOT_CDF(I)/TOT_NUM
+            IF (I_WIG.EQ.2) THEN
+                ANGLE1  = ATAN2 (BETAX(I),BETAY(I))
+                ANGLE2  = ASIN  (BETAZ(I))
+                WRITE (21) X(I),Y(I),Z(I),CDF,ANGLE1,ANGLE2, CURV(I)
+            ELSE
+                ANGLE = ATAN2 (BETAX(I),BETAY(I))
+                WRITE (21) X(I),Y(I),CDF,ANGLE,CURV(I)
+                !C
+            ENDIF
+        ! 499         CONTINUE
+        END DO 
+        CLOSE   (21)
+        print *,'File written to disk: '//trim(outFile)
+
+        ! deallocate arrays
+        if (allocated(Y )) deallocate( Y)
+        if (allocated(BETAY )) deallocate( BETAY)
+        if (allocated(X )) deallocate( X)
+        if (allocated(BETAX )) deallocate( BETAX)
+        if (allocated(CURV )) deallocate( CURV)
+        if (allocated(PHOT_NUM )) deallocate( PHOT_NUM)
+        if (allocated(PHOT_CDF )) deallocate( PHOT_CDF)
+        if (allocated(Z )) deallocate( Z)
+        if (allocated(BETAZ )) deallocate( BETAZ)
+        if (allocated(DS )) deallocate( DS)
+        if (allocated(S )) deallocate( S)
+        if (allocated(DX )) deallocate( DX)
+        if (allocated(DY )) deallocate( DY)
+        if (allocated(DZ )) deallocate( DZ)
+
+        RETURN
 END SUBROUTINE NPhoton
 
 !
