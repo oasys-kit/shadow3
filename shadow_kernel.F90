@@ -7532,7 +7532,7 @@ end if
 ! C
 ! C tests if surface errors are defined
 ! C
-     	IF (F_RIPPLE.EQ.1) THEN
+        IF (F_RIPPLE.EQ.1) THEN
 ! C
 ! C The case of a rippled surface is solved by successive approximations
 ! C Due to the small amplitudes involved, few iterations are enough.
@@ -7547,49 +7547,55 @@ end if
 ! C reflected from the base mirror figure (e.g. plane), *not* the error 
 ! C surface specified.
 
-     	DO 300 I=1,3
-     	   CALL SURFACE (PPOUT,P_TRUE,VTEMP,SURFERR)
+        !DO 300 I=1,3
+        DO I=1,3
+           CALL SURFACE (PPOUT,P_TRUE,VTEMP,SURFERR)
            ! srio@esrf.eu changed 20131120
            !IF (SURFERR.EQ.-9) THEN
            IF (SURFERR.LT.0) THEN
 ! C	   	WRITE(6,*)'SURFERR = ',SURFERR
-                !print *,"MIRROR: Warning: Unable to get interpolated coordinates."
-                !print *,"                 ray number: ",itik," , Error code: ",surferr
+                if (shadow3_verbose .eq. 1) then 
+                    print *,"MIRROR: Warning: Unable to get interpolated coordinates."
+                    print *,"                 ray number: ",itik," , Error code: ",surferr
+                end if 
                 !RAY(10,ITIK) = -9
                 RAY(10,ITIK) = SURFERR
+                go to 301
            END IF
 ! C
 ! C Evaluate now the intersection of the incoming beam with a plane 
 ! C tangent to the TRUE surface in P_TRUE.
 ! C
-     	   CALL  DOT   		( VTEMP, VVIN, T_1)
-     	   CALL  VECTOR 	( P_START, P_TRUE, P_TEMP)
-     	   CALL  DOT		( P_TEMP, VTEMP, T_2)
+           CALL  DOT   ( VTEMP, VVIN, T_1)
+           CALL  VECTOR ( P_START, P_TRUE, P_TEMP)
+           CALL  DOT ( P_TEMP, VTEMP, T_2)
 ! C
-     	   TPAR	 = T_2/T_1
+           TPAR = T_2/T_1
 ! C
-     	   STEMP(1)	=   P_START(1) + TPAR*VVIN(1)	! 1st approx
-     	   STEMP(2)	=   P_START(2) + TPAR*VVIN(2)	!
-     	   STEMP(3)	=   P_START(3) + TPAR*VVIN(3)	!
+           STEMP(1) =   P_START(1) + TPAR*VVIN(1) ! 1st approx
+           STEMP(2) =   P_START(2) + TPAR*VVIN(2) !
+           STEMP(3) =   P_START(3) + TPAR*VVIN(3) !
 ! C
 ! C Computes ideal surface position above former approximation
 ! C
-     	  IF (I.NE.3) THEN
-	    IFLAG	= -1
-     	    CALL	INTERCEPT ( STEMP, Z_VRS, T_2, IFLAG)
-     	    PPOUT(1)  =   STEMP(1)
-     	    PPOUT(2)  =   STEMP(2)
-     	    PPOUT(3)  =   STEMP(3) + T_2			
-     	  END IF
-300	   CONTINUE
-     	  PPOUT(1) = STEMP(1)
-     	   PPOUT(2) = STEMP(2)
-     	    PPOUT(3) = STEMP(3)
-     	  VNOR(1)  = VTEMP(1)
-     	   VNOR(2)  = VTEMP(2)
-     	    VNOR(3)  = VTEMP(3)
-     	  CALL NORM	(VNOR, VNOR)
-     	ELSE
+          IF (I.NE.3) THEN
+            IFLAG = -1
+            CALL INTERCEPT ( STEMP, Z_VRS, T_2, IFLAG)
+            PPOUT(1)  =   STEMP(1)
+            PPOUT(2)  =   STEMP(2)
+            PPOUT(3)  =   STEMP(3) + T_2
+          END IF
+        END DO 
+!300	   CONTINUE
+
+        PPOUT(1) = STEMP(1)
+         PPOUT(2) = STEMP(2)
+          PPOUT(3) = STEMP(3)
+        VNOR(1)  = VTEMP(1)
+         VNOR(2)  = VTEMP(2)
+          VNOR(3)  = VTEMP(3)
+        CALL NORM     (VNOR, VNOR)
+        ELSE   !non-ripple
 ! C
 ! C Computes the normal for the ideal surface. The normal (gradient) is 
 ! C defined as 'outward' for a concave surface, in our case it will be 
@@ -7604,13 +7610,15 @@ end if
 ! C
 ! C                                         -Z   for a refractor
 ! C
-	  CALL NORMAL (PPOUT,VNOR)
-     	  CALL NORM	(VNOR, VNOR)
+          CALL NORMAL (PPOUT,VNOR)
+          CALL NORM (VNOR, VNOR)
 ! C
 ! C Then the following test will insure that the normal is always UPWARD
 ! C
-     	  IF (F_CONVEX.EQ.0)  CALL SCALAR (VNOR,-1.0D0,VNOR)
-     	END IF
+          IF (F_CONVEX.EQ.0)  CALL SCALAR (VNOR,-1.0D0,VNOR)
+        END IF  !ripple/non-ripple
+
+301     continue
 ! C
 ! C COMPUTES THE PHASE
 ! C

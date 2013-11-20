@@ -66,5 +66,7 @@ module shadow_globaldefinitions
     real(kind=skr), parameter :: tocm =   12398.4192920042D-8
     real(kind=skr), parameter :: toangs = 12398.4192920042
 
+    ! for debugging purposes, set this to 1 to get a verbose output
+    integer(kind=ski), public :: shadow3_verbose = 0
 
 end module shadow_globaldefinitions
