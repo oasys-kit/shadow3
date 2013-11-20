@@ -68,7 +68,7 @@ COMPILEOPT=-D_COMPILE4NIX
 #
 FC = gfortran
 STATIC = -static
-#STATIC = -static -static-libgfortran -static-libgcc
+STATIC = -static -static-libgfortran -static-libgcc
 FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 LINKFLAGS = $(32BITS) $(STATIC)
 
