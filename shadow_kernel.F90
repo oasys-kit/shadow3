@@ -3710,11 +3710,11 @@ IF (FMIRR.NE.10) CCC=0.0D0
 ! C
 ! C Computes the parabola 
 ! C
-     	IF (F_SIDE.EQ.0) THEN
+     	IF (F_SIDE.EQ.0) THEN  ! image is at infinity
      	  IF (F_EXT.EQ.0)	PARAM	=   2*SSOUR*COSTHE**2
      		YCEN	= - SSOUR*SINTHE**2
      		ZCEN	= - 2*SSOUR*SINTHE*COSTHE
-     	ELSE
+     	ELSE  ! source is at infinity
      	  IF (F_EXT.EQ.0)	PARAM	=   2*SIMAG*COSTHE**2
      		YCEN	= - SIMAG*SINTHE**2
      		ZCEN	= - 2*SIMAG*SINTHE*COSTHE
@@ -8168,6 +8168,20 @@ end if
      		CALL	NORM	(VTAN,VTAN)
      		G_MODR	=   G_MOD
 	ELSE IF (F_RULING.EQ.5) THEN
+            !--------------------
+            ! Ruben added for VLS grating phase shift
+            IF (F_RUL_ABS.EQ.0) then
+                DIST = ABS(PPOUT(2))
+            else
+                DIST = PPOUT(2)
+            end If
+            PHASE(1,ITIK) = PHASE(1,ITIK) + TWOPI*ORDER*PPOUT(2)*( Ruling &
+                + DIST * RUL_A1 &
+                + DIST**2 * RUL_A2 &
+                + DIST**3 * RUL_A3)/RAY(11,ITIK)
+            ! End Ruben added for VLS grating
+            !--------------------
+
      		CALL	CROSS	(VNOR,X_VRS,VTAN)
      		CALL	NORM	(VTAN,VTAN)
 ! C
@@ -9316,479 +9330,404 @@ End Subroutine trace_step
 !c---
 SUBROUTINE INPUT_OE (I_OENUM,iTerminate)
 
-        !todo remove implicits
-	!implicit real(kind=skr) (a-e,g-h,o-z)
-	!implicit integer(kind=ski)        (f,i-n)
+implicit none
 
-        integer(kind=ski), intent(in) :: I_OENUM
-        integer(kind=ski), intent(out):: iTerminate
-        integer(kind=ski)             :: I_MIR,IVERB,F_PLANES,I,IDUMM
-        character(len=sklen) ::  TEXT
-        character(len=80)  ::  MSSG,MSSG2
-!!     	CHARACTER*80	MSSG,MSSG2,TEXT,RSTRING
-!!	CHARACTER*132 	VERSION
-!c
-	iTerminate=0
-     	WRITE(6,*)'Call to INPUT_OE'
-     	MSSG (1:40) = '--------------------------------- S H A '
-        MSSG (41:80)= 'D O W  -------------------------------  '
-     	WRITE (6,'(1X,A)')  trim(MSSG)
-!c
-!c Get the data file path using either SHADOW$DATA or Unix SHADOW_DATA_DIR
-!c environment variable. Also, check for existence in the routine itself.
-!c
-!	IFLAG = 1
-!	CALL DATAPATH ('VERSION', VERSION, IFLAG) 
-!	IF (IFLAG.NE.0) THEN
-!	    CALL LEAVE ('INPUT_OE', 'VERSION file not found', IFLAG)
-!	END IF
-!    	OPEN (11, FILE=VERSION, STATUS='OLD')
-!     	READ (11,*) I1,I1,I1
-!     	READ (11,'(1X,A)') MSSG2
-!     	CLOSE(11)
-        !MSSG2 = "Shadow3.0alpha0.1"
-        
-     	!WRITE (6,'(1X,A)') trim(MSSG2)
-	IF (I_OENUM.EQ.1) THEN
-	  WRITE(6,*)' '
-     	  WRITE(6,*)'When prompted for a yes/no answer, you may enter:'
-     	  WRITE(6,*)'for   YES  answer      Y*, y*, 1*'
-     	  WRITE(6,*)'for   NO   answer      anything else'
-	  WRITE(6,*)' '
-	END IF
-     	WRITE (6,2222) I_OENUM
-2222	FORMAT (1X,/,1X,'Defining Optical Element: ', I2)
-     	I_MIR	=   I_OENUM
-     	TEXT	=   RSTRING('Continue ? [ EXIT to terminate OS ] ')
-     	IF (TEXT(1:5).EQ.'EXIT'.OR.TEXT(1:5).EQ.'exit') THEN
-     	  print *,''
-     	  print *,'End of session'
-     	  print *,''
-	  iTerminate=1
-     	  !STOP
-          RETURN
-     	END IF
-     	WRITE (6,'(1X,///)')
-     	IVERB = IYES ('Do you want a verbose [ 1 ] or terse [ 0 ] output ?')
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'You may save disk space by not writing out the ', &
+integer(kind=ski), intent(in) :: I_OENUM
+integer(kind=ski), intent(out):: iTerminate
+integer(kind=ski)             :: I_MIR,IVERB,F_PLANES,I,IDUMM
+character(len=sklen) ::  TEXT
+character(len=80)  ::  MSSG,MSSG2
+
+iTerminate=0
+WRITE(6,*)'Call to INPUT_OE'
+MSSG (1:40) = '--------------------------------- S H A '
+MSSG (41:80)= 'D O W  -------------------------------  '
+WRITE (6,'(1X,A)')  trim(MSSG)
+IF (I_OENUM.EQ.1) THEN
+    WRITE(6,*)' '
+    WRITE(6,*)'When prompted for a yes/no answer, you may enter:'
+    WRITE(6,*)'for   YES  answer      Y*, y*, 1*'
+    WRITE(6,*)'for   NO   answer      anything else'
+    WRITE(6,*)' '
+END IF
+WRITE (6,2222) I_OENUM
+2222  FORMAT (1X,/,1X,'Defining Optical Element: ', I2)
+I_MIR  =   I_OENUM
+TEXT  =   RSTRING('Continue ? [ EXIT to terminate OS ] ')
+IF (TEXT(1:5).EQ.'EXIT'.OR.TEXT(1:5).EQ.'exit') THEN
+    print *,''
+    print *,'End of session'
+    print *,''
+    iTerminate=1
+    !STOP
+    RETURN
+END IF
+WRITE (6,'(1X,///)')
+
+
+IVERB = IYES ('Do you want a verbose [ 1 ] or terse [ 0 ] output ?')
+IF (IVERB.EQ.1) THEN
+    WRITE(6,*)'You may save disk space by not writing out the ', &
       'intermediate STAR or MIRR data files. In general you will not', &
       'need them unless you have specific needs (footprints, etc.) '
-     	END IF
-     	WRITE(6,*)' '
-     	WRITE(6,*)'Files to write out. Options: '
-     	WRITE(6,*)'All............................ [ 0 ] '
-     	WRITE(6,*)'Mirror only.....................[ 1 ] '
-     	WRITE(6,*)'Image at CP only................[ 2 ] '
-     	WRITE(6,*)'None............................[ 3 ] '
-     	FWRITE = IRINT (' Then ? ')
-!**---------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+END IF
+WRITE(6,*)' '
+WRITE(6,*)'Files to write out. Options: '
+WRITE(6,*)'All............................ [ 0 ] '
+WRITE(6,*)'Mirror only.....................[ 1 ] '
+WRITE(6,*)'Image at CP only................[ 2 ] '
+WRITE(6,*)'None............................[ 3 ] '
+FWRITE = IRINT (' Then ? ')
+WRITE(6,*)
 
 !**---------------------------------------------------------------------
-     	IF (IVERB.EQ.1) THEN
-print *,'Let''s define the optical or central axis of the system for this particular    '
-print *,'optical element. By this I mean a "virtual" line that runs throughout the   '
-print *,'optical system. Along this line are located the "continuation" planes, where'
-print *,'the OS is subdivided in the individual OE. This line does not have to coincide'
-print *,'with the true optical axis, as it is used mainly for bookkeeping the data,    '
-print *,'but it helps greatly in the data analysis if this identity is preserved as    '
-print *,'everything in the program is referred to it. Once established, you still have '
-print *,'complete freedom of "moving" around the mirrors. In the case of a grating,  '
-print *,'you will have several choices. The program may override your specifications   '
-print *,'for the central axis and locate the source and image at the ‘‘best’’ position.'
-print *,'You will be prompted later for this option. It is recommended to use CM as    '
-print *,'units. This is not critical for most cases, but it is in the case of          '
-print *,'diffraction elements.                                                         '
+IF (IVERB.EQ.1) THEN
+    print *,'Let''s define the optical or central axis of the system for this particular    '
+    print *,'optical element. By this I mean a "virtual" line that runs throughout the   '
+    print *,'optical system. Along this line are located the "continuation" planes, where'
+    print *,'the OS is subdivided in the individual OE. This line does not have to coincide'
+    print *,'with the true optical axis, as it is used mainly for bookkeeping the data,    '
+    print *,'but it helps greatly in the data analysis if this identity is preserved as    '
+    print *,'everything in the program is referred to it. Once established, you still have '
+    print *,'complete freedom of "moving" around the mirrors. In the case of a grating,  '
+    print *,'you will have several choices. The program may override your specifications   '
+    print *,'for the central axis and locate the source and image at the ‘‘best’’ position.'
+    print *,'You will be prompted later for this option. It is recommended to use CM as    '
+    print *,'units. This is not critical for most cases, but it is in the case of          '
+    print *,'diffraction elements.                                                         '
+END IF
 
+WRITE(6,*)'Optical Element definition:'
+T_INCIDENCE = RNUMBER ('Incidence Angle ? ')
+T_SOURCE    = RNUMBER ('Source Distance ? ')
+T_REFLECTION= RNUMBER ('Reflection Angle? ')
+T_IMAGE     = RNUMBER ('Image Distance  ? ')
+F_REFRAC    = IRINT   ('Reflector [ 0 ] or refractor [ 1 ] ? ')
+!**---------------------------------------------------------------------
+WRITE(6,*)
+!**---------------------------------------------------------------------
 
-!     	WRITE(6,*)	&
-!' Let''s define the optical or central axis of the system' &
-!,'for this particular optical element.' &
-!,'	By this I mean a "virtual" line that runs throughout' &
-!,'the optical system. Along this line are located the ' &
-!,'"continuation" planes, where the OS is subdivided in the' &
-!,'individual OE. This line does not have to coincide with the' &
-!,'true optical axis, as it is used mainly for bookeeping the' &
-!,'data, but it helps greatly in the data analysis if this' &
-!,'identity is preserved as everything in the program is referred' &
-!,'to it.' &
-!,'	Once established, you still have complete freedom of' &
-!,'"moving" around the mirrors.' &
-!,' ' &
-!,'In the case of a grating, you will have several choices. The ' &
-!,'program may override your specifications for the central axis ' &
-!,'and locate the source and image at the "best" position. ' &
-!,'You will be prompted later for this option.'
-!
-!    	WRITE(6,*) &
-!     'It is recommended to use CM as units. This is not critical for', &
-!     ' most cases, but it is in the case of diffraction elements.'
-     	END IF
-     	 WRITE(6,*)'Optical Element definition:'
-     	T_INCIDENCE = RNUMBER ('Incidence Angle ? ')
-     	T_SOURCE    = RNUMBER ('Source Distance ? ')
-     	T_REFLECTION= RNUMBER ('Reflection Angle? ')
-     	T_IMAGE     = RNUMBER ('Image Distance  ? ')
-     	F_REFRAC    = IRINT   ('Reflector [ 0 ] or refractor [ 1 ] ? ')
-!**---------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
-!**---------------------------------------------------------------------
-!c 
-!c        IF (IVERB.EQ.1) THEN
-!c        WRITE(6,*)'You can store the angle between the ray and ',
-!c     $   'mirror normal vector '
-!c        END IF
-!c 
-!c        F_INC_MNOR_ANG =  IYES('Store incident angle information?')
-!c 
-!c
 !c------------------------------------------------------------
 !c Segmented Mirror  question
 !c Added by G.J. 4/17/93
 !c
+IF (IVERB.EQ.1) THEN
+    WRITE(6,*)'A segmented mirror is formed by M by N independent  mirrors'
+END IF
+ 
+F_SEGMENT = IYES('Is this a segmented mirror system?')
+ 
+IF (F_SEGMENT.EQ.1) THEN  ! start block if-segmented
+    FILE_SEGMENT = RSTRING ('File describing the orientation of the mirrors?')
+    FILE_SEGP = RSTRING ('File with the polynomial describing the mirror?')
+    WRITE(6,*)'Size and  number of the mirrors ?'
+    SEG_LENX =RNUMBER(' x-length ?')
+    SEG_LENY =RNUMBER(' y-length ?')
+    !c       type *,'seg length',seg_lenx,seg_leny
+    ISEG_XNUM =IRINT(' Number of rows(x- odd integer) ?')
+    ISEG_YNUM =IRINT(' Number of columns(y- odd integer) ?')
+    FMIRR = 5
+ELSE
+    !c
+    !c------------------------------------------------------------
+    !c KOMAKOFU  question
+    !c Added by G.J. 8/7/92
+    !c
+    IF (IVERB.EQ.1) THEN
+        WRITE(6,*)'Kumakhov lens are formed from tube arrays '
+        WRITE(6,*)'their packing pattern are Wigner-Seitz type cell.'
+        WRITE(6,*)'A capillary would be the central tube of a kumakhov lens.'
+    END IF
+    F_KOMA = IYES('Is this a Kumakhov system?')
+    
+    IF (F_KOMA.EQ.1) THEN  !<koma>
+        !c	   F_INC_MNOR_ANG = 0
+           
         IF (IVERB.EQ.1) THEN
-        WRITE(6,*)'A segmented mirror is formed by M by N independent  mirrors'
+           WRITE(6,*) 'For multiple reflection calculations, you may'
+           WRITE(6,*) 'want to store the intercepts of each bounce.'
         END IF
- 
-        F_SEGMENT = IYES('Is this a segmented mirror system?')
- 
-        IF (F_SEGMENT.EQ.1) THEN
-        FILE_SEGMENT = RSTRING ('File describing the orientation of the mirrors?')
- 
-        FILE_SEGP = RSTRING ('File with the polynomial describing the mirror?')
- 
-        WRITE(6,*)'Size and  number of the mirrors ?'
-        SEG_LENX =RNUMBER(' x-length ?')
-        SEG_LENY =RNUMBER(' y-length ?')
- 
-!c       type *,'seg length',seg_lenx,seg_leny
- 
-        ISEG_XNUM =IRINT(' Number of rows(x- odd integer) ?')
-        ISEG_YNUM =IRINT(' Number of columns(y- odd integer) ?')
- 
-        FMIRR = 5
+        F_KOMA_BOUNCE = IYES('Store (X,Y,Z) for each bounce? ')
+        
+        IF (IVERB.EQ.1) THEN
+            WRITE(6,*) 'Normally, the tube radii are specified as r(z).'
+            WRITE(6,*) 'You may also specify r(z)^2.'
+        END IF
+        F_KOMA_CA = IYES ('Specify as r(z)^2 ? (Y/N) ')
+        
+        IF (F_KOMA_CA.NE.1) THEN
+        
+            IF (IVERB.EQ.1) THEN
+                WRITE(6,*)'Modified means that you could change each ', &
+                  'tube length as a function of position.'
+            END IF
+            F_EXIT_SHAPE = IYES('B: Is  this a modified exit plane?')
+            !c	      F_EXIT_SHAPE = 0
+            FILE_KOMA= RSTRING('File with the parameters?')
         ELSE
-
-!c
-!c------------------------------------------------------------
-!c KOMAKOFU  question
-!c Added by G.J. 8/7/92
-!c
-
-	IF (IVERB.EQ.1) THEN
-	WRITE(6,*)'Kumakhov lens are formed from tube arrays '
-    WRITE(6,*)'their packing pattern are Wigner-Seitz type cell.'
-	WRITE(6,*)'A capillary would be the central tube of a kumakhov lens.'
+            FILE_KOMA_CA = RSTRING('File with the parameters? ')
+            F_EXIT_SHAPE = 0
         END IF
-
-	F_KOMA = IYES('Is this a Kumakhov system?')
-
-	IF (F_KOMA.EQ.1) THEN
-!c	   F_INC_MNOR_ANG = 0
-	   
-	   IF (IVERB.EQ.1) THEN
-	   WRITE(6,*) 'For multiple reflection calculations, you may'
-       WRITE(6,*) 'want to store the intercepts of each bounce.'
-	   END IF
-	   F_KOMA_BOUNCE = IYES('Store (X,Y,Z) for each bounce? ')
-
-	   IF (IVERB.EQ.1) THEN
-	   WRITE(6,*) 'Normally, the tube radii are specified as r(z).'
-	   WRITE(6,*) 'You may also specify r(z)^2.'
-	   END IF
-	   F_KOMA_CA = IYES ('Specify as r(z)^2 ? (Y/N) ')
-
-	   IF (F_KOMA_CA.NE.1) THEN
-
-          IF (IVERB.EQ.1) THEN
-             WRITE(6,*)'Modified means that you could change each ', &
-               'tube length as a function of position.'
-          END IF
-          F_EXIT_SHAPE = IYES('B: Is  this a modified exit plane?')
-
-!c	      F_EXIT_SHAPE = 0
-	      FILE_KOMA= RSTRING('File with the parameters?')
-	   ELSE
-	      FILE_KOMA_CA = RSTRING('File with the parameters? ')
-	      F_EXIT_SHAPE = 0
-	   END IF
-
-	   FMIRR = 5
-
-	ELSE
-!c
-!c------------------------------------------------------------************
-!c Facet question
-!c Added by G.J. 5/12/92
-!c
-
-	IF (IVERB.EQ.1) THEN
-	 WRITE(6,*) 'Compound mirrors ( or lenses) are formed'
-     WRITE(6,*) 'by several smaller mirrors ( facets) combined together.'
-	END IF
+        
+        FMIRR = 5
+        
+    ELSE  !<koma>
+        !c
+        !c------------------------------------------------------------************
+        !c Facet question
+        !c Added by G.J. 5/12/92
+        !c
+        
+        IF (IVERB.EQ.1) THEN
+           WRITE(6,*) 'Compound mirrors ( or lenses) are formed'
+           WRITE(6,*) 'by several smaller mirrors ( facets) combined together.'
+        END IF
         F_FACET = IYES('A: Is this mirror faceted [Y/N] ?')
-	IF (F_FACET.EQ.1) THEN
-	FILE_FAC = RSTRING &
-      	  ('B: File with the polynomial describing the facet?')
-	IF (IVERB.EQ.1) THEN
-	WRITE(6,*) 'We need to define which side of the surface'
-    WRITE(6,*) 'to use (see demo for further explanation).'
+        IF (F_FACET.EQ.1) THEN
+            FILE_FAC = RSTRING ('B: File with the polynomial describing the facet?')
+            IF (IVERB.EQ.1) THEN
+                WRITE(6,*) 'We need to define which side of the surface'
+                WRITE(6,*) 'to use (see demo for further explanation).'
+            END IF
+            F_POLSEL=0
+            WRITE(6,*)' 3      closest'
+            WRITE(6,*)' 2      ...'
+            WRITE(6,*)' 1      ...'
+            WRITE(6,*)' 4      farthest'
+            F_POLSEL = IRINT('Choice[1-4]?')
+            WRITE(6,*)'Size of the Facet?'
+            RFAC_LENX =RNUMBER(' x-length ?')
+            RFAC_LENY =RNUMBER(' y-length ?')
         END IF
-        F_POLSEL=0
-	WRITE(6,*)' 3      closest'
-	WRITE(6,*)' 2      ...'
-	WRITE(6,*)' 1      ...'
-	WRITE(6,*)' 4      farthest'
-	F_POLSEL = IRINT('Choice[1-4]?')
-	WRITE(6,*)'Size of the Facet?'
-	RFAC_LENX =RNUMBER(' x-length ?')
-	RFAC_LENY =RNUMBER(' y-length ?')
-	END IF
-
-     	IF (IVERB.EQ.1) THEN
-	 IF(F_FACET.EQ.1) THEN
-	  WRITE(6,*)'Choose the baseline for facet'
-         END IF
-!     	WRITE(6,*) &
-!      'Lets define the mirror. I may compute its parameters, like the' &
-!      ,'radius or the axes. This will not affect the rest of the calcu' &
-!      ,'lations; all the geometrical parameters may be modified later.' &
-!      ,'Or, you may wish to specify the mirror parameters yourself.'
-print *,''
-print *,'Lets define the mirror. I may compute its parameters, like the radius or the '
-print *,'axes. This will not affect the rest of the calculations; all the geometrical '
-print *,'parameters may be modified later. Or, you may wish to specify the mirror     '
-print *,'parameters yourself.                                                         '
-
-                                               
-	WRITE (6,30)
-30    FORMAT (//,1X,'What kind of surface are we dealing with ?',/,1X,&
-        'spherical    = 1',/,1X,&
-        'elliptical   = 2',/,1X,&
-        'toroidal     = 3',/,1X,&
-        'paraboloid   = 4',/,1X,&
-        'plane        = 5',/,1X,&
-        'Codling slit = 6',/,1X,&
-        'hyperbolical = 7',/,1X,&
-        'cone	      = 8',/,1X,&
-        'polynomial   = 9',/)
-     	END IF
-     	FMIRR	=   IRINT ('Mirror surface [ 1-9] ? ')
-       	IF (FMIRR.NE.9) THEN
-     	 IF (FMIRR.EQ.4) THEN
-     	WRITE(6,*)'Paraboloid Selected.'
-     	WRITE(6,*)'Enter 0 (1) if the image (source) is at infinity.'
-        WRITE(6,*)'The inputs for the relative positions are disregarded.'
-     	F_SIDE = IRINT ('Focus location ? ')
-	 ELSE IF (FMIRR.EQ.3) THEN
-	IF (F_FACET.EQ.1) THEN
-	  WRITE(6,*)'In facet, only selection 0 has been developed'
-      WRITE(6,*)'Do not use Angle=0 0 The R_MAJ will be 0'
-	END IF
-
-	WRITE(6,*)'Toroidal Selected.'
-	WRITE(6,*)'Enter 0, if mirror pole is at the lower outer '//&
-      'torus (usual case)'
-	WRITE(6,*)'      1,                          lower inner'
-	WRITE(6,*)'      2,                          upper inner'      
-	WRITE(6,*)'      3,                          upper outer'
-	F_TORUS	= IRINT ('Mirror pole location ? ')
-     	 END IF
-	 IF (FMIRR.EQ.8) THEN
-	  F_EXT = 1
-	 ELSE IF (FMIRR.NE.5.AND.FMIRR.NE.6) THEN
-	  F_EXT = IYES ('Do you want to specify the mirror parameters ?')
-	 END IF
-     	  FCYL 	= IYES ('Is the mirror Cylindrical ? ')
-     	 IF (FCYL.EQ.1) THEN
-     	   CIL_ANG = RNUMBER ('Angle of cylinder axis from x axis [ 0 ] ?')
-     	 END IF
-       	ELSE
-       	FILE_MIR = RSTRING ('File with polynomial coefficients ? ')
-       	END IF
-
-!c
-!c end of the Komakofu IF block
-!c
-	END IF
-!c
-!c end of the segmented mirror IF block
-!c
+        
+        IF (IVERB.EQ.1) THEN
+            IF(F_FACET.EQ.1) THEN
+                WRITE(6,*)'Choose the baseline for facet'
+            END IF
+            print *,''
+            print *,'Lets define the mirror. I may compute its parameters, like the radius or the '
+            print *,'axes. This will not affect the rest of the calculations; all the geometrical '
+            print *,'parameters may be modified later. Or, you may wish to specify the mirror     '
+            print *,'parameters yourself.                                                         '
+        
+                                                       
+            WRITE (6,30)
+        30  FORMAT (//,1X,'What kind of surface are we dealing with ?',/,1X,&
+                'spherical    = 1',/,1X,&
+                'elliptical   = 2',/,1X,&
+                'toroidal     = 3',/,1X,&
+                'paraboloid   = 4',/,1X,&
+                'plane        = 5',/,1X,&
+                'Codling slit = 6',/,1X,&
+                'hyperbolical = 7',/,1X,&
+                'cone	      = 8',/,1X,&
+                'polynomial   = 9',/)
         END IF
+        
+        FMIRR = IRINT ('Mirror surface [ 1-9] ? ')
+        IF (FMIRR.NE.9) THEN
+            IF (FMIRR.EQ.4) THEN 
+                WRITE(6,*)'Paraboloid Selected.'
+                WRITE(6,*)'Enter 0 (1) if the image (source) is at infinity.'
+                WRITE(6,*)'The inputs for the relative positions are disregarded.'
+                F_SIDE = IRINT ('Focus location ? ')
+            ELSE IF (FMIRR.EQ.3) THEN
+                IF (F_FACET.EQ.1) THEN
+                      WRITE(6,*)'In facet, only selection 0 has been developed'
+                      WRITE(6,*)'Do not use Angle=0 0 The R_MAJ will be 0'
+                END IF
+                WRITE(6,*)'Toroidal Selected.'
+                WRITE(6,*)'Enter 0, if mirror pole is at the lower outer '//&
+                    'torus (usual case)'
+                WRITE(6,*)'      1,                          lower inner'
+                WRITE(6,*)'      2,                          upper inner'      
+                WRITE(6,*)'      3,                          upper outer'
+                F_TORUS = IRINT ('Mirror pole location ? ')
+            END IF
+            IF (FMIRR.EQ.8) THEN
+                F_EXT = 1
+            ELSE IF (FMIRR.NE.5.AND.FMIRR.NE.6) THEN
+                F_EXT = IYES ('Do you want to specify the mirror parameters ?')
+            END IF
+            FCYL = IYES ('Is the mirror Cylindrical ? ')
+            IF (FCYL.EQ.1) THEN
+                CIL_ANG = RNUMBER ('Angle of cylinder axis from x axis [ 0 ] ?')
+            END IF
+        ELSE
+                  FILE_MIR = RSTRING ('File with polynomial coefficients ? ')
+        END IF
+        
+        !c
+        !c end of the Kumakof IF block
+        !c
+    END IF  !<koma>
+    !c
+    !c end of the segmented mirror IF block
+    !c
+END IF  ! end block if-segmented
  
 
-     	FZP = IYES('Is this optical element a Fresnel Zone Plate ? ')
-	IF (FZP.EQ.1) THEN
-	  F_GRATING	= 1
-	ELSE
-     	  F_GRATING=IYES ('Are we dealing with a Grating ? ')
-	END IF
-     	 IF (F_GRATING.EQ.1) THEN
-!**-------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
-!**-------------------------------------------------------------------
-     	IF (FZP.EQ.1) THEN
-     	  WRITE(6,*)' For a Fresnel Zone Plate select the appropriate '//&
-      'HOLOGRAPHIC case.'
-     	END IF
-     	WRITE(6,*)'Type of ruling.'
-     	WRITE(6,*) '0    ruling density constant on the X-Y plane'
-     	WRITE(6,*) '1    for ruling density constant onto the mirror surface.'
-     	WRITE(6,*) '2    for an holographic grating.'
-        WRITE(6,*) '3    for an oriental-fan type'
-	    WRITE(6,*) '4    reserved'
-	    WRITE(6,*) '5    polynomial line density'
-     	F_RULING = IRINT ('Then: ')
-     	  IF (F_RULING.EQ.0.OR.F_RULING.EQ.1) THEN
-     	RULING	=   RNUMBER ('Lines per CM ? ')
-     	  ELSE IF (F_RULING.EQ.2) THEN
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'Hologram Recording Parameters.'
-     	WRITE(6,*)'The angles are positive if the source is on the' &
-      //' side of the Y-axis.'
-     	WRITE(6,*)'"EnS" means Entrance Slit Side Source'
-     	WRITE(6,*)'"Rotation" refers to rotation around Z'
-     	WRITE(6,*)'Distances [ cm! ] and angles [ degrees ] refer ', &
-      'to hologram.'
-     	END IF
-     	HOLO_R1	=  RNUMBER('EnS distance: ')
-     	HOLO_DEL=  RNUMBER('EnS incidence angle:    ')
-     	HOLO_RT1=  RNUMBER('EnS rotation  angle:    ')
-     	HOLO_R2	=  RNUMBER('ExS distance: ')
-     	HOLO_GAM=  RNUMBER('ExS incidence angle:    ')
-     	HOLO_RT2=  RNUMBER('ExS rotation  angle:    ')
-     	HOLO_W  =  RNUMBER('Recording Wavelength [ Angs ] ? ')
-     	WRITE(6,*)'Type of recording sources. We have the choices: '
-     	WRITE(6,*)'Both    SPHERICAL                    0'
-     	WRITE(6,*)'Source  PLANE,     image SPHERICAL   1'
-     	WRITE(6,*)'Source  SPHERICAL, image PLANE       2'
-     	WRITE(6,*)'Source  PLANE,     image PLANE       3'
-     	F_PW	=  IRINT ('Source type [ 0-3 ]. Then ? ')
-     	WRITE(6,*)'The SPHERICAL source can also be specified to be '// &
-      'CYLINDRICAL, with axis perpendicular to recording plane.'
-      	WRITE(6,*)'Use: '
-     	WRITE(6,*)'None   Cylindrical                    0'
-     	WRITE(6,*)'Source Cylindrical, image Spherical   1'
-     	WRITE(6,*)'Source Spherical,   image Cylindrical 2'
-     	WRITE(6,*)'Both   Cylindrical                    3'
-     	F_PW_C	=  IRINT ('Cylindrical [ 0-3 ] ? ')
-     	WRITE(6,*)'Sources REAL/ VIRTUAL: '
-     	WRITE(6,*)'EnS real,    ExS real		0'
-     	WRITE(6,*)'EnS real,    ExS virtual: 	1'
-     	WRITE(6,*)'EnS virtual, ExS real:  	2'
-     	WRITE(6,*)'EnS virtual, ExS virtual 	3'
-     	F_VIRTUAL = IRINT ('Then ? ')
-     	WRITE(6,*)' '
-     	  ELSE IF (F_RULING.EQ.3) THEN
-       	WRITE(6,*)' Position of ruling focus on mirror plane.'
-       	AZIM_FAN = RNUMBER ('Angle from Y axis         [ deg, CCW ] ? ')
-       	DIST_FAN = RNUMBER ('Distance from grating center    [ cm ] ? ')
-       	COMA_FAC = RNUMBER ('Coma correction factor  [ 0 for none ] ? ')
-       	RULING   = RNUMBER ('Line density at grat. cent.   [ l/cm ] ? ')
-	  ELSE IF (F_RULING.EQ.5) THEN
-	WRITE(6,*)'Degree of polynomial is 4 :'
-	WRITE(6,*)'   density = a0 + a1*w + a2*w^2 + a3*w^3 + a4*w^4'
-	WRITE(6,*)'NOTICE : for a0, please enter the LINE DENSITY AT ORIGIN'
-	WRITE(6,*)'units of density is LINES/CM'
-	WRITE(6,*)'Please enter coefficients :'
-	RULING	= RNUMBER ('a0 : ')
-	RUL_A1	= RNUMBER ('a1 : ')
-	RUL_A2	= RNUMBER ('a2 : ')
-	RUL_A3	= RNUMBER ('a3 : ')
-	RUL_A4	= RNUMBER ('a4 : ')
-     	WRITE(6,*)'Use ABSOLUTE [ 0 ] or SIGNED [ 1 ] from origin ? '
-     	F_RUL_ABS = IRINT ('Then ? ')
-	WRITE(6,*)'All set then.'
-     	  END IF
-     	IF (IVERB.EQ.1)  &
-       WRITE(6,*) 'We follow the European convention. NEGATIVE orders are inside.'
-     	ORDER	=  RNUMBER('Diffraction Order ? ')
-     	IF (IVERB.EQ.1) WRITE(6,*) &
-      'Enter 1 if you want me to position the grating at the correct' &
-      //'wavelength, 0 to leave everything as it is.'
-     	F_CENTRAL =  IRINT ('Auto Tuning of Grating [ Y/N ] ? ')
-     	  IF (F_CENTRAL.EQ.1) THEN
-     	IF (IVERB.EQ.1) WRITE(6,*) &
-      'You must then supply the wavelength (or photon energy) at '// &
-      'which you want the grating tuned.'
-        F_PHOT_CENT =  &
-      IRINT ('Energy, in eV, [ 0 ] or wavelength, in Angs., [ 1 ] ? ')
-     	IF (F_PHOT_CENT.EQ.0) PHOT_CENT = RNUMBER ('Photon Energy ? ')
-     	IF (F_PHOT_CENT.EQ.1) R_LAMBDA  = RNUMBER ('Wavelength    ? ')
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*) 'SHADOW recognizes several types of Grating mounts and/or '
-     	WRITE(6,*) 'monochromators. '
-        WRITE(6,*) 'We have several choices, depending on what kind of mount you '
-     	WRITE(6,*) 'are using. They are :'
-     	
-       WRITE(6,*) '	TGM/SEYA  mount (constant included angle).'
-       WRITE(6,*) ' In this case the source/image distances are not changed from'
-       WRITE(6,*) ' the one already specified and the grating is rotated to match'
-       WRITE(6,*) ' the diffraction conditions.'
+FZP = IYES('Is this optical element a Fresnel Zone Plate ? ')
 
-       WRITE(6,*) ' ERG/GRASSHOPPER (constant incidence angle). The image' 
-       WRITE(6,*) ' plane is positioned on the Rowland circle at the appropriate' 
-       WRITE(6,*) ' diffraction angle.'
-       WRITE(6,*) ' '
-       WRITE(6,*) ' CONSTANT INCIDENCE ANGLE and image plane at the' 
-       WRITE(6,*) ' position already specified. Only the diffraction angle is'
-       WRITE(6,*) ' modified.'
-       WRITE(6,*) ' ' 
-       WRITE(6,*) ' CONSTANT DIFFRACTION ANGLE. The incidence angle'
-       WRITE(6,*) ' is modified to match the diffraction conditions. The planes'
-       WRITE(6,*) ' are not moved.'
-       WRITE(6,*) ' ' 
-       WRITE(6,*) ' for a CONSTANT BLAZE mount (Hunter type)'
-      
-     	END IF
-     	WRITE(6,*)'TGM/SEYA    0'
-     	WRITE(6,*)'ERG         1'
-     	WRITE(6,*)'Con Inc Ang 2'
-     	WRITE(6,*)'Con Dif Ang 3'
-     	WRITE(6,*)'Hunter      4'
-     	F_MONO	=   IRINT ('Mount type ? ')
-     	   IF (F_MONO.EQ.4) THEN
-     	BLAZE	=   RNUMBER ('Blaze Angle [ Deg ] ? ')
-     	HUNT_L  =   RNUMBER ('Monochromator Length ? ')
-     	HUNT_H	=   RNUMBER ('Monochr. Height (Distance between Beams) ')
-     	F_HUNT  =   IRINT ('First [ 1 ] or Second [ 2 ] grating ? ')
-     	   END IF
-     	  ELSE
-     	  END IF
-     	END IF
-!**------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
-!**------------------------------------------------------------------
-        IF (F_GRATING.EQ.0) THEN
-        F_CRYSTAL = IYES ('Are we dealing with a crystal [ Y/N ] ? ')
-        IF (F_REFRAC.EQ.1.and.f_crystal.ne.1) THEN     !lens
-!-----
-            print *,' Enter index of refraction in the two media (ONJECT and IMAGE spaces):'
-            print *,'    '
-            print *,' Index of refraction (optical constants) from: '
-            print *,'     0: constant: keyword in both media'
-            print *,'     1: file(from prerefl) in first medium keyboard in next medium'
-            print *,'     2: keyboard in first medium and file (from prerefl) next medium'
-            print *,'     3: file(from prerefl) in both media'
-            print *,'     '
-            f_r_ind = irint('?>')
-            WRITE(6,*)
+IF (FZP.EQ.1) THEN
+    F_GRATING = 1
+ELSE
+    F_GRATING=IYES ('Are we dealing with a Grating ? ')
+END IF
 
-            select case (f_r_ind)
-                case (0) 
+IF (F_GRATING.EQ.1) THEN ! grating
+    WRITE(6,*)
+    !**-------------------------------------------------------------------
+    IF (FZP.EQ.1) THEN
+         WRITE(6,*)' For a Fresnel Zone Plate select the appropriate '//&
+          'HOLOGRAPHIC case.'
+    END IF
+    WRITE(6,*)'Type of ruling.'
+    WRITE(6,*) '0    ruling density constant on the X-Y plane'
+    WRITE(6,*) '1    for ruling density constant onto the mirror surface.'
+    WRITE(6,*) '2    for an holographic grating.'
+    WRITE(6,*) '3    for an oriental-fan type'
+    WRITE(6,*) '4    reserved'
+    WRITE(6,*) '5    polynomial line density'
+    F_RULING = IRINT ('Then: ')
+    IF (F_RULING.EQ.0.OR.F_RULING.EQ.1) THEN
+        RULING =   RNUMBER ('Lines per CM ? ')
+    ELSE IF (F_RULING.EQ.2) THEN
+        IF (IVERB.EQ.1) THEN
+            WRITE(6,*)'Hologram Recording Parameters.'
+            WRITE(6,*)'The angles are positive if the source is on the' &
+              //' side of the Y-axis.'
+            WRITE(6,*)'"EnS" means Entrance Slit Side Source'
+            WRITE(6,*)'"Rotation" refers to rotation around Z'
+            WRITE(6,*)'Distances [ cm! ] and angles [ degrees ] refer ', &
+              'to hologram.'
+        END IF
+        HOLO_R1 =  RNUMBER('EnS distance: ')
+        HOLO_DEL=  RNUMBER('EnS incidence angle:    ')
+        HOLO_RT1=  RNUMBER('EnS rotation  angle:    ')
+        HOLO_R2 =  RNUMBER('ExS distance: ')
+        HOLO_GAM=  RNUMBER('ExS incidence angle:    ')
+        HOLO_RT2=  RNUMBER('ExS rotation  angle:    ')
+        HOLO_W  =  RNUMBER('Recording Wavelength [ Angs ] ? ')
+        WRITE(6,*)'Type of recording sources. We have the choices: '
+        WRITE(6,*)'Both    SPHERICAL                    0'
+        WRITE(6,*)'Source  PLANE,     image SPHERICAL   1'
+        WRITE(6,*)'Source  SPHERICAL, image PLANE       2'
+        WRITE(6,*)'Source  PLANE,     image PLANE       3'
+        F_PW =  IRINT ('Source type [ 0-3 ]. Then ? ')
+        WRITE(6,*)'The SPHERICAL source can also be specified to be '// &
+          'CYLINDRICAL, with axis perpendicular to recording plane.'
+         WRITE(6,*)'Use: '
+        WRITE(6,*)'None   Cylindrical                    0'
+        WRITE(6,*)'Source Cylindrical, image Spherical   1'
+        WRITE(6,*)'Source Spherical,   image Cylindrical 2'
+        WRITE(6,*)'Both   Cylindrical                    3'
+        F_PW_C =  IRINT ('Cylindrical [ 0-3 ] ? ')
+        WRITE(6,*)'Sources REAL/ VIRTUAL: '
+        WRITE(6,*)'EnS real,    ExS real        0'
+        WRITE(6,*)'EnS real,    ExS virtual:    1'
+        WRITE(6,*)'EnS virtual, ExS real:       2'
+        WRITE(6,*)'EnS virtual, ExS virtual     3'
+        F_VIRTUAL = IRINT ('Then ? ')
+        WRITE(6,*)' '
+    ELSE IF (F_RULING.EQ.3) THEN
+        WRITE(6,*)' Position of ruling focus on mirror plane.'
+        AZIM_FAN = RNUMBER ('Angle from Y axis         [ deg, CCW ] ? ')
+        DIST_FAN = RNUMBER ('Distance from grating center    [ cm ] ? ')
+        COMA_FAC = RNUMBER ('Coma correction factor  [ 0 for none ] ? ')
+        RULING   = RNUMBER ('Line density at grat. cent.   [ l/cm ] ? ')
+    ELSE IF (F_RULING.EQ.5) THEN
+        WRITE(6,*)'Degree of polynomial is 4 :'
+        WRITE(6,*)'   density = a0 + a1*w + a2*w^2 + a3*w^3 + a4*w^4'
+        WRITE(6,*)'NOTICE : for a0, please enter the LINE DENSITY AT ORIGIN'
+        WRITE(6,*)'units of density is LINES/CM'
+        WRITE(6,*)'Please enter coefficients :'
+        RULING = RNUMBER ('a0 : ')
+        RUL_A1 = RNUMBER ('a1 : ')
+        RUL_A2 = RNUMBER ('a2 : ')
+        RUL_A3 = RNUMBER ('a3 : ')
+        RUL_A4 = RNUMBER ('a4 : ')
+        WRITE(6,*)'Use ABSOLUTE [ 0 ] or SIGNED [ 1 ] from origin ? '
+        F_RUL_ABS = IRINT ('Then ? ')
+        WRITE(6,*)'All set then.'
+    END IF
+
+
+    IF (IVERB.EQ.1) WRITE(6,*) 'We follow the European convention. NEGATIVE orders are inside.'
+    ORDER    =  RNUMBER('Diffraction Order ? ')
+    IF (IVERB.EQ.1) WRITE(6,*) &
+        'Enter 1 if you want me to position the grating at the correct' &
+           //'wavelength, 0 to leave everything as it is.'
+    F_CENTRAL =  IRINT ('Auto Tuning of Grating [ Y/N ] ? ')
+    IF (F_CENTRAL.EQ.1) THEN
+        IF (IVERB.EQ.1) WRITE(6,*) &
+            'You must then supply the wavelength (or photon energy) at '// &
+            'which you want the grating tuned.'
+        F_PHOT_CENT =  IRINT ('Energy, in eV, [ 0 ] or wavelength, in Angs., [ 1 ] ? ')
+        IF (F_PHOT_CENT.EQ.0) PHOT_CENT = RNUMBER ('Photon Energy ? ')
+        IF (F_PHOT_CENT.EQ.1) R_LAMBDA  = RNUMBER ('Wavelength    ? ')
+        IF (IVERB.EQ.1) THEN
+            WRITE(6,*) 'SHADOW recognizes several types of Grating mounts and/or '
+            WRITE(6,*) 'monochromators. '
+            WRITE(6,*) 'We have several choices, depending on what kind of mount you '
+            WRITE(6,*) 'are using. They are :'
+        
+            WRITE(6,*) '	TGM/SEYA  mount (constant included angle).'
+            WRITE(6,*) ' In this case the source/image distances are not changed from'
+            WRITE(6,*) ' the one already specified and the grating is rotated to match'
+            WRITE(6,*) ' the diffraction conditions.'
+
+            WRITE(6,*) ' ERG/GRASSHOPPER (constant incidence angle). The image' 
+            WRITE(6,*) ' plane is positioned on the Rowland circle at the appropriate' 
+            WRITE(6,*) ' diffraction angle.'
+            WRITE(6,*) ' '
+            WRITE(6,*) ' CONSTANT INCIDENCE ANGLE and image plane at the' 
+            WRITE(6,*) ' position already specified. Only the diffraction angle is'
+            WRITE(6,*) ' modified.'
+            WRITE(6,*) ' ' 
+            WRITE(6,*) ' CONSTANT DIFFRACTION ANGLE. The incidence angle'
+            WRITE(6,*) ' is modified to match the diffraction conditions. The planes'
+            WRITE(6,*) ' are not moved.'
+            WRITE(6,*) ' ' 
+            WRITE(6,*) ' for a CONSTANT BLAZE mount (Hunter type)'
+        END IF
+
+        WRITE(6,*)'TGM/SEYA    0'
+        WRITE(6,*)'ERG         1'
+        WRITE(6,*)'Con Inc Ang 2'
+        WRITE(6,*)'Con Dif Ang 3'
+        WRITE(6,*)'Hunter      4'
+        F_MONO   =   IRINT ('Mount type ? ')
+        IF (F_MONO.EQ.4) THEN
+            BLAZE   =   RNUMBER ('Blaze Angle [ Deg ] ? ')
+            HUNT_L  =   RNUMBER ('Monochromator Length ? ')
+            HUNT_H   =   RNUMBER ('Monochr. Height (Distance between Beams) ')
+            F_HUNT  =   IRINT ('First [ 1 ] or Second [ 2 ] grating ? ')
+        END IF
+    ELSE
+    END IF
+END IF !grating
+!**------------------------------------------------------------------
+WRITE(6,*)
+!**------------------------------------------------------------------
+
+IF (F_GRATING.EQ.0) THEN  !no-grating
+    F_CRYSTAL = IYES ('Are we dealing with a crystal [ Y/N ] ? ')
+    IF (F_REFRAC.EQ.1.and.f_crystal.ne.1) THEN     !lens
+        !-----
+        print *,' Enter index of refraction in the two media (ONJECT and IMAGE spaces):'
+        print *,'    '
+        print *,' Index of refraction (optical constants) from: '
+        print *,'     0: constant: keyword in both media'
+        print *,'     1: file(from prerefl) in first medium keyboard in next medium'
+        print *,'     2: keyboard in first medium and file (from prerefl) next medium'
+        print *,'     3: file(from prerefl) in both media'
+        print *,'     '
+        f_r_ind = irint('?>')
+        WRITE(6,*)
+
+        select case (f_r_ind)
+            case (0) 
                   !WRITE(6,*) 'Enter the index of refraction in OBJECT space:'
                   !R_IND_OBJ = RNUMBER ('Object space: ')
                   !WRITE(6,*) 'Enter the index of refraction in IMAGE space:'
@@ -9799,463 +9738,428 @@ print *,'parameters yourself.                                                   
                        RNUMBER(' Enter attenuation coeff [UserLength^-1] in OBJECT space: ')
                   R_ATTENUATION_IMA = &
                        RNUMBER(' Enter attenuation coeff [UserLength^-1] in IMAGE space: ')
-                case (1) 
+            case (1) 
                   FILE_R_IND_OBJ = rstring(" Enter file (from prerefl) for OBJECT space: ")
                   R_IND_IMA = RNUMBER(' Enter the index of refraction in IMAGE space: ')
                   R_ATTENUATION_IMA = &
                        RNUMBER(' Enter attenuation coeff [UserLength^-1] in IMAGE space: ')
-                case (2) 
+            case (2) 
                   R_IND_OBJ = RNUMBER(' Enter the index of refraction in OBJECT space: ')
                   R_ATTENUATION_OBJ = &
                        RNUMBER(' Enter attenuation coeff [UserLength^-1] in OBJECT space: ')
                   FILE_R_IND_IMA = rstring(" Enter file (from prerefl) for IMAGE space: ")
-                case (3) 
+            case (3) 
                   FILE_R_IND_OBJ = rstring(" Enter file (from prerefl) for OBJECT space: ")
                   FILE_R_IND_IMA = rstring(" Enter file (from prerefl) for IMAGE space: ")
-            end select 
-!-----
-        END IF
+        end select 
+    !-----
+    END IF !lens
 
-     	 IF (F_CRYSTAL.EQ.1) THEN
-     	   WRITE(6,*) 'File containing crystal parameters ?'
-     	   READ	(5,111)	FILE_REFL
-     	   F_MOSAIC = IYES ('Is it a mosaic crystal [ Y/N ] ? ')
-	   if (f_mosaic.eq.1.or.f_refrac.eq.1)  &
-        THICKNESS  = RNUMBER ('What is the crystal thickness [cm] ? ')
-	   IF (F_MOSAIC.EQ.1) THEN
-     	IF (IVERB.EQ.1) THEN 
-          WRITE(6,*) 'I assume that the mosaic crystal small blocks follow a gaussian'
-          WRITE(6,*) 'distribution of a given FWHM spread.This spread must be much'
-          WRITE(6,*) 'larger than the rock curve width. I suposse that the distance'
-          WRITE(6,*) 'between intercepts on the mosaic surface will be larger enough'
-          WRITE(6,*) 'than the small mosaic block size.I use a random seed to gene-'
-          WRITE(6,*) 'rate the gaussian distribution of the blocks around the sur-'
-          WRITE(6,*) 'face normal.I also need the thickness of the whole crystal'
-          WRITE(6,*) '(faces must be parallel) for the reflectivity calculation.'
-          WRITE(6,*) 'Mosaic crystal force us to use cm as unit.'
-       END IF
-	SPREAD_MOS = RNUMBER ('What is the mosaic spread FWHM [deg] ? ')
-	MOSAIC_SEED  = IRINT ('Give me a random seed (integer, 0=get from clock) ? ')
-	   ELSE IF (F_MOSAIC.NE.1) THEN
-     	     F_BRAGG_A = IYES ('Is the crystal asymmetric [ Y/N ] ? ')
-     	     IF (F_BRAGG_A.EQ.1) THEN
-     	IF (IVERB.EQ.1) THEN
-          WRITE(6,*) ' Enter the angle formed by the crystal planes with'
-          WRITE(6,*) ' the crystal surface. Use a positive value if the plane normal'
-          WRITE(6,*) ' lies along the +Y direction (focusing), negative otherwise.'
-     	END IF
-     	       A_BRAGG = RNUMBER('Planes angle [ deg ] ? ')
+    IF (F_CRYSTAL.EQ.1) THEN !crystal
+        WRITE(6,*) 'File containing crystal parameters ?'
+        READ    (5,111)    FILE_REFL
+        F_MOSAIC = IYES ('Is it a mosaic crystal [ Y/N ] ? ')
+        if (f_mosaic.eq.1.or.f_refrac.eq.1) THICKNESS = RNUMBER ('What is the crystal thickness [cm] ? ')
+        IF (F_MOSAIC.EQ.1) THEN ! mosaic=yes
+            IF (IVERB.EQ.1) THEN 
+                WRITE(6,*) 'I assume that the mosaic crystal small blocks follow a gaussian'
+                WRITE(6,*) 'distribution of a given FWHM spread.This spread must be much'
+                WRITE(6,*) 'larger than the rock curve width. I suposse that the distance'
+                WRITE(6,*) 'between intercepts on the mosaic surface will be larger enough'
+                WRITE(6,*) 'than the small mosaic block size.I use a random seed to gene-'
+                WRITE(6,*) 'rate the gaussian distribution of the blocks around the sur-'
+                WRITE(6,*) 'face normal.I also need the thickness of the whole crystal'
+                WRITE(6,*) '(faces must be parallel) for the reflectivity calculation.'
+                WRITE(6,*) 'Mosaic crystal force us to use cm as unit.'
+            END IF
+            SPREAD_MOS = RNUMBER ('What is the mosaic spread FWHM [deg] ? ')
+            MOSAIC_SEED  = IRINT ('Give me a random seed (integer, 0=get from clock) ? ')
+        ELSE IF (F_MOSAIC.NE.1) THEN  ! mosaic-no
+            F_BRAGG_A = IYES ('Is the crystal asymmetric [ Y/N ] ? ')
+            IF (F_BRAGG_A.EQ.1) THEN
+                IF (IVERB.EQ.1) THEN
+                    WRITE(6,*) ' Enter the angle formed by the crystal planes with'
+                    WRITE(6,*) ' the crystal surface. Use a positive value if the plane normal'
+                    WRITE(6,*) ' lies along the +Y direction (focusing), negative otherwise.'
+                END IF
+                A_BRAGG = RNUMBER('Planes angle [ deg ] ? ')
 
-            if (f_refrac.eq.1) then
-          WRITE(6,*) 'For the Laue case: is the beam arriving onto the'
-          WRITE(6,*) ' bragg planes [0] , or under the bragg planes [1] ?'
-              f_planes = iyes(' <?> ')
-              if (f_planes.eq.1) then 
-               order = -1
-              else
-               order = +1
-              end if
-            end if
-
-     	     END IF
-	     F_JOHANSSON = &
-             IYES ('Are we working in Johansson geometry [Y/N] ? ')
-	     IF (F_JOHANSSON.EQ.1) THEN
-     	IF (IVERB.EQ.1) THEN
-          WRITE(*,*) 'Johansson geometry is when you grind a crystal plate with a'
-          WRITE(*,*) 'spherical shape of a given radius (Johansson radius),and then,'
-          WRITE(*,*) 'the crystal is bent again with another different radius'
-          WRITE(*,*) '(surface radius). For the optimal curvature, the surface must'
-          WRITE(*,*) 'lie on the Rowland circle and the Johansson radius should be'
-          WRITE(*,*) 'twice the Rowland circle radius. Both are calculated automati-'
-          WRITE(*,*) 'cally if you have chosen automatic parameters calculation in'
-          WRITE(*,*) 'a spherical shape surface.    '  
-       END IF
-		IF (F_EXT.EQ.1) THEN
-		     R_JOHANSSON = RNUMBER ('Johansson radius  ? ')
-		END IF
-	     END IF
-	  END IF
-     	   F_CENTRAL = IYES ('Automatic Tuning of Crystal [ Y/N ] ?')
-     	  IF (F_CENTRAL.EQ.1) THEN
-     	IF (IVERB.EQ.1) THEN 
-          WRITE(6,*) 'You must then supply the wavelength (or photon energy) at '
-          WRITE(6,*) 'which you want the crystal tuned.'
-        END IF
-        F_PHOT_CENT =  &
-       IRINT ('Energy, in eV, [ 0 ] or wavelength, in Angs., [ 1 ] ? ')
-     	IF (F_PHOT_CENT.EQ.0) PHOT_CENT = RNUMBER ('Photon Energy ? ')
-     	IF (F_PHOT_CENT.EQ.1) R_LAMBDA  = RNUMBER ('Wavelength    ? ')
-!c     	D_SPACING = RNUMBER ('Interplanar Distance [ Angs ] ? ')
-     	  END IF
-     	 END IF
-     	END IF
+                if (f_refrac.eq.1) then
+                    WRITE(6,*) 'For the Laue case: is the beam arriving onto the'
+                    WRITE(6,*) ' bragg planes [0] , or under the bragg planes [1] ?'
+                    f_planes = iyes(' <?> ')
+                    if (f_planes.eq.1) then 
+                        order = -1
+                    else
+                        order = +1
+                    end if
+                end if
+            END IF
+            F_JOHANSSON = IYES ('Are we working in Johansson geometry [Y/N] ? ')
+            IF (F_JOHANSSON.EQ.1) THEN
+                IF (IVERB.EQ.1) THEN
+                    WRITE(*,*) 'Johansson geometry is when you grind a crystal plate with a'
+                    WRITE(*,*) 'spherical shape of a given radius (Johansson radius),and then,'
+                    WRITE(*,*) 'the crystal is bent again with another different radius'
+                    WRITE(*,*) '(surface radius). For the optimal curvature, the surface must'
+                    WRITE(*,*) 'lie on the Rowland circle and the Johansson radius should be'
+                    WRITE(*,*) 'twice the Rowland circle radius. Both are calculated automati-'
+                    WRITE(*,*) 'cally if you have chosen automatic parameters calculation in'
+                    WRITE(*,*) 'a spherical shape surface.    '  
+                END IF
+                IF (F_EXT.EQ.1) THEN
+                    R_JOHANSSON = RNUMBER ('Johansson radius  ? ')
+                END IF
+            END IF
+        END IF !mosaic-end
+        F_CENTRAL = IYES ('Automatic Tuning of Crystal [ Y/N ] ?')
+        IF (F_CENTRAL.EQ.1) THEN
+            IF (IVERB.EQ.1) THEN 
+                WRITE(6,*) 'You must then supply the wavelength (or photon energy) at '
+                WRITE(6,*) 'which you want the crystal tuned.'
+            END IF
+            F_PHOT_CENT =  IRINT ('Energy, in eV, [ 0 ] or wavelength, in Angs., [ 1 ] ? ')
+            IF (F_PHOT_CENT.EQ.0) PHOT_CENT = RNUMBER ('Photon Energy ? ')
+            IF (F_PHOT_CENT.EQ.1) R_LAMBDA  = RNUMBER ('Wavelength    ? ')
+        END IF  
+    END IF !crystal
+END IF  ! no-grating
 !c
 !c---------------------------------------------------------------------
 !c
-     	F_CONVEX =  IYES ('Is the mirror convex [ Y/N ] ? ')
-     	IF (F_REFRAC.EQ.0) THEN
-	IF (IVERB.EQ.1) THEN
-      WRITE(6,*) 'Reflectivity of Surface. SHADOW may solve the Fresnel equations locally. '
-      WRITE(6,*) 'Available options:'
-      WRITE(6,*) 'No reflectivity              .......... 0 '
-      WRITE(6,*) 'Full polarization dependence .......... 1 '
-      WRITE(6,*) 'No        "           "      .......... 2 '
+F_CONVEX =  IYES ('Is the mirror convex [ Y/N ] ? ')
+IF (F_REFRAC.EQ.0) THEN
+    IF (IVERB.EQ.1) THEN
+        WRITE(6,*) 'Reflectivity of Surface. SHADOW may solve the Fresnel equations locally. '
+        WRITE(6,*) 'Available options:'
+        WRITE(6,*) 'No reflectivity              .......... 0 '
+        WRITE(6,*) 'Full polarization dependence .......... 1 '
+        WRITE(6,*) 'No        "           "      .......... 2 '
     END IF
-     	F_REFLEC  =  IRINT ('Reflectivity mode [ 0,1,2 ] ? ')
-     	IF (F_REFLEC.NE.0) THEN
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
-     	IF (IVERB.EQ.1) THEN
-     	  WRITE(6,*) &
-      'Optical constants from file  ( for multi-line source ) ..... 0',&
-      'Optical constants from keyboard  (single-line source ) ..... 1',&
-      'Define multilayer from file                            ..... 2'
-     	END IF
-     	F_REFL = IRINT  &
-      	('Optical Constant Source: [file=0,tt:=1], multilayer [2] ?')
-	   IF (F_REFL.EQ.1) THEN
-     	WRITE(6,*) &
-      'Please enter the complex dielectric constant. ', &
-      'The form I use is :', &
-      '           Epsilon  = ( 1 - ALPHA) + i*GAMMA'
-	ALFA = RNUMBER ('ALPHA = ')
-     	GAMMA= RNUMBER ('GAMMA = ')
-     	   ELSE IF (F_REFL.EQ.0) THEN
-     	WRITE(6,*) 'File with optical constants ?'
-     	READ (5,111)	FILE_REFL
-     	   ELSE
-	WRITE(6,*) &
-      'File with thicknesses and refractive indices of multilayer ?'
-	READ (5,111)	FILE_REFL
-	F_THICK = IYES  &
-      ('Vary thicknesses as the cosine of the angle from the pole? ')
-	   END IF 
-     	ELSE
-     	END IF
-	END IF
+    F_REFLEC  =  IRINT ('Reflectivity mode [ 0,1,2 ] ? ')
+    IF (F_REFLEC.NE.0) THEN
+        WRITE(6,*)
+       IF (IVERB.EQ.1) THEN
+           WRITE(6,*) &
+              'Optical constants from file  ( for multi-line source ) ..... 0',&
+              'Optical constants from keyboard  (single-line source ) ..... 1',&
+              'Define multilayer from file                            ..... 2'
+       END IF
+       F_REFL = IRINT ('Optical Constant Source: [file=0,tt:=1], multilayer [2] ?')
+       IF (F_REFL.EQ.1) THEN
+           WRITE(6,*) &
+            'Please enter the complex dielectric constant. ', &
+            'The form I use is :', &
+            '           Epsilon  = ( 1 - ALPHA) + i*GAMMA'
+           ALFA = RNUMBER ('ALPHA = ')
+           GAMMA= RNUMBER ('GAMMA = ')
+       ELSE IF (F_REFL.EQ.0) THEN
+           WRITE(6,*) 'File with optical constants ?'
+           READ (5,111) FILE_REFL
+       ELSE
+           WRITE(6,*) 'File with thicknesses and refractive indices of multilayer ?'
+           READ (5,111)FILE_REFL
+           F_THICK = IYES ('Vary thicknesses as the cosine of the angle from the pole? ')
+       END IF 
+    ELSE
+    END IF
+END IF  
+
 !c------------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !c---------------------------------------------------------------------
-     	IF (IVERB.EQ.1) THEN
-!	WRITE (6,60)
-!60	FORMAT (1X, &
-!      /,1X,'Mirror orientation angle. Angles are measured CCW, in deg,' &
-!      /,1X,'referring to the mirror normal. Alpha=0 is the mirror' &
-!      /,1X,'sitting at the origin, facing up. Alpha = 90 is the ' &
-!      /,1X,'mirror standing at your right and facing left when you ' &
-!      /,1x,'look along the beam STANDING ON THE PREVIOUS MIRROR and so', &
-!      ' on.')
 
-       print *,'Mirror orientation angle. Angles are measured CCW, in deg,     '
-       print *,'referring to the mirror normal. Alpha=0 is the mirror          '
-       print *,'sitting at the origin, facing up. Alpha = 90 is the            '
-       print *,'mirror standing at your right and facing left when you         '
-       print *,'look along the beam STANDING ON THE PREVIOUS MIRROR and so on. '
+IF (IVERB.EQ.1) THEN
+    print *,'Mirror orientation angle. Angles are measured CCW, in deg,     '
+    print *,'referring to the mirror normal. Alpha=0 is the mirror          '
+    print *,'sitting at the origin, facing up. Alpha = 90 is the            '
+    print *,'mirror standing at your right and facing left when you         '
+    print *,'look along the beam STANDING ON THE PREVIOUS MIRROR and so on. '
+END IF
+ALPHA = RNUMBER ('Orientation Angle [ Alpha ] ? ')
 
-
-     	END IF
-     	ALPHA = RNUMBER ('Orientation Angle [ Alpha ] ? ')
 !c----------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !c----------------------------------------------------------------------
-     	FHIT_C = IYES ('Mirror Dimensions finite [ Y/N ] ?')
-     	IF (FHIT_C.EQ.1) THEN
-     	 IF (IVERB.EQ.1) THEN
-     	  WRITE(6,*)'Mirror shape. Options:'
-     	  WRITE(6,*)'         rectangular :    1'
-     	  WRITE(6,*)'   full  elliptical  :    2'
-     	  WRITE(6,*)'  "hole" elliptical  :    3'
-     	 END IF
-     	FSHAPE = IRINT ('Shape: [ 1, 2, 3] ?')
-     	   IF (FSHAPE.EQ.1) THEN
-     	RWIDX1 = RNUMBER ('Mirror half-width x(+) ? ')
-     	RWIDX2 = RNUMBER ('Mirror half-width x(-) ? ')
-     	RLEN1  = RNUMBER ('Mirror half-length y(+) ? ')
-     	RLEN2  = RNUMBER ('Mirror half-length y(-) ? ')
-     	   ELSE 
-     	RWIDX2	= RNUMBER ('External Outline Major axis ( x ) ? ')
-        RLEN2	= RNUMBER ('External Outline Minor axis ( y ) ? ')
-     	    IF (FSHAPE.EQ.3) THEN
-     	RWIDX1	= RNUMBER ('Internal Outline Major axis ( x ) ? ')
-     	RLEN1	= RNUMBER ('Internal Outline Minor axis ( y ) ? ')
-     	    END IF
-     	   END IF
-     	END IF
+
+FHIT_C = IYES ('Mirror Dimensions finite [ Y/N ] ?')
+IF (FHIT_C.EQ.1) THEN
+    IF (IVERB.EQ.1) THEN
+         WRITE(6,*)'Mirror shape. Options:'
+         WRITE(6,*)'         rectangular :    1'
+         WRITE(6,*)'   full  elliptical  :    2'
+         WRITE(6,*)'  "hole" elliptical  :    3'
+    END IF
+    FSHAPE = IRINT ('Shape: [ 1, 2, 3] ?')
+    IF (FSHAPE.EQ.1) THEN
+        RWIDX1 = RNUMBER ('Mirror half-width x(+) ? ')
+        RWIDX2 = RNUMBER ('Mirror half-width x(-) ? ')
+        RLEN1  = RNUMBER ('Mirror half-length y(+) ? ')
+        RLEN2  = RNUMBER ('Mirror half-length y(-) ? ')
+    ELSE 
+        RWIDX2 = RNUMBER ('External Outline Major axis ( x ) ? ')
+        RLEN2  = RNUMBER ('External Outline Minor axis ( y ) ? ')
+        IF (FSHAPE.EQ.3) THEN
+            RWIDX1 = RNUMBER ('Internal Outline Major axis ( x ) ? ')
+            RLEN1 = RNUMBER ('Internal Outline Minor axis ( y ) ? ')
+        END IF
+    END IF
+END IF
 !*----------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !*----------------------------------------------------------------------
-     	 IF (FMIRR.EQ.6)	THEN
-     	COD_LEN = RNUMBER ('Codling Slit Length [ Sagittal ] ? ')
-     	COD_WID = RNUMBER ('Codling Slit Width  [ Effective, Tangential] ? ')
-	GO TO 5001
-     	 END IF
-       	IF (FMIRR.EQ.9.OR.FMIRR.EQ.5) GO TO 5001
+IF (FMIRR.EQ.6) THEN
+    COD_LEN = RNUMBER ('Codling Slit Length [ Sagittal ] ? ')
+    COD_WID = RNUMBER ('Codling Slit Width  [ Effective, Tangential] ? ')
+    GO TO 5001
+END IF
+IF (FMIRR.EQ.9.OR.FMIRR.EQ.5) GO TO 5001
 !* Inquires about the mirror optical parameters.
-     	IF (F_EXT.EQ.0) THEN
-     	 IF (IVERB.EQ.1) THEN
-           print *,'The mirror will be computed from the optical parameters'        
-           print *,'that you supply. For example,in the case of a spherical mirror' 
-           print *,'I will compute the radius of the mirror to satisfy the equation'
-           print *,'	1/p + 1/q = 2/(R*cos(theta))  given p,q and theta.'         
-           print *,'This will NOT affect in any way the placement of the mirror in' 
-           print *,'the optical element.'
-     	 END IF
-     	F_DEFAULT = IYES ('Focii placed at continuation planes [ Y/N ] ? ')
-     	IF (F_DEFAULT.EQ.0) THEN
-     	 IF (IVERB.EQ.1) THEN
-     	  print *,' '
-          print *,'The mirror parameters will be specified by using either polar' 
-          print *,'or cartesian coordinates for the source position. Then? '
-     	 END IF
-!c
-!c Using polar coordinates.
-!c
-     	SSOUR	= RNUMBER ('Object Focus to Mirror Pole Distance: ')
-     	THETA	= RNUMBER ('Incidence Angle [ degrees ] ? ')
-     	SIMAG	=  RNUMBER ('Mirror pole to Image Focus Distance ? ')
-     	ELSE
-     	END IF
-     	END IF
-	IF (F_EXT.EQ.1) THEN
-		IF (FMIRR.EQ.1) THEN
-     	RMIRR	=   RNUMBER ('Spherical Mirror Radius ? ')
-		ELSE IF (FMIRR.EQ.2) THEN
-     	AXMAJ	= RNUMBER ('Elliptical Mirror Semi-Major Axis ? ')
-     	AXMIN	= RNUMBER ('Elliptical Mirror Semi-Minor Axis ? ')
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*) 'In the elliptical mirror case, it is also necessary to'
-     	WRITE(6,*) 'specify which part of the ellipse is being used. This '
-     	WRITE(6,*) 'is achieved by specifing the angle between the major '
-     	WRITE(6,*) 'axis and the vector from the ellipse center to the '
-     	WRITE(6,*) 'mirror pole.'
-     	END IF
-     	ELL_THE = RNUMBER ('CCW angle between semi-major axis and pole ? ')
-		ELSE IF (FMIRR.EQ.3) THEN
-		 WRITE(6,*) 'Care !! Enter the torus MAXIMUM radius and the minor radius'
-     	R_MAJ	=  RNUMBER ('Tangential [ Major ] Radius ? ')
-     	R_MIN	=  RNUMBER ('Sagittal [ Minor ] Radius ? ')
-		ELSE IF (FMIRR.EQ.4) THEN
-     	IF (IVERB.EQ.1) THEN
-     	 WRITE(6,*)'Equation used is      2'
-     	 WRITE(6,*)'                    Y    =   2 P X '
-     	END IF
-     	PARAM	=  RNUMBER ('Parabola Parameter ? ')
-		ELSE IF (FMIRR.EQ.7) THEN
-     	AXMAJ	= RNUMBER ('Hyperbolical Mirror Semi-Major Axis ? ')
-     	AXMIN	= RNUMBER ('Hyperbolical Mirror Semi-Minor Axis ? ')
-     	IF (IVERB.EQ.1) THEN
-          print *,'In the hyperbolical mirror case, it is also necessary '
-          print *,'to specify which part of the ellipse is being used. '
-          print *,'This is achieved by specifing the angle between the '
-          print *,'major axis and the vector from the hyperbola center '
-     	WRITE(6,*)'to the mirror pole.'
-     	END IF
-     	ELL_THE = RNUMBER ('CCW angle between semi-major axis and pole ? ')
-     		ELSE IF (FMIRR.EQ.8) THEN
-     	CONE_A	= RNUMBER ('Cone Half-Opening [deg] ? ')
-		END IF
-	ELSE
-	END IF
+IF (F_EXT.EQ.0) THEN
+    IF (IVERB.EQ.1) THEN
+        print *,'The mirror will be computed from the optical parameters'        
+        print *,'that you supply. For example,in the case of a spherical mirror' 
+        print *,'I will compute the radius of the mirror to satisfy the equation'
+        print *,'      1/p + 1/q = 2/(R*cos(theta))  given p,q and theta.'         
+        print *,'This will NOT affect in any way the placement of the mirror in' 
+        print *,'the optical element.'
+    END IF
+    F_DEFAULT = IYES ('Focii placed at continuation planes [ Y/N ] ? ')
+    IF (F_DEFAULT.EQ.0) THEN
+        IF (IVERB.EQ.1) THEN
+            print *,' '
+            print *,'The mirror parameters will be specified by using either polar' 
+            print *,'or cartesian coordinates for the source position. Then? '
+        END IF
+        !c
+        !c Using polar coordinates.
+        !c
+        SSOUR      = RNUMBER ('Object Focus to Mirror Pole Distance: ')
+        THETA      = RNUMBER ('Incidence Angle [ degrees ] ? ')
+        SIMAG      =  RNUMBER ('Mirror pole to Image Focus Distance ? ')
+    ELSE
+    END IF
+END IF
+IF (F_EXT.EQ.1) THEN
+    IF (FMIRR.EQ.1) THEN
+        RMIRR =   RNUMBER ('Spherical Mirror Radius ? ')
+    ELSE IF (FMIRR.EQ.2) THEN
+        AXMAJ      = RNUMBER ('Elliptical Mirror Semi-Major Axis ? ')
+        AXMIN      = RNUMBER ('Elliptical Mirror Semi-Minor Axis ? ')
+        IF (IVERB.EQ.1) THEN
+            WRITE(6,*) 'In the elliptical mirror case, it is also necessary to'
+            WRITE(6,*) 'specify which part of the ellipse is being used. This '
+            WRITE(6,*) 'is achieved by specifing the angle between the major '
+            WRITE(6,*) 'axis and the vector from the ellipse center to the '
+            WRITE(6,*) 'mirror pole.'
+        END IF
+        ELL_THE = RNUMBER ('CCW angle between semi-major axis and pole ? ')
+    ELSE IF (FMIRR.EQ.3) THEN
+        WRITE(6,*) 'Care !! Enter the torus MAXIMUM radius and the minor radius'
+        R_MAJ      =  RNUMBER ('Tangential [ Major ] Radius ? ')
+        R_MIN      =  RNUMBER ('Sagittal [ Minor ] Radius ? ')
+    ELSE IF (FMIRR.EQ.4) THEN
+        IF (IVERB.EQ.1) THEN
+            WRITE(6,*)'Equation used is      2'
+            WRITE(6,*)'                    Y    =   2 P X '
+        END IF
+        PARAM      =  RNUMBER ('Parabola Parameter ? ')
+    ELSE IF (FMIRR.EQ.7) THEN
+        AXMAJ      = RNUMBER ('Hyperbolical Mirror Semi-Major Axis ? ')
+        AXMIN      = RNUMBER ('Hyperbolical Mirror Semi-Minor Axis ? ')
+        IF (IVERB.EQ.1) THEN
+            print *,'In the hyperbolical mirror case, it is also necessary '
+            print *,'to specify which part of the ellipse is being used. '
+            print *,'This is achieved by specifing the angle between the '
+            print *,'major axis and the vector from the hyperbola center '
+            WRITE(6,*)'to the mirror pole.'
+        END IF
+        ELL_THE = RNUMBER ('CCW angle between semi-major axis and pole ? ')
+    ELSE IF (FMIRR.EQ.8) THEN
+        CONE_A      = RNUMBER ('Cone Half-Opening [deg] ? ')
+    END IF
+ELSE
+END IF
 !**---------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !**-----------------------------------------------------------------------
-5001	CONTINUE
-	IF (IVERB.EQ.1) THEN
-       print *,'It may be helpful to save the exact incidence and reflection '
-       print *,'angles for each ray.  The saved file contains the index of the '
-       print *,'ray, the incidence angle (in degrees), and the reflection angle'
-       print *,'for each ray hitting this element.'
-	END IF
-	F_ANGLE = IYES('Save incidence and reflection angles to disk? ')
-     	IF (IVERB.EQ.1) THEN
-          print *,' The Optical Element and the the relative mirror are now fully '
-          print *,'defined. The mirror pole is now located at the "center" of the '
-          print *,'optical element. It is possible to override this situation and '
-          print *,'"move" the mirror without affecting the rest of the system.'    
-          print *,' It is also possible to move the "source" without affecting the'
-          print *,'rest of the system.'                                            
-          print *,' The movements are expressed in the DEFAULT Mirror Ref. Frame.' 
-          print *,' so that if you move BOTH source and mirror the relative'       
-          print *,'movement is the vector sum of the individual ones.'             
-          print *,'A word of caution: SOURCE movements and MIRROR movements are'   
-          print *,'NOT equivalent from the point of view of the whole system.'
-     	END IF
-     	FSTAT =  IYES ('Do you want to move the Source [ Y/N ] ? ')
-		IF (FSTAT.EQ.1) THEN
-     	WRITE(6,*)'Source movements in SOURCE REFERENCE FRAME.'
-     	WRITE(6,*)'CW rotations are (+) angles.'
-     	X_SOUR		=   	RNUMBER	('X-offset ? ')
-     	Y_SOUR 		=  	RNUMBER	('Y-offset ? ')
-     	Z_SOUR		=   	RNUMBER	('Z-offset ? ')
-     	X_SOUR_ROT	=	RNUMBER	('X-rotation ? ')
-     	Y_SOUR_ROT	=	RNUMBER	('Y-rotation ? ')
-     	Z_SOUR_ROT	=	RNUMBER	('Z-rotation ? ')
-     	ALPHA_S = RNUMBER ('Source rotation around Z-axis. CCW is > 0 ')
-     	RDSOUR = RNUMBER ('Source Distance from Pole ? ')
-     	RTHETA = RNUMBER ('Incidence Angle [ degrees ] ? ')
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'The previous changes are in the SOURCE frame.'
-     	WRITE(6,*)'The following OFFSETS are applied in the MIRROR'
-     	WRITE(6,*)'reference frame.'
-     	END IF
-     	OFF_SOUX = RNUMBER ('Source offset in [ x ] ? ')
-     	OFF_SOUY = RNUMBER ('                 [ y ] ? ')
-     	OFF_SOUZ = RNUMBER ('                 [ z ] ? ')
-		ELSE
-		END IF
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'   '
-	WRITE(6,*)'--- Mirror rotations and position. ---'
-          print *,'We define three angles, as rotations around the three axis.'   
-          print *,'These rotation are  defined in the program as corrections to'  
-          print *,'the mirror nominal position; that is, they modify the mirror'  
-          print *,'position relative to the Default Mirror Reference Frame, where'
-          print *,'all the calculations are performed. Remember that rotations'   
-          print *,'do NOT commute. I apply them in the same order of entry.'      
-          print *,'CW ROTATIONS are (+) angles. '                                 
-          print *,'A translation can be also applied to the mirror.'
-     	END IF
-     	F_MOVE = IYES ('Do you want to move the mirror itself [ Y/N ] ? ')
-     	IF (F_MOVE.EQ.1) THEN
-     	X_ROT	=  RNUMBER ('Rotation around X axis [ degrees ] ? ')
-     	Y_ROT	=  RNUMBER ('                Y                  ? ')
-     	Z_ROT	=  RNUMBER ('                Z                  ? ')
-     	OFFX	=  RNUMBER ('Mirror Offset. In X ? ')
-     	OFFY	=  RNUMBER ('                  Y ? ')
-     	OFFZ	=  RNUMBER ('                  Z ? ')
-     	ELSE
-     	END IF
-     	F_RIPPLE = IYES ('Distorted surface [ Y/N ] ? ')
-     	IF (F_RIPPLE.EQ.1) THEN 		
-	  IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'Sinusoidal ripple (0)'
-	WRITE(6,*)'Gaussian ripple   (1)'
-	WRITE(6,*)'External spline   (2)'
-	  END IF
-	F_G_S	= IRINT ('Type of distortion ? ')
-     	   IF (F_G_S.NE.0) THEN	
-     	FILE_RIP	= RSTRING('File to read ? ')
-     	   ELSE
-     	WRITE(6,*) 'Wavelength along the X-axis ?'
-     		READ(5,*)X_RIP_WAV
-     	WRITE(6,*) '             and the Y-axis ?'
-     		READ(5,*)Y_RIP_WAV
-     	WRITE(6,*) 'Amplitude along the X-axis ?'
-     		READ(5,*)X_RIP_AMP
-     	WRITE(6,*) '            and the Y-axis ?'
-     		READ(5,*)Y_RIP_AMP
-     	WRITE(6,*) 'Phase for X-axis. 0 means a maximum at the origin. Then ?'
-     		READ(5,*)X_PHASE
-     	WRITE(6,*) ' and  for Y-axis ?'
-     		READ(5,*)Y_PHASE
-     	   END IF
-       	ELSE                                    ! RIP 1
-     	END IF
-	f_roughness = iyes('Do you want to include surface roughness [Y/N] ? ' )
-	if (f_roughness.eq.1) then
-	 file_rough  = rstring( 'File to read ? ')
-	 rough_y = rnumber &
+5001      CONTINUE
+IF (IVERB.EQ.1) THEN
+    print *,'It may be helpful to save the exact incidence and reflection '
+    print *,'angles for each ray.  The saved file contains the index of the '
+    print *,'ray, the incidence angle (in degrees), and the reflection angle'
+    print *,'for each ray hitting this element.'
+END IF
+F_ANGLE = IYES('Save incidence and reflection angles to disk? ')
+IF (IVERB.EQ.1) THEN
+    print *,' The Optical Element and the the relative mirror are now fully '
+    print *,'defined. The mirror pole is now located at the "center" of the '
+    print *,'optical element. It is possible to override this situation and '
+    print *,'"move" the mirror without affecting the rest of the system.'    
+    print *,' It is also possible to move the "source" without affecting the'
+    print *,'rest of the system.'                                            
+    print *,' The movements are expressed in the DEFAULT Mirror Ref. Frame.' 
+    print *,' so that if you move BOTH source and mirror the relative'       
+    print *,'movement is the vector sum of the individual ones.'             
+    print *,'A word of caution: SOURCE movements and MIRROR movements are'   
+    print *,'NOT equivalent from the point of view of the whole system.'
+END IF
+FSTAT =  IYES ('Do you want to move the Source [ Y/N ] ? ')
+IF (FSTAT.EQ.1) THEN
+    WRITE(6,*)'Source movements in SOURCE REFERENCE FRAME.'
+    WRITE(6,*)'CW rotations are (+) angles.'
+    X_SOUR            =         RNUMBER      ('X-offset ? ')
+    Y_SOUR             =        RNUMBER      ('Y-offset ? ')
+    Z_SOUR            =         RNUMBER      ('Z-offset ? ')
+    X_SOUR_ROT      =      RNUMBER      ('X-rotation ? ')
+    Y_SOUR_ROT      =      RNUMBER      ('Y-rotation ? ')
+    Z_SOUR_ROT      =      RNUMBER      ('Z-rotation ? ')
+    ALPHA_S = RNUMBER ('Source rotation around Z-axis. CCW is > 0 ')
+    RDSOUR = RNUMBER ('Source Distance from Pole ? ')
+    RTHETA = RNUMBER ('Incidence Angle [ degrees ] ? ')
+    IF (IVERB.EQ.1) THEN
+        WRITE(6,*)'The previous changes are in the SOURCE frame.'
+        WRITE(6,*)'The following OFFSETS are applied in the MIRROR'
+        WRITE(6,*)'reference frame.'
+    END IF
+    OFF_SOUX = RNUMBER ('Source offset in [ x ] ? ')
+    OFF_SOUY = RNUMBER ('                 [ y ] ? ')
+    OFF_SOUZ = RNUMBER ('                 [ z ] ? ')
+ELSE
+END IF
+IF (IVERB.EQ.1) THEN
+    WRITE(6,*)'   '
+    WRITE(6,*)'--- Mirror rotations and position. ---'
+    print *,'We define three angles, as rotations around the three axis.'   
+    print *,'These rotation are  defined in the program as corrections to'  
+    print *,'the mirror nominal position; that is, they modify the mirror'  
+    print *,'position relative to the Default Mirror Reference Frame, where'
+    print *,'all the calculations are performed. Remember that rotations'   
+    print *,'do NOT commute. I apply them in the same order of entry.'      
+    print *,'CW ROTATIONS are (+) angles. '                                 
+    print *,'A translation can be also applied to the mirror.'
+END IF
+F_MOVE = IYES ('Do you want to move the mirror itself [ Y/N ] ? ')
+IF (F_MOVE.EQ.1) THEN
+    X_ROT      =  RNUMBER ('Rotation around X axis [ degrees ] ? ')
+    Y_ROT      =  RNUMBER ('                Y                  ? ')
+    Z_ROT      =  RNUMBER ('                Z                  ? ')
+    OFFX      =  RNUMBER ('Mirror Offset. In X ? ')
+    OFFY      =  RNUMBER ('                  Y ? ')
+    OFFZ      =  RNUMBER ('                  Z ? ')
+ELSE
+END IF
+F_RIPPLE = IYES ('Distorted surface [ Y/N ] ? ')
+IF (F_RIPPLE.EQ.1) THEN             
+    IF (IVERB.EQ.1) THEN
+        WRITE(6,*)'Sinusoidal ripple (0)'
+        WRITE(6,*)'Gaussian ripple   (1)'
+        WRITE(6,*)'External spline   (2)'
+    END IF
+    F_G_S      = IRINT ('Type of distortion ? ')
+    IF (F_G_S.NE.0) THEN      
+        FILE_RIP      = RSTRING('File to read ? ')
+    ELSE
+        WRITE(6,*) 'Wavelength along the X-axis ?'
+        READ(5,*)X_RIP_WAV
+        WRITE(6,*) '             and the Y-axis ?'
+        READ(5,*)Y_RIP_WAV
+        WRITE(6,*) 'Amplitude along the X-axis ?'
+        READ(5,*)X_RIP_AMP
+        WRITE(6,*) '            and the Y-axis ?'
+        READ(5,*)Y_RIP_AMP
+        WRITE(6,*) 'Phase for X-axis. 0 means a maximum at the origin. Then ?'
+        READ(5,*)X_PHASE
+        WRITE(6,*) ' and  for Y-axis ?'
+        READ(5,*)Y_PHASE
+    END IF
+ELSE                                    ! RIP 1
+END IF
+f_roughness = iyes('Do you want to include surface roughness [Y/N] ? ' )
+if (f_roughness.eq.1) then
+    file_rough  = rstring( 'File to read ? ')
+    rough_y = rnumber &
       ('Roughness RMS in Y direction (along the mirror) [Angstroms] ? ')
-	 rough_x = rnumber &
+    rough_x = rnumber &
       ('Roughness RMS in X direction (transversal) [Angstroms]? ')
-	end if
+end if
 !c
 !**-----------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !**--------------------------------------------------------------------
-     	F_SCREEN = IYES ('Any screens in this OE [ Y/N ] ? ')
-     	IF (F_SCREEN.NE.0) THEN
-     	N_SCREEN = IRINT ('How many in this OE [ total ] ? ')
-     	DO 11 I=1,N_SCREEN
-     	WRITE(6,*)'Screen N. ',I
-     	I_SCREEN(I) = IYES ('Is this screen before mirror [ Y/N ] ? ')
-     	SL_DIS(I) = RNUMBER('Distance from mirror [ absolute ] ? ')
-     	I_SLIT(I) = IYES ('Is Screen Carrying an Aperture Stop [ Y/N ] ? ')
-     	 IF (I_SLIT(I).EQ.1) THEN
-     	I_STOP(I) = IRINT ('Obstruction [ 1 ] or Aperture [ 0 ] ? ')
-     	IF (IVERB.EQ.1) THEN
-     	WRITE(6,*)'Kind of slit. Use:'
-     	WRITE(6,*)'0		for a rectangular slit'
-     	WRITE(6,*)'1		for an elliptical slit'
-     	WRITE(6,*)'2		for an "external" slit.'
-     	END IF
-     	K_SLIT(I) = IRINT ('Stop shape [ 0 r, 1 e, 2 ex ] ? ')
-	IF (K_SLIT(I).EQ.2) THEN
-!	  XXFILSCR(I) = RSTRING('File containing the mask coordinates ? ')
-	  FILE_SCR_EXT(I) = RSTRING('File containing the mask coordinates ? ')
-	ELSE
-     	  RX_SLIT(I)= RNUMBER ('Dimension along X ? ')
-     	  RZ_SLIT(I)= RNUMBER ('                Z ? ')
-     	  CX_SLIT(I)= RNUMBER ('Center along X [0.0] ? ')
-     	  CZ_SLIT(I)= RNUMBER ('             Z [0.0] ? ')
-	END IF
-     	 ELSE
-     	 END IF
-     	I_ABS(I)= IYES ('Include absorption [ Y/N ] ? ')
-     	   IF (I_ABS(I).EQ.1) THEN
-     	WRITE(6,*) 'File with optical constants ?'
-     	READ (5,111)	FILE_ABS(I)
-     	THICK(I) = RNUMBER ('Thickness of film [ cm ] ? ')
-     	   END IF
-11     	CONTINUE
+F_SCREEN = IYES ('Any screens in this OE [ Y/N ] ? ')
+IF (F_SCREEN.NE.0) THEN
+    N_SCREEN = IRINT ('How many in this OE [ total ] ? ')
+    DO 11 I=1,N_SCREEN
+        WRITE(6,*)'Screen N. ',I
+        I_SCREEN(I) = IYES ('Is this screen before mirror [ Y/N ] ? ')
+        SL_DIS(I) = RNUMBER('Distance from mirror [ absolute ] ? ')
+        I_SLIT(I) = IYES ('Is Screen Carrying an Aperture Stop [ Y/N ] ? ')
+        IF (I_SLIT(I).EQ.1) THEN
+            I_STOP(I) = IRINT ('Obstruction [ 1 ] or Aperture [ 0 ] ? ')
+            IF (IVERB.EQ.1) THEN
+                WRITE(6,*)'Kind of slit. Use:'
+                WRITE(6,*)'0            for a rectangular slit'
+                WRITE(6,*)'1            for an elliptical slit'
+                WRITE(6,*)'2            for an "external" slit.'
+            END IF
+            K_SLIT(I) = IRINT ('Stop shape [ 0 r, 1 e, 2 ex ] ? ')
+            IF (K_SLIT(I).EQ.2) THEN
+                !        XXFILSCR(I) = RSTRING('File containing the mask coordinates ? ')
+                FILE_SCR_EXT(I) = RSTRING('File containing the mask coordinates ? ')
+            ELSE
+                RX_SLIT(I)= RNUMBER ('Dimension along X ? ')
+                RZ_SLIT(I)= RNUMBER ('                Z ? ')
+                CX_SLIT(I)= RNUMBER ('Center along X [0.0] ? ')
+                CZ_SLIT(I)= RNUMBER ('             Z [0.0] ? ')
+            END IF
+        ELSE
+        END IF
+        I_ABS(I)= IYES ('Include absorption [ Y/N ] ? ')
+        IF (I_ABS(I).EQ.1) THEN
+            WRITE(6,*) 'File with optical constants ?'
+            READ (5,111)      FILE_ABS(I)
+            THICK(I) = RNUMBER ('Thickness of film [ cm ] ? ')
+        END IF
+11  CONTINUE
 
-     	ELSE
-     	END IF
+ELSE
+END IF
 !**---------------------------------------------------------------------
-	!CALL CLSCREEN
-	!WRITE(6,'(1X,A)') trim(MSSG)
-	!WRITE(6,'(1X,A)') trim(MSSG2)
-	WRITE(6,*)
+WRITE(6,*)
 !**---------------------------------------------------------------------
-     	FSLIT = IYES ('Slit at continuation plane [ Y/N ] ? ')
-		IF (FSLIT.EQ.1) THEN 
-     	SLLEN	= RNUMBER ('Slit Length in Sagittal Plane [ x ] ? ')
-     	SLWID   = RNUMBER ('Slit Width in Dispersion Plane [ z ] ? ')
-     	SLTILT	= RNUMBER ('Slit Tilt, CCW [ degrees ] ? ')
-		ELSE
-		END IF
-     	N_PLATES= IYES ('Extra Image plates [ Y/N ] ? ')
-     	IF (N_PLATES.EQ.1) N_PLATES = IRINT ('How many ? ')
-     	IF (N_PLATES.GT.0) THEN
-     	I	=   1
-21     	IF (I.LE.N_PLATES) THEN
-     	WRITE(6,*)'Plate # ',I
-     	D_PLATE(I) = RNUMBER ('Distance Mirror Center Plate ? ')
-     	  I 	=   I + 1
-		GOTO 21
-     	END IF
-     	F_PLATE = IYES ('Plates at orthogonal to Optical Axis ? ')
-     	 IF (F_PLATE.EQ.0) THEN
-     	IF (IVERB.EQ.1) THEN
-          print *,'Image plane orientation: the plane is defined by two angles.'
-          print *,'Take the Y = 0 plane, then rotate it around the X-axis CCW.' 
-          print *,'This is your first angle (elevation). Then rotate it around' 
-          print *,'the Z-axis, still CCW (azimuth) and there you are.'
-     	END IF
-     	THETA_I = RNUMBER ('Elevation [ degrees ] ? ')
-     	ALPHA_I = RNUMBER ('Azimuth               ? ')
-     	 ELSE
-     	 END IF
-     	ELSE
-     	END IF
+FSLIT = IYES ('Slit at continuation plane [ Y/N ] ? ')
+IF (FSLIT.EQ.1) THEN 
+    SLLEN      = RNUMBER ('Slit Length in Sagittal Plane [ x ] ? ')
+    SLWID   = RNUMBER ('Slit Width in Dispersion Plane [ z ] ? ')
+    SLTILT      = RNUMBER ('Slit Tilt, CCW [ degrees ] ? ')
+ELSE
+END IF
+N_PLATES= IYES ('Extra Image plates [ Y/N ] ? ')
+IF (N_PLATES.EQ.1) N_PLATES = IRINT ('How many ? ')
+IF (N_PLATES.GT.0) THEN
+    I      =   1
+21  continue
+    IF (I.LE.N_PLATES) THEN
+        WRITE(6,*)'Plate # ',I
+        D_PLATE(I) = RNUMBER ('Distance Mirror Center Plate ? ')
+        I       =   I + 1
+        GOTO 21
+    END IF
+    F_PLATE = IYES ('Plates at orthogonal to Optical Axis ? ')
+    IF (F_PLATE.EQ.0) THEN
+        IF (IVERB.EQ.1) THEN
+            print *,'Image plane orientation: the plane is defined by two angles.'
+            print *,'Take the Y = 0 plane, then rotate it around the X-axis CCW.' 
+            print *,'This is your first angle (elevation). Then rotate it around' 
+            print *,'the Z-axis, still CCW (azimuth) and there you are.'
+        END IF
+        THETA_I = RNUMBER ('Elevation [ degrees ] ? ')
+        ALPHA_I = RNUMBER ('Azimuth               ? ')
+    ELSE
+    END IF
+ELSE
+END IF
 !c
 !c---------------------------------------------------------------------
 !c
@@ -10264,10 +10168,10 @@ print *,'parameters yourself.                                                   
 !c This question applies only to the first OE of an optical system
 !c
 !c
-     	IF (I_OENUM.EQ.1) THEN
-	  FILE_SOURCE = RSTRING ('File containing the source array [Default: begin.dat] ? ')
-	  IF (trim(FILE_SOURCE) == "") FILE_SOURCE="begin.dat"
-     	END IF
+IF (I_OENUM.EQ.1) THEN
+    FILE_SOURCE = RSTRING ('File containing the source array [Default: begin.dat] ? ')
+    IF (trim(FILE_SOURCE) == "") FILE_SOURCE="begin.dat"
+END IF
 10101	CONTINUE
 !c
 !c-----------------------------------------------------------------------
@@ -10275,12 +10179,13 @@ print *,'parameters yourself.                                                   
 !c                  SAVE     FILE
 !c
 !c
-     	CALL	FNAME	(FFILE, 'start', I_OENUM, izero)
-     	IDUMM = 0
-     	CALL	RWNAME	(FFILE, 'W_OE', IDUMM)
-     	IF (IDUMM.NE.0) CALL LEAVE ('INPUT_OE','Error writing NAMELIST',IDUMM)
-111	FORMAT (A)
-     	WRITE(6,*)'Exit from INPUT'
+CALL  FNAME  (FFILE, 'start', I_OENUM, izero)
+IDUMM = 0
+CALL  RWNAME  (FFILE, 'W_OE', IDUMM)
+IF (IDUMM.NE.0) CALL LEAVE ('INPUT_OE','Error writing NAMELIST',IDUMM)
+111  FORMAT (A)
+WRITE(6,*)'Exit from INPUT'
+
 End Subroutine input_oe
 
 
