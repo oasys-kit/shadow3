@@ -30,6 +30,19 @@ class SRWLParticle(object):
     self.relE0 = _relE0
     self.nq = _nq
 
+  @property
+  def energy(self):
+    return self.gamma*5.10998902e-4*self.relE0
+  @property
+  def relRestMass(self):
+    return self.relE0*5.10998902e-4
+
+  @energy.setter
+  def energy(self,value):
+    self.gamma = value/5.10998902e-4/self.relE0
+  @relRestMass.setter
+  def relRestMass(self,value):
+    self.relE0=value/5.10998902e-4
 
 #****************************************************************************
 class SRWLPartBeam(object):
@@ -67,6 +80,41 @@ class SRWLPartBeam(object):
     self.nPart = _nPart
     self.partStatMom1 = SRWLParticle() if _partStatMom1 is None else _partStatMom1
     self.arStatMom2 = array('d', [0] * 21) if _arStatMom2 is None else _arStatMom2
+
+  @property
+  def arrStatMom2(self): 
+    return self.arStatMom2 
+
+  @arrStatMom2.setter
+  def arrStatMom2(self,value):
+    self.arStatMom2 = value
+
+  def save(self,fname,mode='hdf5'):
+    """
+    save Charged Particle instance to file
+    :param fname: filename
+    :param mode: 'hdf5' (default) or 'bin'
+    """
+    try:
+      h5py  = __import__('h5py',  globals(), locals(), [], -1)
+      numpy = __import__('numpy', globals(), locals(), [], -1)
+    except ImportError:
+      mode = 'bin'
+    if mode=='hdf5':
+      f = h5py.File(fname,'w')
+      fkeys=set([])
+      f.visit(fkeys.add)
+      h5grp = "Source/Beam/Particle"
+      if h5grp not in fkeys: f.create_group(h5grp)
+      varnames = ["energy","nq","relRestMass","x","y","z","xp","yp"]
+      varDesc = aux_hdf5_obj_dict(self,varnames)
+      aux_hdf5_dict_save(f,h5grp,varDesc)
+      f.close()
+    else:
+      f = open(fname+'_part.dat','wb')
+      pickle.dump(self,f,pickle.HIGHEST_PROTOCOL)
+      f.close()
+  
 
 
 #****************************************************************************
@@ -335,6 +383,13 @@ class SRWLRadMesh(object):
     self.ny = _ny
     self.zStart = _zStart
 
+  @property
+  def zFin(self):
+    return self.zStart
+
+  @zFin.setter
+  def zFin(self,value):
+    self.zStart=value # or maybe not this is the less important alias
 
 #****************************************************************************
 class SRWLStokes(object):
@@ -364,6 +419,58 @@ class SRWLStokes(object):
     self.unitStokes = 1 #electric field units: 0- arbitrary, 1- Phot/s/0.1%bw/mm^2 ?
 
     nProd = _ne*_nx*_ny #array length to store one component of complex electric field
+
+  @property
+  def arrStokes(self): 
+    return self.arS
+  @property
+  def photonEnergy(self):
+    return self.avgPhotEn
+  @property
+  def wSpace(self):
+    return self.presCA
+  @property
+  def wDomain(self):
+    return self.presFT
+  @arrStokes.setter
+  def arrStokes(self,value):
+    self.arS=value
+  @photonEnergy.setter
+  def photonEnergy(self,value):
+    self.avgPhotEn=value
+  @wSpace.setter
+  def wSpace(self,value):
+    self.presCA=value
+  @wDomain.setter
+  def wDomain(self,value):
+    self.presFT=value
+
+  def save(self,fname,mode='hdf5'):
+    """
+    save Stokes instance to hdf5 file
+    :param fname: filename
+    :param mode: 'hdf5' (default) or 'bin'
+    """
+    try:
+      h5py  = __import__('h5py',  globals(), locals(), [], -1)
+      numpy = __import__('numpy', globals(), locals(), [], -1)
+    except ImportError:
+      mode='bin'
+    if mode=='hdf5':
+      f = h5py.File(fname,'w')
+      fkeys=set([])
+      f.visit(fkeys.add)
+      h5grp = "Data"
+      if h5grp not in fkeys: f.create_group(h5grp)
+      varnames = ["arrStokes"]
+      varDesc = aux_hdf5_obj_dict(self,varnames,isarray=True)
+      aux_hdf5_dict_save(f,h5grp,varDesc,shape=(4,self.mesh.ny,self.mesh.nx,self.mesh.ne))
+      f.close()
+      self.mesh.save(fname)
+    else:
+      f = open(fname+'_stk.dat','wb')
+      pickle.dump(self,f,pickle.HIGHEST_PROTOCOL)
+      f.close()
 
 
 #****************************************************************************
@@ -423,6 +530,62 @@ class SRWLWfr(object):
     nProd = _ne * _nx * _ny #array length to store one component of complex electric field
     EXNeeded = 0
     EYNeeded = 0
+
+  @property
+  def arrEhor(self):
+    return self.arEx
+  @property
+  def arrEver(self):
+    return self.arEy
+  @property
+  def arrElecPropMatr(self):
+    return self.arElecPropMatr
+  @property
+  def arrMomX(self): 
+    return self.arMomX
+  @property
+  def arrMomY(self): 
+    return self.arMomY
+  @property
+  def photonEnergy(self):
+    return self.avgPhotEn
+  @property
+  def wSpace(self):
+    return self.presCA
+  @property
+  def wDomain(self):
+    return self.presFT
+  @property
+  def wEFieldUnit(self):
+    return self.unitElFld
+
+  @arrEhor.setter
+  def arrEhor(self,value):
+    self.arEx=value
+  @arrEver.setter
+  def arrEver(self,value):
+    self.arEy=value
+  @arrElecPropMatr.setter
+  def arrElecPropMatr(self,value):
+    self.arElecPropMatr = value
+  @arrMomX.setter
+  def arrMomX(self,value):
+    self.arMomX = value
+  @arrMomY.setter
+  def arrMomY(self,value):
+    self.arMomY = value
+  @photonEnergy.setter
+  def photonEnergy(self,value):
+    self.avgPhotEn=value
+  @wSpace.setter
+  def wSpace(self,value):
+    self.presCA=value
+  @wDomain.setter
+  def wDomain(self,value):
+    self.presFT=value
+  @wEFieldUnit.setter
+  def wEFieldUnit(self,value):
+    self.unitElFld=value
 
 #****************************************************************************
 class SRWLOpt(object):
@@ -588,4 +751,120 @@ class SRWLOptC(SRWLOpt):
     """
     self.arOpt = _arOpt #optical element structures array
     self.arProp = _arProp #list of lists of propagation parameters to be used for individual optical elements
+
+
+def loadParticle(fname, mode='hdf5'):
+    """
+    load Charged Particle instance to hdf5 file
+    :param fname: filename
+    :param mode: 'hdf5' (default) or 'bin'
+    """
+    res = SRWLParticle()
+    try:
+        h5py  = __import__('h5py',   globals(),  locals(),  [],  -1)
+        numpy = __import__('numpy',  globals(),  locals(),  [],  -1)
+        f = h5py.File(fname, 'r')
+    except ImportError:
+        mode = 'bin'
+    except IOError:
+        mode = 'bin'
+    if mode=='hdf5':
+        try:
+            h5grp = "Source/Beam/Particle"
+            varnames = ["energy", "nq", "relRestMass", "x", "y", "z", "xp", "yp"]
+            res = aux_hdf5_obj_load(f, res, h5grp, varnames)
+            f.close()
+        except KeyError as err:
+            print("some objects have not been found,  please control hdf5 file: "+fname)
+            print("SRWLParicle: ",  err.message)
+    else:
+        f = open(fname+'_part.dat', 'rb')
+        res = pickle.load(f)
+        f.close()
+    return res
+
+
+
+def loadPartBeam(fname, mode='hdf5'):
+  """
+  load Particle instance to hdf5 file
+  :param fname: filename
+  :param mode: 'hdf5' (default) or 'bin'
+  """
+  res = SRWLPartBeam()
+  h5grp = "Source/Beam"
+  try:
+    h5py  = __import__('h5py',   globals(),  locals(),  [],  -1)
+    numpy = __import__('numpy',  globals(),  locals(),  [],  -1)
+    f = h5py.File(fname, 'r')
+  except ImportError:
+    mode = 'bin'
+  except IOError:
+    mode = 'bin'
+  if mode=='hdf5':
+    try:
+      varnames = ["Iavg", "nPart"]
+      res = aux_hdf5_obj_load(f, res, h5grp, varnames)
+      varnames=["arrStatMom2"]
+      res = aux_hdf5_obj_load(f, res, h5grp, varnames, isarray=True)
+      f.close()
+      res.partStatMom1 = loadParticle(fname)
+      except KeyError as err:
+        print("some objects have not been found,  please control hdf5 file: "+fname)
+        print("SRWLPartBeam: ",  err.message)
+  else:
+    f = open(fname+'_ebeam.dat', 'rb')
+    res = pickle.load(f)
+    f,.close()
+  return res
+
+
+def loadStokes(fname, mode='hdf5'):
+  """
+  load Stokes instance to hdf5 file
+  :param fname: filename
+  :param mode: 'hdf5' (default) or 'bin'
+  """
+  res = SRWLStokes()
+  h5grp = "Data"
+  try:
+    h5py  = __import__('h5py',   globals(),  locals(),  [],  -1)
+    numpy = __import__('numpy',  globals(),  locals(),  [],  -1)
+    f = h5py.File(fname, 'r')
+  except ImportError:
+    mode = 'bin'
+  except IOError:
+    mode = 'bin'
+  if mode=='hdf5':
+    try:
+      varnames = ["arrStokes"]
+      res = aux_hdf5_obj_load(f, res, h5grp, varnames, isarray=True)
+      f.close()
+      res.mesh = loadRadMesh(fname)
+    except KeyError as err:
+      print("some objects have not been found,  please control hdf5 file: "+fname)
+      print("SRWLStokes: ",  err.message)
+  else:
+    f = open(fname+'_stk.dat', 'rb')
+    res = pickle.load(f)
+    f.close()
+  return res
+
+def getStokesFromASCII(fname):
+  import numpy as np
+  nLinesHead = 11
+  with open(fname, 'r') as f: hlp = f.readlines(nLinesHead)
+  ne, nx, ny = [int(hlp[i].replace('#', '').split()[0]) for i in [3, 6, 9]]
+  ns = 1
+  testStr = hlp[nLinesHead-1]
+  if testStr[0]=='#': ns = int(testStr.replace('#', '').split()[0])
+  e0, e1, x0, x1, y0, y1 = [float(hlp[i].replace('#', '').split()[0]) for i in [1, 2, 4, 5, 7, 8]]
+  stk = SRWLStokes()
+  stk.mesh.ne, stk.mesh.eStart, stk.mesh.eFin = ne, e0, e1
+  stk.mesh.nx, stk.mesh.xStart, stk.mesh.xFin = nx, x0, x1 
+  stk.mesh.ny, stk.mesh.yStart, stk.mesh.yFin = ny, y0, y1
+  stk.arS = array('f', [0]*ne*nx*ny) 
+  flnp = np.ndarray(buffer=stk.arS, shape=(len(stk.arS)), dtype=stk.arS.typecode)
+  flnp[:] = np.loadtxt(fname)
+  return stk
 

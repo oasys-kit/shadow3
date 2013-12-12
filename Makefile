@@ -155,7 +155,9 @@ FMODULES = \
 	shadow_postprocessors.F90 \
 	shadow_bind_f.F90 \
 	shadow_crl.F90
-#	cdf_z.f
+        # if wanted to compile shadow3 with urgent code for undulator
+        # uncomment this sestion, and the corresponding section in shadow3.F90
+	# cdf_z.f
 
 
 OBJFMODULES = ${FMODULES:.F90=.o}
