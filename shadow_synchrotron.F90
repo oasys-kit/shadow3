@@ -26,6 +26,12 @@ Module shadow_synchrotron
     !---- Variables ----!
     implicit none
 
+    !dimensions
+    integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! number of points of electron trajectory
+
+    real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
+
+
     ! this was in bm.blk
     !C
     !C Common block for bending magnet source code.
@@ -38,7 +44,7 @@ Module shadow_synchrotron
     !
     !	COMMON	/FIRST/	PPAR(1001,2),PPER(1001,2),PTOT(1001,2)
 
-    real(kind=skr),dimension(1001,2)   :: PPAR,PPER,PTOT
+    real(kind=skr),dimension(NDIM_TRAJ,2)   :: PPAR,PPER,PTOT
 
     !	COMMON	/SECON/	PHOT,BENER,THETA,NP,IPAD1,STEP,X,N,IPAD2,BK,IER,
     !     $			IPAD3,GAMM
@@ -57,12 +63,12 @@ Module shadow_synchrotron
 
     !	COMMON  /SIXTH/ PPAR_INT(1001),PPER_INT(1001),PTOT_INT(1001)
 
-    real(kind=skr),dimension(1001)   :: PPAR_INT,PPER_INT,PTOT_INT
+    real(kind=skr),dimension(NDIM_TRAJ)   :: PPAR_INT,PPER_INT,PTOT_INT
 
     !	COMMON  /SEVNT/ SPLI_1(1000,3),SPLI_2(1000,3),
     !     $			SPLI_3(1000,3),ANG_ARR(1001)
 
-    real(kind=skr),dimension(1001)   :: ANG_ARR
+    real(kind=skr),dimension(NDIM_TRAJ)   :: ANG_ARR
     real(kind=skr),dimension(10013)  :: SPLI_1,SPLI_2,SPLI_3
 
     !	COMMON	/EIGHT/ R_INPUT
@@ -815,83 +821,97 @@ End Subroutine piecespl
 
 
 !***************************************************************************
-FUNCTION POL_PAR(XPAR_IN)
+REAL(KIND=SKR) FUNCTION POL_PAR(XPAR_IN)
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        !DIMENSION X_IN(1),Y_OUT(1)
 
-!C
-	DIMENSION	X_IN(1),Y_OUT(1)
+        implicit none
 
-	N_ELEM 		= 1001
-	M_VECTOR	= 1
-	L_SPLINE	= 1000
-	X_IN(1)		= XPAR_IN
+        real(kind=skr),   intent(inout) :: xpar_in
+        real(kind=skr),dimension(1)     :: X_IN,Y_OUT
+        integer(kind=ski)               :: N_ELEM,M_VECTOR,L_SPLINE
 
-	CALL ICSEVU (ANG_ARR,PPAR_INT,N_ELEM,SPLI_1,L_SPLINE,X_IN,Y_OUT, &
-       M_VECTOR,IER)
+        N_ELEM   = NDIM_TRAJ
+        M_VECTOR = 1
+        L_SPLINE = NDIM_TRAJ-1 !1000
+        X_IN(1)  = XPAR_IN
 
-	IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
+        CALL ICSEVU (ANG_ARR,PPAR_INT,N_ELEM,SPLI_1,L_SPLINE,X_IN,Y_OUT, &
+                     M_VECTOR,IER)
 
-	POL_PAR	= R_INPUT - Y_OUT(1)
+        IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
+        
+        POL_PAR = R_INPUT - Y_OUT(1)
 
-	RETURN
+        RETURN
 End Function pol_par
     !
     !
     !
 
 !  ***************************************************************************
-FUNCTION POL_PER(XPAR_IN)
+REAL(KIND=SKR) FUNCTION POL_PER(XPAR_IN)
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        !DIMENSION X_IN(1),Y_OUT(1)
 
-	DIMENSION	X_IN(1),Y_OUT(1)
+        implicit none
 
-	N_ELEM 		= 1001
-	M_VECTOR	= 1
-	L_SPLINE	= 1000
-	X_IN(1)		= XPAR_IN
+!C
+        real(kind=skr),   intent(inout) :: xpar_in
+        real(kind=skr),dimension(1)     :: X_IN,Y_OUT
+        integer(kind=ski)               :: N_ELEM,M_VECTOR,L_SPLINE
 
-	CALL ICSEVU (ANG_ARR,PPER_INT,N_ELEM,SPLI_2,L_SPLINE,X_IN,Y_OUT, &
-       M_VECTOR,IER)
+        N_ELEM   = NDIM_TRAJ
+        M_VECTOR = 1
+        L_SPLINE = NDIM_TRAJ-1 !1000
+        X_IN(1)  = XPAR_IN
 
-	IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
+        CALL ICSEVU (ANG_ARR,PPER_INT,N_ELEM,SPLI_2,L_SPLINE,X_IN,Y_OUT, &
+                     M_VECTOR,IER)
 
-	POL_PER	= R_INPUT - Y_OUT(1)
+        IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
 
-	RETURN
+        POL_PER = R_INPUT - Y_OUT(1)
+
+        RETURN
 End Function pol_per
     !
     !
     !
 
 !***************************************************************************
-FUNCTION POL_TOT(XPAR_IN)
+REAL(KIND=SKR) FUNCTION POL_TOT(XPAR_IN)
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
 
 !C
-	DIMENSION	X_IN(1),Y_OUT(1)
+        real(kind=skr),   intent(inout) :: xpar_in
+        real(kind=skr),dimension(1)     :: X_IN,Y_OUT
+        integer(kind=ski)               :: N_ELEM,M_VECTOR,L_SPLINE
+        !DIMENSION X_IN(1),Y_OUT(1)
 
-	N_ELEM 		= 1001
-	M_VECTOR	= 1
-	L_SPLINE	= 1000
-	X_IN(1)		= XPAR_IN
+        N_ELEM   = NDIM_TRAJ
+        M_VECTOR = 1
+        L_SPLINE = NDIM_TRAJ-1  !1000
+        X_IN(1)  = XPAR_IN
 
-	CALL ICSEVU (ANG_ARR,PTOT_INT,N_ELEM,SPLI_3,L_SPLINE,X_IN,Y_OUT, &
-       M_VECTOR,IER)
+        CALL ICSEVU (ANG_ARR,PTOT_INT,N_ELEM,SPLI_3,L_SPLINE,X_IN,Y_OUT, &
+                     M_VECTOR,IER)
 
-	IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
+        IF (IER.NE.0) WRITE(6,*)'Error in ICSEVU = ',IER
 
-	POL_TOT	= R_INPUT - Y_OUT(1)
+        POL_TOT = R_INPUT - Y_OUT(1)
 
-	RETURN
+        RETURN
 End Function pol_tot
 
 !C+++
@@ -905,28 +925,31 @@ SUBROUTINE SETUP
 !C
 
         ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
+
 
 !todo: update all these numerical constants with latest CODATA values
-
-	NP 	= 1001
-	!srio !! THETA 	= 1.0D0
-	THETABM 	= 1.0D0
+        NP  = NDIM_TRAJ
+        !srio !! THETA  = 1.0D0
+        THETABM  = 1.0D0
 !C ***** uses a 1 mrad angle (horizontal) ******
-!C ***** band-pass is 1 eV		 ******
-	!srio !! CONST 	= 3.951D+28*PHOT*THETA/1000.0D0*RAD**2.0D0
-	CONST 	= 3.951D+28*PHOT*THETABM/1000.0D0*RAD**2.0D0
-	GAMM 	= 1957.0D0*BENER
-	CONST 	= CONST/GAMM**4
+!C ***** band-pass is 1 eV   ******
+        !srio !! CONST  = 3.951D+28*PHOT*THETA/1000.0D0*RAD**2.0D0
+        CONST  = 3.951D+28*PHOT*THETABM/1000.0D0*RAD**2.0D0
+        !GAMM  = 1957.0D0*BENER
+        GAMM  = BENER/(codata_mee*1d-3)
+        CONST  = CONST/GAMM**4
 !C ***** THIS USES A CURRENT OF 1 mA ******
-	CONST 	= CONST*0.001D0
-	RLCR 	= 5.59D0*RAD/BENER**3
-	RL 	= 12398.0D0/PHOT
-	STEP 	= 2.0D0*PSIMAX/(NP-1)
-	FCT 	= RLCR/2/RL
+        CONST  = CONST*0.001D0
+        RLCR  = 5.59D0*RAD/BENER**3
+        !RL  = 12398.0D0/PHOT
+        RL  = TOANGS/PHOT
+        STEP  = 2.0D0*PSIMAX/(NP-1)
+        FCT  = RLCR/2/RL
 
-	RETURN
+        RETURN
 End Subroutine setup
 
 !C+++
@@ -941,7 +964,7 @@ End Subroutine setup
 	implicit real(kind=skr) (a-h,o-z)
 	implicit integer(kind=ski)        (i-n)
 
-	DO 100 IC=1,1001
+	DO 100 IC=1,NDIM_TRAJ
 
 	 PSI = - PSIMAX + (IC-1)*STEP	
  	 ARG = (1 + GAMM**2*PSI**2)
@@ -974,7 +997,7 @@ End Subroutine setup
 
 	 ANG_ARR(1)	= - PSIMAX
 
-	DO 200 I=2,1001
+	DO 200 I=2,NDIM_TRAJ
 	 PSI = - PSIMAX + (I-1)*STEP
 	 ANG_ARR(I) = PSI
 	 SUM_PAR  = SUM_PAR  + (PPAR(I,2) + PPAR(I-1,2))/2*STEP
@@ -1021,22 +1044,24 @@ End Subroutine setup
 	PPER_MIN = PPER_INT(1)
 	PTOT_MIN = PTOT_INT(1)
 
-	DO 250 I=1,1001
+	DO 250 I=1,NDIM_TRAJ
 	PPAR_INT(I) = PPAR_INT(I) - PPAR_MIN
 	PPER_INT(I) = PPER_INT(I) - PPER_MIN
 250	PTOT_INT(I) = PTOT_INT(I) - PTOT_MIN
 
-	PAR_MAX  = PPAR_INT(1001)
-	PERP_MAX = PPER_INT(1001)
-	PTOT_MAX = PTOT_INT(1001)
+	PAR_MAX  = PPAR_INT(NDIM_TRAJ)
+	PERP_MAX = PPER_INT(NDIM_TRAJ)
+	PTOT_MAX = PTOT_INT(NDIM_TRAJ)
 
-	DO 300 I=1,1001
+	DO 300 I=1,NDIM_TRAJ
 	PPAR_INT(I) = PPAR_INT(I)/PAR_MAX
 	PPER_INT(I) = PPER_INT(I)/PERP_MAX
 300	PTOT_INT(I) = PTOT_INT(I)/PTOT_MAX
 
-	i1000 = 1000
-	i1001 = 1001
+	!i1000 = 1000
+	!i1001 = 1001
+	i1000 = NDIM_TRAJ-1
+	i1001 = NDIM_TRAJ
 	CALL ICSCCU (ANG_ARR,PPAR_INT,i1001,SPLI_1,i1000,IER1)
 	CALL ICSCCU (ANG_ARR,PPER_INT,i1001,SPLI_2,i1000,IER2)
 	CALL ICSCCU (ANG_ARR,PTOT_INT,i1001,SPLI_3,i1000,IER3)
@@ -1205,7 +1230,7 @@ SUBROUTINE ALADDIN1 (R_VAR,ANG_OUT,I_FLAG,IERROR)
 !** so that 0.5 will be pure circular. The module SOURCE will then 
 !** generate a randomly choosen polarization between the two.
      		IF (I_FLAG.EQ.3) THEN
-     		 DO 100	I=1,1001
+     		 DO 100	I=1,NDIM_TRAJ
      		  TEST   =   ABS(ANG_OUT - PTOT(I,1)/1000)
      		  IF (TEST.LE.STEP)  GO TO 200
 100		 CONTINUE
@@ -1787,9 +1812,13 @@ real(kind=skr),dimension(:),allocatable :: p_temp,ang2_temp,abd2_temp
 real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
 real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
 
-real(kind=skr),dimension(31,31,51) :: CDFX,D_POL,UPHI
-real(kind=skr),dimension(31,51)    :: CDFZ,UTHETA
-real(kind=skr),dimension(51)       :: CDFW,UENER
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E) :: CDFX,D_POL,UPHI
+!real(kind=skr),dimension(NDIM_A,NDIM_E)        :: CDFZ,UTHETA
+!real(kind=skr),dimension(NDIM_E)               :: CDFW,UENER
+real(kind=skr),dimension(:,:,:),allocatable :: CDFX,D_POL,UPHI
+real(kind=skr),dimension(:,:),allocatable   :: CDFZ,UTHETA
+real(kind=skr),dimension(:),allocatable     :: CDFW,UENER
+
 real(kind=skr),dimension(10)       :: RELINT,PRELINT
 real(kind=skr),dimension(4)        :: II,DX,PHI_INT
 real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
@@ -2054,35 +2083,58 @@ ELSE IF (F_WIGGLER.EQ.2) THEN
     OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='UNFORMATTED')
     !!srio #endif
     READ(30) NE,NT,NP,IANGLE
+
+    allocate( CDFX (NP,NT,NE) )
+    allocate( D_POL(NP,NT,NE) )
+    allocate( UPHI (NP,NT,NE) )
+    allocate( CDFZ   (NT,NE) )
+    allocate( UTHETA (NT,NE) )
+    allocate( CDFW   (NE) )
+    allocate( UENER  (NE) )
     
-    DO 17 K = 1,NE
-    17     READ  (30)UENER(K)
+    DO K = 1,NE
+        READ (30) UENER(K)
+    END DO
 
-    DO 27 K = 1,NE
-    DO 27 J = 1,NT
-    27        READ   (30)   UTHETA(J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            READ (30)UTHETA(J,K)
+        END DO
+    END DO
 
-    DO 37 K = 1,NE
-    DO 37 J = 1,NT
-    DO 37 I = 1,NP
-    37           READ(30)UPHI(I,J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                READ (30) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
     
-    DO 47 K = 1,NE
-    47     READ   (30) CDFW(K)
+    DO K = 1,NE
+        READ (30) CDFW(K)
+    END DO
 
-    DO 57 K = 1,NE
-    DO 57 J = 1,NT
-    57        READ(30)CDFZ(J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            READ (30) CDFZ(J,K)
+        END DO
+    END DO
 
-    DO 67 K = 1,NE
-    DO 67 J = 1,NT
-    DO 67 I = 1,NP
-    67           READ(30)CDFX(I,J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                READ (30) CDFX(I,J,K)
+            END DO
+        END DO
+    END DO
     
-    DO 87 K = 1,NE
-    DO 87 J = 1,NT
-    DO 87 I = 1,NP
-    87     READ(30)D_POL(I,J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                READ (30) D_POL(I,J,K)
+            END DO
+        END DO
+    END DO
     
     CLOSE(30)
     ! C
@@ -3135,6 +3187,15 @@ if (allocated(p_temp)) deallocate( p_temp)
 if (allocated(ang2_temp)) deallocate( ang2_temp)
 if (allocated(abd2_temp )) deallocate( abd2_temp)
 
+! deallocate arrays (undulator)
+if (allocated( cdfx )) deallocate( cdfx )
+if (allocated( d_pol )) deallocate( d_pol )
+if (allocated( uphi )) deallocate( uphi )
+if (allocated( cdfz )) deallocate( cdfz )
+if (allocated( utheta )) deallocate( utheta )
+if (allocated( cdfw )) deallocate( cdfw )
+if (allocated( uener )) deallocate( uener )
+
 WRITE(6,*)'Exit from SOURCE'
 RETURN
 
@@ -3178,7 +3239,7 @@ SUBROUTINE SrCdf
 !     	ORD23	=  2.0D0/3.0D0
 !     	ORD13	=  1.0D0/3.0D0
 !C
-     	NP	=  1001
+     	NP	=  NDIM_TRAJ
      	EX_LOW	=  -5.0D0
 !C
 !C Way back the maximum energy used to be 20*lam_c (EX_UPP = 1.30103),
@@ -3399,7 +3460,7 @@ SUBROUTINE SrFunc
 	real(kind=skr) :: ex_step,ex_upp,ex_low,x_ex,x_j,x_j1,xstep
         integer(kind=ski) :: np,i,j,kl
 
-     	NP	=  1001
+     	NP	=  NDIM_TRAJ
      	EX_LOW	=  -5.0D0
      	EX_UPP  =   2.0D0
      	EX_STEP =  (EX_UPP - EX_LOW)/(NP - 1)

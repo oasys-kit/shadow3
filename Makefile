@@ -151,13 +151,11 @@ FMODULES = \
 	shadow_kernel.F90 \
 	shadow_synchrotron.F90 \
 	shadow_pre_sync.F90 \
+	shadow_pre_sync_urgent.F90 \
 	shadow_preprocessors.F90 \
 	shadow_postprocessors.F90 \
 	shadow_bind_f.F90 \
 	shadow_crl.F90
-        # if wanted to compile shadow3 with urgent code for undulator
-        # uncomment this sestion, and the corresponding section in shadow3.F90
-	# cdf_z.f
 
 
 OBJFMODULES = ${FMODULES:.F90=.o}
@@ -170,7 +168,7 @@ OBJTESTS    = ${FTESTS:.F90=.o}
 #
 
 
-shadow3: $(OBJFMODULES) shadow3.o 
+shadow3: $(OBJFMODULES) shadow3.o  
 	$(FC) $(LINKFLAGS) -o shadow3$(EXE) shadow3.o $(OBJFMODULES) 
 
 #create .f90 files (see rule) and clean (remove lines starting with #) them using sed

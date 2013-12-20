@@ -24,6 +24,7 @@ PROGRAM  Shadow3
   use shadow_crl
   use shadow_synchrotron
   use shadow_pre_sync    ! undulator preprocessors
+  use shadow_pre_sync_urgent ! undulator preprocessor undul_phot_urgent
   use shadow_preprocessors       ! general preprocessors
   use shadow_postprocessors      ! general postprocessors
 
@@ -31,7 +32,7 @@ PROGRAM  Shadow3
 
   
   character(len=sklen)     ::  inCommand,inCommandLow,arg,mode
-  integer(kind=ski)      :: numArg,indx,iErr,i_Device, itmp
+  integer(kind=ski)      :: numArg,indx,iErr,i_Device,i_code,itmp
 
  
 inCommand = "" 
@@ -120,7 +121,15 @@ SELECT CASE (inCommandLow)
           END IF
        CASE(2)  ! undulator
           CALL Undul_Set
-          CALL Undul_Phot
+          WRITE(6,*) 'Code used for Undulator emission: ' 
+          WRITE(6,*) 'SHADOW  [ 0 ]'
+          WRITE(6,*) 'URGENT  [ 1 ]'
+          I_CODE = IRINT ('Then ? ')
+          if (I_CODE .eq.1) then
+              CALL Undul_Phot_Urgent
+          else
+              CALL Undul_Phot
+          endif
           CALL Undul_Cdf
           CALL input_source1
           CALL RWNAME('start.00','W_SOUR',iErr)
@@ -195,6 +204,9 @@ SELECT CASE (inCommandLow)
   !CASE ("cdf_z")
   !   CALL cdf_z
   !   inCommand=""
+  CASE ("undul_phot_urgent")
+     CALL undul_phot_urgent
+     inCommand=""
   CASE ("epath")
      i_device = 0
      CALL epath(i_Device)
@@ -208,6 +220,9 @@ SELECT CASE (inCommandLow)
      inCommand=""
   CASE ("undul_phot")
      CALL undul_phot
+     inCommand=""
+  CASE ("undul_phot_dump")
+     CALL undul_phot_dump
      inCommand=""
   CASE ("undul_cdf")
      CALL undul_cdf
@@ -321,9 +336,11 @@ SELECT CASE (inCommandLow)
      print *,'  [PRE-PROCESSORS]  : prerefl bragg presurface'
      !print *,'                    : input_source pre_mlayer grade_mlayer'
      print *,'                    : input_source pre_mlayer '
-     print *,'                    : make_id epath nphoton undul_set undul_phot undul_cdf' 
+     print *,'                    : make_id { epath nphoton undul_set'
+     print *,'                    :   undul_phot (undul_phot_urgent) undul_phot_dump'
+     print *,'                    :   undul_cdf}' 
      print *,'                    : jntpscalc mkdatafiles' 
-     print *,'  [POST-PROCESSORS] : histo1 plotxy translate '
+     print *,'  [POST-PROCESSORS] : histo1 plotxy sysplot translate '
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
      print *,'                    : retrace minmax reflag histo3'

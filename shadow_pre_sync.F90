@@ -26,28 +26,41 @@ Module shadow_Pre_Sync
 !
 ! the global variables here are only used for undulator and not for wiggler
 ! 
-      	!to shadow_globaldefinitions real(kind=skr),parameter :: PI=3.141592653589793238462643D0
-     	!to shadow_globaldefinitions real(kind=skr),parameter :: TWOPI=6.283185307179586476925287D0
-     	!to shadow_globaldefinitions real(kind=skr),parameter :: PIHALF=1.570796326794896619231322D0
-     	!to shadow_globaldefinitions real(kind=skr),parameter :: TOANGS=1.239852D+4
 
 !todo: check physical constants
+!DONE srio@esrf.eu 20131211 NIST codata values. Bug fixed (inconsistent 
+! values of c in undulators).
+real(kind=skr),parameter :: codata_c  = 2.99792458D8 !speed of light, m/s
+real(kind=skr),parameter :: codata_rm = 9.10938291D-31   !electron rest mass  kg
+real(kind=skr),parameter :: codata_e  = 1.602176565D-19  !electron charge, C
+real(kind=skr),parameter :: codata_h  = 6.62606957D-34   !Planck's constant   joules*sec
+real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
+real(kind=skr),parameter :: codata_electric_permittivity = 8.854187817D-12 ! electric constant epsilon0
 
-	character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
+!TODO: make NDIM* allocatable 
+!      (it is already done for NDIM_{A,E} in shadow_synchrotron.F90)
+! IF CHHANGED THESE NUMBERS, CHANGE ALSO cdf_z.f (Urgent code)!!
+!DONE allocatable arrays!
+!integer(kind=ski),parameter :: NDIM_A=101 !31 ! number of points for angle grids
+!integer(kind=ski),parameter :: NDIM_E=501 !51 ! number of points for energy grid
+integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
 
-	integer(kind=ski)  :: N0,NPointId
+
+        character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
+
+        integer(kind=ski)  :: N0,NPointId
 	real(kind=skr)     :: RLAU,ENERGY1,RLA1,RK,GA0
 	real(kind=skr)     :: BETA0,BETAX0,BETAY0,BETAZ0,B0,ER,RLEN
 	real(kind=skr)     :: PHI_E,THE_E,TAU,Z0,ZSTEP,ETAU,EZ0
 	real(kind=skr)     :: EZSTEP
-	integer(kind=ski)  :: NCOMP,ICOMP,IANGLE,IAPERTURE,IEXTERNAL,IOPT
-	integer(kind=ski)  :: IPASS,ITER,IINT,I_EDIV
+        integer(kind=ski)  :: NCOMP,ICOMP,IANGLE,IAPERTURE,IEXTERNAL,IOPT
+        integer(kind=ski)  :: IPASS,ITER,IINT,I_EDIV
 	real(kind=skr)     :: RCURR,BPASS,BDEL
 	real(kind=skr)     :: EDIVX,EDIVY
-	integer(kind=ski)  :: NE,NT,NP,NCHECK
-	real(kind=skr),dimension(1001) :: XOFZ,TOFZ,Z,BETAX,BETAZ
-	real(kind=skr),dimension(1001) :: XOFZ1,TOFZ1,Z1,BETAX1,BETAZ1
-	real(kind=skr),dimension(1001) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
+        integer(kind=ski)  :: NE,NT,NP,NCHECK
+	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ,TOFZ,Z,BETAX,BETAZ
+	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ1,TOFZ1,Z1,BETAX1,BETAZ1
+	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
 	real(kind=skr) :: emin,emax,estep,phimin,phimax,phistep
 	real(kind=skr) :: themin,themax,thestep,TOTPOWER
 !
@@ -62,6 +75,7 @@ Module shadow_Pre_Sync
     public ::  epath   ! wiggler+undulator
     public ::  nphoton ! wiggler
     public ::  undul_set, undul_phot, undul_cdf  ! undulator
+    public ::  undul_phot_dump ! undulator, create nphoton.spec, and ascii version of nphoton.dat
     public ::  wiggler_spectrum ! wiggler
 
 
@@ -105,17 +119,17 @@ SUBROUTINE EPath(i_device)
         implicit none
 
         CHARACTER(len=sklen) :: OUTFILE,UNOUTFILE,PARFILE,TRAJFILE
-        CHARACTER(len=sklen) :: UNEXAM
-        real(kind=skr),dimension(1001) :: XOFZ,Z,TOFZ,YOFZ
-        real(kind=skr),dimension(1001) :: BETAX, BETAZ,BETAY
-        real(kind=skr),dimension(1001) :: YX,YT,CURV,YY
-        real(kind=skr),dimension(1001) :: EXOFZ,EZ,ETOFZ
-        real(kind=skr),dimension(1001) :: EBETAX,EBETAZ
+        CHARACTER(len=sklen) :: UNEXAM,stmp
+        real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ,Z,TOFZ,YOFZ
+        real(kind=skr),dimension(NDIM_TRAJ) :: BETAX, BETAZ,BETAY
+        real(kind=skr),dimension(NDIM_TRAJ) :: YX,YT,CURV,YY
+        real(kind=skr),dimension(NDIM_TRAJ) :: EXOFZ,EZ,ETOFZ
+        real(kind=skr),dimension(NDIM_TRAJ) :: EBETAX,EBETAZ
         real(kind=skr),dimension(3)    :: VEL,ACC
         real(kind=skr),dimension(3)    :: B,EN,T
-        real(kind=skr),dimension(1001) :: TAUX,TAUY,TAUZ
-        real(kind=skr),dimension(1001) :: ENX,ENY,ENZ
-        real(kind=skr),dimension(1001) :: BX,BY,BZ
+        real(kind=skr),dimension(NDIM_TRAJ) :: TAUX,TAUY,TAUZ
+        real(kind=skr),dimension(NDIM_TRAJ) :: ENX,ENY,ENZ
+        real(kind=skr),dimension(NDIM_TRAJ) :: BX,BY,BZ
 
         real(kind=skr)    ::  b0x, b1x, b2x, bbb, beta02, betaxmax, betaymax, bf
         real(kind=skr)    ::  c, c2, c3, con, d2dxd2dy, d2xdz2, d2ydz2, dnum, dxdz, dydz
@@ -127,29 +141,24 @@ SUBROUTINE EPath(i_device)
 ! srio: writes also epath.nml for further use these parameters 
 ! in urgent_cdf
 !
+!TODO: change namelist by gfile
 
         NAMELIST /EPATH1/  I_DEVICE, N0, RLAU, OLDENER, RK, RKX, RLEN
 !C
 !C
-!C For unix, we cannot set symbol for the parent process to communicate
-!C as in VMS, so we pull the classic BSD kludge of writing the environment
-!C strings to a temporary file and then source'ing the file in the driver
-!C to script to export to the parent environment. The temporary file is
-!C given by SHADOW_ENV_FILE environment variable, and must be set before
-!C this program is called. This is usually set in the driver script that
-!C calls this program.
 !C
 
 !TO DO: change this with latest NIST data
+!DONE srio@esrf.eu 20131105
 !        c  = 2.998D8        !speed of light, m/s
 !        rm = 9.109D-31      !electron rest mass  kg
 !        e  = 1.602D-19      !electron charge, C
 !        h  = 6.626D-34      !Planck's constant   joules*sec
-!DONE srio@esrf.eu 20131105
-        c  = 2.99792458D8     !speed of light, m/s
-        rm = 9.10938291D-31   !electron rest mass  kg
-        e  = 1.602176565D-19  !electron charge, C
-        h  = 6.62606957D-34   !Planck's constant   joules*sec
+        c  = codata_c
+        rm = codata_rm
+        e  = codata_e
+        h  = codata_h
+
 
         c2 = e/(TWOPI*rm*c)   !unit(coul*sec/(kg*m))
 ! srio moved this to upper level
@@ -192,7 +201,8 @@ SUBROUTINE EPath(i_device)
         end if
         ener =  rnumber('      electron energy (GeV) : ')
         WRITE(6,*) '      Enter the number of points to be used in the trajectory calculation.'
-        np  =  irint  ('      ( max = 1001, suggested 101 ) : ')
+        write(stmp,'(I8)') NDIM_TRAJ
+        np  =  irint  ('      ( max = '//trim(stmp)//', suggested 101 ) : ')
         Rb0 =  rnumber('End correction field factor (0-1) : ')
 !c	Electron Trajectory Parameters
 !c
@@ -705,7 +715,8 @@ SUBROUTINE NPhotonCalc (TOT_NUM,RAD,BENER,EIMIN,EIMAX,IFLAG)
             !C
             !C Calculate the appropriate index for EIMAX and EIMIN
             !C
-            gamma1       = 1957.0D0*BENER
+            !gamma1       = 1957.0D0*BENER
+            gamma1       = BENER/(codata_mee*1d-3)
             R_LAM       = 4.0D0*PI*RAD/3.0D0/gamma1**3*1.0D10        !Angstroms
             C_PHOT      = TOANGS/R_LAM
             EMIN        = EIMIN/C_PHOT
@@ -765,9 +776,9 @@ SUBROUTINE NPhoton
         real(kind=skr),dimension(:),allocatable ::  CURV,PHOT_NUM,PHOT_CDF
         real(kind=skr),dimension(:),allocatable ::  Z,BETAZ,DS,S
         real(kind=skr),dimension(:),allocatable ::  DX, DY, DZ
-        !real(kind=skr),dimension(1001)  ::  TAUX,TAUY,TAUZ
-        !real(kind=skr),dimension(1001)  ::  BX,BY,BZ
-        !real(kind=skr),dimension(1001)  ::  ENX,ENY,ENZ
+        !real(kind=skr),dimension(NDIM_TRAJ)  ::  TAUX,TAUY,TAUZ
+        !real(kind=skr),dimension(NDIM_TRAJ)  ::  BX,BY,BZ
+        !real(kind=skr),dimension(NDIM_TRAJ)  ::  ENX,ENY,ENZ
         character(len=sklen)            ::  INFILE,OUTFILE
 
         real(kind=skr)    :: ang_num, angle, angle1, angle2, bener, cdf, curv_max, curv_min
@@ -847,7 +858,10 @@ SUBROUTINE NPhoton
         !C Compute gamma and the beam energy
         !C
         gamma1   = 1/SQRT(1-(BETAY(1)**2)-(BETAX(1)**2)-(BETAZ(1)**2))
-        BENER   = gamma1*(9.109D-31)*(2.998d8**2)/(1.602d-19)*1.0d-9
+        !BENER   = gamma1*(9.109D-31)*(2.998d8**2)/(1.602d-19)*1.0d-9
+        BENER   = gamma1*(codata_rm)*(codata_c**2)/(codata_e)*1.0d-9
+        
+
          WRITE(6,*) 'Beam energy (GeV) = ',BENER
         !C
         !C Figure out the limit of photon energy.
@@ -963,131 +977,139 @@ END SUBROUTINE NPhoton
 !
 
 !C+++
-!C	SUBROUTINE		UNDUL_SHADOW_IO
+!C      SUBROUTINE              UNDUL_SHADOW_IO
 !C
-!C	PURPOSE			Act as a user friendly input routine 
-!C				to obtain parameters otherwise defined
-!C				using a NAMELIST file
+!C      PURPOSE                 Act as a user friendly input routine 
+!C                              to obtain parameters 
 !C
-!C	INPUT			see NAMELIST
+!C      INPUT                   from trajectory file
 !C
-!C	OUTPUT			Parameters passed through COMMON block
+!C      OUTPUT                  Parameters passed through global vars in this module
 !C
 !C---
-	SUBROUTINE 		UNDUL_SHADOW_IO
+        SUBROUTINE UNDUL_SHADOW_IO
 
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
-!C
-	c     = 2.998D8		!M/SEC
-	e     = 1.602D-19	!COULOMB
-	h     = 6.626D-34	!PLANCK'S CONSTANT  JOULE*SEC
-	hh    = H/E		!  "         "	    eV*sec
-	hbar  = H/TWOPI		!  "         "      joule*sec
-	hhbar = HH/TWOPI	!  "	     "	    eV*sec
-     	EPSI    = 8.854D-12	!FARAD/METER
-     	EPSI_FAC = 16.0D0*PI**3*EPSI*C
-     	EPSI_FAC = 1/EPSI_FAC	! {4 pi epsi_0 * 4 pi^2}
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
+
+        real(kind=skr)       :: hh,hbar,hhbar,epsi,epsi_fac
+        character(len=sklen) :: stmp
+
+!        hh    = H/E             !  "         "	    eV*sec
+!        hbar  = H/TWOPI         !  "         "      joule*sec
+!        hhbar = HH/TWOPI        !  "	     "	    eV*sec
+
+        hh    = codata_H/codata_E             !  "         "	    eV*sec
+        hbar  = codata_H/TWOPI         !  "         "      joule*sec
+        hhbar = HH/TWOPI        !  "	     "	    eV*sec
+
+        !EPSI    = 8.854D-12	!FARAD/METER
+        EPSI    = codata_electric_permittivity
+        EPSI_FAC = 16.0D0*PI**3*EPSI*codata_C
+        EPSI_FAC = 1/EPSI_FAC  ! {4 pi epsi_0 * 4 pi^2}
 !C
 !C Internal or external computation base
 !C
-	WRITE(6,*) 'Computation done by :'
-	WRITE(6,*) '       supplied program        (0)'
-	WRITE(6,*) '       user''s program          (1)'
-	IEXTERNAL	= IRINT ('Choice : ')
+        WRITE(6,*) 'Computation done by :'
+        WRITE(6,*) '       supplied program        (0)'
+        WRITE(6,*) '       user''s program          (1)'
+        IEXTERNAL = IRINT ('Choice : ')
 !C
-     	WRITE(6,*) ' '
-     	WRITE(6,*) '----------------------------',&
+             WRITE(6,*) ' '
+             WRITE(6,*) '----------------------------',&
       '-----------------------------------------------'
-     	WRITE(6,*) ' '
-	WRITE(6,*) ' '
-	WRITE(6,*) 'Define Radiation Computational parameters:'
-	WRITE(6,*) ' '
-	WRITE(6,*) 'Polar coordinate is used here.'
-	NE	= IRINT ('Number of points in energy (51 max) : ')
-	NT	= IRINT ('                     theta (31 max) : ')
-	NP	= IRINT ('                       phi (31 max) : ')
-     	WRITE(6,*) ' '
-     	WRITE(6,*) '----------------------------',&
+             WRITE(6,*) ' '
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Define Radiation Computational parameters:'
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Polar coordinate is used here.'
+        !write(stmp,'(I5)') NDIM_E
+        NE = IRINT ('Number of points in energy : ')
+        !write(stmp,'(I5)') NDIM_A
+        NT = IRINT ('                     theta : ')
+        NP = IRINT ('                       phi : ')
+        WRITE(6,*) ' '
+        WRITE(6,*) '----------------------------',&
       '-----------------------------------------------'
-     	WRITE(6,*) ' '
+        WRITE(6,*) ' '
 !C
 !C  read file generated from EPATH
 !C
-     	  WRITE(6,*) '----------------------------',&
+        WRITE(6,*) '----------------------------',&
       '-----------------------------------------------'
-     	  WRITE(6,*) ' '
-	  FTRAJ   = RSTRING('Enter name of trajectory file from EPATH (input ):')
-     	  WRITE(6,*) ' '
-     	  WRITE(6,*) '----------------------------', &
-      '-----------------------------------------------'
+        WRITE(6,*) ' '
+        FTRAJ   = RSTRING('Enter name of trajectory file from EPATH (input ):')
+        WRITE(6,*) ' '
+        WRITE(6,*) '----------------------------', &
+              '-----------------------------------------------'
 !C
 !C Read in trajectory file
 !C
-	  CALL	UREAD
+        CALL UREAD
 !C
 !C Let the user know the parameters from the trajectory file.
 !C
-	  WRITE(6,*) ' '
-     	  WRITE(6,*) 'Undulator case.'
-	  WRITE(6,*) 'Trajectory computed by EPATH with following parameters:'
-	  WRITE(6,*) ' '
-     	  WRITE(6,*) 'Number of points       :',NPointId
-	  WRITE(6,*) 'Undulator wavelength   :',RLAU,'  meters'
-	  WRITE(6,*) 'Deflection parameter   :',RK
-	  WRITE(6,*) 'Peak magnetic field    :',B0,'  tesla'
-	  WRITE(6,*) 'Electron energy	       :',ER/1.602D-19/1.D9,'  GeV'
-	  WRITE(6,*) 'Gamma		       :',GA0
-     	  WRITE(6,*) '      '
-	  WRITE(6,*) 'Fundamental energy     :',ENERGY1/1.602D-19,'  eV'
-	  WRITE(6,*) 'Fundamental wavelength :',RLA1*1.0d10,'  Angstrom'
-     	  WRITE(6,*) '      '
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Undulator case.'
+        WRITE(6,*) 'Trajectory computed by EPATH with following parameters:'
+        WRITE(6,*) ' '
+        WRITE(6,*) 'Number of points       :',NPointId
+        WRITE(6,*) 'Undulator wavelength   :',RLAU,'  meters'
+        WRITE(6,*) 'Deflection parameter   :',RK
+        WRITE(6,*) 'Peak magnetic field    :',B0,'  tesla'
+        WRITE(6,*) 'Electron energy	       :',ER/1.602D-19/1.D9,'  GeV'
+        WRITE(6,*) 'Gamma		       :',GA0
+        WRITE(6,*) '      '
+        WRITE(6,*) 'Fundamental energy     :',ENERGY1/1.602D-19,'  eV'
+        WRITE(6,*) 'Fundamental wavelength :',RLA1*1.0d10,'  Angstrom'
+        WRITE(6,*) '      '
 !C
 !C  band pass case:  energy range: EMIN,EMAX,ESTEP
 !C
-     	WRITE(6,*) ' '
-     	WRITE(6,*) '----------------------------',&
+        WRITE(6,*) ' '
+        WRITE(6,*) '----------------------------',&
       '-----------------------------------------------'
-     	WRITE(6,*) ' Parameters for Radiation Computation.'
-	IF (IEXTERNAL.EQ.0) WRITE(6,*)  &
+        WRITE(6,*) ' Parameters for Radiation Computation.'
+        IF (IEXTERNAL.EQ.0) WRITE(6,*)  &
        'Please note value of first harmonic from above table.'
-	WRITE(6,*) ' '
-     	NCOMP	= IRINT  ('  Enter number of periods: ')
-	EMIN    = RNUMBER('        spectrum starting energy [ eV ] : ')
-	EMAX    = RNUMBER('                 final           [ eV ] : ')
-     	RCURR	= RNUMBER('        electron current         [ A  ] : ')
+        WRITE(6,*) ' '
+        NCOMP   = IRINT  ('  Enter number of periods: ')
+        EMIN    = RNUMBER('        spectrum starting energy [ eV ] : ')
+        EMAX    = RNUMBER('                 final           [ eV ] : ')
+        RCURR   = RNUMBER('        electron current         [ A  ] : ')
 !C
 !C Sets ICOMP to # of photons per energy interval (=1), bandpass case is (=0).
 !C
-     	ICOMP	= 1
+        ICOMP = 1
 !C
 !C Selects polar angles (=1), cartesian angle (=2).
 !C
-     	IANGLE	= 1
+        IANGLE = 1
 !C
 !C Region in which to generate angles (first quadrant of x',z')
 !C
-     	IAPERTURE = 2
+        IAPERTURE = 2
 !C
-     	   THEMAX = RNUMBER('Maximum angle between radiation and undulator axis [ mrad ]: ')
-	   THEMIN    = 0.0d0
+        THEMAX = RNUMBER('Maximum angle between radiation and undulator axis [ mrad ]: ')
+        THEMIN    = 0.0d0
 !C
-!C     	   WRITE(6,*) 'Maximum angle between radiation and undulator axis 
+!C      WRITE(6,*) 'Maximum angle between radiation and undulator axis 
 !C     $ NORMAL to undulator plane (i.e., parallel to magnetic field) '
-!C     	   WRITE(6,*) '(i.e., in the vertical plane)'
-	   PHIMIN    = 0.0d0
-	   PHIMAX    = PIHALF
+!C      WRITE(6,*) '(i.e., in the vertical plane)'
+        PHIMIN    = 0.0d0
+        PHIMAX    = PIHALF
 !C
 !C  convert units (mrad to rad)
 !C
-	THEMAX   = THEMAX*1.D-3
+        THEMAX   = THEMAX*1.D-3
 !C
 !C No. of optimization
 !C
-	WRITE(6,*) 'All undulator parameters defined.'
-	IOPT	= IRINT	('How many times of optimization ? ')
+        WRITE(6,*) 'All undulator parameters defined.'
+        IOPT = IRINT ('How many times of optimization ? ')
 
-	RETURN
+        RETURN
 END SUBROUTINE Undul_Shadow_Io
 
 
@@ -1103,51 +1125,84 @@ END SUBROUTINE Undul_Shadow_Io
 !C
 !C---
 SUBROUTINE URead 
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        ! implicit real(kind=skr) (a-h,o-z)
+        ! implicit integer(kind=ski)        (i-n)
+        implicit none
+        integer(kind=ski) :: i,nc
+        real(kind=skr)    :: betay,betazprime,yofz,rb0dumm
+
 
 !C
 !C  read file generated from EPATH
 !C
-	OPEN (21,FILE=FTRAJ,STATUS='OLD',FORM='UNFORMATTED')
-	READ (21) N0,RLAU,ENERGY1
-	READ (21) RLA1,RK,GA0,BETA0
-	READ (21) BETAX0,BETAY0,BETAZ0
-	READ (21) B0,ER,RLEN,NPointId,rb0dumm
-	READ (21) PHI_E,THE_E	!Initial velocity angles for EPATH
+        OPEN (21,FILE=FTRAJ,STATUS='OLD',FORM='UNFORMATTED')
+        READ (21) N0,RLAU,ENERGY1
+        READ (21) RLA1,RK,GA0,BETA0
+        READ (21) BETAX0,BETAY0,BETAZ0
+        READ (21) B0,ER,RLEN,NPointId,rb0dumm
+        READ (21) PHI_E,THE_E  !Initial velocity angles for EPATH
 !C
 !C  This is the part for the (N-1) periods of ideal sinusoidal trajectory.
 !C
-	READ (21) TAU,Z0,ZSTEP
-	DO 19 I = 1,NPointId
-	   READ (21) XOFZ(I),YOFZ,Z(I)
-	   READ (21) BETAX(I),BETAY,BETAZ(I)
-	   READ (21) TOFZ(I),BETAZPRIME
-19	CONTINUE	
+        READ (21) TAU,Z0,ZSTEP
+        DO 19 I = 1,NPointId
+             READ (21) XOFZ(I),YOFZ,Z(I)
+            READ (21) BETAX(I),BETAY,BETAZ(I)
+            READ (21) TOFZ(I),BETAZPRIME
+19	CONTINUE
 !C
 !C  Now the part for the two ends of the undulator.
 !C
 !C	NC 	= 0.5*(NPointId+1)
-	READ (21) ETAU, EZ0, EZSTEP, NC
-	DO 29 I=1,NC
-	   READ (21) XOFZ1(I), YOFZ, Z1(I)
-	   READ (21) BETAX1(I), BETAY, BETAZ1(I)
-	   READ (21) TOFZ1(I), BETAZPRIME
+        READ (21) ETAU, EZ0, EZSTEP, NC
+        DO 29 I=1,NC
+            READ (21) XOFZ1(I), YOFZ, Z1(I)
+            READ (21) BETAX1(I), BETAY, BETAZ1(I)
+            READ (21) TOFZ1(I), BETAZPRIME
 29	CONTINUE
 
-	DO 39 I = 1,NC
-	   READ (21) XOFZ2(I), YOFZ, Z2(I)
-	   READ (21) BETAX2(I), BETAY, BETAZ2(I)
-	   READ (21) TOFZ2(I), BETAZPRIME
-	   Z2(I)	= Z2(I) + (NCOMP-1)*RLAU
-	   TOFZ2(I)	= TOFZ2(I) + (NCOMP-1)*TAU
+        DO 39 I = 1,NC
+            READ (21) XOFZ2(I), YOFZ, Z2(I)
+            READ (21) BETAX2(I), BETAY, BETAZ2(I)
+            READ (21) TOFZ2(I), BETAZPRIME
+            Z2(I) = Z2(I) + (NCOMP-1)*RLAU
+            TOFZ2(I) = TOFZ2(I) + (NCOMP-1)*TAU
 39	CONTINUE
-	CLOSE (21)
-	CLOSE (41)
-!C
-	RETURN
-END SUBROUTINE URead
+        CLOSE (21)
 
+! dump ascii file
+
+
+!C
+!C  This is the part for the (N-1) periods of ideal sinusoidal trajectory.
+!C
+!        DO I = 1,NPointId
+!            WRITE (111,*) XOFZ(I),YOFZ,Z(I)
+!            WRITE (111,*) BETAX(I),BETAY,BETAZ(I)
+!            WRITE (111,*) TOFZ(I),BETAZPRIME
+!        END DO
+!C
+!C  Now the part for the two ends of the undulator.
+!C
+!        DO I=1,NC
+!            WRITE (111,*) XOFZ1(I), YOFZ, Z1(I)
+!            WRITE (111,*) BETAX1(I), BETAY, BETAZ1(I)
+!            WRITE (111,*) TOFZ1(I), BETAZPRIME
+!        END DO
+
+!        DO I = 1,NC
+!            WRITE (111,*) XOFZ2(I), YOFZ, Z2(I)
+!            WRITE (111,*) BETAX2(I), BETAY, BETAZ2(I)
+!            WRITE (111,*) TOFZ2(I), BETAZPRIME
+!        END DO
+
+
+! end dump ascii file
+
+!C
+        RETURN
+
+END SUBROUTINE URead
 
 
 
@@ -1163,218 +1218,255 @@ END SUBROUTINE URead
 !C
 !C---
 SUBROUTINE Undul_Set
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
 
-	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	DIMENSION	TSTART(10),TEND(10)
-	LOGICAL		FLAG1,FLAG2
+        !DIMENSION    UPHI(31,31,51),UTHETA(31,51),UENER(51)
+        !real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E)  ::     UPHI
+        !real(kind=skr),dimension(NDIM_A,NDIM_E)     ::     UTHETA
+        !real(kind=skr),dimension(NDIM_E)        ::     UENER
+        real(kind=skr),dimension(:,:,:),allocatable  ::     UPHI
+        real(kind=skr),dimension(:,:),allocatable    ::     UTHETA
+        real(kind=skr),dimension(:),allocatable      ::     UENER
+        
+        !DIMENSION    TSTART(10),TEND(10)
+        real(kind=skr),dimension(10) ::     tstart, tend
+        real(kind=skr)               ::     ener, rlamda, tav, the_1, the_2, tstep,di
+        integer(kind=ski)            ::     i,ii,iname,j,jstart,k,nd,nd1,nd2
+        integer(kind=ski)            ::     nhar,ntemp,srio_jump
+        LOGICAL                      ::     FLAG1,FLAG2
 
-	CHARACTER(len=sklen) :: FNAME
+        CHARACTER(len=sklen) :: FNAME
 
-	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS, &
-      					IANGLE,IAPERTURE,IEXTERNAL, &
-      					FOUT,FIN,FTRAJ,EMIN,EMAX, &
-      					THEMIN,THEMAX,PHIMIN,PHIMAX, &
-      					NE,NT,NP,NCHECK,IOPT,ITER,IPASS, &
-      					I_EDIV,EDIVX,EDIVY,FINT,IINT
+        NAMELIST    /PARAIN/    NCOMP,RCURR,ICOMP,BPASS, &
+                          IANGLE,IAPERTURE,IEXTERNAL, &
+                          FOUT,FIN,FTRAJ,EMIN,EMAX, &
+                          THEMIN,THEMAX,PHIMIN,PHIMAX, &
+                          NE,NT,NP,NCHECK,IOPT,ITER,IPASS, &
+                          I_EDIV,EDIVX,EDIVY,FINT,IINT
 !C
 !C Read in namelist and trajectory file from EPATH
 !C
-	WRITE(6,*) ' '
-	WRITE(6,*) '*********************** UNDULATOR RADIATION ',&
+        WRITE(6,*) ' '
+        WRITE(6,*) '*********************** UNDULATOR RADIATION ',&
       '***********************'
-	WRITE(6,*) ' '
-	write(6,*) 'Parameters from : '
-	write(6,*) '	User interactive process   (0) '
-	write(6,*) '	NAMELIST file		   (1) '
-	INAME 		= IYES ('Choice : ')
+        WRITE(6,*) ' '
+        write(6,*) 'Parameters from : '
+        write(6,*) '    User interactive process   (0) '
+        write(6,*) '    NAMELIST file		   (1) '
+        INAME = IYES ('Choice : ')
 !C
-	if (INAME.eq.1) then
+        if (INAME.eq.1) then
 !C
 !C Read in the namelist file of parameters
 !C
-	   FNAME	= RSTRING ('Namelist file : ')
-	   OPEN	(31, FILE=FNAME, STATUS='OLD')
-	   READ	(31,NML=PARAIN)
-	   CLOSE	(31)
-	else
-	   CALL	UNDUL_SHADOW_IO
-	   ITER	= 0
-	end if
+           FNAME = RSTRING ('Namelist file : ')
+           OPEN (31, FILE=FNAME, STATUS='OLD')
+           READ (31,NML=PARAIN)
+           CLOSE (31)
+        else
+           CALL UNDUL_SHADOW_IO
+           ITER = 0
+        end if
 !C
 !C Get parameters for REPORT
 !C
-     	WRITE(6,*) 'How often do you want a report on calculations ?'
-     	NCHECK	= IRINT ('E.G., 20, 50,... ? ')
+        WRITE(6,*) 'How often do you want a report on calculations ?'
+        NCHECK = IRINT ('E.G., 20, 50,... ? ')
 !C
 !C Set the counters
 !C
-	IPASS	= 0
+        IPASS = 0
 !C
 !C Read in the trajectory parameters.
 !C
-	CALL	UREAD
+        CALL UREAD
 !C
 !C  compute the number of points and step size
 !C
-	IF (EMAX.EQ.EMIN) THEN
-	   NE    = 1
-	   ESTEP = 0.0D0
-	ELSE
-     	   ESTEP  = (EMAX-EMIN)/(NE-1)
-	END IF
+        IF (EMAX.EQ.EMIN) THEN
+           NE    = 1
+           ESTEP = 0.0D0
+        ELSE
+           ESTEP  = (EMAX-EMIN)/(NE-1)
+        END IF
 !C     	BDEL	= ABS(ESTEP)
 !C
-     	IF (PHIMAX.EQ.PHIMIN) THEN
-	  NP      = 1
-	  PHISTEP = 0.0D0
-     	ELSE	
-     	 IF (NP.GT.1) THEN
-	  PHISTEP   = (PHIMAX-PHIMIN)/(NP-1)	! open string of points
-						! for 1 quadrant.
-     	 ELSE
-     	  PHISTEP = ABS ( PHIMAX - PHIMIN )
-     	 END IF
-     	END IF
+        IF (PHIMAX.EQ.PHIMIN) THEN
+          NP      = 1
+          PHISTEP = 0.0D0
+        ELSE
+          IF (NP.GT.1) THEN
+              PHISTEP = (PHIMAX-PHIMIN)/(NP-1) ! open string of points for 1 quadrant.
+          ELSE
+              PHISTEP = ABS ( PHIMAX - PHIMIN )
+          END IF
+        END IF
 !C
-     	IF (THEMAX.EQ.THEMIN) THEN
-	  NT      = 1
-	  THESTEP = 0.0D0
-     	ELSE
-     	 IF (NT.GT.1) THEN
- 	  THESTEP   = (THEMAX-THEMIN)/(NT-1)	! open string of points
-     	 ELSE
-     	  THESTEP = ABS ( THEMAX - THEMIN )
-     	 END IF
-     	END IF
-!C
-!C Fill the arrays
-!C
-	DO 19 K = 1, NE
-	  UENER(K)	= EMIN + (K-1)*ESTEP
-	  DO 29 J = 1, NT
-	    UTHETA(J,K)	= THEMIN + (J-1)*THESTEP
-	    DO 39 I = 1, NP
-	      UPHI(I,J,K) = PHIMIN + (I-1)*PHISTEP
-39	    CONTINUE
-29	  CONTINUE
-19	CONTINUE
-!C
-!C For theta, we put them at the ith harmonics.  
-!C The number of available points in theta, NTEMP, is normally NT minus the 2 
-!C end points (THEMIN and THEMAX).
-!C
-	DO 49 K = 1, NE
-	  ENER		= UENER(K)
-	  RLAMDA 	= 12398.52D0/ENER*1.0D-10		! meter
-	  DI		= 2.0D0/NCOMP
-	  NHAR		= 0
-	  NTEMP		= NT - 2
-	  JSTART	= 2
-!C
-!C Fill in TSTART(i) and TEND(i), the boundary of the ith harmonics.  It 
-!C includes up to the 2nd minimum on either side of the harmonics.
-!C
-	  DO 59 I = 1, 10
-	    THE_1	= (I-DI)*RLAMDA/RLAU*(2.0D0*GA0**2) -  &
-      						1.0D0 - 0.5D0*(RK**2)
-	    THE_2	= (I+DI)*RLAMDA/RLAU*(2.0D0*GA0**2) -  &
-      						1.0D0 - 0.5D0*(RK**2)
-	    IF (THE_1.GE.0.0)	THE_1 = SQRT(THE_1/GA0**2)
-	    IF (THE_2.GE.0.0)	THE_2 = SQRT(THE_2/GA0**2)
-	    FLAG1	= (THE_1.GE.THEMIN).AND.(THE_1.LE.THEMAX)
-	    FLAG2	= (THE_2.GE.THEMIN).AND.(THE_2.LE.THEMAX)
-	    IF (FLAG1.OR.FLAG2) THEN
-	      NHAR	= NHAR + 1
-	      IF (FLAG1) THEN
-		TSTART(NHAR)	= THE_1
-	      ELSE
-	        TSTART(NHAR)	= THEMIN
-		NTEMP		= NTEMP + 1
-		JSTART		= 1
-	      END IF
-	      IF (FLAG2) THEN
-		TEND(NHAR)	= THE_2
-	      ELSE
-	        TEND(NHAR)	= THEMAX
-		NTEMP		= NTEMP + 1
-	      END IF
-	    END IF
-59	  CONTINUE
-!C
-!C If catch no harmonics, just keep the uniform distribution.
-!C
-	  IF (NHAR.EQ.0) THEN			
-	  ELSE
-!C
-!C Check for the unlikely case of overlap.
-!C
-	    DO 69 I = 2, NHAR
-	      IF (TSTART(I).LT.TEND(I-1))THEN
-	 	TAV		= (TSTART(I) + TEND(I-1))/2.0D0
-		TSTART(I)	= TAV + 1.0D-6
-		TEND(I-1)	= TAV
-	      END IF
-69	    CONTINUE
-!C
-!C Spread the available points NTEMP to the various harmonics.
-!C
-	    ND2	= NTEMP/NHAR
-	    ND1	= NTEMP - ND2*(NHAR-1)
-	    DO 79 I = 1, NHAR
-	      IF (I.EQ.1) THEN
-		ND 	= ND1
-	      ELSE
-		ND 	= ND2
-	      END IF
+        IF (THEMAX.EQ.THEMIN) THEN
+            NT      = 1
+            THESTEP = 0.0D0
+        ELSE
+            IF (NT.GT.1) THEN
+                THESTEP   = (THEMAX-THEMIN)/(NT-1) ! open string of points
+            ELSE
+                THESTEP = ABS ( THEMAX - THEMIN )
+            END IF
+        END IF
 
-	      TSTEP	= (TEND(I) - TSTART(I))/(ND-1)
+        !C
+        !C allocate the arrays
+        !C
+        allocate( UENER(NE) )
+        allocate( UTHETA(NT,NE) )
+        allocate( UPHI(NP,NT,NE) )
 
-	      DO 89 II = 1, ND
-		UTHETA(JSTART,K)	= TSTART(I) + (II-1)*TSTEP
-		JSTART			= JSTART + 1
-89	      CONTINUE
-79	    CONTINUE
-	    UTHETA(1,K)		= THEMIN
-	    UTHETA(NT,K)	= THEMAX
-	  END IF
-49	CONTINUE
+        !C
+        !C Fill the arrays
+        !C
+        DO K = 1, NE
+            UENER(K) = EMIN + (K-1)*ESTEP
+            DO J = 1, NT
+                UTHETA(J,K) = THEMIN + (J-1)*THESTEP
+                DO I = 1, NP
+                    UPHI(I,J,K) = PHIMIN + (I-1)*PHISTEP
+                END DO
+            END DO
+        END DO
+        !C
+        !C For theta, we put them at the ith harmonics.  
+        !C The number of available points in theta, NTEMP, is normally NT minus the 2 
+        !C end points (THEMIN and THEMAX).
+        !C
 
-!C
-!C If starting from scratch, we need to write out the initial (energy, theta, 
-!C phi) array; otherwise, it already exists.
-!C
-	IF (ITER.EQ.0) THEN
-	  OPEN	(20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
-	  REWIND (20)
-	  WRITE	(20)	NE, NT, NP
-	  DO 15 K = 1,NE
-	     WRITE	(20)	UENER(K)
-15	  CONTINUE
-	  DO 25 K = 1,NE
-	     DO 35 J = 1,NT
-	  	WRITE	(20) UTHETA(J,K)
-35	     CONTINUE
-25	  CONTINUE
-	  DO 45 K = 1,NE
-	     DO 55 J = 1,NT
-		DO 65 I = 1,NP
-	           WRITE (20)	UPHI(I,J,K)
-65		CONTINUE
-55	     CONTINUE
-45	  CONTINUE
-	  CLOSE	(20)
-          PRINT *,'File writtem to disk: uphot.dat'
-	END IF
+        ! srio@esrf.eu 20131213
+        ! I have decided to jump this sectio that rearranges the angular 
+        ! arrays depending on the energy. 
+        ! I think this creates problems and it is preferred, in my opinion, 
+        ! to keep the arrays linear and increment the number of points. 
+
+        srio_jump = 1
+        if (srio_jump .eq. 0) then
+                DO 49 K = 1, NE
+                    ENER = UENER(K)
+                    !RLAMDA  = 12398.52D0/ENER*1.0D-10 ! meter
+                    RLAMDA = toangs/ENER*1.0D-10  ! meter
+                    DI = 2.0D0/NCOMP
+                    NHAR = 0
+                    NTEMP = NT - 2
+                    JSTART = 2
+                    !C
+                    !C Fill in TSTART(i) and TEND(i), the boundary of the ith harmonics.  It 
+                    !C includes up to the 2nd minimum on either side of the harmonics.
+                    !C
+                    DO 59 I = 1, 10
+                        THE_1 = (I-DI)*RLAMDA/RLAU*(2.0D0*GA0**2) -  &
+                            1.0D0 - 0.5D0*(RK**2)
+                        THE_2 = (I+DI)*RLAMDA/RLAU*(2.0D0*GA0**2) -  &
+                            1.0D0 - 0.5D0*(RK**2)
+                        IF (THE_1.GE.0.0) THE_1 = SQRT(THE_1/GA0**2)
+                        IF (THE_2.GE.0.0) THE_2 = SQRT(THE_2/GA0**2)
+                        FLAG1 = (THE_1.GE.THEMIN).AND.(THE_1.LE.THEMAX)
+                        FLAG2 = (THE_2.GE.THEMIN).AND.(THE_2.LE.THEMAX)
+                        IF (FLAG1.OR.FLAG2) THEN
+                            NHAR = NHAR + 1
+                            IF (FLAG1) THEN
+                                TSTART(NHAR) = THE_1
+                            ELSE
+                                TSTART(NHAR) = THEMIN
+                                NTEMP  = NTEMP + 1
+                                JSTART  = 1
+                            END IF
+                            IF (FLAG2) THEN
+                                TEND(NHAR) = THE_2
+                            ELSE
+                                TEND(NHAR) = THEMAX
+                                NTEMP  = NTEMP + 1
+                            END IF
+                        END IF
+                    59  CONTINUE
+                    !C
+                    !C If catch no harmonics, just keep the uniform distribution.
+                    !C
+                    IF (NHAR.EQ.0) THEN
+                    ELSE
+                        !C
+                        !C Check for the unlikely case of overlap.
+                        !C
+                        DO 69 I = 2, NHAR
+                            IF (TSTART(I).LT.TEND(I-1))THEN
+                                TAV = (TSTART(I) + TEND(I-1))/2.0D0
+                                TSTART(I) = TAV + 1.0D-6
+                                TEND(I-1) = TAV
+                            END IF
+                        69 CONTINUE
+                        !C
+                        !C Spread the available points NTEMP to the various harmonics.
+                        !C
+                        ND2 = NTEMP/NHAR
+                        ND1 = NTEMP - ND2*(NHAR-1)
+                        DO 79 I = 1, NHAR
+                            IF (I.EQ.1) THEN
+                                ND  = ND1
+                            ELSE
+                                ND  = ND2
+                            END IF
+                            TSTEP = (TEND(I) - TSTART(I))/(ND-1)
+                        
+                            DO 89 II = 1, ND
+                                UTHETA(JSTART,K) = TSTART(I) + (II-1)*TSTEP
+                                JSTART = JSTART + 1
+                            89 CONTINUE
+                        79 CONTINUE
+                        UTHETA(1,K) = THEMIN
+                        UTHETA(NT,K) = THEMAX
+                    END IF
+                49 CONTINUE
+        end if ! srio_jump
+        
+        !C
+        !C If starting from scratch, we need to write out the initial 
+        !C (energy, theta, phi) array; otherwise, it already exists.
+        !C
+        IF (ITER.EQ.0) THEN
+          OPEN (20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
+          REWIND (20)
+          WRITE (20) NE, NT, NP
+          DO K = 1,NE
+              WRITE (20) UENER(K)
+          END DO
+          DO K = 1,NE
+             DO J = 1,NT
+                WRITE (20) UTHETA(J,K)
+             END DO
+          END DO
+          DO K = 1,NE
+             DO J = 1,NT
+                DO I = 1,NP
+                   WRITE (20) UPHI(I,J,K)
+                END DO
+             END DO
+          END DO
+          CLOSE (20)
+          PRINT *,'File written to disk: uphot.dat'
+
+        END IF
 !C
 !C Finally the namelist file
 !C
-	OPEN	(21, FILE='uphot.nml', STATUS='UNKNOWN')
-	REWIND	(21)
-	WRITE	(21, NML=PARAIN)
-	CLOSE	(21)
+        OPEN    (21, FILE='uphot.nml', STATUS='UNKNOWN')
+        REWIND  (21)
+        WRITE   (21, NML=PARAIN)
+        CLOSE   (21)
         PRINT *,'File writtem to disk: uphot.nml'
+
+!C
+!C deallocate the arrays
+!C
+        if (allocated( UENER )) deallocate( UENER )
+        if (allocated( UTHETA )) deallocate( UTHETA )
+        if (allocated( UPHI   )) deallocate( UPHI ) 
 
 END SUBROUTINE Undul_Set
 
@@ -1386,23 +1478,25 @@ END SUBROUTINE Undul_Set
 !C
 !C---
 SUBROUTINE Report (E,T,P,TT,PERC,IVAL)
-     	!IMPLICIT	REAL*8	(A-H,O-Z)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        !IMPLICIT	REAL*8	(A-H,O-Z)
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        implicit none
 
-	real,intent(in) :: TT
+        !real,intent(in) :: TT
+        real(kind=skr),       intent(in) :: E,T,P,PERC
+        real(kind=4),         intent(in) :: TT
+        integer(kind=ski),    intent(in) :: IVAL
 
-     	IF (IVAL.LT.0) THEN
-!C
-!C
-     	  WRITE (6,1010) 'Phi / Horz: ', 'Theta / Vert : ', &
-      'Energy: ','CPU Time: ','% Completed: '
-     	ELSE
-     	  WRITE (6,1000)	P, T, E, TT, PERC
-     	END IF
-1000	FORMAT	(1X,G10.3,T15,G10.3,T30,G10.3,T45,G10.3,T60,F9.2)
-1010	FORMAT	(1X,A    ,T15,A    ,T30,A    ,T45,A    ,T60,A)
-     	RETURN
+        IF (IVAL.LT.0) THEN
+            WRITE (6,1010) 'Phi / Horz: ', 'Theta / Vert : ', &
+                'Energy: ','CPU Time: ','% Completed: '
+        ELSE
+            WRITE (6,1000)  P, T, E, TT, PERC
+        END IF
+1000    FORMAT (1X,G10.3,T15,G10.3,T30,G10.3,T45,G10.3,T60,F9.2)
+1010    FORMAT (1X,A    ,T15,A    ,T30,A    ,T45,A    ,T60,A)
+        RETURN
 END SUBROUTINE Report
 
 
@@ -1423,124 +1517,149 @@ END SUBROUTINE Report
 !C				POL_DEG, degree of polarization
 !C---
 SUBROUTINE UPhoton (ENER,THETA,PHI,PHOT,POL_DEG)
-	
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+        
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
 !C
-	DIMENSION		AXR(1001),AXI(1001)
-	DIMENSION		AYR(1001),AYI(1001)
-	DIMENSION		AZR(1001),AZI(1001)
-	DIMENSION		N(3),P_PI(3),EP(3)
+real(kind=skr),intent(in)   :: ener,theta,phi
+real(kind=skr),intent(out)  :: pol_deg,phot
 
+real(kind=skr),dimension(NDIM_TRAJ) :: axr,axi,ayr,ayi,azr,azi
+real(kind=skr),dimension(3)    :: n,p_pi,ep
+
+real(kind=skr)   :: hh,hbar,hhbar,epsi,epsi_fac
+real(kind=skr)    ::   aax,aay,aaz,atempxi,atempxr,atempyi,atempyr,atempzi,atempzr
+real(kind=skr)    ::   atot,atxi,atxr,atyi,atyr,atzi,atzr, comega, cpsi, dot_i, dot_r
+real(kind=skr)    ::   axi_i,axi_i1,axi_i2,axr_i,axr_i1,axr_i2
+real(kind=skr)    ::   ayi_i,ayi_i1,ayi_i2,ayr_i,ayr_i1,ayr_i2
+real(kind=skr)    ::   azi_i,azi_i1,azi_i2,azr_i,azr_i1,azr_i2
+real(kind=skr)    ::   eatempxi,eatempxr
+real(kind=skr)    ::   eatempyi,eatempyr
+real(kind=skr)    ::   eatempzi,eatempzr
+real(kind=skr)    ::   efac,fs,g0,gn,gg, omega, powert, powerx, powery, powerz
+real(kind=skr)    ::   psi, r_nph_t, r_nph_x, r_nph_y, r_nph_z, rnx, rny, rnz
+real(kind=skr)    ::   spsi
+integer(kind=ski) ::   l,nc
+
+!DIMENSION    AXR(1001),AXI(1001)
+!DIMENSION    AYR(1001),AYI(1001)
+!DIMENSION    AZR(1001),AZI(1001)
+!DIMENSION    N(3),P_PI(3),EP(3)
 !C
-	c     = 2.998D8		!M/SEC
-	e     = 1.602D-19	!COULOMB
-	h     = 6.626D-34	!PLANCK'S CONSTANT  JOULE*SEC
-	hh    = H/E		!  "         "	    eV*sec
-	hbar  = H/TWOPI		!  "         "      joule*sec
-	hhbar = HH/TWOPI	!  "	     "	    eV*sec
-     	epsi    = 8.854D-12	!FARAD/METER
-     	epsi_fac = 16.0D0*PI**3*EPSI*C
-     	epsi_fac = 1/EPSI_FAC	! {4 pi epsi_0 * 4 pi^2}
+!c     = 2.998D8  !M/SEC
+
+!c     = codata_c
+!e     = codata_e ! 1.602D-19  !COULOMB
+!h     = codata_h ! 6.626D-34  !PLANCK'S CONSTANT  JOULE*SEC
+hh    = codata_H/codata_E      !  "         "  eV*sec
+hbar  = codata_H/TWOPI  !  "         "      joule*sec
+hhbar = HH/TWOPI !  "         "  eV*sec
+epsi    = codata_electric_permittivity ! 8.854D-12  !FARAD/METER
+epsi_fac = 16.0D0*PI**3*EPSI*codata_C
+epsi_fac = 1/EPSI_FAC  ! {4 pi epsi_0 * 4 pi^2}
 !C
-!C  observation vector		n = ( rnx, rny, rnz )
-!C  electron trajectory 		rr = ( xofz, yofz, z )
+!C  observation vector  n = ( rnx, rny, rnz )
+!C  electron trajectory   rr = ( xofz, yofz, z )
 !C
-	  IF (IANGLE.EQ.2) THEN
-	      RNX = COS(THETA)*SIN(PHI)			!cartesian
-	      RNY = SIN(THETA)
-	      RNZ = COS(THETA)*COS(PHI)
-	  ELSE IF (IANGLE.EQ.1) THEN
-	      RNX = SIN(THETA)*COS(PHI)			!polar
-	      RNY = SIN(THETA)*SIN(PHI)
-	      RNZ = COS(THETA)
-	  END IF
+IF (IANGLE.EQ.2) THEN
+    RNX = COS(THETA)*SIN(PHI)    !cartesian
+    RNY = SIN(THETA)
+    RNZ = COS(THETA)*COS(PHI)
+ELSE IF (IANGLE.EQ.1) THEN
+    RNX = SIN(THETA)*COS(PHI)    !polar
+    RNY = SIN(THETA)*SIN(PHI)
+    RNZ = COS(THETA)
+END IF
 !C
 !C Begin Integration loop.
 !C First integrate over the (N-1) periods of ideal sinusodal trajectory.
 !C
 !C  omega is frequency of radiation, unit:  (SEC-1)
 !C
-	OMEGA  = ENER/HHBAR
-	COMEGA = OMEGA/C	!CONSTANT FOR EXTERNAL
+OMEGA  = ENER/HHBAR
+COMEGA = OMEGA/codata_C        !CONSTANT FOR EXTERNAL
 !C
 !C  compute integral: A = beta exp(ipsi) 1/(c*betaz) dz
 !C
 !C Begins integration loop.
 !C
-     		  DO 19 L=1,NPointId			!Begin loop 4
-!C
-		   PSI   = - COMEGA*( TOFZ(L)*C &
-      			   - RNX*XOFZ(L)  &
-      			   - 0.0d0 &	!	RNY*YOFZ(L)
-      			   - RNZ*Z(L) )
-!C
-     		   CPSI= COS(PSI)
-     		   SPSI= SIN(PSI)
-!C
-!C The following elements should be divided by "C", but due to overflow
-!C errors we do this later.
-!C X component
-!C
-		   AXR(L) = CPSI*BETAX(L)/BETAZ(L)
-		   AXI(L) = SPSI*BETAX(L)/BETAZ(L)
-!C
-!C Y component
-!C
-!C		   AYR(L) = 0.0d0 ! 	CPSI*BETAY(L)/BETAZ(L)
-!C		   AYI(L) = 0.0d0 !	SPSI*BETAY(L)/BETAZ(L)
-!C
-!C Z component
-!C
-     		   AZR(L) = CPSI
-     		   AZI(L) = SPSI
-19       	  CONTINUE			!End loop 4
+DO 19 L=1,NPointId                  !Begin loop 4
+    !C
+    PSI   = - COMEGA*( TOFZ(L)*codata_C &
+        - RNX*XOFZ(L)  &
+        - 0.0d0 &      !      RNY*YOFZ(L)
+        - RNZ*Z(L) )
+    !C
+    CPSI= COS(PSI)
+    SPSI= SIN(PSI)
+    !C
+    !C The following elements should be divided by "C", but due to overflow
+    !C errors we do this later.
+    !C X component
+    !C
+    AXR(L) = CPSI*BETAX(L)/BETAZ(L)
+    AXI(L) = SPSI*BETAX(L)/BETAZ(L)
+    !C
+    !C Y component
+    !C
+    !C               AYR(L) = 0.0d0 !       CPSI*BETAY(L)/BETAZ(L)
+    !C               AYI(L) = 0.0d0 !      SPSI*BETAY(L)/BETAZ(L)
+    !C
+    !C Z component
+    !C
+    AZR(L) = CPSI
+    AZI(L) = SPSI
+19  CONTINUE                  !End loop 4
+
+
+
 !C
 !C Perform integration.
 !C
-		  CALL SIMPSON (ZSTEP,AXR,AXR_I,NPointId)
-		   CALL SIMPSON (ZSTEP,AXI,AXI_I,NPointId)
-     		  CALL SIMPSON (ZSTEP,AZR,AZR_I,NPointId)
-     		   CALL SIMPSON (ZSTEP,AZI,AZI_I,NPointId)
-!C		  CALL SIMPSON (ZSTEP,AYR,AYR_I,NPointId)
-!C		   CALL SIMPSON (ZSTEP,AYI,AYI_I,NPointId)
-		AYR_I	= 0.0D0
-		AYI_I	= 0.0D0
+CALL SIMPSON (ZSTEP,AXR,AXR_I,NPointId)
+CALL SIMPSON (ZSTEP,AXI,AXI_I,NPointId)
+CALL SIMPSON (ZSTEP,AZR,AZR_I,NPointId)
+CALL SIMPSON (ZSTEP,AZI,AZI_I,NPointId)
+!C    CALL SIMPSON (ZSTEP,AYR,AYR_I,NPointId)
+!C     CALL SIMPSON (ZSTEP,AYI,AYI_I,NPointId)
+AYR_I = 0.0D0
+AYI_I = 0.0D0
 !C
 !C  A = N X (N X BETA) = N (N dot BETA)-BETA (N dot N)
 !C
-     		  DOT_R   = RNX*AXR_I + RNY*AYR_I + RNZ*AZR_I
-     		  DOT_I   = RNX*AXI_I + RNY*AYI_I + RNZ*AZI_I
+DOT_R   = RNX*AXR_I + RNY*AYR_I + RNZ*AZR_I
+DOT_I   = RNX*AXI_I + RNY*AYI_I + RNZ*AZI_I
 !C Divide by "C"
-     		  DOT_R   = DOT_R/C
-     		  DOT_I	  = DOT_I/C
-		  ATXR = RNX*DOT_R - AXR_I/C
-		   ATXI = RNX*DOT_I - AXI_I/C
-		  ATYR = RNY*DOT_R - AYR_I/C
-		   ATYI = RNY*DOT_I - AYI_I/C
-		  ATZR = RNZ*DOT_R - AZR_I/C
-		   ATZI = RNZ*DOT_I - AZI_I/C
+DOT_R   = DOT_R/codata_C
+DOT_I   = DOT_I/codata_C
+ATXR = RNX*DOT_R - AXR_I/codata_C
+ATXI = RNX*DOT_I - AXI_I/codata_C
+ATYR = RNY*DOT_R - AYR_I/codata_C
+ATYI = RNY*DOT_I - AYI_I/codata_C
+ATZR = RNZ*DOT_R - AZR_I/codata_C
+ATZI = RNZ*DOT_I - AZI_I/codata_C
 !C
 !C  Now include G(omega), grating term.
 !C
-	GN 	= SIN((NCOMP-1)*OMEGA/2.0d0*( TAU - RLAU*RNZ/C))
-	G0 	= SIN(          OMEGA/2.0d0*( TAU - RLAU*RNZ/C))
-	IF (ABS(G0).GT.1.0E-15) THEN
-	   GG = GN/G0
- 	ELSE
-     	   GG	= NCOMP - 1
-     	END IF
+GN  = SIN((NCOMP-1)*OMEGA/2.0d0*( TAU - RLAU*RNZ/codata_C))
+G0  = SIN(          OMEGA/2.0d0*( TAU - RLAU*RNZ/codata_C))
+IF (ABS(G0).GT.1.0E-15) THEN
+    GG = GN/G0
+ELSE
+    GG = NCOMP - 1
+END IF
 !C
 !C FS is the extra e^(i*(N-1)*psi/2) factor in front of the (sinNx/sinx) term.
-!C	
-	FS	= -0.5D0*(NCOMP-2)*OMEGA*(TAU - RLAU*RNZ/C)
-		  ATEMPXR = GG * (COS(FS)*ATXR - SIN(FS)*ATXI)
-		   ATEMPXI = GG * (COS(FS)*ATXI + SIN(FS)*ATXR)
-		  ATEMPYR = GG * (COS(FS)*ATYR - SIN(FS)*ATYI)
-		   ATEMPYI = GG * (COS(FS)*ATYI + SIN(FS)*ATYR)
-		  ATEMPZR = GG * (COS(FS)*ATZR - SIN(FS)*ATZI)
-		   ATEMPZI = GG * (COS(FS)*ATZI + SIN(FS)*ATZR)
+!C 
+FS = -0.5D0*(NCOMP-2)*OMEGA*(TAU - RLAU*RNZ/codata_C)
+ATEMPXR = GG * (COS(FS)*ATXR - SIN(FS)*ATXI)
+ATEMPXI = GG * (COS(FS)*ATXI + SIN(FS)*ATXR)
+ATEMPYR = GG * (COS(FS)*ATYR - SIN(FS)*ATYI)
+ATEMPYI = GG * (COS(FS)*ATYI + SIN(FS)*ATYR)
+ATEMPZR = GG * (COS(FS)*ATZR - SIN(FS)*ATZI)
+ATEMPZI = GG * (COS(FS)*ATZI + SIN(FS)*ATZR)
 !C
 !C Integration for the (N-1) periods is completed.
 !C
@@ -1550,127 +1669,131 @@ SUBROUTINE UPhoton (ENER,THETA,PHI,PHOT,POL_DEG)
 !C
 !C The entrance to the undulator:
 !C
-		NC	= 0.5D0*(NPointId+1)
-     		  DO 29 L=1,NC				
-!C 
-		   PSI   = - COMEGA*( TOFZ1(L)*C &
-      			   - RNX*XOFZ1(L)  &
-      			   - 0.0d0 &	!	RNY*YOFZ(L)
-      			   - RNZ*Z1(L))
-!C
-     		   CPSI= COS(PSI)
-     		   SPSI= SIN(PSI)
-!C
-!C The following elements should be divided by "C", but due to overflow
-!C errors we do this later.
-!C X component
-!C
-		   AXR(L) = CPSI*BETAX1(L)/BETAZ1(L)
-		   AXI(L) = SPSI*BETAX1(L)/BETAZ1(L)
-!C
-!C Y component
-!C
-!C		   AYR(L) = 0.0d0 ! 	CPSI*BETAY(L)/BETAZ(L)
-!C		   AYI(L) = 0.0d0 !	SPSI*BETAY(L)/BETAZ(L)
-!C
-!C Z component
-!C
-     		   AZR(L) = CPSI
-     		   AZI(L) = SPSI
-29      	 CONTINUE 				!End loop 4
+NC = 0.5D0*(NPointId+1)
+
+
+DO 29 L=1,NC    
+    !C 
+    PSI   = - COMEGA*( TOFZ1(L)*codata_C &
+        - RNX*XOFZ1(L)  &
+        - 0.0d0 & ! RNY*YOFZ(L)
+        - RNZ*Z1(L))
+    !C
+    CPSI= COS(PSI)
+    SPSI= SIN(PSI)
+    !C
+    !C The following elements should be divided by "C", but due to overflow
+    !C errors we do this later.
+    !C X component
+    !C
+    AXR(L) = CPSI*BETAX1(L)/BETAZ1(L)
+    AXI(L) = SPSI*BETAX1(L)/BETAZ1(L)
+    !C
+    !C Y component
+    !C
+    !C     AYR(L) = 0.0d0 !  CPSI*BETAY(L)/BETAZ(L)
+    !C     AYI(L) = 0.0d0 ! SPSI*BETAY(L)/BETAZ(L)
+    !C
+    !C Z component
+    !C
+    AZR(L) = CPSI
+    AZI(L) = SPSI
+29  CONTINUE     !End loop 4
+
 !C
 !C Perform integration.
 !C
-		  CALL SIMPSON (EZSTEP,AXR,AXR_I1,NC)
-		   CALL SIMPSON (EZSTEP,AXI,AXI_I1,NC)
-     		  CALL SIMPSON (EZSTEP,AZR,AZR_I1,NC)
-     		   CALL SIMPSON (EZSTEP,AZI,AZI_I1,NC)
+CALL SIMPSON (EZSTEP,AXR,AXR_I1,NC)
+CALL SIMPSON (EZSTEP,AXI,AXI_I1,NC)
+CALL SIMPSON (EZSTEP,AZR,AZR_I1,NC)
+CALL SIMPSON (EZSTEP,AZI,AZI_I1,NC)
 !C		  CALL SIMPSON (EZSTEP,AYR,AYR_I1,NC)
-!C		   CALL SIMPSON (EZSTEP,AYI,AYI_I1,NC)
-		AYR_I1	= 0.0D0
-		AYI_I1	= 0.0D0
+!C     CALL SIMPSON (EZSTEP,AYI,AYI_I1,NC)
+AYR_I1 = 0.0D0
+AYI_I1 = 0.0D0
 !C
 !C The exit of the undulator:
 !C
-     		  DO 39 L=1,NC				
-!C
-		   PSI   = - COMEGA*( TOFZ2(L)*C &
-      			   - RNX*XOFZ2(L) &
-      			   - 0.0d0 &	!	RNY*YOFZ(L)
-      			   - RNZ*Z2(L))
-!C
-     		   CPSI= COS(PSI)
-     		   SPSI= SIN(PSI)
-!C
-!C The following elements should be divided by "C", but due to overflow
-!C errors we do this later.
-!C X component
-!C
-		   AXR(L) = CPSI*BETAX2(L)/BETAZ2(L)
-		   AXI(L) = SPSI*BETAX2(L)/BETAZ2(L)
-!C
-!C Y component
-!C
-!C		   AYR(L) = 0.0d0 ! 	CPSI*BETAY(L)/BETAZ(L)
-!C		   AYI(L) = 0.0d0 !	SPSI*BETAY(L)/BETAZ(L)
-!C
-!C Z component
-!C
-     		   AZR(L) = CPSI
-     		   AZI(L) = SPSI
-39      	 CONTINUE 				!End loop 4
+DO 39 L=1,NC    
+    !C
+    PSI   = - COMEGA*( TOFZ2(L)*codata_C &
+        - RNX*XOFZ2(L) &
+        - 0.0d0 & ! RNY*YOFZ(L)
+        - RNZ*Z2(L))
+    !C
+    CPSI= COS(PSI)
+    SPSI= SIN(PSI)
+    !C
+    !C The following elements should be divided by "C", but due to overflow
+    !C errors we do this later.
+    !C X component
+    !C
+    AXR(L) = CPSI*BETAX2(L)/BETAZ2(L)
+    AXI(L) = SPSI*BETAX2(L)/BETAZ2(L)
+    !C
+    !C Y component
+    !C
+    !C     AYR(L) = 0.0d0 !  CPSI*BETAY(L)/BETAZ(L)
+    !C     AYI(L) = 0.0d0 ! SPSI*BETAY(L)/BETAZ(L)
+    !C
+    !C Z component
+    !C
+    AZR(L) = CPSI
+    AZI(L) = SPSI
+39   CONTINUE     !End loop 4
+
 !C
 !C Perform integration.
 !C
-		  CALL SIMPSON (EZSTEP,AXR,AXR_I2,NC)
-		   CALL SIMPSON (EZSTEP,AXI,AXI_I2,NC)
-     		  CALL SIMPSON (EZSTEP,AZR,AZR_I2,NC)
-     		   CALL SIMPSON (EZSTEP,AZI,AZI_I2,NC)
-!C		  CALL SIMPSON (EZSTEP,AYR,AYR_I2,NC)
-!C		   CALL SIMPSON (EZSTEP,AYI,AYI_I2,NC)
-		AYR_I2	= 0.0D0
-		AYI_I2	= 0.0D0
+CALL SIMPSON (EZSTEP,AXR,AXR_I2,NC)
+CALL SIMPSON (EZSTEP,AXI,AXI_I2,NC)
+CALL SIMPSON (EZSTEP,AZR,AZR_I2,NC)
+CALL SIMPSON (EZSTEP,AZI,AZI_I2,NC)
+!C    CALL SIMPSON (EZSTEP,AYR,AYR_I2,NC)
+!C     CALL SIMPSON (EZSTEP,AYI,AYI_I2,NC)
+AYR_I2 = 0.0D0
+AYI_I2 = 0.0D0
 !C
 !C Add contributions from the two ends:
 !C
-		AXR_I	= AXR_I1 + AXR_I2
-		 AYR_I	= AYR_I1 + AYR_I2
-		  AZR_I	= AZR_I1 + AZR_I2
-		AXI_I	= AXI_I1 + AXI_I2
-		 AYI_I	= AYI_I1 + AYI_I2
-		  AZI_I	= AZI_I1 + AZI_I2
+AXR_I = AXR_I1 + AXR_I2
+AYR_I = AYR_I1 + AYR_I2
+AZR_I = AZR_I1 + AZR_I2
+AXI_I = AXI_I1 + AXI_I2
+AYI_I = AYI_I1 + AYI_I2
+AZI_I = AZI_I1 + AZI_I2
 !C
 !C  A = N X (N X BETA) = N (N dot BETA)-BETA (N dot N)
 !C
-     		  DOT_R   = RNX*AXR_I + RNY*AYR_I + RNZ*AZR_I
-     		  DOT_I   = RNX*AXI_I + RNY*AYI_I + RNZ*AZI_I
+DOT_R   = RNX*AXR_I + RNY*AYR_I + RNZ*AZR_I
+DOT_I   = RNX*AXI_I + RNY*AYI_I + RNZ*AZI_I
 !C Divide by "C"
-     		  DOT_R   = DOT_R/C
-     		  DOT_I	  = DOT_I/C
-		  EATEMPXR = RNX*DOT_R - AXR_I/C
-		   EATEMPXI = RNX*DOT_I - AXI_I/C
-		  EATEMPYR = RNY*DOT_R - AYR_I/C
-		   EATEMPYI = RNY*DOT_I - AYI_I/C
-		  EATEMPZR = RNZ*DOT_R - AZR_I/C
-		   EATEMPZI = RNZ*DOT_I - AZI_I/C
+DOT_R   = DOT_R/codata_C
+DOT_I   = DOT_I/codata_C
+EATEMPXR = RNX*DOT_R - AXR_I/codata_C
+EATEMPXI = RNX*DOT_I - AXI_I/codata_C
+EATEMPYR = RNY*DOT_R - AYR_I/codata_C
+EATEMPYI = RNY*DOT_I - AYI_I/codata_C
+EATEMPZR = RNZ*DOT_R - AZR_I/codata_C
+EATEMPZI = RNZ*DOT_I - AZI_I/codata_C
 !C
 !C  Integration over the entire undulator is completed.  
 !C
 !C  Now sum up the two contributions:
 !C
-		  ATEMPXR = ATEMPXR + EATEMPXR
-		   ATEMPXI = ATEMPXI + EATEMPXI
-		  ATEMPYR = ATEMPYR + EATEMPYR
-		   ATEMPYI = ATEMPYI + EATEMPYI
-		  ATEMPZR = ATEMPZR + EATEMPZR
-		   ATEMPZI = ATEMPZI + EATEMPZI
+ATEMPXR = ATEMPXR + EATEMPXR
+ATEMPXI = ATEMPXI + EATEMPXI
+ATEMPYR = ATEMPYR + EATEMPYR
+ATEMPYI = ATEMPYI + EATEMPYI
+ATEMPZR = ATEMPZR + EATEMPZR
+ATEMPZI = ATEMPZI + EATEMPZI
 
 !C
 !C  compute modulus sqared:  A(omega)*Astar(omega)
 !C
-		  AAX     = ATEMPXR**2 + ATEMPXI**2
-		   AAY    = ATEMPYR**2 + ATEMPYI**2
-		    AAZ   = ATEMPZR**2 + ATEMPZI**2
+AAX     = ATEMPXR**2 + ATEMPXI**2
+AAY    = ATEMPYR**2 + ATEMPYI**2
+AAZ   = ATEMPZR**2 + ATEMPZI**2
 !C
 !C  Include polarization.  The coord system is defined so that z is parallel
 !C  to the normal vector at the observation point.  Polarization written in 
@@ -1678,75 +1801,75 @@ SUBROUTINE UPhoton (ENER,THETA,PHI,PHOT,POL_DEG)
 !C
 !C  the polarization is defined as:   |E(parallel)|^2/|E(total)|^2
 !C
-		 ATOT   = AAX + AAY + AAZ
-		 IF (ATOT.EQ.AAX) THEN
-		   POL_DEG = 1.0D0
-		 ELSE
-		   POL_DEG = AAX/ATOT
-		 END IF
+ATOT   = AAX + AAY + AAZ
+IF (ATOT.EQ.AAX) THEN
+    POL_DEG = 1.0D0
+ELSE
+    POL_DEG = AAX/ATOT
+END IF
 !C
 !C  Compute energy radiated by a single electron from values of integral; 
 !C  This energy is in units of J/cm-1/solid angle
 !C
-	EFAC	= (OMEGA*E)**2*EPSI_FAC
-     	POWERX = AAX*EFAC
-     	POWERY = AAY*EFAC
-     	POWERZ = AAZ*EFAC
+EFAC = (OMEGA*codata_E)**2*EPSI_FAC
+POWERX = AAX*EFAC
+POWERY = AAY*EFAC
+POWERZ = AAZ*EFAC
 !C
 !C Change to Joules/eV/solid angles (energy radiated by 1 electron along
 !C the trajectory)
 !C
-	POWERX = POWERX/HHBAR
-	POWERY = POWERY/HHBAR
-	POWERZ = POWERZ/HHBAR
+POWERX = POWERX/HHBAR
+POWERY = POWERY/HHBAR
+POWERZ = POWERZ/HHBAR
 !C
 !C Include current (N electrons/sec) and converts at the same time to 
 !C		/mrad**2
 !C Units are now Watts/eV/mrad**2
 !C
-     	POWERX = POWERX*RCURR/e*1.0D-6
-     	POWERY = POWERY*RCURR/e*1.0D-6
-     	POWERZ = POWERZ*RCURR/e*1.0D-6
+POWERX = POWERX*RCURR/codata_e*1.0D-6
+POWERY = POWERY*RCURR/codata_e*1.0D-6
+POWERZ = POWERZ*RCURR/codata_e*1.0D-6
 !C
 !C Compute number of photons/sec/eV/mrad**2
 !C
-     	R_NPH_X = POWERX/(ENER*E)
-     	R_NPH_Y = POWERY/(ENER*E)
-     	R_NPH_Z = POWERZ/(ENER*E)
+R_NPH_X = POWERX/(ENER*codata_E)
+R_NPH_Y = POWERY/(ENER*codata_E)
+R_NPH_Z = POWERZ/(ENER*codata_E)
 !C
 !C Compute number of photons/sec/eV/rad**2
 !C
-	R_NPH_X = R_NPH_X*1.0D6
-	R_NPH_Y = R_NPH_Y*1.0D6
-	R_NPH_Z = R_NPH_Z*1.0D6
+R_NPH_X = R_NPH_X*1.0D6
+R_NPH_Y = R_NPH_Y*1.0D6
+R_NPH_Z = R_NPH_Z*1.0D6
 !C
 !C Bandpass or constant dE case
 !C
-	IF (ICOMP.EQ.0) THEN
-     	   POWERX = POWERX*BPASS*ENER
-     	   POWERY = POWERY*BPASS*ENER
-     	   POWERZ = POWERZ*BPASS*ENER
-     	   POWERT = POWERX + POWERY + POWERZ
-     	   R_NPH_X = R_NPH_X*BPASS*ENER
-     	   R_NPH_Y = R_NPH_Y*BPASS*ENER
-     	   R_NPH_Z = R_NPH_Z*BPASS*ENER
-     	   R_NPH_T = R_NPH_X + R_NPH_Y + R_NPH_Z
-	ELSE
-     	   POWERX = POWERX
-     	   POWERY = POWERY
-     	   POWERZ = POWERZ
-     	   POWERT = POWERX + POWERY + POWERZ
-     	   R_NPH_X = R_NPH_X
-     	   R_NPH_Y = R_NPH_Y
-     	   R_NPH_Z = R_NPH_Z
-     	   R_NPH_T = R_NPH_X + R_NPH_Y + R_NPH_Z
-     	END IF
+IF (ICOMP.EQ.0) THEN
+    POWERX = POWERX*BPASS*ENER
+    POWERY = POWERY*BPASS*ENER
+    POWERZ = POWERZ*BPASS*ENER
+    POWERT = POWERX + POWERY + POWERZ
+    R_NPH_X = R_NPH_X*BPASS*ENER
+    R_NPH_Y = R_NPH_Y*BPASS*ENER
+    R_NPH_Z = R_NPH_Z*BPASS*ENER
+    R_NPH_T = R_NPH_X + R_NPH_Y + R_NPH_Z
+ELSE
+    POWERX = POWERX
+    POWERY = POWERY
+    POWERZ = POWERZ
+    POWERT = POWERX + POWERY + POWERZ
+    R_NPH_X = R_NPH_X
+    R_NPH_Y = R_NPH_Y
+    R_NPH_Z = R_NPH_Z
+    R_NPH_T = R_NPH_X + R_NPH_Y + R_NPH_Z
+END IF
 !C
 !C PHOT is either in photon/sec/rad^2/eV or photon/sec/rad^2/bandpass.
 !C
-	PHOT = R_NPH_T
+PHOT = R_NPH_T
 !C
-	RETURN
+RETURN
 END SUBROUTINE UPhoton
 
 
@@ -1771,22 +1894,30 @@ END SUBROUTINE UPhoton
 !C---
 !TODO: Move to math?
 SUBROUTINE Simpson(H,Y,Z,NDIM)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
-        real(kind=skr) :: sum
-      	DIMENSION		Y(NDIM)
+        implicit none
+        !implicit real(kind=skr) (a-h,o-z)
+        !implicit integer(kind=ski)        (i-n)
+        !DIMENSION Y(NDIM)
+
+        real(kind=skr),intent(in)                 :: h
+        integer(kind=ski),intent(in)              :: ndim
+        real(kind=skr),dimension(ndim),intent(in) :: y
+        real(kind=skr),intent(out)                :: z
+
+        real(kind=skr)     :: ht, sum1
+        integer(kind=ski)  :: i
 !C
-      	HT=1.0D0/3.0D0*H
+        HT=1.0D0/3.0D0*H
 
-	SUM	= Y(1) 
-	DO 29 I = 2, NDIM-1, 2
-	  SUM	= SUM + 4.0D0*Y(I)
-	  SUM	= SUM + 2.0D0*Y(I+1)
-29	CONTINUE	
-	SUM 	= SUM - Y(NDIM)
-	Z	= HT*SUM
+        sum1 = Y(1) 
+        DO 29 I = 2, NDIM-1, 2
+            sum1 = sum1 + 4.0D0*Y(I)
+            sum1 = sum1 + 2.0D0*Y(I+1)
+29      CONTINUE
+        sum1  = sum1 - Y(NDIM)
+        Z = HT*sum1
 
-	RETURN
+        RETURN
 END SUBROUTINE Simpson
 
 !C+++
@@ -1800,132 +1931,177 @@ END SUBROUTINE Simpson
 !C
 !C---
 SUBROUTINE Undul_Phot
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
 
-	real :: ttime,time0
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS,&
-      					IANGLE,IAPERTURE,IEXTERNAL,&
-      					FOUT,FIN,FTRAJ,EMIN,EMAX,&
-      					THEMIN,THEMAX,PHIMIN,PHIMAX,&
-                                        NE,NT,NP,NCHECK,IOPT,ITER,IPASS,&
-      					I_EDIV,EDIVX,EDIVY,FINT,IINT
+real :: ttime,time0
 
-	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	DIMENSION	RN0(31,31,51)
-	DIMENSION	POL_DEG(31,31,51)
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E) :: uphi,rn0,pol_deg
+!real(kind=skr),dimension(NDIM_A,NDIM_E)    :: utheta
+!real(kind=skr),dimension(NDIM_E)       :: uener
+real(kind=skr),dimension(:,:,:),allocatable :: uphi,rn0,pol_deg
+real(kind=skr),dimension(:,:),allocatable   :: utheta
+real(kind=skr),dimension(:),allocatable     :: uener
+
+!DIMENSION UPHI(31,31,51),UTHETA(31,51),UENER(51)
+!DIMENSION RN0(31,31,51)
+!DIMENSION POL_DEG(31,31,51)
+
+real(kind=skr)    :: ener,perc,phi, phot,pol,theta,totpoints
+integer(kind=ski) :: i,j,k,iOne,ipoints,iTmp,kCheck
+
+NAMELIST /PARAIN/ NCOMP,RCURR,ICOMP,BPASS,&
+    IANGLE,IAPERTURE,IEXTERNAL,&
+    FOUT,FIN,FTRAJ,EMIN,EMAX,&
+    THEMIN,THEMAX,PHIMIN,PHIMAX,&
+    NE,NT,NP,NCHECK,IOPT,ITER,IPASS,&
+    I_EDIV,EDIVX,EDIVY,FINT,IINT
+
 
 !C
 !C Read in the parameters from namelist file
 !C
-	OPEN	(21, FILE='uphot.nml', STATUS='OLD')
-	READ	(21, NML=PARAIN)
-	CLOSE	(21)
+OPEN (21, FILE='uphot.nml', STATUS='OLD')
+READ (21, NML=PARAIN)
+CLOSE (21)
 !C
 !C Read in the (energy, theta, phi) array
 !C
-	OPEN	(40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-	READ	(40)	NE, NT, NP
-	DO 99 K = 1, NE
- 99	    READ (40)	UENER(K)
+OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
+READ (40) NE, NT, NP
+!
+! allocate arrays
+!
+allocate( UENER(NE) )
+allocate( UTHETA(NT,NE) )
+allocate( UPHI(NP,NT,NE) )
+allocate( RN0(NP,NT,NE) )
+allocate( POL_DEG(NP,NT,NE) )
 
-	DO 199 K = 1, NE
-	    DO 199 J = 1, NT
- 199		READ (40) UTHETA(J,K)
+DO K = 1, NE
+    READ (40) UENER(K)
+END DO
 
-	DO 299 K = 1, NE
-	    DO 299 J = 1, NT
-		DO 299 I = 1, NP
- 299		    READ (40) UPHI(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        READ (40) UTHETA(J,K)
+    END DO
+END DO
+
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            READ (40) UPHI(I,J,K)
+        END DO
+    END DO
+END DO
 
   
 !C
 !C Read in the trajectory file
 !C
-	CALL	UREAD
+CALL UREAD
 !C
-	  write(6,*) ' '
-     	  write(6,*) '----------------------------', &
-      '-----------------------------------------------'
-     	  write(6,*) ' '
-     	  write(6,*) ' '
-     	  write(6,*) '----------------------------', &
-      '-----------------------------------------------'
-     	  write(6,*) ' '
-	  write(6,*) ' '
-	  write(6,*) 'Begin calculations.'
-	  write(6,*) ' '
+write(6,*) ' '
+write(6,*) '----------------------------', &
+    '-----------------------------------------------'
+write(6,*) ' '
+write(6,*) ' '
+write(6,*) '----------------------------', &
+    '-----------------------------------------------'
+write(6,*) ' '
+write(6,*) ' '
+write(6,*) 'Begin calculations.'
+write(6,*) ' '
 !C
 !C Sets up REPORT
 !C
 !          CALL     REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, -1)
-	  iTmp=-1
-          CALL     REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, iTmp)
+iTmp=-1
+CALL REPORT ( UENER(1), UTHETA(1,1), UPHI(1,1,1), TTIME, PERC, iTmp)
 !C
 !C  Compute the # of photons from internal routine UPHOTON
 !C  All preliminaries completed. Starts real calculations.
 !C
-	  !TIME0 = CPUTIM()
-	  CALL CPU_TIME(TIME0)
-	  TOTPOINTS	= NP*NT*NE
-     	  KCHECK = 0
-     	  IPOINTS = 0
+!TIME0 = CPUTIM()
+CALL CPU_TIME(TIME0)
+TOTPOINTS = NP*NT*NE
+KCHECK = 0
+IPOINTS = 0
 !C
 !C Compute the # of photons at each (energy, theta, phi).
 !C
-	  DO 19 K = 1,NE
-	   ENER		= UENER(K)
-	   DO 29 J = 1, NT
-	     THETA	= UTHETA(J,K)
-	     DO 39 I = 1, NP
-	        PHI	= UPHI(I,J,K)
-	        CALL	UPHOTON	(ENER, THETA, PHI, PHOT, POL)
-	        RN0(I,J,K)	= PHOT
-	        POL_DEG(I,J,K)	= POL
-!C Status report.
-     	        KCHECK = KCHECK + 1
-     	        IPOINTS = IPOINTS + 1
-	        IF (KCHECK.EQ.NCHECK) THEN
-                  CALL CPU_TIME(ttime)
-     	          TTIME = TTIME - TIME0
-                  PERC = IPOINTS/TOTPOINTS*100
-                  iOne = 1
-     	          !CALL	REPORT ( ENER, THETA, PHI, TTIME, PERC, 1)
-     	          CALL	REPORT ( ENER, THETA, PHI, TTIME, PERC, iOne)
-                  KCHECK = 0
-     	        END IF
+DO K = 1,NE
+    ENER  = UENER(K)
+    DO J = 1, NT
+        THETA = UTHETA(J,K)
+        DO I = 1, NP
+            PHI = UPHI(I,J,K)
+            CALL UPHOTON (ENER, THETA, PHI, PHOT, POL)
+            RN0(I,J,K) = PHOT
+            POL_DEG(I,J,K) = POL
+            !C Status report.
+            KCHECK = KCHECK + 1
+            IPOINTS = IPOINTS + 1
+            IF (KCHECK.EQ.NCHECK) THEN
+                CALL CPU_TIME(ttime)
+                TTIME = TTIME - TIME0
+                PERC = IPOINTS/TOTPOINTS*100
+                iOne = 1
+                !CALL REPORT ( ENER, THETA, PHI, TTIME, PERC, 1)
+                CALL REPORT ( ENER, THETA, PHI, TTIME, PERC, iOne)
+                KCHECK = 0
+            END IF
+            !C
+        END DO
+    END DO
+END DO
 !C
-39	     CONTINUE
-29	   CONTINUE
-19	  CONTINUE
+IF (IPASS.EQ.0) THEN
+    write(6,*) ' '
+    write(6,*) '----------------------------', &
+        '-----------------------------------------------'
+    write(6,*) ' '
+    write(6,*) 'Spectra Computations completed.'
+    write(6,*) ' '
+    write(6,*) ' '
+    write(6,*) '----------------------------',&
+        '-----------------------------------------------'
+    write(6,*) ' '
+END IF
 !C
-	IF (IPASS.EQ.0) THEN
-	  write(6,*) ' '
-     	  write(6,*) '----------------------------', &
-      '-----------------------------------------------'
-     	  write(6,*) ' '
-     	  write(6,*) 'Spectra Computations completed.'
-     	  write(6,*) ' '
-     	  write(6,*) ' '
-     	  write(6,*) '----------------------------',&
-      '-----------------------------------------------'
-     	  write(6,*) ' '
-	END IF
+!C Write out all arrays.  APPENDED!!!!
 !C
-!C Write out all arrays.
-!C
-	DO 399 K = 1, NE
-	    DO 399 J = 1, NT
-		DO 399 I = 1, NP
- 399		    WRITE (40) RN0(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            WRITE (40) RN0(I,J,K)
+        END DO
+    END DO
+END DO
 
-	DO 499 K = 1, NE
-	    DO 499 J = 1, NT
-		DO 499 I = 1, NP
- 499		    WRITE (40) POL_DEG(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            WRITE (40) POL_DEG(I,J,K)
+        END DO
+    END DO
+END DO
 
-	CLOSE	(40)
+CLOSE (40)
+
+
+!
+! deallocate arrays
+!
+if (allocated( UENER   )) deallocate( UENER )
+if (allocated( UTHETA  )) deallocate( UTHETA )
+if (allocated( UPHI    )) deallocate( UPHI ) 
+if (allocated( RN0     )) deallocate( RN0 ) 
+if (allocated( POL_DEG )) deallocate( POL_DEG ) 
+
 END SUBROUTINE Undul_Phot
 
 
@@ -1947,176 +2123,199 @@ END SUBROUTINE Undul_Phot
 !C	OUTPUT:		RN1(theta, ener)
 !C			RN2(ener)
 !C---
-SUBROUTINE Rns(RN0,RN1,RN2,UPHI,UTHETA,UENER)
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+SUBROUTINE Rns(RN0,RN1,RN2,UPHI,UTHETA,UENER,np,nt,ne)
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	DIMENSION	RN0(31,31,51),RN1(31,51),RN2(51)
-	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
+integer(kind=ski), intent(in)  :: np,nt,ne
 
-	DIMENSION	YRN0(1001),YRNN0(1001)
-	DIMENSION	YRN1(1001),YRNN1(1001)
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in)  :: rn0
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(out) :: rn1
+!real(kind=skr),dimension(NDIM_E),       intent(out) :: rn2
+!
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E) , intent(in) :: uphi
+!real(kind=skr),dimension(NDIM_A,NDIM_E)    , intent(in) :: utheta
+!real(kind=skr),dimension(NDIM_E)       , intent(in) :: uener
+
+real(kind=skr),dimension(np,nt,ne), intent(in)  :: rn0
+real(kind=skr),dimension(nt,ne),    intent(out) :: rn1
+real(kind=skr),dimension(ne),       intent(out) :: rn2
+
+real(kind=skr),dimension(np,nt,ne) , intent(in) :: uphi
+real(kind=skr),dimension(nt,ne)    , intent(in) :: utheta
+real(kind=skr),dimension(ne)       , intent(in) :: uener
+
+!DIMENSION RN0(31,31,51),RN1(31,51),RN2(51)
+!DIMENSION UPHI(31,31,51),UTHETA(31,51),UENER(51)
+
+real(kind=skr),dimension(NDIM_TRAJ) :: yrn0,yrnn0,yrn1,yrnn1
+
+real(kind=skr)    :: arn
+integer(kind=ski) :: i,j,k
+
+!DIMENSION YRN0(1001),YRNN0(1001)
+!DIMENSION YRN1(1001),YRNN1(1001)
          
-	real(kind=skr),parameter :: PI=3.141592653589793238462643D0
+!real(kind=skr),parameter :: PI=3.141592653589793238462643D0
 
 !C
-	IF (IANGLE.EQ.1) THEN		!Polar coords
-!C	  
-!C	   TYPE *,'BEGIN INTEGRATION OVER PHI'
+IF (IANGLE.EQ.1) THEN  !Polar coords
+    !C   
+    !C    TYPE *,'BEGIN INTEGRATION OVER PHI'
+    !C
+    DO 155 K = 1,NE
+        DO 165 J = 1,NT
+            DO 175 I = 1,NP
+                YRN0(I) = RN0(I,J,K) * UTHETA(J,K)
+                !C      IF (J.EQ.1) THEN
+                !C   YRN0(I) = YRN0(I)/(UPHI(NP,J,K)-UPHI(1,J,K))*
+                !C     $    (UTHETA(2,K)-UTHETA(1,K))*PI/16
+                !C      ELSE IF (J.NE.1) THEN
+                !C   IF (I.EQ.1.OR.I.EQ.NP) THEN
+                !C        YRN0(I) = YRN0(I)/2.0D0*UTHETA(J,K) 
+                !C   ELSE
+                !C        YRN0(I) = YRN0(I)*UTHETA(J,K)
+                !C   END IF
+                !C      END IF
+            175   CONTINUE
+            
+            IF (J.EQ.1) THEN
+                ARN = 0.0D0
+                DO 185 I = 1, NP
+                    ARN = ARN + 0.5D0*(RN0(I,1,K) + RN0(I,2,K))
+                185     CONTINUE
+                ARN = ARN/NP
+                DO 195 I = 1, NP
+                    YRN0(I) = ARN*0.5D0*(UTHETA(2,K)-UTHETA(1,K))/2.0D0
+                195     CONTINUE
+            END IF
+            
+            !C  Use trapezoidal integration
+            YRNN0(1) = 0.0D0
+            DO 205 I=2,NP
+                YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
+                    0.5D0*( YRN0(I-1) + YRN0(I) )
+            205   CONTINUE
+            !C
+            RN1(J,K) = YRNN0(NP)
+        165  CONTINUE
+    155  CONTINUE
+    !C
+    !C TYPE *,'BEGIN INTEGRATION OVER THETA'
+    !C
+    DO 215 K = 1,NE
+        DO 225 J = 1,NT
+            YRN1(J) = RN1(J,K) 
+        225       CONTINUE
+        !C  Use trapezoidal integration
+        YRNN1(1) = 0.0D0
+        DO 235 J=2,NT
+            YRNN1(J) = YRNN1(J-1) + (UTHETA(J,K)-UTHETA(J-1,K))* &
+                0.5D0*( YRN1(J-1) + YRN1(J) )
+        235   CONTINUE
+        !C
+        IF (IAPERTURE.EQ.1) THEN
+            RN2(K) = YRNN1(NT)*4.0D0
+        ELSE IF (IAPERTURE.EQ.2) THEN
+            RN2(K) = YRNN1(NT)
+        END IF
+    215    CONTINUE
+ELSE IF (IANGLE.EQ.2) THEN  ! Cartesian coords
+    !C
+    !C         TYPE *,'BEGIN INTEGRATION OVER  PHI'
+    !C
+    DO 245 K=1,NE    ! # ENER
+        DO 255 J=1,NT    ! # THE
+            DO 265 I=1,NP   ! # PHI
+                YRN0(I) = RN0(I,J,K) ! Prepare integration over phi
+                !C         IF (I.EQ.1.AND.J.EQ.1)THEN
+                !C                  YRN0(I) = YRN0(I)/4.0D0
+                !C         ELSE IF (I.EQ.1.OR.J.EQ.1) THEN
+                !C                  YRN0(I) = YRN0(I)/2.0D0
+                !C         ELSE
+                !C            YRN0(I) = YRN0(I)
+                !C         END IF
+            265      CONTINUE
+            !C  Use trapezoidal integration
+            YRNN0(1) = 0.0D0
+            DO 275 I=2,NP
+                YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
+                    0.5D0*( YRN0(I-1) + YRN0(I) )
+            275   CONTINUE
+            !C
+            RN1(J,K) = YRNN0(NP)
+        255       CONTINUE
+    245    CONTINUE
+    !C
+    !C Begin integration over theta
+    !C 
+    !C         TYPE *,'BEGIN INTEGRATION OVER THETA'
+    !C
+    !C
+    DO 285 K=1,NE
+        DO 295 J=1,NT
+            YRN1(J) = RN1(J,K)
+        295           CONTINUE
+        !C  Use trapezoidal integration
+        YRNN1(1) = 0.0D0
+        DO 305 J=2,NT
+            YRNN1(J) = YRNN1(J-1)+(UTHETA(J,K) - UTHETA(J-1,K))* &
+                0.5D0*( YRN1(J-1) + YRN1(J) )
+        305   CONTINUE
+        !C
+        !C Multiply by 4 for the entire rectangular region.
+        !C
+        IF (IAPERTURE.EQ.3) THEN  !rectangle centered in xy plane 
+            RN2(K) = YRNN1(NT)*4.0D0
+        ELSE IF (IAPERTURE.EQ.4) THEN
+            RN2(K) = YRNN1(NT)  !rectangle in 1st quadrant.
+        END IF
+        285        CONTINUE
+    !C
+END IF
 !C
-	   DO 155 K = 1,NE
-	      DO 165 J = 1,NT
-		 DO 175 I = 1,NP
-		    YRN0(I) = RN0(I,J,K) * UTHETA(J,K)
-!C		    IF (J.EQ.1) THEN
-!C			YRN0(I)	= YRN0(I)/(UPHI(NP,J,K)-UPHI(1,J,K))*
-!C     $				(UTHETA(2,K)-UTHETA(1,K))*PI/16
-!C		    ELSE IF (J.NE.1) THEN
-!C			IF (I.EQ.1.OR.I.EQ.NP) THEN
-!C			     YRN0(I) = YRN0(I)/2.0D0*UTHETA(J,K) 
-!C			ELSE
-!C			     YRN0(I) = YRN0(I)*UTHETA(J,K)
-!C			END IF
-!C		    END IF
-
-175		 CONTINUE
-
-		 IF (J.EQ.1) THEN
-		   ARN	= 0.0D0
-		   DO 185 I = 1, NP
-		     ARN = ARN + 0.5D0*(RN0(I,1,K) + RN0(I,2,K))
-185		   CONTINUE
-		   ARN	= ARN/NP
-		   DO 195 I = 1, NP
-		     YRN0(I) = ARN*0.5D0*(UTHETA(2,K)-UTHETA(1,K))/2.0D0
-195		   CONTINUE
-		 END IF
-
-!C  Use trapezoidal integration
-		 YRNN0(1) = 0.0D0
-		 DO 205 I=2,NP
-		   YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
-      					0.5D0*( YRN0(I-1) + YRN0(I) )
-205		 CONTINUE
-!C
-		 RN1(J,K) = YRNN0(NP)
-165	      CONTINUE
-155	   CONTINUE
-!C
-!C	TYPE *,'BEGIN INTEGRATION OVER THETA'
-!C
-	   DO 215 K = 1,NE
-	      DO 225 J = 1,NT
-		 YRN1(J) = RN1(J,K) 
-225	      CONTINUE
-!C  Use trapezoidal integration
-		 YRNN1(1) = 0.0D0
-		 DO 235 J=2,NT
-		   YRNN1(J) = YRNN1(J-1) + (UTHETA(J,K)-UTHETA(J-1,K))* &
-      					0.5D0*( YRN1(J-1) + YRN1(J) )
-235		 CONTINUE
-!C
-	      IF (IAPERTURE.EQ.1) THEN
-	         RN2(K) = YRNN1(NT)*4.0D0
-	      ELSE IF (IAPERTURE.EQ.2) THEN
-	         RN2(K) = YRNN1(NT)
-	      END IF
-215	   CONTINUE
-	ELSE IF (IANGLE.EQ.2) THEN		! Cartesian coords
-!C
-!C     	   TYPE *,'BEGIN INTEGRATION OVER  PHI'
-!C
-	   DO 245 K=1,NE				! # ENER
-	      DO 255 J=1,NT				! # THE
-	   	 DO 265 I=1,NP			! # PHI
-	      	    YRN0(I) = RN0(I,J,K)	! Prepare integration over phi
-!C		       IF (I.EQ.1.AND.J.EQ.1)THEN
-!C	      	          YRN0(I) = YRN0(I)/4.0D0
-!C		       ELSE IF (I.EQ.1.OR.J.EQ.1) THEN
-!C	      	          YRN0(I) = YRN0(I)/2.0D0
-!C		       ELSE
-!C		          YRN0(I) = YRN0(I)
-!C		       END IF
-265	   	 CONTINUE
-!C  Use trapezoidal integration
-		 YRNN0(1) = 0.0D0
-		 DO 275 I=2,NP
-		   YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
-      					0.5D0*( YRN0(I-1) + YRN0(I) )
-275		 CONTINUE
-!C
-	   	 RN1(J,K) = YRNN0(NP)
-255	      CONTINUE
-245	   CONTINUE
-!C
-!C Begin integration over theta
-!C 
-!C     	   TYPE *,'BEGIN INTEGRATION OVER THETA'
-!C
-!C
-     	   DO 285 K=1,NE
-     	      DO 295 J=1,NT
-     	         YRN1(J) = RN1(J,K)
-295           CONTINUE
-!C  Use trapezoidal integration
-		 YRNN1(1) = 0.0D0
-		 DO 305 J=2,NT
-		   YRNN1(J) = YRNN1(J-1)+(UTHETA(J,K) - UTHETA(J-1,K))* &
-      					0.5D0*( YRN1(J-1) + YRN1(J) )
-305		 CONTINUE
-!C
-!C Multiply by 4 for the entire rectangular region.
-!C
-	      IF (IAPERTURE.EQ.3) THEN		!rectangle centered in xy plane 
-	         RN2(K) = YRNN1(NT)*4.0D0
-	      ELSE IF (IAPERTURE.EQ.4) THEN
-	         RN2(K) = YRNN1(NT)		!rectangle in 1st quadrant.
-	      END IF
-285        CONTINUE
-!C
-	END IF
-!C
-	IF (IPASS.NE.0)	RETURN
+IF (IPASS.NE.0) RETURN
 !C
 !C Include total power calculation
 !C
-     	WRITE(6,*) 'Calculation completed.'
-     	WRITE(6,*) '----------------------------',&
-      '-----------------------------------------------'
-     	WRITE(6,*) ' '
-     	WRITE(6,*) '----------------------------', &
-      '-----------------------------------------------'
-     	WRITE(6,*) ' '
-     	WRITE(6,*) 'Begin computation of total power.'
-     	TOTPOWER = 0.0D0
+WRITE(6,*) 'Calculation completed.'
+WRITE(6,*) '----------------------------',&
+    '-----------------------------------------------'
+WRITE(6,*) ' '
+WRITE(6,*) '----------------------------', &
+    '-----------------------------------------------'
+WRITE(6,*) ' '
+WRITE(6,*) 'Begin computation of total power.'
+TOTPOWER = 0.0D0
 !C
-!C Notice: RN2 is either of:	#phot/eV/sec 
-!C 			or:	#phot/bpass/sec
+!C Notice: RN2 is either of: #phot/eV/sec 
+!C    or: #phot/bpass/sec
 !C
-!d	do kc=1,ne
-!d	write (90,*) ener(kc),rn2(kc)
-!d	end do
+!d do kc=1,ne
+!d write (90,*) ener(kc),rn2(kc)
+!d end do
 !d
-     	DO 315 K=1,NE-1
-     	 IF (ICOMP.EQ.0) THEN		! Constant Bpass
-     	   TOTPOWER = TOTPOWER + 0.5D0*(RN2(K)+RN2(K+1))/BPASS &
-      				*(UENER(K+1)-UENER(K))*1.602D-19
-     	 ELSE				! Constant dE
-     	   TOTPOWER = TOTPOWER +  &
-      			0.5D0*(RN2(K)*UENER(K)+RN2(K+1)*UENER(K+1)) &
-      				*(UENER(K+1)-UENER(K))*1.602D-19
-     	 END IF
-315     CONTINUE
+DO 315 K=1,NE-1
+    IF (ICOMP.EQ.0) THEN  ! Constant Bpass
+        TOTPOWER = TOTPOWER + 0.5D0*(RN2(K)+RN2(K+1))/BPASS &
+            *(UENER(K+1)-UENER(K))*1.602D-19
+    ELSE    ! Constant dE
+        TOTPOWER = TOTPOWER +  &
+            0.5D0*(RN2(K)*UENER(K)+RN2(K+1)*UENER(K+1)) &
+            *(UENER(K+1)-UENER(K))*1.602D-19
+    END IF
+315 CONTINUE
 
-     	WRITE(6,*)'Total Power emitted in the specified angles is: '
-     	WRITE(6,*)totpower
-     	WRITE(6,*)'Watts.'
-     	WRITE(6,*)' '
-     	WRITE(6,*)'Preliminary calculations completed.'
-     	WRITE(6,*)' '
-     	WRITE(6,*)' '
+WRITE(6,*)'Total Power emitted in the specified angles is: '
+WRITE(6,*)totpower
+WRITE(6,*)'Watts.'
+WRITE(6,*)' '
+WRITE(6,*)'Preliminary calculations completed.'
+WRITE(6,*)' '
+WRITE(6,*)' '
 !C
-	RETURN
+RETURN
 END SUBROUTINE Rns
 
 !C+++
@@ -2133,71 +2332,100 @@ END SUBROUTINE Rns
 !C				CDF1(     theta, ener)
 !C				CDF2(            ener)
 !C---
-SUBROUTINE UCDF(RN0,RN1,RN2,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
+SUBROUTINE UCDF(RN0,RN1,RN2,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,np,nt,ne)
 
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+implicit none
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+integer(kind=ski), intent(in)  :: np,nt,ne
 
-	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51) 
-	DIMENSION		RN0(31,31,51),RN1(31,51),RN2(51) 
-	DIMENSION		CDF0(31,31,51),CDF1(31,51),CDF2(51)
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: rn0
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: rn1
+!real(kind=skr),dimension(NDIM_E),       intent(in) :: rn2
+!
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(out) :: cdf0
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(out) :: cdf1
+!real(kind=skr),dimension(NDIM_E),       intent(out) :: cdf2
+!
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E)             :: uphi
+!real(kind=skr),dimension(NDIM_A,NDIM_E)                :: utheta
+!real(kind=skr),dimension(NDIM_E)                   :: uener
 
-	DIMENSION		YRN0(1001),YRNN0(1001)
-	DIMENSION		YRN1(1001),YRNN1(1001)
-	DIMENSION		YRN2(1001),YRNN2(1001)
+real(kind=skr),dimension(np,nt,ne), intent(in) :: rn0
+real(kind=skr),dimension(nt,ne),    intent(in) :: rn1
+real(kind=skr),dimension(ne),       intent(in) :: rn2
+
+real(kind=skr),dimension(np,nt,ne), intent(out) :: cdf0
+real(kind=skr),dimension(nt,ne),    intent(out) :: cdf1
+real(kind=skr),dimension(ne),       intent(out) :: cdf2
+
+real(kind=skr),dimension(np,nt,ne)             :: uphi
+real(kind=skr),dimension(nt,ne)                :: utheta
+real(kind=skr),dimension(ne)                   :: uener
+
+real(kind=skr),dimension(NDIM_TRAJ)  :: yrn0,yrnn0,yrn1,yrnn1,yrn2,yrnn2
+integer(kind=ski)  :: i,j,k
+
+!DIMENSION  UPHI(31,31,51),UTHETA(31,51),UENER(51) 
+!DIMENSION  RN0(31,31,51),RN1(31,51),RN2(51) 
+!DIMENSION  CDF0(31,31,51),CDF1(31,51),CDF2(51)
+
+!DIMENSION  YRN0(1001),YRNN0(1001)
+!DIMENSION  YRN1(1001),YRNN1(1001)
+!DIMENSION  YRN2(1001),YRNN2(1001)
 
 !C 
 !C  HERE WE CALCULATE THE CDF's.  
 !C
-	 DO 15 K = 1,NE
-	   DO 25 J = 1,NT
-	      DO 35 I = 1,NP
-		 YRN0(I) = RN0(I,J,K)
-35	      CONTINUE
-!C  Use trapezoidal integration
-		 YRNN0(1) = 0.0D0		
-		 DO 45 I=2,NP
-		   YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
-      					0.5D0*( YRN0(I-1) + YRN0(I) )
-45 		 CONTINUE
-!C						! integrate over phi
-	      DO 55 I = 1,NP			! Note, just integration,
-		 CDF0(I,J,K) = YRNN0(I)	! variable not eliminated.
-55	      CONTINUE
-25	   CONTINUE
-15	 CONTINUE
+DO 15 K = 1,NE
+    DO 25 J = 1,NT
+        DO 35 I = 1,NP
+            YRN0(I) = RN0(I,J,K)
+        35       CONTINUE
+        !C  Use trapezoidal integration
+        YRNN0(1) = 0.0D0  
+        DO 45 I=2,NP
+            YRNN0(I) = YRNN0(I-1) + (UPHI(I,J,K)-UPHI(I-1,J,K))* &
+                0.5D0*( YRN0(I-1) + YRN0(I) )
+        45    CONTINUE
+        !C      ! integrate over phi
+        DO 55 I = 1,NP   ! Note, just integration,
+            CDF0(I,J,K) = YRNN0(I) ! variable not eliminated.
+        55 CONTINUE
+    25 CONTINUE
+15 CONTINUE
 !C 
-	 DO 65 K = 1,NE
-	   DO 75 J = 1,NT
-	      YRN1(J) = RN1(J,K)
-75	   CONTINUE
-!C  Use trapezoidal integration
-		 YRNN1(1) = 0.0D0
-		 DO 85 J=2,NT
-		   YRNN1(J) = YRNN1(J-1) + (UTHETA(J,K)-UTHETA(J-1,K))* &
-      					0.5D0*( YRN1(J-1) + YRN1(J) )
-85		 CONTINUE
-!C						! integrate over theta
-	   DO 95 J = 1,NT
-	      CDF1(J,K) = YRNN1(J)
-95 	   CONTINUE
-65	 CONTINUE
+DO 65 K = 1,NE
+    DO 75 J = 1,NT
+        YRN1(J) = RN1(J,K)
+    75    CONTINUE
+    !C  Use trapezoidal integration
+    YRNN1(1) = 0.0D0
+    DO 85 J=2,NT
+        YRNN1(J) = YRNN1(J-1) + (UTHETA(J,K)-UTHETA(J-1,K))* &
+            0.5D0*( YRN1(J-1) + YRN1(J) )
+    85   CONTINUE
+    !C      ! integrate over theta
+    DO 95 J = 1,NT
+        CDF1(J,K) = YRNN1(J)
+    95     CONTINUE
+65  CONTINUE
 !C
-	 DO 115 K=1,NE
-	   YRN2(K) = RN2(K)
-115 	 CONTINUE
+DO 115 K=1,NE
+    YRN2(K) = RN2(K)
+115   CONTINUE
 !C  Use trapezoidal integration
-	 YRNN2(1) = 0.0D0
-	 DO 125 K=2,NE
-	   YRNN2(K) = YRNN2(K-1) + (UENER(K)-UENER(K-1))* &
-      				0.5D0*( YRN2(K-1) + YRN2(K) )
-125	 CONTINUE
+YRNN2(1) = 0.0D0
+DO 125 K=2,NE
+    YRNN2(K) = YRNN2(K-1) + (UENER(K)-UENER(K-1))* &
+        0.5D0*( YRN2(K-1) + YRN2(K) )
+125  CONTINUE
 !C
-	 DO 135 K=1,NE
-	   CDF2(K) = YRNN2(K)
-135 	 CONTINUE
-!C	
-	RETURN
+DO 135 K=1,NE
+    CDF2(K) = YRNN2(K)
+135   CONTINUE
+!C 
+RETURN
 END SUBROUTINE Ucdf
 
 !C+++
@@ -2209,164 +2437,177 @@ END SUBROUTINE Ucdf
 !C	INPUT:			RN0,RN1,RN2,POL_DEG
 !C				CDF0,CDF1,CDF2
 !C---
-SUBROUTINE UWrite (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
-	
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+SUBROUTINE UWrite (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,np,nt,ne)
 
-	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	DIMENSION	RN0(31,31,51),RN1(31,51),RN2(51)
-	DIMENSION	CDF0(31,31,51),CDF1(31,51),CDF2(51)
-	DIMENSION	POL_DEG(31,31,51)
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	CHARACTER(len=sklen) :: FNAME1,FNAME2,SPECFILE
-	CHARACTER*60	NAME
-	CHARACTER*17	DATE
-!C
-	DATA		FNAME1	/ '     ' /
-	DATA		FNAME2	/ '     ' /
-	DATA		SPECFILE/ '     ' /
+integer(kind=ski), intent(in)  :: np,nt,ne
+
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: rn0,cdf0,uphi
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: rn1,cdf1,utheta
+!real(kind=skr),dimension(NDIM_E),       intent(in) :: rn2,cdf2,uener
+!
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(out) :: pol_deg
+
+real(kind=skr),dimension(np,nt,ne), intent(in) :: rn0,cdf0,uphi
+real(kind=skr),dimension(nt,ne),    intent(in) :: rn1,cdf1,utheta
+real(kind=skr),dimension(ne),       intent(in) :: rn2,cdf2,uener
+
+real(kind=skr),dimension(np,nt,ne), intent(out) :: pol_deg
+
+
+character(len=sklen) :: FNAME1,FNAME2,SPECFILE
+character(len=60)    :: name
+character(len=17)    :: date
+
+integer(kind=ski) :: i,j,k,iflag,itype
+real(kind=skr)    :: temp
+
 !C
 !C Read in parameters of trajectory file.
 !C
-	   CALL	UREAD
+CALL UREAD
 !C
 !C Write RN file
 !C
-	   WRITE(6,*) 'Number of optimizations finished : ',ITER
-	   WRITE(6,*) ' '
-	   ITYPE = 1
-	   IFLAG = IYES ('Do you want to write out spectra ? ')
-	   IF (IFLAG.EQ.0) GO TO 10
-	   FNAME1 = RSTRING ('Name of file for storing spectra: ')
-	   CALL RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
-               RN0, RN1, RN2, POL_DEG, &
-      	       FNAME1, ITYPE, IANGLE)
+WRITE(6,*) 'Number of optimizations finished : ',ITER
+WRITE(6,*) ' '
+ITYPE = 1
+IFLAG = IYES ('Do you want to write out spectra ? ')
+IF (IFLAG.EQ.0) GO TO 10
+FNAME1 = RSTRING ('Name of file for storing spectra: ')
+CALL RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
+    RN0, RN1, RN2, POL_DEG, &
+    FNAME1, ITYPE, IANGLE)
 !C
-10	  CONTINUE
+
+10   CONTINUE
 
 !C
 !C Write CDF file
 !C
-	 ITYPE = 2
-	 IFLAG = IYES ('Do you want to create a SHADOW file ? ')
-	 IF (IFLAG.EQ.0) GO TO 30
-	 FNAME2 = RSTRING ('Name of (binary) file for SHADOW: ')
+ITYPE = 2
+IFLAG = IYES ('Do you want to create a SHADOW file ? ')
+IF (IFLAG.EQ.0) GO TO 30
+FNAME2 = RSTRING ('Name of (binary) file for SHADOW: ')
 
 !C
 !C SHADOW defines the degree of polarization by |E| instead of |E|^2
 !C i.e.  P = |Ex|/(|Ex|+|Ey|)   instead of   |Ex|^2/(|Ex|^2+|Ey|^2)
 !C
-	 DO 19 K = 1, NE
-	   DO 29 J = 1, NT
-	     DO 39 I = 1, NP
-		TEMP	       = POL_DEG(I,J,K)
-		POL_DEG(I,J,K) = SQRT(TEMP)/(SQRT(TEMP)+SQRT(1.D0-TEMP))
-39	     CONTINUE
-29	   CONTINUE
-19	 CONTINUE
+DO 19 K = 1, NE
+    DO 29 J = 1, NT
+        DO 39 I = 1, NP
+            TEMP = POL_DEG(I,J,K)
+            POL_DEG(I,J,K) = SQRT(TEMP)/(SQRT(TEMP)+SQRT(1.D0-TEMP))
+        39 CONTINUE
+    29 CONTINUE
+19 CONTINUE
 
-	 CALL RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
-             CDF0, CDF1, CDF2, POL_DEG,  &
-             FNAME2, ITYPE, IANGLE)
+CALL RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
+    CDF0, CDF1, CDF2, POL_DEG, FNAME2, ITYPE, IANGLE)
 
 !C
 !C Create and write a log file.
 !C
-30      SPECFILE	= RSTRING('File name for parameter info : ')
-      	OPEN  (29,FILE=SPECFILE,STATUS='UNKNOWN')
-	REWIND (29)
-      	WRITE (29,99)
-      	WRITE (29,*) 'Trajectory computed by EPATH with following ', &
-      	   'parameters:'
-      	WRITE (29,*) 'Number of points : ',NPointId
-      	WRITE (29,*) 'Wavelen. (und)   : ',RLAU,             ' meters'
-      	WRITE (29,*) 'Fundamental wvl  : ',RLA1*1.0d10,      ' angstroms'
-      	WRITE (29,*) 'Fund.    energy  : ',ENERGY1/1.602D-19,' eV'
-      	WRITE (29,*) 'K is             : ',RK
-      	WRITE (29,*) 'Gamma            : ',GA0
-      	WRITE (29,*) 'Beta0            : ',BETA0,            ' C units'    
-     	WRITE (29,*) 'Field B0         : ',B0,               ' tesla'
-	WRITE (29,*) 'Electron energy  : ',ER/1.602d-19/1.D9,'GeV'
-      	WRITE (29,99)
-      	WRITE (29,*) 'Read ',NPointId,' trajectory records from ',trim(FTRAJ)
-	WRITE (29,*) 'Number periods used in ERAD: ',NCOMP
-     	WRITE (29,*) 'Total power radiated in the limits [ W ]: ',TOTPOWER
-     	IF (ICOMP.EQ.0) THEN
-     	   write (29,99)
-     	   write (29,*) 'Working with band-pass case (units eV) .'
-     	   write (29,*) 'band-pass = ',bpass
-     	   write (29,*) 'Limits: ',EMIN,EMAX
-!C     	   write (29,*) 'Step  : ',ESTEP,' Number of points: ',NE
-     	   write (29,*) 'Number of points: ',NE
-     	   write (29,99)
-	ELSE
-     	   write (29,99)
-     	   write (29,*) 'Working with constant dE (units eV) .'
-     	   write (29,*) 'Energy interval = ',ESTEP
-     	   write (29,*) 'Limits: ',EMIN,EMAX
-!C     	   write (29,*) 'Step  : ',ESTEP,' Number of points: ',NE
-     	   write (29,*) 'Number of points: ',NE
-     	   write (29,99)
-!C     	   write (29,*) 'Piecewise spectrum choosen: ', KIND(IHARM+1)
-!C     	   write (29,*) 'From Harmonic: ',N_HARM1,' to ',N_HARM2
-!C     	   write (29,*) 'Width ',WIDTH,' and Number of points ',NCOMP
-	END IF
-	  IF (IANGLE.EQ.1) THEN
-	  WRITE (29,*) 'POLAR ANGLES CHOSEN    '
-	  WRITE (29,*)'Azimutal angle (units rad) .'
-     	  WRITE (29,*) 'Limits: ',PHIMIN,PHIMAX
-!C     	  WRITE (29,*) 'Step  : ',PHISTEP,' Number of points: ',NP
-     	  WRITE (29,*) 'Number of points: ',NP
-     	  WRITE (29,99)
-	  WRITE (29,*)'Polar angle (units mrad) .'
-     	  WRITE (29,*) 'Limits: ',THEMIN*1.0D3,THEMAX*1.0D3
-!C     	  WRITE (29,*) 'Step  : ',THESTEP*1.0D3,' Number of points: ',NT
-     	  WRITE (29,*) 'Number of points: ',NT
-     	  WRITE (29,'(a)') 'Spectra written into (binary) file: '//trim(FNAME1)
-	  ELSE IF (IANGLE.EQ.2) THEN
-	      WRITE (29,*) 'CARTESIAN ANGLES CHOSEN '
-	  WRITE (29,*)'Horizontal angle (units mrad) .'
-     	  WRITE (29,*) 'Limits: ',PHIMIN*1.0D3,PHIMAX*1.0D3
-!C     	  WRITE (29,*) 'Step  : ',PHISTEP*1.0D3,' Number of points: ',NP
-     	  WRITE (29,*) 'Number of points: ',NP
-     	  WRITE (29,99)
-	  WRITE (29,*)'Vertical angle (units mrad) .'
-     	  WRITE (29,*) 'Limits: ',THEMIN*1.0D3,THEMAX*1.0D3
-!C     	  WRITE (29,*) 'Step  : ',THESTEP*1.0D3,' Number of points: ',NT
-     	  WRITE (29,*) 'Number of points: ',NT
-	  WRITE (29,*) 'File for SHADOW (binary) written to:'
-	  WRITE (29,*) trim(FNAME2)
-	  END IF
-	  IF (ICOMP.EQ.0) THEN
-	    WRITE (29,*) 'in units: PHOTONS/SEC/%Bandpass/RAD**2 '
-	  ELSE
-	    WRITE (29,*) 'in units: PHOTONS/SEC/eV/RAD**2 '
-	  END IF
-    	  WRITE (29,99)
+30  continue
+
+SPECFILE = RSTRING('File name for parameter info : ')
+OPEN  (29,FILE=SPECFILE,STATUS='UNKNOWN')
+REWIND (29)
+WRITE (29,99)
+WRITE (29,*) 'Trajectory computed by EPATH with following parameters:'
+WRITE (29,*) 'Number of points : ',NPointId
+WRITE (29,*) 'Wavelen. (und)   : ',RLAU,             ' meters'
+WRITE (29,*) 'Fundamental wvl  : ',RLA1*1.0d10,      ' angstroms'
+WRITE (29,*) 'Fund.    energy  : ',ENERGY1/1.602D-19,' eV'
+WRITE (29,*) 'K is             : ',RK
+WRITE (29,*) 'Gamma            : ',GA0
+WRITE (29,*) 'Beta0            : ',BETA0,            ' C units'    
+WRITE (29,*) 'Field B0         : ',B0,               ' tesla'
+WRITE (29,*) 'Electron energy  : ',ER/1.602d-19/1.D9,'GeV'
+WRITE (29,99)
+WRITE (29,*) 'Read ',NPointId,' trajectory records from ',trim(FTRAJ)
+WRITE (29,*) 'Number periods used in ERAD: ',NCOMP
+WRITE (29,*) 'Total power radiated in the limits [ W ]: ',TOTPOWER
+IF (ICOMP.EQ.0) THEN
+    write (29,99)
+    write (29,*) 'Working with band-pass case (units eV) .'
+    write (29,*) 'band-pass = ',bpass
+    write (29,*) 'Limits: ',EMIN,EMAX
+    !C         write (29,*) 'Step  : ',ESTEP,' Number of points: ',NE
+    write (29,*) 'Number of points: ',NE
+    write (29,99)
+    ELSE
+    write (29,99)
+    write (29,*) 'Working with constant dE (units eV) .'
+    write (29,*) 'Energy interval = ',ESTEP
+    write (29,*) 'Limits: ',EMIN,EMAX
+    !C         write (29,*) 'Step  : ',ESTEP,' Number of points: ',NE
+    write (29,*) 'Number of points: ',NE
+    write (29,99)
+    !C         write (29,*) 'Piecewise spectrum choosen: ', KIND(IHARM+1)
+    !C         write (29,*) 'From Harmonic: ',N_HARM1,' to ',N_HARM2
+    !C         write (29,*) 'Width ',WIDTH,' and Number of points ',NCOMP
+END IF
+IF (IANGLE.EQ.1) THEN
+    WRITE (29,*) 'POLAR ANGLES CHOSEN    '
+    WRITE (29,*)'Azimutal angle (units rad) .'
+    WRITE (29,*) 'Limits: ',PHIMIN,PHIMAX
+    !C        WRITE (29,*) 'Step  : ',PHISTEP,' Number of points: ',NP
+    WRITE (29,*) 'Number of points: ',NP
+    WRITE (29,99)
+    WRITE (29,*)'Polar angle (units mrad) .'
+    WRITE (29,*) 'Limits: ',THEMIN*1.0D3,THEMAX*1.0D3
+    !C        WRITE (29,*) 'Step  : ',THESTEP*1.0D3,' Number of points: ',NT
+    WRITE (29,*) 'Number of points: ',NT
+    WRITE (29,'(a)') 'Spectra written into (binary) file: '//trim(FNAME1)
+    ELSE IF (IANGLE.EQ.2) THEN
+    WRITE (29,*) 'CARTESIAN ANGLES CHOSEN '
+    WRITE (29,*)'Horizontal angle (units mrad) .'
+    WRITE (29,*) 'Limits: ',PHIMIN*1.0D3,PHIMAX*1.0D3
+    !C        WRITE (29,*) 'Step  : ',PHISTEP*1.0D3,' Number of points: ',NP
+    WRITE (29,*) 'Number of points: ',NP
+    WRITE (29,99)
+    WRITE (29,*)'Vertical angle (units mrad) .'
+    WRITE (29,*) 'Limits: ',THEMIN*1.0D3,THEMAX*1.0D3
+    !C        WRITE (29,*) 'Step  : ',THESTEP*1.0D3,' Number of points: ',NT
+    WRITE (29,*) 'Number of points: ',NT
+    WRITE (29,*) 'File for SHADOW (binary) written to:'
+    WRITE (29,*) trim(FNAME2)
+END IF
+IF (ICOMP.EQ.0) THEN
+    WRITE (29,*) 'in units: PHOTONS/SEC/%Bandpass/RAD**2 '
+ELSE
+    WRITE (29,*) 'in units: PHOTONS/SEC/eV/RAD**2 '
+END IF
+WRITE (29,99)
 !C
 !C
-    	WRITE (29,99)
-	CLOSE (29)
-        PRINT *,'File written to disk: '//trim(specFile)
-99	FORMAT (1X,/,'---------------------------------------------',/)
-1000	FORMAT	(1X, 3(1X,G12.5), 1X, G15.8)
-1010	FORMAT	(1X, 3(1X,G12.5), 3(1X, G15.8) )
-1020	FORMAT	(1X, 3(1X,G12.5), 2(1X, G15.8) )
+WRITE (29,99)
+CLOSE (29)
+PRINT *,'File written to disk: '//trim(specFile)
+
+99 FORMAT (1X,/,'---------------------------------------------',/)
+1000 FORMAT (1X, 3(1X,G12.5), 1X, G15.8)
+1010 FORMAT (1X, 3(1X,G12.5), 3(1X, G15.8) )
+1020 FORMAT (1X, 3(1X,G12.5), 2(1X, G15.8) )
 !C
-	RETURN
+RETURN
 END SUBROUTINE UWrite
-
-
 
 !C+++
 !C
 !C	SUBROUTINE 		RW_UNDUL
 !C
-!C	PURPOSE			Specifies format to write output files for 
-!C				source generation using SHADOW.
+!C	PURPOSE			write output files for source generation 
+!                               using SHADOW.
 !C
-!C	INPUT			none
+!C	INPUT			arrays to write out (U*, ZERO,ONE,TWO,POL_DEG)
+!C                              itype: 1=write spectrum, 2=write SHADOW file.
+!C
 !C
 !C	OUTPUT			A file containing CDF's and POLARIZATION
 !C				or RN's
@@ -2375,69 +2616,78 @@ END SUBROUTINE UWrite
 SUBROUTINE RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
                       ZERO, ONE, TWO, POL_DEG, FNAME, ITYPE, IANGLE)
 
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	DIMENSION		ZERO(31,31,51),ONE(31,51),TWO(51)
-	DIMENSION		POL_DEG(31,31,51)
-	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	CHARACTER(len=sklen) :: FNAME
+integer(kind=ski), intent(in)    :: np,nt,ne,itype,iangle
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: uphi, zero, pol_deg
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: utheta, one
+!real(kind=skr),dimension(NDIM_E),       intent(in) :: uener, two
+real(kind=skr),dimension(np,nt,ne), intent(in) :: uphi, zero, pol_deg
+real(kind=skr),dimension(nt,ne),    intent(in) :: utheta, one
+real(kind=skr),dimension(ne),       intent(in) :: uener, two
 
-	   OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='UNFORMATTED')
-	   REWIND (31)
-!C		IF (ITYPE.EQ.2) THEN		!cartesian for SHADOW
-	   	  WRITE(31) NE,NT,NP,IANGLE
+!DIMENSION  ZERO(31,31,51),ONE(31,51),TWO(51)
+!DIMENSION  POL_DEG(31,31,51)
+!DIMENSION  UPHI(31,31,51),UTHETA(31,51),UENER(51)
+character(len=sklen) :: FNAME
+integer(kind=ski)  :: i,j,k
 
-		  DO 15 K = 1,NE
-15	   	     WRITE(31) UENER(K)
-		  DO 25 K = 1,NE
-		     DO 25 J = 1,NT
-25	   	        WRITE(31) UTHETA(J,K)
-		  DO 35 K = 1, NE
-		     DO 35 J = 1,NT
-			DO 35 I = 1,NP
-35	   	           WRITE(31) UPHI(I,J,K)
+OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='UNFORMATTED')
+REWIND (31)
+!C  IF (ITYPE.EQ.2) THEN  !cartesian for SHADOW
+WRITE(31) NE,NT,NP,IANGLE
 
-		  DO 45 K = 1,NE
-45	   	     WRITE(31) TWO(K)
-		  DO 55 K = 1,NE
-		     DO 55 J = 1,NT
-55	   	        WRITE(31) ONE(J,K)
-		  DO 65 K = 1,NE
-		     DO 65 J = 1,NT
-			DO 65 I = 1,NP
-65	   	           WRITE(31) ZERO(I,J,K)
+DO K = 1,NE
+    WRITE(31) UENER(K)
+END DO
 
-		  DO 75 K = 1,NE
-		     DO 75 J = 1,NT
-			DO 75 I = 1,NP
-75	   	           WRITE(31) POL_DEG(I,J,K)
+DO K = 1,NE
+    DO J = 1,NT
+        WRITE(31) UTHETA(J,K)
+    END DO
+END DO
 
-!C	   	  WRITE(31) (UENER(K), K = 1,NE)
-!C	   	  WRITE(31) ((UTHETA(J,K), J = 1,NT), K = 1,NE)
-!C	   	  WRITE(31) (((UPHI(I,J,K), I = 1,NP), 
-!C     $			J = 1,NT), K = 1,NE)
-!C
-!C	   	  WRITE(31) (TWO(K), K = 1,NE)
-!C	   	  WRITE(31) ((ONE(J,K), J = 1,NT), K = 1,NE)
-!C	   	  WRITE(31) (((ZERO(I,J,K), I = 1,NP), 
-!C     $			J = 1,NT), K = 1,NE)
-!C
-!C	   	  WRITE(31) (((POL_DEG(I,J,K), I = 1,NP),
-!C     $			 J = 1,NT), K = 1,NE)
+DO K = 1, NE
+    DO J = 1,NT
+        DO I = 1,NP
+            WRITE(31) UPHI(I,J,K)
+        END DO
+    END DO
+END DO
 
-!C		ELSE IF (ITYPE.EQ.1) THEN
-!C		    DO KC = 1,NE
-!C			WRITE (40,*) UENER(KC),TWO(KC)
-!C		    END DO
-!C	   	  WRITE(31) ZERO
-!C	   	  WRITE(31) ONE
-!C	   	  WRITE(31) TWO
-!C		END IF
-	   CLOSE(31)
-	   PRINT *,'File written to disk: '//trim(fname)
+DO K = 1,NE
+    WRITE(31) TWO(K)
+END DO
 
-	RETURN
+DO K = 1,NE
+    DO J = 1,NT
+        WRITE(31) ONE(J,K)
+    END DO
+END DO
+
+
+DO K = 1,NE
+    DO J = 1,NT
+        DO I = 1,NP
+            WRITE(31) ZERO(I,J,K)
+        END DO
+    END DO
+END DO
+
+DO K = 1,NE
+    DO J = 1,NT
+        DO I = 1,NP
+            WRITE(31) POL_DEG(I,J,K)
+        END DO
+    END DO
+END DO
+
+CLOSE(31)
+PRINT *,'File written to disk: '//trim(fname)
+
+RETURN
 END SUBROUTINE RW_Undul
 
 !C+++
@@ -2454,122 +2704,161 @@ END SUBROUTINE RW_Undul
 !C	OUTPUT:			AENER,ATHETA,APHI
 !C
 !C---
-SUBROUTINE UInvert (CDF0,CDF1,CDF2,UPHI,UTHETA, UENER,APHI,ATHETA,AENER)
-	
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
+SUBROUTINE UInvert (CDF0,CDF1,CDF2,UPHI,UTHETA, UENER,APHI,ATHETA,AENER,np,nt,ne)
 
-	DIMENSION		UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	DIMENSION		CDF0(31,31,51),CDF1(31,51),CDF2(51)
-	DIMENSION		APHI(31,31,51),ATHETA(31,51),AENER(51)
+implicit none
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
 
-	DIMENSION		XY(2,201),X_NEW(201)
+integer(kind=ski), intent(in)  :: np,nt,ne
+
+!integer(kind=ski), intent(in)    :: np,nt,ne,itype,iangle
+
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: cdf0,uphi
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: cdf1,utheta
+!real(kind=skr),dimension(NDIM_E),       intent(in) :: cdf2,uener
+!
+!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(out) :: aphi
+!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(out) :: atheta
+!real(kind=skr),dimension(NDIM_E),       intent(out) :: aener
+
+real(kind=skr),dimension(np,nt,ne), intent(in) :: cdf0,uphi
+real(kind=skr),dimension(nt,ne),    intent(in) :: cdf1,utheta
+real(kind=skr),dimension(ne),       intent(in) :: cdf2,uener
+
+real(kind=skr),dimension(np,nt,ne), intent(out) :: aphi
+real(kind=skr),dimension(nt,ne),    intent(out) :: atheta
+real(kind=skr),dimension(ne),       intent(out) :: aener
+
+!DIMENSION  UPHI(31,31,51),UTHETA(31,51),UENER(51)
+!DIMENSION  CDF0(31,31,51),CDF1(31,51),CDF2(51)
+!DIMENSION  APHI(31,31,51),ATHETA(31,51),AENER(51)
+
+!DIMENSION  XY(2,201),X_NEW(201)
+real(kind=skr),dimension(2,201)  :: xy
+real(kind=skr),dimension(201)    :: x_new
+
+integer(kind=ski) :: i,j,k,jstart,kstart
+real(kind=skr)    :: ener,adjust,theta
 
 !C
 !C ADJUST is the allowed movement for INV_LINEAR.
 !C
-	ADJUST	= 1.0D0/NCOMP
+ADJUST = 1.0D0/NCOMP
 
-	IF (IPASS.EQ.0) THEN
-	  GO TO 10
-	ELSE IF (IPASS.EQ.1) THEN
-	  DO 19 K = 1, NE
- 19	    AENER(K)	= UENER(K)
-	  GO TO 20
-	ELSE IF (IPASS.EQ.2) THEN
-	  DO 29 K = 1, NE
-	    AENER(K)	= UENER(K)
-	    DO 29 J = 1, NT
- 29	      ATHETA(J,K)	= UTHETA(J,K)
-	  GO TO 30
-	END IF
+IF (IPASS.EQ.0) THEN
+    GO TO 10
+ELSE IF (IPASS.EQ.1) THEN
+    DO K = 1, NE
+        AENER(K) = UENER(K)
+    END DO
+    GO TO 20
+ELSE IF (IPASS.EQ.2) THEN
+    DO K = 1, NE
+        AENER(K) = UENER(K)
+        DO J = 1, NT
+            ATHETA(J,K) = UTHETA(J,K)
+        END DO
+    END DO
+    GO TO 30
+END IF
 
 !C
 !C First invert the energy.
-!C	
-10	DO 39 K = 1, NE
-	  XY(1,K)	= UENER(K)
-	  XY(2,K)	= CDF2(K)
- 39	CONTINUE
-	CALL	INV_LINEAR	(XY,NE,X_NEW,ADJUST)
-	DO 49 K = 1, NE
- 49	  AENER(K)	= X_NEW(K)
+!C 
+10 continue
+
+DO 39 K = 1, NE
+    XY(1,K) = UENER(K)
+    XY(2,K) = CDF2(K)
+39 CONTINUE
+CALL INV_LINEAR (XY,NE,X_NEW,ADJUST)
+DO K = 1, NE
+    AENER(K) = X_NEW(K)
+END DO
 !C
 !C Then theta.
 !C
-20	KSTART	= 1
-	DO 59 K = 1, NE
-	  ENER	= AENER(K)
+20 continue
 
-!C +++
-!C Replace DO ... WHILE with standard stuff.
-!C
-!C	  DO WHILE (ENER.GT.UENER(KSTART))
-!C	    KSTART	= KSTART + 1
-!C	  END DO
-!C
-!C ---
- 69	CONTINUE
-	  IF (ENER.GT.UENER(KSTART)) THEN
-	    KSTART	= KSTART + 1
-	    GOTO 69
-	  END IF
-
-	  DO 79 J = 1, NT
-	    XY(1,J)	= UTHETA(J,KSTART)
-	    XY(2,J)	= CDF1(J,KSTART)
- 79	CONTINUE
-	  CALL	INV_LINEAR	(XY,NT,X_NEW,ADJUST)
-	  DO 89 J = 1, NT
- 89	    ATHETA(J,K)	= X_NEW(J)
- 59	CONTINUE
+KSTART = 1
+DO 59 K = 1, NE
+    ENER = AENER(K)
+    !C +++
+    !C Replace DO ... WHILE with standard stuff.
+    !C
+    !C   DO WHILE (ENER.GT.UENER(KSTART))
+    !C     KSTART = KSTART + 1
+    !C   END DO
+    !C
+    !C ---
+    69 CONTINUE
+    
+    IF (ENER.GT.UENER(KSTART)) THEN
+        KSTART = KSTART + 1
+        GOTO 69
+    END IF
+    
+    DO 79 J = 1, NT
+        XY(1,J) = UTHETA(J,KSTART)
+        XY(2,J) = CDF1(J,KSTART)
+    79 CONTINUE
+    CALL INV_LINEAR (XY,NT,X_NEW,ADJUST)
+    DO J = 1, NT
+        ATHETA(J,K) = X_NEW(J)
+    END DO
+59 CONTINUE
 !C
 !C Now phi.
 !C
-30	KSTART	= 1
-	DO 99 K = 1, NE
-	  ENER	= AENER(K)
-!C +++
-!C Replace DO ... WHILE with standard stuff.
-!C	  DO WHILE (ENER.GT.UENER(KSTART))
-!C	    KSTART	= KSTART + 1
-!C	  END DO
-!C ---
-!C
- 109	  CONTINUE
-	  IF (ENER.GT.UENER(KSTART)) THEN
-	    KSTART	= KSTART + 1
-	    GOTO 109
-	  ENDIF
-!C
-	  JSTART	= 1
-	  DO 119 J = 1, NT
-	    THETA	= ATHETA(J,K)
-!C +++
-!C Replace DO ... WHILE with standard stuff.
-!C
-!C	    DO WHILE (THETA.GT.UTHETA(JSTART,KSTART))
-!C	      JSTART	= JSTART + 1
-!C	    END DO
-!C ---
-!C
- 129	    CONTINUE
-	    IF (THETA.GT.UTHETA(JSTART,KSTART)) THEN
-	      JSTART	= JSTART + 1
-	      GOTO 129
-	    ENDIF
-!C
-	    DO 139 I = 1, NP
-	      XY(1,I)	= UPHI(I,JSTART,KSTART)
-	      XY(2,I)	= CDF0(I,JSTART,KSTART)
- 139  	    CONTINUE
-	    CALL	INV_LINEAR	(XY,NP,X_NEW,ADJUST)
-	    DO 149 I = 1, NP
- 149	      APHI(I,J,K)	= X_NEW(I) 
- 119	CONTINUE
- 99	CONTINUE
 
-	RETURN
+30 continue
+
+KSTART = 1
+DO 99 K = 1, NE
+    ENER = AENER(K)
+    !C +++
+    !C Replace DO ... WHILE with standard stuff.
+    !C   DO WHILE (ENER.GT.UENER(KSTART))
+    !C     KSTART = KSTART + 1
+    !C   END DO
+    !C ---
+    !C
+    109   CONTINUE
+    IF (ENER.GT.UENER(KSTART)) THEN
+        KSTART = KSTART + 1
+        GOTO 109
+    ENDIF
+    !C
+    JSTART = 1
+    DO 119 J = 1, NT
+        THETA = ATHETA(J,K)
+        !C +++
+        !C Replace DO ... WHILE with standard stuff.
+        !C
+        !C     DO WHILE (THETA.GT.UTHETA(JSTART,KSTART))
+        !C       JSTART = JSTART + 1
+        !C     END DO
+        !C ---
+        !C
+        129     CONTINUE
+        IF (THETA.GT.UTHETA(JSTART,KSTART)) THEN
+            JSTART = JSTART + 1
+            GOTO 129
+        ENDIF
+        !C
+        DO 139 I = 1, NP
+            XY(1,I) = UPHI(I,JSTART,KSTART)
+            XY(2,I) = CDF0(I,JSTART,KSTART)
+        139       CONTINUE
+        CALL INV_LINEAR (XY,NP,X_NEW,ADJUST)
+        DO I = 1, NP
+            APHI(I,J,K) = X_NEW(I) 
+        END DO
+    119 CONTINUE
+99 CONTINUE
+
+RETURN
 
 END SUBROUTINE UInvert
 
@@ -2586,60 +2875,71 @@ END SUBROUTINE UInvert
 !C
 !C---
 SUBROUTINE Inv_Linear (XY,NE,X_NEW,ADJUST)
-	
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
-	DIMENSION	XY(2,201),X_NEW(201)
 
-	YSTEP	= (XY(2,NE)-XY(2,1))/(NE-1)
-	ISTART	= 1
-	X_NEW(1)	= XY(1,1)
-	X_NEW(NE)	= XY(1,NE)
+implicit none
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+!DIMENSION XY(2,201),X_NEW(201)
 
-	DO 15 I = 2, NE-1
-	  Y_NEW	= XY(2,1) + (I-1)*YSTEP
+real(kind=skr),dimension(2,201),intent(in)  :: xy
+real(kind=skr),                 intent(in)  :: adjust
+integer(kind=ski),              intent(in)  :: ne
 
-!C +++
-!C Replace DO ... WHILE with GOTO statements.
-!C
-!C	  DO WHILE (Y_NEW.GT.XY(2,ISTART))
-!C	    ISTART	= ISTART + 1
-!C	  END DO
-!C ---
- 19	CONTINUE
-	  IF (Y_NEW.GT.XY(2,ISTART)) THEN
-	    ISTART	= ISTART + 1
-	    GOTO 19
-	  ENDIF
-	  
-	  IF (XY(2,ISTART).NE.XY(2,ISTART-1)) THEN
-	    X_NEW(I) = XY(1,ISTART-1) + (XY(1,ISTART) - XY(1,ISTART-1))/ &
-      				        (XY(2,ISTART) - XY(2,ISTART-1))* &
-      				        (Y_NEW - XY(2,ISTART-1))
-	  ELSE
-!C
-!C If the probability is the same, then just use the average value.
-!C
-	    X_NEW(I) = (XY(1,ISTART-1)+XY(1,ISTART))/2.0D0
-	  END IF
+real(kind=skr),dimension(201),  intent(out) :: x_new
 
-15	CONTINUE
+real(kind=skr)     :: astep,xstep,ystep,y_new
+integer(kind=ski)  :: i,istart
+
+YSTEP = (XY(2,NE)-XY(2,1))/(NE-1)
+ISTART = 1
+X_NEW(1) = XY(1,1)
+X_NEW(NE) = XY(1,NE)
+
+DO 15 I = 2, NE-1
+    Y_NEW = XY(2,1) + (I-1)*YSTEP
+    
+    !C +++
+    !C Replace DO ... WHILE with GOTO statements.
+    !C
+    !C   DO WHILE (Y_NEW.GT.XY(2,ISTART))
+    !C     ISTART = ISTART + 1
+    !C   END DO
+    !C ---
+    19 CONTINUE
+    IF (Y_NEW.GT.XY(2,ISTART)) THEN
+        ISTART = ISTART + 1
+        GOTO 19
+    ENDIF
+    
+    IF (XY(2,ISTART).NE.XY(2,ISTART-1)) THEN
+        X_NEW(I) = XY(1,ISTART-1) + (XY(1,ISTART) - XY(1,ISTART-1))/ &
+            (XY(2,ISTART) - XY(2,ISTART-1))* &
+            (Y_NEW - XY(2,ISTART-1))
+    ELSE
+        !C
+        !C If the probability is the same, then just use the average value.
+        !C
+        X_NEW(I) = (XY(1,ISTART-1)+XY(1,ISTART))/2.0D0
+    END IF
+
+15 CONTINUE
 
 !C
 !C Now check whether any 2 adjacant points are spaced too far apart in X.
 !C
-	ASTEP	= (XY(1,NE)-XY(1,1))/(NE-1)
-	DO 25 I = 1, NE-1
-	  XSTEP	= X_NEW(I+1) - X_NEW(I)
-	  IF (XSTEP.GT.ASTEP) THEN
-	    X_NEW(I)	 = X_NEW(I) + ADJUST*XSTEP
-	    X_NEW(I+1)	 = X_NEW(I+1) - ADJUST*XSTEP
-	  END IF
-25	CONTINUE
-	X_NEW(1)	= XY(1,1)
-	X_NEW(NE)	= XY(1,NE)
+ASTEP = (XY(1,NE)-XY(1,1))/(NE-1)
+DO 25 I = 1, NE-1
+    XSTEP = X_NEW(I+1) - X_NEW(I)
+    IF (XSTEP.GT.ASTEP) THEN
+        X_NEW(I)  = X_NEW(I) + ADJUST*XSTEP
+        X_NEW(I+1)  = X_NEW(I+1) - ADJUST*XSTEP
+    END IF
+25 CONTINUE
+
+X_NEW(1) = XY(1,1)
+X_NEW(NE) = XY(1,NE)
 !C
-	RETURN
+RETURN
 END SUBROUTINE Inv_Linear
 
 !C+++
@@ -2653,142 +2953,351 @@ END SUBROUTINE Inv_Linear
 !C
 !C---
 SUBROUTINE Undul_Cdf
-        implicit real(kind=skr) (a-h,o-z)
-        implicit integer(kind=ski)        (i-n)
-	NAMELIST	/PARAIN/	NCOMP,RCURR,ICOMP,BPASS, &
-      					IANGLE,IAPERTURE,IEXTERNAL, &
-      					FOUT,FIN,FTRAJ,EMIN,EMAX, &
-      					THEMIN,THEMAX,PHIMIN,PHIMAX, &
-      					NE,NT,NP,NCHECK,IOPT,ITER,IPASS, &
-      					I_EDIV,EDIVX,EDIVY,FINT,IINT
 
-	DIMENSION	UPHI(31,31,51),UTHETA(31,51),UENER(51)
-	DIMENSION	RN0(31,31,51),RN1(31,51),RN2(51)
-	DIMENSION	POL_DEG(31,31,51)
-	DIMENSION	CDF0(31,31,51),CDF1(31,51),CDF2(51)
-	DIMENSION	APHI(31,31,51),ATHETA(31,51),AENER(51)
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
+NAMELIST /PARAIN/ NCOMP,RCURR,ICOMP,BPASS, &
+    IANGLE,IAPERTURE,IEXTERNAL, &
+    FOUT,FIN,FTRAJ,EMIN,EMAX, &
+    THEMIN,THEMAX,PHIMIN,PHIMAX, &
+    NE,NT,NP,NCHECK,IOPT,ITER,IPASS, &
+    I_EDIV,EDIVX,EDIVY,FINT,IINT
+
+!DIMENSION UPHI(31,31,51),UTHETA(31,51),UENER(51)
+!DIMENSION RN0(31,31,51),RN1(31,51),RN2(51)
+!DIMENSION POL_DEG(31,31,51)
+!DIMENSION CDF0(31,31,51),CDF1(31,51),CDF2(51)
+!DIMENSION APHI(31,31,51),ATHETA(31,51),AENER(51)
+
+real(kind=skr),dimension(:,:,:),allocatable  :: cdf0,uphi,aphi,rn0,pol_deg
+real(kind=skr),dimension(:,:),allocatable    :: cdf1,utheta,atheta,rn1
+real(kind=skr),dimension(:),allocatable      :: cdf2,uener,aener,rn2
+
+integer(kind=ski)  :: i,j,k
 !C
 !C Read in the parameters from namelist file
 !C
-	OPEN	(21, FILE='uphot.nml', STATUS='OLD')
-	READ	(21, NML=PARAIN)
-	CLOSE	(21)
+
+OPEN (21, FILE='uphot.nml', STATUS='OLD')
+READ (21, NML=PARAIN)
+CLOSE (21)
 !C
 !C Read in the arrays
 !C
-	OPEN	(40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-	READ	(40)	NE, NT, NP
+OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
+READ (40) NE, NT, NP
 
-	DO 99 K = 1, NE
- 99	    READ (40)	UENER(K)
+!
+! allocate arrays
+!
+allocate( cdf2(NE) )
+allocate( UENER(NE) )
+allocate( aener(NE) )
+allocate( rn2(NE) )
 
-	DO 199 K = 1, NE
-	    DO 199 J = 1, NT
- 199		READ (40) UTHETA(J,K)
+allocate( cdf1(NT,NE) )
+allocate( UTHETA(NT,NE) )
+allocate( aTHETA(NT,NE) )
+allocate( rn1(NT,NE) )
 
-	DO 299 K = 1, NE
-	    DO 299 J = 1, NT
-		DO 299 I = 1, NP
- 299		    READ (40) UPHI(I,J,K)
+allocate( cdf0(NP,NT,NE) )
+allocate( UPHI(NP,NT,NE) )
+allocate( aPHI(NP,NT,NE) )
+allocate( rn0(NP,NT,NE) )
+allocate( pol_deg(NP,NT,NE) )
+
+!
+
+DO K = 1, NE
+    READ (40) UENER(K)
+END DO
+
+DO K = 1, NE
+    DO J = 1, NT
+        READ (40) UTHETA(J,K)
+    END DO
+END DO
+
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            READ (40) UPHI(I,J,K)
+        END DO
+    END DO
+END DO
 
   
-	DO 399 K = 1, NE
-	    DO 399 J = 1, NT
-		DO 399 I = 1, NP
- 399		    READ (40) RN0(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            READ (40) RN0(I,J,K)
+        END DO
+    END DO
+END DO
 
 
-	DO 499 K = 1, NE
-	    DO 499 J = 1, NT
-		DO 499 I = 1, NP
- 499		    READ (40) POL_DEG(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            READ (40) POL_DEG(I,J,K)
+        END DO
+    END DO
+END DO
 
-	CLOSE	(40)
+CLOSE (40)
 !C
 !C Integrate RN0 to get RN1 and RN2
-!C		
-	CALL	RNS	(RN0,RN1,RN2,UPHI,UTHETA,UENER)
+!C  
+CALL RNS (RN0,RN1,RN2,UPHI,UTHETA,UENER,np,nt,ne)
 !C
 !C Generate the 3 CDFs
 !C
-	CALL	UCDF	(RN0,RN1,RN2,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
+CALL UCDF (RN0,RN1,RN2,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,np,nt,ne)
 !C
 !C Check if the user want to write out RNs
 !C
-	IF (IPASS.EQ.0) THEN
-	  CALL	UWRITE	(RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER)
-!C
-!C See if the no. of times of optimization is finished
-!C
-	  IF (ITER.EQ.IOPT)	THEN
-	    !CALL EXIT (0)
-	    RETURN
-	  END IF
-	END IF
+IF (IPASS.EQ.0) THEN
+    CALL UWRITE (RN0,RN1,RN2,POL_DEG,CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,np,nt,ne)
+    !C
+    !C See if the no. of times of optimization is finished
+    !C
+    IF (ITER.EQ.IOPT) THEN
+        !CALL EXIT (0)
+        RETURN
+    END IF
+END IF
+
+!
+! srio@esrf.eu 
+! the following part (till the end proroutine) is only run if 
+! OPTIMIZATION is set, an option not recommended (and not tested!). 
+!
+print*,''
+print*,'----------------------------------------------------------------'
+print*,''
+print*,'undul_cdf: Warning: undulator optimization set (not recommended)'
+print*,''
+print*,'----------------------------------------------------------------'
+print*,''
+
 !C
 !C Invert the CDFs so that they are equal space in probability (Y-axis). A new 
 !C set of (energy, theta, phi) is created.
 !C
-	  CALL	UINVERT	(CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,APHI,ATHETA,AENER)
+CALL UINVERT (CDF0,CDF1,CDF2,UPHI,UTHETA,UENER,APHI,ATHETA,AENER,np,nt,ne)
 
-     	 IF (IPASS.EQ.0) THEN
-	  DO 115 K = 1, NE
-	    UENER(K)		= AENER(K)
-	    DO 115 J = 1, NT
-	      UTHETA(J,K)	= ATHETA(J,K)
-	      DO 115 I = 1, NP
-		UPHI(I,J,K)	= APHI(I,J,K)
-115	  CONTINUE
-     	  IPASS = IPASS + 1
-     	 ELSE IF (IPASS.EQ.1) THEN
-	  DO 125 K = 1, NE
-	    DO 125 J = 1, NT
-	      UTHETA(J,K)	= ATHETA(J,K)
-	      DO 125 I = 1, NP
-		UPHI(I,J,K)	= APHI(I,J,K)
-125 	  CONTINUE
-     	  IPASS = IPASS + 1
-     	 ELSE IF (IPASS.EQ.2) THEN
-	  DO 135 K = 1, NE
-	    DO 135 J = 1, NT
-	      DO 135 I = 1, NP
-		UPHI(I,J,K)	= APHI(I,J,K)
-135 	  CONTINUE
-     	   IPASS = 0
-	   ITER = ITER + 1
-     	 END IF
+IF (IPASS.EQ.0) THEN
+    DO K = 1, NE
+        UENER(K)  = AENER(K)
+        DO J = 1, NT
+            UTHETA(J,K) = ATHETA(J,K)
+            DO I = 1, NP
+                UPHI(I,J,K) = APHI(I,J,K)
+            END DO
+        END DO
+    END DO
+    IPASS = IPASS + 1
+ELSE IF (IPASS.EQ.1) THEN
+    DO K = 1, NE
+        DO J = 1, NT
+            UTHETA(J,K) = ATHETA(J,K)
+            DO I = 1, NP
+                UPHI(I,J,K) = APHI(I,J,K)
+            END DO
+        END DO
+    END DO
+    IPASS = IPASS + 1
+ELSE IF (IPASS.EQ.2) THEN
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                UPHI(I,J,K) = APHI(I,J,K)
+            END DO
+        END DO
+    END DO
+    IPASS = 0
+    ITER = ITER + 1
+END IF
 !C
 !C Write the new (energy, theta, phi) array
 !C
-	OPEN	(45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
-	REWIND	(45)
-	WRITE	(45)	NE, NT, NP
+OPEN (45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
+REWIND (45)
+WRITE (45) NE, NT, NP
 
-	DO 599 K = 1, NE
- 599	    WRITE (45)	UENER(K)
+DO K = 1, NE
+    WRITE (45) UENER(K)
+END DO
 
-	DO 699 K = 1, NE
-	    DO 699 J = 1, NT
- 699		WRITE (45) UTHETA(J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        WRITE (45) UTHETA(J,K)
+    END DO
+END DO
 
-	DO 799 K = 1, NE
-	    DO 799 J = 1, NT
-		DO 799 I = 1, NP
- 799		    WRITE (45) UPHI(I,J,K)
+DO K = 1, NE
+    DO J = 1, NT
+        DO I = 1, NP
+            WRITE (45) UPHI(I,J,K)
+        END DO
+    END DO
+END DO
 
-	CLOSE	(45)
-        PRINT *,'File written to disk: uphot.dat'
+CLOSE (45)
 !C
 !C Write out the parameters to namelist file
 !C
-	OPEN	(31, FILE='uphot.nml', STATUS='UNKNOWN')
-	REWIND	(31)
-	WRITE	(31, NML=PARAIN)
-	CLOSE	(31)
-        PRINT *,'File (namelist) written to disk: uphot.nml'
+OPEN (31, FILE='uphot.nml', STATUS='UNKNOWN')
+REWIND (31)
+WRITE (31, NML=PARAIN)
+CLOSE (31)
+PRINT *,'File (namelist) written to disk: uphot.nml'
+!
+! deallocate arrays
+!
+if (allocated( cdf2   )) deallocate( cdf2 )
+if (allocated( uener  )) deallocate( uener )
+if (allocated( aener  )) deallocate( aener )
+if (allocated( rn2  )) deallocate( rn2 )
+if (allocated( cdf1  )) deallocate( cdf1 )
+if (allocated( utheta  )) deallocate( utheta )
+if (allocated( atheta  )) deallocate( atheta )
+if (allocated( rn1  )) deallocate( rn1 )
+if (allocated( cdf0  )) deallocate( cdf0 )
+if (allocated( uphi  )) deallocate( uphi )
+if (allocated( aphi  )) deallocate( aphi )
+if (allocated( rn0  )) deallocate( rn0 )
+if (allocated( pol_deg  )) deallocate( pol_deg )
 
 END SUBROUTINE Undul_Cdf
+
+!
+!
+!  Subroutine undul_phot_dump
+!
+!  Creates an ascii file with the contents of nphoton.dat (created by undul_phot)  
+!
+!  input file:  nphoton.dat
+!  output file: nphoton.spec
+!
+!
+SUBROUTINE undul_phot_dump
+implicit none
+
+integer(kind=ski):: i,j,k,ne,nt,np,itmp
+real(kind=skr),dimension(:),allocatable          :: uener
+real(kind=skr),dimension(:,:),allocatable        :: utheta
+real(kind=skr),dimension(:,:,:),allocatable      :: uphi,rn0,pol_deg
+real(kind=skr) :: xx,zz,tmp_p,tmp_i
+
+!C
+!
+!
+! get the arrays
+!
+!
+    OPEN    (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
+    READ    (40)    NE, NT, NP
+    !
+    ! allocate arrays
+    !
+    allocate( UENER(NE) )
+    allocate( UTHETA(NT,NE) )
+    allocate( UPHI(NP,NT,NE) )
+    allocate( RN0(NP,NT,NE) )
+    allocate( POL_DEG(NP,NT,NE) )
+
+    DO 99 K = 1, NE
+    99 READ (40)    UENER(K)
+
+    DO 199 K = 1, NE
+        DO 199 J = 1, NT
+    199 READ (40) UTHETA(J,K)
+
+    DO 299 K = 1, NE
+        DO 299 J = 1, NT
+        DO 299 I = 1, NP
+    299 READ (40) UPHI(I,J,K)
+
+!
+!
+! get the intesity and pol_deg
+!
+!
+!C
+    DO 399 K = 1, NE
+        DO 399 J = 1, NT
+        DO 399 I = 1, NP
+    399 READ (40) RN0(I,J,K)
+
+    DO 499 K = 1, NE
+        DO 499 J = 1, NT
+        DO 499 I = 1, NP
+    499 READ (40) POL_DEG(I,J,K)
+
+close(40)
+
+
+print*,"Dumping arrays Theta Phi Energy: ",nt,np,ne
+
+open (unit=29,file='uphot.spec',status='UNKNOWN')
+write(29,'(a18,2X,f12.5)') "#F uphot.spec",uener(k)
+write(29,'(a)') "#U Undulator flux calculated by shadow3/undul_phot"
+
+!energy spectrum
+write(29,'(a)') ""
+write(29,'(a18,2x,f13.5)') "#S 1 ENERGY SPECTRUM"
+write(29,'(a)') "#N 3"
+write(29,'(a)') "#L ENERGY [eV]  POL_DEG  INTENSITY [a.u.]"
+do k=1,ne
+    itmp = 0
+    tmp_p = 0e0
+    tmp_i = 0e0
+    DO I=1,NP
+        DO J=1,NT
+           itmp = itmp + 1
+           tmp_p = tmp_p + pol_deg(i,j,k)
+           tmp_i = tmp_i + rn0(i,j,k)
+        END DO
+    END DO
+    !write(29,*) uener(k),tmp_p/itmp,tmp_i/itmp
+    write(29,*) uener(k),tmp_p/itmp,tmp_i/itmp
+                !(0.001*uener(k))* &    ! from eV to 0.1%bw
+                !(utheta(nt,1))**2     ! integral in phi (2pi) and theta
+
+end do
+
+    
+
+do k=1,ne
+    ! THETA PHI INT
+    write(29,'(a)') ""
+    write(29,'(a51,2x,f13.5)') "#S 2 FLUX [Ph/s/eV/rad^2] vs ANGLE [rad] for E[eV]=",uener(k)
+    write(29,'(a)') "#N 4"
+    write(29,'(a)') "#L THETA [rad]  PHI [rad]  POL_DEG  INTENSITY [Ph/s/eV/rad^2]"
+    DO I=1,NP
+        DO J=1,NT
+            write(29,*) utheta(j,k),uphi(i,j,k),pol_deg(i,j,k),rn0(i,j,k)
+        END DO
+    END DO
+end do
+
+close(unit=29)
+print *,'File written to disk: uphot.spec'
+
+!
+! deallocate arrays
+!
+if (allocated( UENER   )) deallocate( UENER )
+if (allocated( UTHETA  )) deallocate( UTHETA )
+if (allocated( UPHI    )) deallocate( UPHI ) 
+if (allocated( RN0     )) deallocate( RN0 ) 
+if (allocated( POL_DEG )) deallocate( POL_DEG ) 
+
+    
+END SUBROUTINE undul_phot_dump
 
 
 
@@ -2808,7 +3317,7 @@ subroutine wiggler_spectrum
         integer(kind=ski)                 ::  N_DIM=10000
         real(kind=skr),dimension(10000)   ::  Y,BETAY,X,BETAX,CURV,PHOT_NUM,PHOT_CDF
         real(kind=skr),dimension(10000)   ::  Z,BETAZ,DS,S, DX, DY, DZ
-        real(kind=skr),dimension(1001)    ::  TAUX,TAUY,TAUZ, BX,BY,BZ, ENX,ENY,ENZ
+        real(kind=skr),dimension(NDIM_TRAJ)    ::  TAUX,TAUY,TAUZ, BX,BY,BZ, ENX,ENY,ENZ
         character(len=sklen)              ::  INFILE,OUTFILE
         real(kind=skr)                    ::  pnum,rad,bener,emin,emax,gamma1,step
         real(kind=skr)                    ::  phot_min,phot_max,eloopmin, eloopmax, estep 
@@ -2851,7 +3360,9 @@ subroutine wiggler_spectrum
 !  Compute gamma and the beam energy
 ! 
         gamma1        = 1/SQRT(1-(BETAY(1)**2)-(BETAX(1)**2)-(BETAZ(1)**2))
-        BENER        = gamma1*(9.109D-31)*(2.998d8**2)/(1.602e-19)*1.0d-9
+        !TODO:
+        !BENER        = gamma1*(9.109D-31)*(2.998d8**2)/(1.602e-19)*1.0d-9
+        BENER        = gamma1*(codata_rm)*(codata_c**2)/(codata_e)*1.0d-9
          WRITE(6,*) 'Beam energy (GeV) = ',BENER
 ! 
 !  Figure out the limit of photon energy.
