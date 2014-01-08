@@ -1,4 +1,5 @@
-import ShadowLibExtensions as sd
+from __future__ import print_function
+import Shadow.ShadowLibExtensions as sd
 import numpy 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -48,7 +49,7 @@ class plotxy_Ticket:
 
 
 def ErrorMsg(fromFunc,value):
-  print fromFunc+" called with an error in the arguments.\nCheck help function"
+  print (fromFunc+" called with an error in the arguments.\nCheck help function")
   return ArgsError(value)
 
 def getshonecol_CheckArg(beam,col):
@@ -161,22 +162,22 @@ def Histo1_write(title,bins,h,w,col,beam,ref):
   now = str(datetime.datetime.now())  
   usubtitle += " "+now+" "+getpass.getuser()+"@"+socket.gethostname()
   file = open(title,'w')  
-  print >> file, "#F HISTO1"
-  print >> file, "#C This file has been created using histo1 (python ShadowTools)"
-  print >> file, "#D "+now
-  print >> file, "#UTITLE"
-  print >> file, "#USUBTITLE "+usubtitle
-  print >> file, "#UTTEXT"
-  print >> file, "#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN"
-  print >> file, "#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN"
-  print >> file, "#C COLUMN 3 CORRESPONDS TO INTENSITY (COUNTING RAYS)"
-  print >> file, "#C COLUMN 4 CORRESPONDS TO INTENSITY (WEIGHTED IF SELECTED)"
-  print >> file, " "
-  print >> file, "#S 1 histogram"
-  print >> file, "#N 4" #N 4
-  print >> file, "#L "+getLabel(col)[1]+"  "+(getLabel(col))[1]+"  "+"intensity (rays)"+"  "+(getLabel(ref))[1]
+  print ("#F HISTO1", file = file)
+  print ("#C This file has been created using histo1 (python ShadowTools)", file = file)
+  print ("#D "+now, file = file)
+  print ("#UTITLE", file = file)
+  print ("#USUBTITLE "+usubtitle, file = file)
+  print ("#UTTEXT", file = file)
+  print ("#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN", file = file)
+  print ("#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN", file = file)
+  print ("#C COLUMN 3 CORRESPONDS TO INTENSITY (COUNTING RAYS)", file = file)
+  print ("#C COLUMN 4 CORRESPONDS TO INTENSITY (WEIGHTED IF SELECTED)", file = file)
+  print (" ", file = file)
+  print ("#S 1 histogram", file = file)
+  print ("#N 4" , file = file)
+  print ("#L "+getLabel(col)[1]+"  "+(getLabel(col))[1]+"  "+"intensity (rays)"+"  "+(getLabel(ref))[1], file = file)
   for i in range(len(h)):
-    print >> file, "%f\t%f\t%f\t%f" % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], w[i] )
+    print ("%f\t%f\t%f\t%f" % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], w[i] ), file = file)
   file.close()
   
 

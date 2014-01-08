@@ -17,10 +17,14 @@
 #
 #
 
+
 # define paths for the software packages
-MYSHADOWDIR=/scisoft/xop2.3/extensions/shadowvui/shadow3
+MYSHADOWDIR=/scisoft/users/srio/Working/XOPPY/shadow3
 MYXRAYLIBDIR=/buffer/srio/xraylib
 MYSRWDIR=/buffer/srio/SRW
+#define python call (for tests)
+PY=python
+#PY=python3
 
 # be sure that the variables do exist
 if [ $1 == "init" ]; then
@@ -45,6 +49,7 @@ fi
 export  LD_LIBRARY_PATH=$MYSHADOWDIR:"${LD_LIBRARY_PATH}"
 #TODO: change these directories if needed!!
 export  PYTHONPATH=$MYSHADOWDIR/build/lib.linux-x86_64-2.7:"${PYTHONPATH}"
+#export  PYTHONPATH=$MYSHADOWDIR/build/lib.linux-x86_64-3.2/:"${PYTHONPATH}"
 export  DYLD_LIBRARY_PATH=$MYSHADOWDIR/build/lib.macos:"${DYLD_LIBRARY_PATH}"
 
 #needed for python/xraylib
@@ -63,16 +68,16 @@ echo "************************************************************"
 echo "                  setpythonpath.sh:                         "
 echo "  "
 echo "Testing Shadow:"
-python -c "import Shadow"
+$PY -c "import Shadow"
 echo "Done"
-echo "  "
-echo "Testing xraylib:"
-python -c "import xraylib"
-echo "Done"
-echo "  "
-echo "Testing SRW:"
-python -c "import srwlib"
-echo "Done"
+#echo "  "
+#echo "Testing xraylib:"
+#$PY -c "import xraylib"
+#echo "Done"
+#echo "  "
+#echo "Testing SRW:"
+#$PY -c "import srwlib"
+#echo "Done"
 echo "  "
 echo "LD_LIBRARY_PATH is: "
 echo  $LD_LIBRARY_PATH

@@ -99,6 +99,7 @@ CXX = g++
 #CXX = i686-w64-mingw32-g++
 
 PY = python
+#PY = python3
 
 #-fopenmp -g
 CFLAGS = -fPIC $(32BITS)
@@ -193,7 +194,7 @@ examplesFortran: libstatic gen_source.o trace.o trace3.o example01_f95.o example
 
 #examples in C and C++, linked dynamically
 #TODO: link statically
-examplesMore: lib 
+examplesMore: lib  libcpp
 	$(CC) $(CFLAGS) -c trace3_c.c
 	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3c -lshadow3
 
@@ -213,9 +214,12 @@ ifeq ($(MPI),1)
 	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow3 -lmpi_F90
 endif
 
-lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
+lib: $(OBJFMODULES) shadow_bind_c.o 
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
+
+
+libcpp: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(CXX) $(LIBFLAGS) $(CFLAGS) -o libshadow3c++$(SO) shadow_bind_c.o shadow_bind_cpp.cpp -L. -lshadow3 -lshadow3c #$(OBJFMODULES)
 
 libstatic: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o

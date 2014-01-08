@@ -1,4 +1,5 @@
-import ShadowLib as sdl
+from __future__ import print_function
+import Shadow.ShadowLib as sdl
 import numpy as np
 import sys
 import h5py
@@ -86,7 +87,7 @@ def getParam(data,mesh,eBeam,N):
 
 def GetImageFromEnergy(E_sel,mesh,data):
   if E_sel<mesh.eStart or E_sel>mesh.eFin :
-    print "Energy selected out of bound!"
+    print ("Energy selected out of bound!")
     raise ValueError
   i_sel = (E_sel*1.0-mesh.eStart)/(mesh.eFin-mesh.eStart)*(mesh.ne-1)
   il = np.int( np.floor(i_sel) )
@@ -257,7 +258,8 @@ def WriteParameters(fname,d):
                'Xp0','XpD','NXpph',
                'Zp0','ZpD','NZpph'}
   for p in paramName:
-    print >> f, p, '=', d[p]
+    # print >> f, p, '=', d[p]
+    print (p, '=', d[p], file=f)
 
 def genShadowBeam(fname,N=100000,method='ME',energy=None,lim=None,canted=None, distance=30.):
   if method=='ME':

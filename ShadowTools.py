@@ -1,18 +1,25 @@
+from __future__ import print_function
 import numpy 
-import ShadowLibExtensions as sd
+import Shadow.ShadowLibExtensions as sd
+import sys
 try: 
+    #import matplotlib.pyplot as plt
+    #from matplotlib import cm
+    #from matplotlib import figure as matfig
+    #import pylab
+    #import matplotlib
+    import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib import cm
     from matplotlib import figure as matfig
     import pylab
-    import matplotlib
 except ImportError: 
     print(sys.exc_info()[1]) 
     pass
 
-import ShadowToolsPrivate as stp
-from ShadowToolsPrivate import Histo1_Ticket as Histo1_Ticket
-from ShadowToolsPrivate import plotxy_Ticket as plotxy_Ticket
+import Shadow.ShadowToolsPrivate as stp
+from Shadow.ShadowToolsPrivate import Histo1_Ticket as Histo1_Ticket
+from Shadow.ShadowToolsPrivate import plotxy_Ticket as plotxy_Ticket
 import os
 
 A2EV = 50676.89919462
@@ -285,7 +292,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     t = numpy.where(a!=1.0)
     ytitle = 'Lost rays'
   if len(t[0])==0:
-    print "no rays match the selection, the histogram will not be plotted"
+    print ("no rays match the selection, the histogram will not be plotted")
     return 
   if ref==0:
     ytitle = 'counts ' + ytitle
@@ -301,7 +308,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   if calfwhm==1:
     fwhm, tf, ti = stp.calcFWHM(hw,bins[1]-bins[0])
     axHist.plot([bins[ti],bins[tf+1]],[max(h)*0.5,max(h)*0.5],'x-')
-    print "fwhm = ", fwhm
+    print ("fwhm = %g" % fwhm)
   if write==1: stp.Histo1_write(title,bins,h,hw,col,beam,ref-1)  
 
   if xtitle==None: xtitle=(stp.getLabel(col))[0]
@@ -439,7 +446,7 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   tf = set(list(t[0])) & set(list(tx[0])) & set(list(ty[0]))
   t = (numpy.array(sorted(list(tf))),)
   if len(t[0])==0: 
-    print "no point selected"
+    print ("no point selected")
     return None
   
   figure = pylab.plt.figure(figsize=(12,8),dpi=96)
@@ -516,15 +523,15 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
     axHistx.plot([binx[txi],binx[txf+1]],[max(hx)*0.5,max(hx)*0.5],'x-')
     axHisty.plot([max(hy)*0.5,max(hy)*0.5],[biny[tyi],biny[tyf+1]],'x-')
-    print "fwhm horizontal:  ", fwhmx
-    print "fwhm vertical:    ", fwhmy
+    print ("fwhm horizontal:  %g" % fwhmx)
+    print ("fwhm vertical:    %g" % fwhmy)
   if calfwhm>=2:
     xx1 = binx[txi]
     xx2 = binx[txf+1]
     yy1 = biny[tyi]
     yy2 = biny[tyf+1]
-    print "limits horizontal:  ", binx[txi],binx[txf+1]
-    print "limits vertical:  ", biny[tyi],biny[tyf+1]
+    print ("limits horizontal: %g %g " % (binx[txi],binx[txf+1]))
+    print ("limits vertical:   %g %g " % (biny[tyi],biny[tyf+1]))
     axScatter.plot([xx1,xx2,xx2,xx1,xx1],[yy1,yy1,yy2,yy2,yy1])
     #fwhmx,txf, txi = stp.calcFWHM(hx,binx[1]-binx[0])
     #fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
@@ -540,7 +547,7 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     tt = (numpy.array(sorted(list(ttf))),)
     if len(tt[0])>0: 
       intensityinslit = col4[tt].sum()
-      print "Intensity in slit: ",intensityinslit
+      print ("Intensity in slit: %g ",intensityinslit)
     
   if title!=None:
     axHistx.set_title(title)

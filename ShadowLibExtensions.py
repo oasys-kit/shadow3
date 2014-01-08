@@ -4,9 +4,10 @@
 #
 # It also define GeometricSource and Beamline
 #
-import ShadowLib
-from numpy import float64, zeros, array 
+from __future__ import print_function
 import sys
+import Shadow.ShadowLib as ShadowLib
+from numpy import float64, zeros, array 
 
 
 class Beam(ShadowLib.Beam):
@@ -21,7 +22,7 @@ class Beam(ShadowLib.Beam):
       self.rays[:,0] += tof*self.rays[:,3].flatten()
       self.rays[:,2] += tof*self.rays[:,5].flatten()
     except AttributeError:
-      print 'retrace: No rays'
+      print ("retrace: No rays")
 
   def getStandardDeviations(self,weighted=True):
     try:
@@ -47,7 +48,7 @@ class Beam(ShadowLib.Beam):
         eStd  = self.rays[:,10].std()/AE2V
       return xStd,yStd,zStd,xpStd,ypStd,zpStd,eStd
     except AttributeError:
-      print ('getStandardDeviations: No rays')
+      print ("getStandardDeviations: No rays")
 
 class GeometricSource(ShadowLib.Source):
   def __init__(self):
@@ -79,7 +80,7 @@ class GeometricSource(ShadowLib.Source):
         self.SIGMAY = param[2]
 
     except KeyError:
-      print 'setSpaceDistribution: wrong distribution name'
+      print ("setSpaceDistribution: wrong distribution name")
 #TODO    
 #  def setAngleDistribution(self,angle='gauss',)
 
@@ -115,7 +116,7 @@ class OE(ShadowLib.OE):
     if n_screen<=10 and n_screen>0: 
       self.N_SCREEN = n_screen 
     else:
-      print "Shadow cannot handle more then 10 screens"
+      print ("Shadow cannot handle more then 10 screens")
       return
     self.I_SCREEN     = i_screen
     self.I_ABS        = i_abs
@@ -485,12 +486,12 @@ class Beamline(list):
         txt = item
         item = OE()
         item.load(txt)
-    if not isinstance(item,self.type): raise TypeError, 'item is not of type %s' % self.type
+    if not isinstance(item,self.type): raise TypeError( 'item is not of type %s' % self.type )
     super(Beamline,self).append(item)
 
   def trace(self,beam):
     if beam.rays==None:
-      raise ValueError, 'beam not initialized yet'
+      raise ValueError( 'beam not initialized yet' )
 
     for i in range(len(self)):
       beam.traceOE(self[i],i+1)
@@ -511,11 +512,15 @@ class Beamline(list):
 
   def writeDistances(self,f=sys.stdout):
     dist = self.distances()
-    print >>f, "distance from source to oe1: %f" % dist[0]
+    #print >>f, "distance from source to oe1: %f" % dist[0]
+    print ("distance from source to oe1: %f" % dist[0], file = f)
     for i in range(1,len(self)):
-      print >>f, "distance from oe%d to oe%d: %f" % (i,i+1,dist[i])
-    print >>f, "distance from oe%d to image" % (len(self),dist[-1])
-    print >>f, "distance from source to image" % (sum(dist))
+      #print >>f, "distance from oe%d to oe%d: %f" % (i,i+1,dist[i])
+      print ("distance from oe%d to oe%d: %f" % (i,i+1,dist[i]), file = f)
+    #print >>f, "distance from oe%d to image" % (len(self),dist[-1])
+    #print >>f, "distance from source to image" % (sum(dist))
+    print ("distance from oe%d to image" % (len(self),dist[-1]), file = f)
+    print ("distance from source to image" % (sum(dist)), file = f)
 
   def appendCRL(self,crlfilename):
     f = file(crlfilename,"r")

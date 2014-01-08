@@ -9,10 +9,11 @@ ShadowPreprocessorsXraylib: Shadow preprocessors using python+xraylib
 
 """
 
+from __future__ import print_function
+
 __author__ = "Manuel Sanchez del Rio"
 __contact__ = "srio@esrf.eu"
 __copyright = "ESRF, 2012"
-
 
 import math
 import xraylib 
@@ -86,19 +87,19 @@ def prerefl():
     itest = 0
     if itest:
        cdtest = xraylib.CompoundParser(iMaterial)
-       print "    ",iMaterial," contains %i atoms and %i elements"% (cdtest['nAtomsAll'], cdtest['nElements'])
+       print ("    ",iMaterial," contains %i atoms and %i elements"% (cdtest['nAtomsAll'], cdtest['nElements']))
        for i in range(cdtest['nElements']):
-          print "    Element %i: %lf %%" % (cdtest['Elements'][i],cdtest['massFractions'][i]*100.0)
-       print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-       print qmin,qmax,qstep,depth0
-       print npoint
+          print ("    Element %i: %lf %%" % (cdtest['Elements'][i],cdtest['massFractions'][i]*100.0))
+       print (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+       print (qmin,qmax,qstep,depth0)
+       print (npoint)
        for i in range(npoint):
           energy = (estart+estep*i)*1e-3
           qq = qmin+qstep*i
-          print energy,qq, \
+          print (energy,qq, \
               2e0*(1e0-xraylib.Refractive_Index_Re(iMaterial,energy,density)),\
-              2e0*(xraylib.Refractive_Index_Im(iMaterial,energy,density))
-       print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+              2e0*(xraylib.Refractive_Index_Im(iMaterial,energy,density)) )
+       print (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     return None
 
@@ -295,17 +296,17 @@ def bragg():
     if itest: 
         if (cryst == None):
             sys.exit(1)
-        print "  Unit cell dimensions are %f %f %f" % (cryst['a'],cryst['b'],cryst['c'])
-        print "  Unit cell angles are %f %f %f" % (cryst['alpha'],cryst['beta'],cryst['gamma'])
+        print ("  Unit cell dimensions are %f %f %f" % (cryst['a'],cryst['b'],cryst['c']))
+        print ("  Unit cell angles are %f %f %f" % (cryst['alpha'],cryst['beta'],cryst['gamma']))
         volume = cryst['volume']
-        print "  Unit cell volume is %f" % volume
+        print ("  Unit cell volume is %f" % volume )
         volume = volume*1e-8*1e-8*1e-8 # in cm^3
-        print "  Atoms at:"
-        print "     Z  fraction    X        Y        Z"
+        print ("  Atoms at:")
+        print ("     Z  fraction    X        Y        Z")
         for i in range(cryst['n_atom']):
             atom =  cryst['atom'][i]
-            print "    %3i %f %f %f %f" % (atom['Zatom'], atom['fraction'], atom['x'], atom['y'], atom['z'])
-        print "  "
+            print ("    %3i %f %f %f %f" % (atom['Zatom'], atom['fraction'], atom['x'], atom['y'], atom['z']) )
+        print ("  ")
 
     print("Miller indices of crystal plane of reflection.")
     miller = raw_input("H K L: ")
@@ -393,10 +394,10 @@ if __name__ == '__main__':
     if len(sys.argv) >= 2: 
         preprocessor_option = int(sys.argv[1])
     else:
-        print "preprocessor_option:    "
-        print "     0 prerefl"
-        print "     1 pre_mlayer"
-        print "     2 bragg"
+        print ("preprocessor_option:    ")
+        print ("     0 prerefl")
+        print ("     1 pre_mlayer")
+        print ("     2 bragg")
         tmp = raw_input("?>")
         preprocessor_option = int(tmp)
 

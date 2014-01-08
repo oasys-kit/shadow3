@@ -337,3 +337,16 @@ probability distributions calculated by SRW and stored in hdf5 files.
 python SRW2SHADOW_Example01.py help
 
 
+9) TROUBLESHOOTING
+------------------
+
+i) Problem:  
+            Fail to copile when "make python" 
+   Error: 
+            shadow_bind_python.h:23:20: fatal error: Python.h: 
+            No such file or directory compilation terminated.
+   Solution: 
+            need to install python development tools:
+            in Debian/Ubuntu: 
+                sudo apt-get install python-dev
+

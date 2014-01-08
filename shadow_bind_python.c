@@ -1,20 +1,4 @@
-/*
- * =====================================================================================
- *
- *       Filename:  shadow_bind_python.c
- *
- *    Description:  
- *
- *        Version:  1.0
- *        Created:  11/27/2012 11:44:07 AM
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  YOUR NAME (), 
- *   Organization:  
- *
- * =====================================================================================
- */
+
 #include <stdlib.h>
 #include "shadow_bind_python.h"
 #include <float.h>
@@ -34,7 +18,7 @@
 
 static void Source_dealloc ( Shadow_Source* self )
 {
-  self->ob_type->tp_free ( ( PyObject* ) self );
+  Py_TYPE(self)->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* Source_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
@@ -74,14 +58,61 @@ static PyObject* Source_write ( Shadow_Source* self, PyObject* args )
   Py_RETURN_NONE; //TODO do we want to output self???
 }
 
+static PyObject* Source_genBeam ( Shadow_Source* self )
+{
+  Shadow_Beam *bm = (Shadow_Beam*) PyObject_CallObject((PyObject *) &ShadowBeamType, NULL);
+  npy_intp dims[2];
+  npy_intp strides[2];
+  strides[0] = 18*sizeof ( double );
+  strides[1] = sizeof( double );
+  dims[0] = self->pl.NPOINT;
+  dims[1] = 18;
+  if ( bm->rays!=NULL )
+    Py_DECREF ( bm->rays );
+  bm->rays = ( PyArrayObject* ) PyArray_New ( &PyArray_Type, 2, dims, NPY_FLOAT64, strides, NULL, sizeof ( double ), NPY_CARRAY|NPY_OWNDATA, NULL );
+  if ( ( self->pl.FDISTR==4 ) || ( self->pl.FSOURCE_DEPTH==4 ) || ( self->pl.F_WIGGLER>0 ) ) {
+    CShadowSourceSync ( &(self->pl), ( double* ) ( bm->rays->data ) );
+  }
+  else {
+    CShadowSourceGeom ( &(self->pl), ( double* ) ( bm->rays->data ) );
+  }
+  return (PyObject*) bm;
+}
+
+#if PY_MAJOR_VERSION >= 3
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
+static PyObject* Source_get_##name(Shadow_Source* self, void* closure) \
+{ \
+  return PyBytes_FromString(trim(self->pl.name)); \
+}
+#else
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* Source_get_##name(Shadow_Source* self, void* closure) \
 { \
   return PyString_FromString(trim(self->pl.name)); \
 }
+#endif
+
 #include "shadow_source.def"
 
+
+#if PY_MAJOR_VERSION >= 3
+#define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
+static int Source_set_##name(Shadow_Source* self, PyObject* value, void* closure) \
+{ \
+  if( value!=NULL && PyBytes_Check(value) ) { \
+    strcpy(self->pl.name, PyBytes_AsString(value)); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a string."); \
+    return -1; \
+  } \
+  return 0; \
+}
+#else
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int Source_set_##name(Shadow_Source* self, PyObject* value, void* closure) \
@@ -95,6 +126,8 @@ static int Source_set_##name(Shadow_Source* self, PyObject* value, void* closure
   } \
   return 0; \
 }
+#endif
+
 #include "shadow_source.def"
 
 
@@ -106,8 +139,9 @@ static PyMemberDef Source_members[] = {
 };
 
 static PyMethodDef Source_methods[] = {
-  {"load" , ( PyCFunction ) Source_load , METH_VARARGS, "load Shadow.Source from a file"},
-  {"write", ( PyCFunction ) Source_write, METH_VARARGS, "write Shadow.Source on a file" },
+  {"load" ,   ( PyCFunction ) Source_load ,   METH_VARARGS, "load Shadow.Source from a file"},
+  {"write",   ( PyCFunction ) Source_write,   METH_VARARGS, "write Shadow.Source on a file" },
+  {"genBeam", ( PyCFunction ) Source_genBeam, METH_NOARGS,  "generate and return beam object"},
   {NULL}                                             /* Sentinel          */
 };
 
@@ -120,8 +154,12 @@ static PyGetSetDef Source_getseters[] = {
 };
 
 static PyTypeObject ShadowSourceType = {
+#if PY_MAJOR_VERSION < 3
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
+#else
+  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+#endif
   "Source",                                          /* tp_name           */
   sizeof ( Shadow_Source ),                          /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
@@ -212,7 +250,7 @@ static PyTypeObject ShadowSourceType = {
 
 static void OE_dealloc ( Shadow_OE* self )
 {
-  self->ob_type->tp_free ( ( PyObject* ) self );
+  Py_TYPE(self)->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* OE_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
@@ -263,10 +301,56 @@ static PyObject* OE_write ( Shadow_OE* self, PyObject* args )
   Py_RETURN_NONE;
 }
 
+static PyObject* OE_trace ( Shadow_OE* self, PyObject* args )
+{
+  Shadow_Beam * bm = NULL;
+  int nPoint;
+  int iCount;
+  if ( !PyArg_ParseTuple ( args, "Oi", &bm, &iCount ) ) {
+    PyErr_SetString ( PyExc_TypeError, "argument should be a python object!" );
+    return NULL;
+  }
+  if ( !PyObject_TypeCheck ( bm, &ShadowBeamType ) ) {
+    PyErr_SetString ( PyExc_TypeError, "the argument has to be a Shadow.Beam instance" );
+    Py_RETURN_NONE;
+  }
+  if ( bm->rays==NULL ) {
+    PyErr_SetString ( PyExc_TypeError, "rays is empty" );
+    Py_RETURN_NONE;
+  }
+  nPoint = bm->rays->dimensions[0];
+  CShadowTraceOE ( &(self->pl), ( double* ) ( bm->rays->data ), nPoint, iCount );
+  return (PyObject*) bm;
+}
+
 #define ski NPY_INT32
 #define skr NPY_FLOAT64
 #define skc NPY_STRING
 
+
+#if PY_MAJOR_VERSION>=3
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
+static PyObject* OE_get_##name(Shadow_OE* self, void* closure) \
+{ \
+  return PyBytes_FromString(trim(self->pl.name)); \
+}
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+static PyObject* OE_get_##name(Shadow_OE* self, void *closure){ \
+  int ndims = 1; \
+  npy_intp dims[1] = {arrdim}; \
+  return PyArray_SimpleNewFromData(ndims,dims,fkind,self->pl.name); \
+}
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+static PyObject* OE_get_##name(Shadow_OE* self, void *closure){ \
+  PyObject *res; \
+  int nd = 1; \
+  npy_intp strides[1] = {length*sizeof(char)}; \
+  npy_intp dims[1] = {arrdim}; \
+  res = PyArray_New(&PyArray_Type,nd,dims,fkind,strides,self->pl.name,length,0,NULL); \
+  return res; \
+}
+#else
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static PyObject* OE_get_##name(Shadow_OE* self, void* closure) \
@@ -288,15 +372,54 @@ static PyObject* OE_get_##name(Shadow_OE* self, void *closure){ \
   res = PyArray_New(&PyArray_Type,nd,dims,fkind,strides,self->pl.name,length,0,NULL); \
   return res; \
 }
+#endif
 #include "shadow_oe.def"
 
-//  int nd = 1; 
-//  for(i=0;i<arrdim;i++) 
-//  printf("str[%d]%s\n", i, self->pl.name[i]); 
-//  strcpy(PyArray_GETPTR1(res,i),self->pl.name[i]); 
-//  self->pl.name[i]);
 
-
+#if PY_MAJOR_VERSION>=3
+#define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
+static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
+{ \
+  if( value!=NULL && PyBytes_Check(value) ) { \
+    strcpy(self->pl.name, PyBytes_AsString(value)); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a string."); \
+    return -1; \
+  } \
+  return 0; \
+}
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) \
+static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
+{ \
+  if(PyArray_Check(value) && PyArray_ISCONTIGUOUS(value) && PyArray_NDIM(value)==1 && PyArray_Size(value)==arrdim && PyArray_ISNUMBER(value)){ \
+    memcpy((void*)self->pl.name, PyArray_DATA( (PyArrayObject*) PyArray_Cast( (PyArrayObject*)value,fkind) ),sizeof(ctype)*arrdim); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a conform array."); \
+    return -1; \
+  } \
+  return 0; \
+}
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) \
+static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
+{ \
+  PyObject *res; \
+  int nd = 1; \
+  npy_intp strides[1] = {length*sizeof(char)}; \
+  npy_intp dims[1] = {arrdim}; \
+  if(PyArray_Check(value) && PyArray_ISCONTIGUOUS(value) && PyArray_NDIM(value)==1 && PyArray_Size(value)==arrdim && PyArray_ISSTRING(value)){ \
+    res = PyArray_New(&PyArray_Type,nd,dims,fkind,strides,self->pl.name,length,NPY_WRITEABLE,NULL); \
+    PyArray_CastTo((PyArrayObject*)res,(PyArrayObject*)value); \
+  } \
+  else{ \
+    PyErr_SetString(PyExc_TypeError, "not a conform array of string."); \
+    return -1; \
+  } \
+  return 0; \
+}
+#else
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue)
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) \
 static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
@@ -339,6 +462,7 @@ static int OE_set_##name(Shadow_OE* self, PyObject* value, void* closure) \
   } \
   return 0; \
 }
+#endif
 #include "shadow_oe.def"
 
 
@@ -354,6 +478,7 @@ static PyMemberDef OE_members[] = {
 static PyMethodDef OE_methods[] = {
   {"load" , ( PyCFunction ) OE_load , METH_VARARGS, "load Shadow.OE from a file"},
   {"write", ( PyCFunction ) OE_write, METH_VARARGS, "write Shadow.OE on a file" },
+  {"trace", ( PyCFunction ) OE_trace, METH_VARARGS, "trace Shadow.Beam through the opticacl element"},
   {NULL}                                             /* Sentinel          */
 };
 
@@ -370,8 +495,12 @@ static PyGetSetDef OE_getseters[] = {
 };
 
 static PyTypeObject ShadowOEType = {
+#if PY_MAJOR_VERSION < 3
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
+#else
+  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+#endif
   "OE",                                              /* tp_name           */
   sizeof ( Shadow_OE ),                              /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
@@ -465,7 +594,7 @@ static PyTypeObject ShadowOEType = {
 static void Beam_dealloc ( Shadow_Beam* self )
 {
   Py_XDECREF ( self->rays );
-  self->ob_type->tp_free ( ( PyObject* ) self );
+  Py_TYPE(self)->tp_free ( ( PyObject* ) self );
 }
 
 static PyObject* Beam_new ( PyTypeObject* type, PyObject* args, PyObject* kwds )
@@ -622,8 +751,12 @@ static PyMethodDef Beam_methods[] = {
 };
 
 static PyTypeObject ShadowBeamType = {
+#if PY_MAJOR_VERSION < 3
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
+#else
+  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+#endif
   "Beam",                                            /* tp_name           */
   sizeof ( Shadow_Beam ),                            /* tp_basicsize      */
   0,                                                 /* tp_itemsize       */
@@ -759,6 +892,64 @@ static npy_int BinarySearch(npy_double x, npy_double *wl, npy_int n){
 }
 
 
+static void Rotate(npy_double *ux, npy_double *uy, npy_double *uz, const npy_double vx, const npy_double vy, const npy_double vz) { 
+  npy_double sinT, IsinT, cosT, I_cosT, nx, nz;
+  npy_double Rxx, Rxy, Rxz, Ryx, Ryy, Ryz, Rzx, Rzy, Rzz;
+  npy_double tmpx, tmpy, tmpz;
+// vector u to rotate using the rotation R such that dot(R,e2) = v
+  nx =   vz;
+  nz = - vx;
+  sinT   = sqrt(nx*nx + nz*nz);
+  IsinT  = 1.0/sinT;
+  nx    *= IsinT;
+  nz    *= IsinT;
+  cosT   = vy;
+  I_cosT = (1.0-cosT);
+
+  Rxx =   cosT + nx*nx*I_cosT;
+  Rxy = - nz*sinT;
+  Rxz =   nx*nz*I_cosT;
+
+  Ryx =   nz*sinT;
+  Ryy =   cosT;
+  Ryz = - nx*sinT;
+
+  Rzx =   nx*nz*I_cosT;
+  Rzy =   nx*sinT;
+  Rzz =   cosT + nz*nz*I_cosT;
+
+  tmpx = Rxx*(*ux) + Rxy*(*uy) + Rxz*(*uz);
+  tmpy = Ryx*(*ux) + Ryy*(*uy) + Ryz*(*uz);
+  tmpz = Rzx*(*ux) + Rzy*(*uy) + Rzz*(*uz);
+  
+  *ux = tmpx;
+  *uy = tmpy;
+  *uz = tmpz; 
+}
+
+
+static PyObject *
+vecRotate(PyObject *self, PyObject *args){
+  PyArrayObject *PyUx, *PyUy, *PyUz, *PyVx, *PyVy, *PyVz;
+  npy_intp      *dims;//, Rdims[3];
+  npy_int        size;
+  npy_double    *ux, *uy, *uz, *vx, *vy, *vz;//, *R;
+  int i;
+  if(!PyArg_ParseTuple(args, "O!O!O!O!O!O!", &PyArray_Type, &PyUx, &PyArray_Type, &PyUy, &PyArray_Type, &PyUz,
+                                             &PyArray_Type, &PyVx, &PyArray_Type, &PyVy, &PyArray_Type, &PyVz)) return NULL;
+  dims = PyArray_DIMS(PyUx); //actually it is better to check if all the dimensions are ok...
+  size = dims[0];
+
+  ux = PyArray_DATA(PyUx); uy = PyArray_DATA(PyUy); uz = PyArray_DATA(PyUz);
+  vx = PyArray_DATA(PyVx); vy = PyArray_DATA(PyVy); vz = PyArray_DATA(PyVz);
+
+  for(i=0;i<size;i++){
+    Rotate(&ux[i], &uy[i], &uz[i], vx[i], vy[i], vz[i]);
+  }
+  return Py_None;
+}
+
+
 static PyObject* FastCDFfromZeroIndex(PyObject *self, PyObject *args){
 /* python related variable (input - output) */
   PyArrayObject *arry, *x;
@@ -794,7 +985,6 @@ static PyObject* FastCDFfromZeroIndex(PyObject *self, PyObject *args){
   }
   return arrR;
 }
-
 
 
 static PyObject* FastCDFfromOneIndex(PyObject *self, PyObject *args){
@@ -954,6 +1144,7 @@ static PyObject* FastCDFfromTwoIndex(PyObject *self, PyObject *args){
 
 static PyMethodDef Shadow_methods[] = {
   {"saveBeam" ,            ( PyCFunction ) saveBeam,             METH_VARARGS, "save Beam in a new instance Shadow.Beam"},
+  {"vecRotate",            ( PyCFunction ) vecRotate,            METH_VARARGS, NULL},
   {"FastCDFfromZeroIndex", ( PyCFunction ) FastCDFfromZeroIndex, METH_VARARGS, NULL},
   {"FastCDFfromOneIndex",  ( PyCFunction ) FastCDFfromOneIndex,  METH_VARARGS, NULL},
   {"FastCDFfromTwoIndex",  ( PyCFunction ) FastCDFfromTwoIndex,  METH_VARARGS, NULL},
@@ -961,31 +1152,57 @@ static PyMethodDef Shadow_methods[] = {
 };
 /*  module init function  */
 
-#ifndef PyMODINIT_FUNC /* declarations for DLL import/export */
-#define PyMODINIT_FUNC void
-#endif
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef shadowModule = {
+    PyModuleDef_HEAD_INIT,
+    "Shadow.ShadowLib",
+    "ShadowLib module is the Python binding for the SHADOW3 Library",
+    -1,
+    Shadow_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_ShadowLib( void ){
+  PyObject* m;
+  _import_array();//???
+
+//  Py_TYPE(ShadowSourceType) = PyType_Type;
+//  Py_TYPE(ShadowOEType) = PyType_Type;
+//  Py_TYPE(ShadowBeamType) = PyType_Type;
+  if ( PyType_Ready ( &ShadowSourceType ) < 0 ){ printf("failed to load Source"); return NULL; }
+  if ( PyType_Ready ( &ShadowOEType ) < 0 ){ printf("failed to load OE"); return NULL; }
+  if ( PyType_Ready ( &ShadowBeamType ) < 0 ){ printf("failed to load Beam"); return NULL; }
+  m = PyModule_Create(&shadowModule);
+  Py_INCREF ( &ShadowSourceType );
+  PyModule_AddObject ( m, "Source", ( PyObject * ) &ShadowSourceType );
+  Py_INCREF ( &ShadowOEType );
+  PyModule_AddObject ( m, "OE", ( PyObject * ) &ShadowOEType );
+  Py_INCREF ( &ShadowBeamType );
+  PyModule_AddObject ( m, "Beam", ( PyObject * ) &ShadowBeamType );
+  return m;
+}
+
+#else
+
 PyMODINIT_FUNC
 initShadowLib ( void )
 {
   _import_array();
   PyObject* m;
+
   ShadowSourceType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowSourceType ) < 0 ){
-    printf("failed to load Source");
-    return;
-  }
   ShadowOEType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowOEType ) < 0 ){
-    printf("failed to load OE");
-    return;
-  }
   ShadowBeamType.ob_type = &PyType_Type;
-  if ( PyType_Ready ( &ShadowBeamType ) < 0 ){
-    printf("failed to load Beam");
-    return;
-  }
+  if ( PyType_Ready ( &ShadowSourceType ) < 0 ){ printf("failed to load Source"); return; }
+  if ( PyType_Ready ( &ShadowOEType ) < 0 ){ printf("failed to load OE"); return; }
+  if ( PyType_Ready ( &ShadowBeamType ) < 0 ){ printf("failed to load Beam"); return; }
 
   m = Py_InitModule3 ( "Shadow.ShadowLib", Shadow_methods, "Extension Module for Ray Tracing Sofware SHADOW" );
+
   Py_INCREF ( &ShadowSourceType );
   PyModule_AddObject ( m, "Source", ( PyObject * ) &ShadowSourceType );
   Py_INCREF ( &ShadowOEType );
@@ -994,3 +1211,4 @@ initShadowLib ( void )
   PyModule_AddObject ( m, "Beam", ( PyObject * ) &ShadowBeamType );
 }
 
+#endif

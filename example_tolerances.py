@@ -20,6 +20,7 @@
 # import block
 #
 
+from __future__ import print_function
 import numpy 
 #import sys
 import copy
@@ -114,11 +115,11 @@ for scanIndex,scanWhat in enumerate(scanList):
         #g1 = st.plotxy(beam,1,3,calfwhm=2,nbins=200,noplot=noplot)
         g1 = st.plotxy(beam,1,3,calfwhm=2,nbins=500,noplot=noplot,nolost=1)
         fw1 = numpy.array([g1.fwhmx,g1.fwhmy])
-        print "------------------------------------"
-        print "fwhm source: ",fw0
-        print "fwhm spot: ",fw1
-        print "demagnification: ",fw0/fw1
-        print "------------------------------------"
+        print ("------------------------------------")
+        print ("fwhm source: %g" % fw0)
+        print ("fwhm spot: %g" %fw1)
+        print ("demagnification: %g" % fw0/fw1)
+        print ("------------------------------------")
         # store results
         out[0,i] = scan1[i]
         out[3,i] = fw1[0]*1e4
@@ -161,6 +162,6 @@ for scanIndex,scanWhat in enumerate(scanList):
     
 # terminate
 f.close()
-print "File written to disk: tolerances.spec"
+print ("File written to disk: tolerances.spec")
 
 #st.plt.close("all")
