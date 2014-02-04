@@ -6186,6 +6186,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 !C 
 !C  EOF marker
 !C 
+if ((fwrite.eq.0).or.(fwrite.eq.2)) then
      	KOUNTS	=   100*I_ELEMENT + I_WHAT
      	CALL	FNAME	(LOCFILE,'screen',KOUNTS,ifour)
 	IFLAG	= 0
@@ -6193,6 +6194,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
                           izero,IERR)
      	IF	(IERR.NE.0)	CALL LEAVE  &
      		('SCREEN','Error writing SCREEN.',IERR)
+endif
      	IF (I_ABS(I_WHAT).EQ.1) THEN
 	    F_REFL	=   FTEMP
 	    FILE_REFL 	=   FILE_TMP
