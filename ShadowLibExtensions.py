@@ -101,7 +101,8 @@ class OE(ShadowLib.OE):
   def setScreens(self, 
                  n_screen=1, 
                  i_screen=zeros(10), 
-                 i_abs=zeros(10), 
+                 i_abs=zeros(10),
+                 sl_dis=zeros(10),
                  i_slit=zeros(10), 
                  i_stop=zeros(10), 
                  k_slit=zeros(10),
@@ -109,7 +110,8 @@ class OE(ShadowLib.OE):
                  file_abs=array(['', '', '', '', '', '', '', '', '', '']),
                  rx_slit=zeros(10),
                  rz_slit=zeros(10),
-                 sl_dis=zeros(10),
+                 cx_slit=zeros(10),
+                 cz_slit=zeros(10),
                  file_src_ext=array(['', '', '', '', '', '', '', '', '', ''])
                  ):
     self.F_SCREEN = 1
@@ -120,6 +122,7 @@ class OE(ShadowLib.OE):
       return
     self.I_SCREEN     = i_screen
     self.I_ABS        = i_abs
+    self.SL_DIS       = sl_dis
     self.I_SLIT       = i_slit
     self.I_STOP       = i_stop
     self.K_SLIT       = k_slit
@@ -127,8 +130,10 @@ class OE(ShadowLib.OE):
     self.FILE_ABS     = file_abs
     self.RX_SLIT      = rx_slit
     self.RZ_SLIT      = rz_slit
-    self.SL_DIS       = sl_dis
+    self.CX_SLIT      = cx_slit
+    self.CZ_SLIT      = cz_slit
     self.FILE_SRC_EXT = file_src_ext
+
     return self
 
 
@@ -349,10 +354,10 @@ class OE(ShadowLib.OE):
   def setDimensions(self,fshape=0,params=zeros(4,dtype=float64)):
     self.FHIT_C = 1
     self.FSHAPE = fshape
-    self.RLEN1  = param[0]
-    self.RLEN2  = param[1]
-    self.RWIDX1 = param[2]
-    self.RWIDX2 = param[3]
+    self.RLEN1  = params[0]
+    self.RLEN2  = params[1]
+    self.RWIDX1 = params[2]
+    self.RWIDX2 = params[3]
     #TODO set self.FHIT_C = 0 elsewhere
     return self
 
@@ -377,9 +382,9 @@ class OE(ShadowLib.OE):
     self.F_CRYSTAL = 0
     return self
 
-  def setCrystal(self,file_refl='',a_bragg=0.0):
+  def setCrystal(self,file_refl=b"",a_bragg=0.0):
     self.F_CRYSTAL = 1
-    self.FILE_REFL = file_refl #TODO check if it does not change place in memory
+    self.FILE_REFL = file_refl
     self.F_REFLECT = 0
 
     if a_bragg!=0.0:
@@ -455,7 +460,7 @@ class OE(ShadowLib.OE):
     self.THICKNESS = thickness
     return self
 
-  def setAutoTuning(self,f_phot_cent=0,photo_cent=5000.0,r_lambda=100.0):
+  def setAutoTuning(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0):
     self.F_CENTRAL = 1
     self.F_PHOT_CENT = f_phot_cent
     self.PHOT_CENT = phot_cent
@@ -463,7 +468,7 @@ class OE(ShadowLib.OE):
     return self
 
   def setAutoMonochromator(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0,f_mono=0,f_hunt=1,hparam=zeros(3,dtype=float64)):
-    self.setAutoTuning(f_photo_cent=f_photo_cent,phot_cent=phot_cent,r_lambda=r_lambda)
+    self.setAutoTuning(f_phot_cent=f_phot_cent,phot_cent=phot_cent,r_lambda=r_lambda)
     self.F_MONO = f_mono
     self.F_HUNT = f_hunt
     self.HUNT_H = hparam[0]

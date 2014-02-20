@@ -7,6 +7,7 @@
 # SRWLib Python Classes
 #****************************************************************************
 #****************************************************************************
+import sys
 class SRWLParticle(object):
   """Charged Particle"""
 
@@ -774,7 +775,8 @@ def loadParticle(fname, mode='hdf5'):
             varnames = ["energy", "nq", "relRestMass", "x", "y", "z", "xp", "yp"]
             res = aux_hdf5_obj_load(f, res, h5grp, varnames)
             f.close()
-        except KeyError as err:
+        except KeyError:
+            err = sys.exc_info()[1]
             print("some objects have not been found,  please control hdf5 file: "+fname)
             print("SRWLParicle: ",  err.message)
     else:
@@ -809,13 +811,14 @@ def loadPartBeam(fname, mode='hdf5'):
       res = aux_hdf5_obj_load(f, res, h5grp, varnames, isarray=True)
       f.close()
       res.partStatMom1 = loadParticle(fname)
-      except KeyError as err:
+    except KeyError:
+        err = sys.exc_info()[1]
         print("some objects have not been found,  please control hdf5 file: "+fname)
         print("SRWLPartBeam: ",  err.message)
   else:
     f = open(fname+'_ebeam.dat', 'rb')
     res = pickle.load(f)
-    f,.close()
+    f.close()
   return res
 
 
@@ -841,7 +844,8 @@ def loadStokes(fname, mode='hdf5'):
       res = aux_hdf5_obj_load(f, res, h5grp, varnames, isarray=True)
       f.close()
       res.mesh = loadRadMesh(fname)
-    except KeyError as err:
+    except KeyError:
+      err = sys.exc_info()[1]
       print("some objects have not been found,  please control hdf5 file: "+fname)
       print("SRWLStokes: ",  err.message)
   else:

@@ -6,7 +6,7 @@
 # It uses the currently defined Shadow system defined in the (existing) 
 # files start.xx and systemfile.dat
 #
-# Author: Niccolo Canestrari, Manuel Sanchew del Rio
+# Author: Niccolo Canestrari, Manuel Sanchez del Rio
 #         ESRF (c) 2011
 #
 
