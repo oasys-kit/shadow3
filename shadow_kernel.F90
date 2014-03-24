@@ -7797,7 +7797,7 @@ end if
 	  !Q2_PER	= ALFA**2*Q1_PER + (ALFA**2-1)*Q_PAR
 	  Q2_PER	= rr_ALFA**2*Q1_PER + (rr_ALFA**2-1)*Q_PAR
 	  CALL SCALAR	(VTEMP,SQRT(Q2_PER/Q1_PER),VTEMP)
-	  CALL SUM	(VTEMP,K_PAR,Q_OUT)
+	  CALL vSUM	(VTEMP,K_PAR,Q_OUT)
 	  CALL DOT	(Q_OUT,Q_OUT,TTEMP)
 	  CALL NORM	(Q_OUT,VTEMP)
 
@@ -8382,7 +8382,7 @@ end if
 ! C
 	CALL SCALAR	(VTAN,G_MODR,stemp)
 	if (f_grating.eq.1.or.f_bragg_a.eq.1) then
-	 call sum (gscatter,stemp,gscatter)
+	 call vsum (gscatter,stemp,gscatter)
 	else 
 	 gscatter(1) = stemp(1)
 	  gscatter(2) = stemp(2)
@@ -8424,14 +8424,14 @@ end if
 !		  iskiplaue=1
 ! end debugging
 	          end if
-! C			call sum	(vtemp,gscatter,q_out) 
+! C			call vsum	(vtemp,gscatter,q_out) 
 ! C     		else if (f_refrac.ne.1) then
 	        end if
 
 !srio
 !-------------		IF (iskiplaue.ne.1) THEN
 
-		CALL SUM	(K_PAR,GSCATTER,Q_OUT)
+		CALL vSUM	(K_PAR,GSCATTER,Q_OUT)
      		CALL DOT	(Q_OUT,Q_OUT,Q_OUT_MOD)
      		VALUE  =   Q_IN_MOD**2 - Q_OUT_MOD
      		  IF (VALUE.LT.0.0D0) THEN
@@ -8444,7 +8444,7 @@ end if
      		  ELSE
      		VALUE  =   SQRT( VALUE )
      		CALL SCALAR	(VNOR,VALUE,VTEMP)
-     		CALL SUM	(VTEMP,Q_OUT,Q_OUT)
+     		CALL vSUM	(VTEMP,Q_OUT,Q_OUT)
      		CALL NORM	(Q_OUT,Q_OUT)
                 krough_count2 = krough_count2 + 1
 
@@ -8707,7 +8707,7 @@ end if
 !srio      	IF (F_GRATING.NE.0.OR.F_BRAGG_A.EQ.1) THEN
 !srio 	  CALL	PROJ	(VVOUT,VNOR,VTEMP)
 !srio 	  CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
-!srio 	  CALL	SUM	(VTEMP,VVOUT,VTEMP)
+!srio 	  CALL	vSUM	(VTEMP,VVOUT,VTEMP)
 !srio 	  CALL	CROSS	(VTEMP,VNOR,AS_TEMP)
 !srio      	 IF (M_FLAG.EQ.1) THEN
 !srio 	   CALL	DOT	(AS_VEC,AS_VEC,AS2)
@@ -8733,7 +8733,7 @@ end if
 !srio      	CALL	PROJ	(AP_VEC,VNOR,VTEMP)
 !srio 	CALL	VECTOR	(VTEMP,AP_VEC,VTEMP)
 !srio      	CALL	SCALAR	(VTEMP,-2.0D0,VTEMP)
-!srio      	CALL	SUM	(AP_VEC,VTEMP,AP_VEC)
+!srio      	CALL	vSUM	(AP_VEC,VTEMP,AP_VEC)
 
 !--------------------------------------------------------------------------------
 
@@ -8790,7 +8790,7 @@ end do
 ! C onto disk.  To have the As carry the correct magnitude, we must sum As and Ap.
 ! C
 	IF (NCOL.NE.18)	THEN
-	  CALL	SUM	(AS_VEC,AP_VEC,AS_VEC)
+	  CALL	vSUM	(AS_VEC,AP_VEC,AS_VEC)
 	ELSE
 	  AP  (1,ITIK)	=   AP_VEC(1) * rr_reflectivity
 	  AP  (2,ITIK)	=   AP_VEC(2) * rr_reflectivity

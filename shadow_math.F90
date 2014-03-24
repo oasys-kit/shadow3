@@ -29,11 +29,11 @@ Module shadow_math
 !---- public routines :
 !---- used in the geometrical source: wran, rotate, spl_int, atan_2, gauss
 !---- the vectorial calculus tools:   scalar, dot, cross, norm, vector, 
-!----                                 versor, proj, sum, vdist
+!----                                 versor, proj, vsum, vdist
 
     public :: wran, mysqrt
     public :: rotate, spl_int, atan_2, gauss
-    public :: scalar, dot, cross, norm, vector, versor, proj, sum, vdist
+    public :: scalar, dot, cross, norm, vector, versor, proj, vsum, vdist
     public :: gnormal, rotvector, mfp, cross_m_flag
     public :: qsf,cubspl
     ! used in shadow_preprocessors: ibcccu, ibcdcu
@@ -551,7 +551,7 @@ end function mysqrt
 ! C
 ! C       Generates the sum of two vectors 
 ! C ----
-        SUBROUTINE SUM (P1,P2,RES)
+        SUBROUTINE vSUM (P1,P2,RES)
 
         implicit none
         real(kind=skr),dimension(3),intent(in)   :: p1,p2
@@ -563,7 +563,7 @@ end function mysqrt
         RES(1) = P1(1) + P2(1)
         RES(2) = P1(2) + P2(2)
         RES(3) = P1(3) + P2(3)
-    END SUBROUTINE SUM
+    END SUBROUTINE vSUM
 
 ! C ++++
 ! C
@@ -964,8 +964,8 @@ SUBROUTINE ROTVECTOR (VIN,AXIS,ALPHA,VOUT)
                 CA = COS(ALPHA)
                 CALL SCALAR(VCTR3,SA,VCTR3)
                 CALL SCALAR(VCTR1,CA,VCTR1)
-                CALL SUM(VCTR1,VCTR3,VCTR2)
-                CALL SUM(VCTR0,VCTR2,VOUT)
+                CALL vSUM(VCTR1,VCTR3,VCTR2)
+                CALL vSUM(VCTR0,VCTR2,VOUT)
      RETURN
 End Subroutine rotvector
 
