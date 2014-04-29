@@ -27,20 +27,20 @@ if len(sys.argv)==1:
   print ("Usage: \n  trace3_py.py -a ->creates source \n  trace3_py.py -t ->runs trace (optical system) \n  trace3_py.py -a ->runs both source and trace \n" )
   exit()
 
-if sys.argv[1]=='-s':
-  src.load('start.00')
+if sys.argv[1]=="-s":
+  src.load("start.00")
   beam.genSource(src)
   
-if sys.argv[1]=='-t':
-  beam.load('begin.dat')  
+if sys.argv[1]=="-t":
+  beam.load("begin.dat")  
   for file in open("systemfile.dat","r").readlines():
     if file!="":      
       oe1.load(file.strip())
       beam.traceOE(oe1,i)
       i=i+1
 
-if sys.argv[1]=='-a':
-  src.load('start.00')
+if sys.argv[1]=="-a":
+  src.load("start.00")
   beam.genSource(src)
   for file in open("systemfile.dat","r").readlines():
     if file!="":
