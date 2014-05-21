@@ -32,7 +32,7 @@ Module shadow_math
 !----                                 versor, proj, vsum, vdist
 
     public :: wran, mysqrt
-    public :: rotate, spl_int, atan_2, gauss
+    public :: rotate, spl_int, lin_int, atan_2, gauss
     public :: scalar, dot, cross, norm, vector, versor, proj, vsum, vdist
     public :: gnormal, rotvector, mfp, cross_m_flag
     public :: qsf,cubspl
@@ -273,9 +273,67 @@ end function mysqrt
            END IF
    10  Z = X - G(1,I)
        Y = G(2,I) + Z*(G(3,I) + Z*(G(4,I) + Z*G(5,I)))
-      IER = 0
+       IER = 0
        RETURN
         END SUBROUTINE SPL_INT
+
+
+! C+++
+! C     SUBROUTINE    LIN_INT
+! C
+! C     PURPOSE    TO INTERPOLATE LINEARLY THE VALUE Y FOR A POINT X, 
+! C                USING ONLY THE ELEMENTS G(1,N) and G(2,N) OF THE ARRAY
+! C                G(5,N) FROM THE PROGRAM CUBSPL.
+! C
+! C     INPUT      G(5,N) AS FROM CUBSPL.
+! C                N, THE # OF DATA POINTS IN G(5,N).
+! C                X, THE POINT WHERE YOU WANT THE INTERPOLATION TO BE MADE.   
+! C 
+! C     OUTPUT     Y, THE INTERPOLATED VALUE.
+! C                IER =1 FOR ERROR, =0 OTHERWISE.
+! C
+! C---              
+        SUBROUTINE LIN_INT(G,N,X,Y,IER)
+
+       REAL(KIND=SKR),dimension(5,N),intent(in)  ::  G
+       REAL(KIND=SKR),               intent(in)  ::  X
+       INTEGER(KIND=SKI),            intent(in)  ::  N
+       REAL(KIND=SKR),               intent(out) ::  Y
+       REAL(KIND=SKR)                            ::  Z
+       INTEGER(KIND=SKI)              ::  I, IER
+       real(kind=skr)                 ::  gmin,gmax
+
+       GMAX = MAX(G(1,1),G(1,N))
+       GMIN = MIN(G(1,1),G(1,N))
+       IF ((X .LT. GMIN) .OR. (X .GT. GMAX)) THEN
+! please note that an error here for BM or WIGGLER may be due
+! to the use of an not-updated SRSPEC SRANG and SRDISTR
+                WRITE(6,*) 'LIN_INT: x is outside the interpolation range.'
+                WRITE(6,*) 'X, GMIN, GMAX: ',X,GMIN,GMAX
+                IER = 1
+                RETURN
+       ELSE IF (X .EQ. G(1,N)) THEN
+                I = N-1
+                GO TO 10
+       END IF
+       I = 0
+   21   IF (G(1,I+1) .LE. X) THEN
+                I = I + 1
+       GOTO 21
+           END IF
+   10  Z = X - G(1,I)
+       IF (I .EQ. N)  THEN
+           WRITE(6,*) 'LIN_INT: End point. Set previous one'
+           I = I-1
+       END IF
+       !cubic spline Y = G(2,I) + Z*(G(3,I) + Z*(G(4,I) + Z*G(5,I)))
+       !liner interpolation
+       Y = G(2,I) + Z* (G(2,I+1) -G(2,I))/(G(1,I+1)-G(1,I))
+       IER = 0
+       RETURN
+        END SUBROUTINE LIN_INT
+
+
 
 !C ++++
 !C

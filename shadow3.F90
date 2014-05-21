@@ -32,7 +32,7 @@ PROGRAM  Shadow3
 
   
   character(len=sklen)     ::  inCommand,inCommandLow,arg,mode
-  integer(kind=ski)      :: numArg,indx,iErr,i_Device,i_code,itmp
+  integer(kind=ski)      :: numArg,indx,iErr,i_Device,itmp
 
  
 inCommand = "" 
@@ -109,9 +109,17 @@ SELECT CASE (inCommandLow)
      WRITE(6,*) 'for undulator (small K)      [ 2 ]'
      I_DEVICE = IRINT ('Then ? ')
  
-     CALL epath(i_Device)
      SELECT CASE (i_Device)
        CASE(1)  ! wiggler
+          WRITE(6,*) 'Type of wiggler: ' 
+          WRITE(6,*) ' [0] conventional (sinosoidal field)'
+          WRITE(6,*) ' [1] external magnetic field'
+          itmp = IRINT ('Then ? ')
+          if (itmp .eq. 1) then
+              CALL epath_b(i_Device)
+          else
+              CALL epath(i_Device)
+          endif
           CALL nphoton
           CALL input_source1
           CALL RWNAME('start.00','W_SOUR',iErr)
@@ -120,12 +128,13 @@ SELECT CASE (inCommandLow)
              stop 'Aborted'
           END IF
        CASE(2)  ! undulator
+          CALL epath(i_Device)
           CALL Undul_Set
           WRITE(6,*) 'Code used for Undulator emission: ' 
           WRITE(6,*) 'SHADOW  [ 0 ]'
           WRITE(6,*) 'URGENT  [ 1 ]'
-          I_CODE = IRINT ('Then ? ')
-          if (I_CODE .eq.1) then
+          itmp = IRINT ('Then ? ')
+          if (itmp .eq.1) then
               CALL Undul_Phot_Urgent
           else
               CALL Undul_Phot
@@ -210,6 +219,10 @@ SELECT CASE (inCommandLow)
   CASE ("epath")
      i_device = 0
      CALL epath(i_Device)
+     inCommand=""
+  CASE ("epath_b")
+     i_device = 1 ! always wiggler
+     CALL epath_b(i_Device)
      inCommand=""
   CASE ("nphoton")
      i_device = 0
@@ -336,7 +349,7 @@ SELECT CASE (inCommandLow)
      print *,'  [PRE-PROCESSORS]  : prerefl bragg presurface'
      !print *,'                    : input_source pre_mlayer grade_mlayer'
      print *,'                    : input_source pre_mlayer '
-     print *,'                    : make_id { epath nphoton undul_set'
+     print *,'                    : make_id { epath epath_b nphoton undul_set'
      print *,'                    :   undul_phot (undul_phot_urgent) undul_phot_dump'
      print *,'                    :   undul_cdf}' 
      print *,'                    : jntpscalc mkdatafiles' 

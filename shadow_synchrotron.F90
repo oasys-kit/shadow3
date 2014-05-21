@@ -2455,6 +2455,16 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
      	  IF (F_WIGGLER.EQ.1) THEN
      	    ARG_Y = GRID(2,ITIK)
      	    CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
+            ! srio@esrf.eu 2014-05-19
+            ! in wiggler some problems arise because spl_int
+            ! does not return a Y value in the correct range. 
+            ! In those cases, we make a linear interpolation instead. 
+            if ((y_traj.le.y_temp(1)).or.(y_traj.gt.y_temp(NP_SY))) then 
+                y_traj_old = y_traj
+                CALL LIN_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
+                print*,'SOURCESYNC: bad y_traj from SPL_INT, corrected with LIN_SPL: ',y_traj_old,'=>',y_traj
+            endif
+
      	    CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
      	    CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE,     IER)
      	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)

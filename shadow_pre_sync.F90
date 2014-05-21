@@ -73,6 +73,7 @@ integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public ::  epath   ! wiggler+undulator
+    public ::  epath_b ! wiggler
     public ::  nphoton ! wiggler
     public ::  undul_set, undul_phot, undul_cdf  ! undulator
     public ::  undul_phot_dump ! undulator, create nphoton.spec, and ascii version of nphoton.dat
@@ -626,9 +627,266 @@ END IF
         RETURN
 END SUBROUTINE EPath
 
+
 !
 ! START WIGGLER PREPROCESSORS
 !
+
+
+!C+++
+!C	SUBROUTINE	EPATH_B
+!C
+!C	PURPOSE		To compute the trajectory of an electron through
+!C			a wiggler given the magnetic field.
+!C
+!C	ALGORITHM	See formulae in ESRF red book pag. CIV-297
+!C
+!C	COMMENTS	Old btraj from ESRF.
+!C
+!C	CREATION DATE	10/91 M. Sanchez del Rio, C. Vettier
+!C                      5/2014 srio@esrf.eu adapted to Shadow3
+!C
+!C--
+SUBROUTINE epath_b(i_device)
+        implicit none
+
+        integer(kind=ski), intent(in) ::  i_device
+
+        real(kind=skr),dimension(:),allocatable    ::  betax,betaz,betay
+        real(kind=skr),dimension(:),allocatable    ::  yx, yz, curv, yy, bx, bz
+        real(kind=skr),dimension(:),allocatable    ::  bh
+        integer(kind=ski),dimension(:),allocatable ::  nh
+
+        real(kind=skr)       :: e,h,c,rm,c2
+        character(len=sklen) :: outfilePar,outfileTraj,infile
+        integer(kind=ski)    :: i_file,i,j,npoints,nharm,nper,i_write,n,nn
+        real(kind=skr)       :: per,beta0,start_len,beta02,emc,ener
+        real(kind=skr)       :: oldener,phase,phase0,yint,ystep,tmp
+
+        c  = codata_c
+        rm = codata_rm
+        e  = codata_e
+        h  = codata_h
+        c2 = e/(TWOPI*rm*c)   !unit(coul*sec/(kg*m))
+
+!
+! input section
+!
+        write(6,*) 'Wiggler trajectory calculation from: '
+        write(6,*) '  [0] An input file (2-column) with the magnetic field'
+        write(6,*) '      of one period. 1st column: y[m]; 2nd column: B[T]'
+        write(6,*) '  [1] A file with magnetic field hatmonic data:'
+        write(6,*) '      1st column: n (harmonic number); 2nd column: Bn[T]' 
+        i_file = irint('> ')
+        infile = rstring ('Input file ? ')
+        nper = irint ('Enter number of periods : ')
+        oldener = rnumber  ('Electron energy [GeV] ? ')
+        outfilePar  = rstring ('Output file with parameters ? ')
+        outfileTraj = rstring ('Output file with the trajectory ? ')
+
+
+        if (i_file.eq.0) then      !file with magnetic field Bz[T](y[m]) (vertical)
+        else if (i_file.eq.1) then !file with period [m], number of periods, harmonics [T]
+            npoints = irint('Enter number of points per period : ')
+            per = rnumber('Enter wiggler wavelength [m] : ')
+        endif
+
+
+        if (i_file.eq.0) then !reads file with magnetic field Bz[T](y[m]) (vertical)
+            ! gets NPOINTS from file
+            open (21,file=infile,status='old')
+            ! first scan the file to get the number of points
+            I = 0
+            DO WHILE (.true.) 
+                READ (21,*,END=11)   tmp,tmp
+                I = I + 1
+            END DO 
+11          npoints = I 
+            CLOSE   (21)
+            WRITE(6,*) 'Found ',npoints,' points from input file : '//trim(infile)
+        else
+            ! gets NHARM from file
+            open (21,file=infile,status='old')
+            ! first scan the file to get the number of points
+            nharm = 0
+            DO WHILE (.true.) 
+                READ (21,*,END=110)   nn,tmp
+                IF (nn .GT. nharm) nharm=nn
+            END DO 
+110         CONTINUE
+            CLOSE   (21)
+            WRITE(6,*) 'Found ',nharm,' maximum harmonic in input file : '//trim(infile)
+            allocate( nh(nharm) )
+            allocate( bh(nharm) )
+        end if
+    
+        ! allocate arrays
+        allocate( BETAX(NPOINTS*NPER) )
+        allocate( BETAY(NPOINTS*NPER) )
+        allocate( BETAZ(NPOINTS*NPER) )
+        allocate( YX(NPOINTS*NPER) )
+        allocate( YY(NPOINTS*NPER) )
+        allocate( YZ(NPOINTS*NPER) )
+        allocate( CURV(NPOINTS*NPER) )
+        allocate( BX(NPOINTS*NPER) )
+        allocate( BZ(NPOINTS*NPER) )
+
+        !
+        !load Bz(Y) data from file
+        !
+        if (i_file.eq.0) then !reads file with magnetic field Bz[T](y[m]) (vertical)
+            open (21,file=infile,status='old')
+            do i=1,npoints
+                read (21,*) YY(i),BZ(i)
+            end do
+            close (21)
+            ystep = yy(2)-yy(1)
+            per  = yy(npoints)-yy(1)
+            write(6,*) npoints ,' points read from file: '//trim(infile)
+            write(6,*) ' Period of the ID is : ',per
+        else if (i_file.eq.1) then !read file with period [m], number of periods, harmonics [T]
+            open (21,file=infile,status='old')
+            !c get harmonics from file
+            do i=1,nharm
+                nh(i) = i
+                bh(i) = 0.0d0
+            end do
+            do i=1,3001
+                read (21,*,end=34) n,tmp
+                if (n .gt. 0) bh(n) = tmp
+            end do
+34          continue
+            close (21)
+            !test
+            !do i=1,nharm
+            !    print*,'>>>>>>>>>>>>>>> ',i,nh(i),bh(i)
+            !    bh(i) = 0.0d0
+            !end do
+
+
+
+            ystep = per/(npoints-1)
+        end if
+!c
+!c	calculates initial electron speed from its energy
+!c
+        ENER    = E*oldENER*1.0D9        !CHANGE UNITS (TO JOULE)
+        GA0     = ENER/RM/C**2                !Gamma_0, in electron rest mass
+                                             !energy (mc^2) units,
+                                             !adimensional
+        emc = e/(ga0*rm*c)
+        beta02 = 1.0d0 - (rm*c**2/ener)**2
+        beta0 = sqrt(beta02)
+        write(6,*) ' beta = v/c =',beta0
+        start_len=per*(nper-1)/2.d0                
+!c
+!c        calculates the integral of the magnetic field bz (proportional
+!c        to speeds)
+!c        
+        if (i_file.eq.0) then
+         yint = 0.0d0
+         betax(1) = 0.0d0
+         do i=2,npoints
+           yint = yint + bz(i)
+           betax (i) = yint*ystep
+         end do 
+        else if (i_file.eq.1) then
+         phase0=-pi
+         do i=1,npoints
+                yy(i)=(i-1)*ystep-per/2.d0
+                bz(i)=0.d0
+                betax(i)=0.d0
+                do n=1,nharm
+                        phase=twopi*(yy(i)/per)
+                        bz(i)=bz(i)+bh(n)*dcos(phase*n)
+                        betax(i)=betax(i)+bh(n)*(dsin(phase*n)-dsin(phase0*n))/n
+                enddo
+                betax(i)=betax(i)*per/twopi
+         end do 
+        end if
+        write(6,*) ' Integral of B = ',betax(npoints), '  [Tm]'
+!c
+!c        rescale to speeds v/c = 0.3/E[GeV] * integral (Bz [T] ds[m])
+!c
+        do i=1,npoints
+         betax (i) = - (0.3/oldener) * betax(i) 
+         betay (i) = sqrt(beta0**2 - betax(i)**2)
+         curv(i) = -emc*bz(i)/beta0
+        end do        
+!c
+!c        calculates positions as the integral of speeds
+!c
+        if (i_file.eq.0) then
+         yint = 0.0d0
+         do i=1,npoints
+          yint = yint + betax(i)
+          yx(i) = yint * ystep 
+         end do 
+        else if (i_file.eq.1) then
+         do i=1,npoints
+                yx(i)=0.d0
+                do n=1,nharm
+                        phase=twopi*(yy(i)/per)
+                        yx(i)=yx(i)-bh(n)*(dcos(phase*n)-dcos(phase0*n))/n/n
+                enddo
+                yx(i)=yx(i)*(-3.d-1/oldener)*(per/twopi)**2
+         end do 
+        end if
+!c
+!c        creates parameters file
+!c
+        open(22,file=outfilePar,status='unknown')
+          write (22,*) '########### Data from epath_b ##############'
+          write (22,*) 'Period of the ID is : ',per ,' [m]'
+          write (22,*) 'Number of periods : ',nper
+          write (22,*) 'Number of points per periods : ',npoints
+          write (22,*) 'beta = v/c =',beta0
+          write (22,*) 'Electron energy [GeV] = ',oldener
+        if (i_file.eq.0) then
+          write(22,*) 'Magnetic field profile from file:   ',infile
+          write(22,*) 'Integral of B = ',betax(npoints), '[T m]'
+        else if (i_file.eq.1) then 
+          write(22,*) 'Magnetic field harmonics from file '//trim(infile)
+          write(22,*) 'Number of harmonics: ',nharm
+        end if
+        close(22)
+        write(6,*) "File written to disk: "//trim(outfilePar)
+!c
+!c        creates trajectory file
+!c
+        open(22,file=outfileTraj,status='unknown')
+        do j=1,nper
+                nn=1
+                if(j.gt.1) nn=2         ! to avoid overlap
+                do i=nn,npoints
+                write (22,*) YX(i),yy(i)+(j-1)*per-start_len,0.0,betax(i),betay(i),0.0d0,curv(i),bz(i)
+                end do
+        end do
+        close(22)
+        write(6,*) "File written to disk: "//trim(outfileTraj)//" containing: "
+        write(6,*) "   Cols:  1      2      3      5      6      7      8          9"
+        write(6,*) "          X[m]   Y[m]   Z[m]   betaX  betaY  betaZ  curv[m^-1] Bz[T]"
+        !
+        ! deallocate arrays
+        !
+        if (allocated( BETAX ) ) deallocate( BETAX )
+        if (allocated( BETAY ) ) deallocate( BETAY )
+        if (allocated( BETAZ ) ) deallocate( BETAZ )
+        if (allocated( YX ) ) deallocate( YX )
+        if (allocated( YY ) ) deallocate( YY )
+        if (allocated( YZ ) ) deallocate( YZ )
+        if (allocated( CURV ) ) deallocate( CURV )
+        if (allocated( BX ) ) deallocate( BX )
+        if (allocated( BZ ) ) deallocate( BZ )
+        if (allocated( nh ) ) deallocate( nh )
+        if (allocated( bh ) ) deallocate( bh )
+
+        write(6,*) 'Done'
+        RETURN
+END SUBROUTINE epath_b
+
+
+
 
 !C+++
 !C	SUBROUTINE	NPhotonCalc
