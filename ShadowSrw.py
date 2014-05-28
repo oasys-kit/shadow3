@@ -253,10 +253,10 @@ def SetBeam(xe,ze,xpph,ypph,zpph,Eph,N,ye=None):
 
 def WriteParameters(fname,d):
   f = open(fname,'w')
-  paramName = {'N','ratio','A2EV',
+  paramName = ['N','ratio','A2EV',
                'Eph0','EphD','NEph',
                'Xp0','XpD','NXpph',
-               'Zp0','ZpD','NZpph'}
+               'Zp0','ZpD','NZpph']
   for p in paramName:
     # print >> f, p, '=', d[p]
     print (p, '=', d[p], file=f)
