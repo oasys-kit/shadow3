@@ -34,6 +34,12 @@ import numpy
 # this is for physical constants, may be eliminated (see comments)
 import scipy.constants.codata
 
+#raw_input does not exist in python3
+import sys
+try:
+    input = raw_input
+except NameError:
+    pass
 
 def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MIN=100.0,E_MAX=20000.0,E_STEP=100.0):
     """
