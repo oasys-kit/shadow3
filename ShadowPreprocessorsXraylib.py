@@ -65,20 +65,20 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
     if interactive:
         # input section
         print("prerefl: Preprocessor for mirrors - python+xraylib version")
-        iMaterial = raw_input("Enter material expression (symbol,formula): ")
-        density = raw_input("Density [ g/cm3 ] ?") 
+        iMaterial = input("Enter material expression (symbol,formula): ")
+        density = input("Density [ g/cm3 ] ?") 
         density = float(density)
     
-        estart = raw_input("Enter starting photon energy: ") 
+        estart = input("Enter starting photon energy: ") 
         estart = float(estart)
     
-        efinal = raw_input("Enter end photon energy: ") 
+        efinal = input("Enter end photon energy: ") 
         efinal = float(efinal)
     
-        estep = raw_input("Enter step photon energy:") 
+        estep = input("Enter step photon energy:") 
         estep = float(estep)
     
-        out_file  = raw_input("Output file : ")
+        out_file  = input("Output file : ")
     else:
         iMaterial = SYMBOL
         density = DENSITY
@@ -138,10 +138,10 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
     # input section
     if interactive:
         print("pre_mlayer: SHADOW preprocessor for multilayers - python+xraylib version")
-        fileout = raw_input("Name of output file : ")
-        estart = raw_input("Photon energy (eV) from : ")
+        fileout = input("Name of output file : ")
+        estart = input("Photon energy (eV) from : ")
         estart = float(estart)
-        efinal = raw_input("                     to : ")
+        efinal = input("                     to : ")
         efinal = float(efinal)
     
         print("  ")
@@ -168,24 +168,24 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
         print(" ")
     
         # substrate
-        matSubstrate = raw_input("Specify the substrate material : ")
-        denSubstrate = raw_input("Specify the substrate density [g/cm^3] : ")
+        matSubstrate = input("Specify the substrate material : ")
+        denSubstrate = input("Specify the substrate density [g/cm^3] : ")
         denSubstrate = float(denSubstrate)
         
         print("Right above the substrate is the even layer material")
-        matEven = raw_input("Specify the even layer material : ")
-        denEven = raw_input("Specify the even layer density [g/cm^3] : ")
+        matEven = input("Specify the even layer material : ")
+        denEven = input("Specify the even layer density [g/cm^3] : ")
         denEven = float(denEven)
     
         print("Odd layer material is on top of the even layer.")
-        matOdd = raw_input("Specify the odd layer material : ")
-        denOdd = raw_input("Specify the odd layer density [g/cm^3] : ")
+        matOdd = input("Specify the odd layer material : ")
+        denOdd = input("Specify the odd layer density [g/cm^3] : ")
         denOdd = float(denOdd)
     
         #! By convention, starting from the version that includes ML roughness
         #! we set NPAR negative, in order to assure compatibility with old
         #! versions. If NPAR<0, roughness data are read, if NPAR>0 no roughness.
-        npair = raw_input("No. of layer pairs : ")
+        npair = input("No. of layer pairs : ")
         npair = int(npair)
     
         print(" ")
@@ -207,7 +207,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
     
         for i in range(npair): 
             tmps = ("thickness [A], gamma ratio, roughness even [A] and roughness odd [A] of bilayer %i: \n"% (i+1) )
-            tmp = raw_input(tmps)
+            tmp = input(tmps)
             tmp1 = tmp.split()
             if ((i != 0) and (int(float(tmp1[0])) == -1)):
                 thick[i:(npair-1)] = [thick[i-1]] * (npair-i)
@@ -230,7 +230,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
         print("         (input quadratic fit to t gradient)")
         print("      ")
     
-        igrade = raw_input("Is t and/or gamma graded over the surface [0=No/1=Yes] ? ")
+        igrade = input("Is t and/or gamma graded over the surface [0=No/1=Yes] ? ")
         igrade = int(igrade)
         if igrade == 1:
             print("Generation of the spline coefficients for the t and gamma factors")
@@ -239,7 +239,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
             print("coefficients for the t and gamma factors over the surface.")
             print("Here just type in the file name that WILL be used to store")
             print("the spline coefficients :")
-            fgrade = raw_input("File name (output from grade_mlayer: ")
+            fgrade = input("File name (output from grade_mlayer: ")
         elif igrade == 2:  # igrade=2, coefficients
             print("A second degree polynomial fit of the thickness grading")
             print("must be available:")
@@ -248,7 +248,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
             print("a0 (constant term) ")
             print("a1 (slope term) ")
             print("a2 (quadratic term) ")
-            tmp = raw_input("Enter a0, a1, a2: ")
+            tmp = input("Enter a0, a1, a2: ")
             tmp = tmp.split()
             a0 = float(tmp[0])
             a1 = float(tmp[1])
@@ -362,7 +362,7 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
 
     if interactive:
         print("bragg: SHADOW preprocessor for crystals - python+xraylib version")
-        fileout = raw_input("Name of output file : ")
+        fileout = input("Name of output file : ")
     
         print(" bragg (python) only works now for ZincBlende Cubic structures. ")
         print(" Valid descriptor are: ")
@@ -373,23 +373,23 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
         print("     InAs, InP, InSb")
         print("     SiC")
     
-        descriptor = raw_input("Name of crystal descriptor : ")
+        descriptor = input("Name of crystal descriptor : ")
     
         print("Miller indices of crystal plane of reeflection.")
-        miller = raw_input("H K L: ")
+        miller = input("H K L: ")
         miller = miller.split()
         hh = int(miller[0])
         kk = int(miller[1])
         ll = int(miller[2])
     
-        temper = raw_input("Temperature (Debye-Waller) factor (set 1 for default): ")
+        temper = input("Temperature (Debye-Waller) factor (set 1 for default): ")
         temper = float(temper)
     
-        emin = raw_input("minimum photon energy (eV): ")
+        emin = input("minimum photon energy (eV): ")
         emin = float(emin)
-        emax = raw_input("maximum photon energy (eV): ")
+        emax = input("maximum photon energy (eV): ")
         emax = float(emax)
-        estep = raw_input("energy step (eV): ")
+        estep = input("energy step (eV): ")
         estep = float(estep)
     
     else:
@@ -509,7 +509,7 @@ if __name__ == '__main__':
         print ("    (3 test prerefl with defaults)")
         print ("    (4 test pre_mlayer with defaults)")
         print ("    (5 test bragg with defaults)")
-        tmp = raw_input("?>")
+        tmp = input("?>")
         preprocessor_option = int(tmp)
 
     if preprocessor_option == 0:
