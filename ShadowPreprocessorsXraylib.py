@@ -94,7 +94,7 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
     qmax = efinal/tocm*twopi
     qstep = estep/tocm*twopi
 
-    f = open(out_file, 'wb')
+    f = open(out_file, 'wt')
     f.write( ("%20.11e "*4+"\n") % tuple([qmin,qmax,qstep,depth0]) )
     f.write("%i \n" % int(npoint))
     for i in range(npoint):
@@ -300,7 +300,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
     ifinal = int(math.log10(efinal/30.0e0)/elfactor + 2)
     np = int(ifinal - istart) + 1
 
-    f = open(fileout, 'wb')
+    f = open(fileout, 'wt')
     f.write("%i \n" % np)
     for i in range(np):
         energy = 30e0*math.pow(10,elfactor*(istart+i-1))
@@ -411,7 +411,7 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
     # end input section, start calculations
     #
 
-    f = open(fileout, 'wb')
+    f = open(fileout, 'wt')
 
     cryst = xraylib.Crystal_GetCrystal(descriptor)
     volume = cryst['volume']
