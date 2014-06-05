@@ -4,12 +4,16 @@ import numpy as np
 import sys
 import h5py
 import copy
-import cPickle as pickle
+
+try:
+  import cPickle as pickle
+except ImportError:
+  import pickle
 
 try:
   import srwlib
 except ImportError:
-  import srwlib_fake as srwlib
+  import Shadow.srwlib_fake as srwlib
 
 A2EV     =  50676.89919462
 

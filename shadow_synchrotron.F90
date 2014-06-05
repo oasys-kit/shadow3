@@ -1849,11 +1849,11 @@ NREJ = 0
 ! C First figure out the number of columns written out for each ray.
 ! C
 IF (F_POLAR.EQ.1) THEN
-        NCOL = 18
+   NCOL = 18
 ELSE IF (F_OPD.EQ.1) THEN
-        NCOL = 13
+   NCOL = 13
 ELSE
-        NCOL = 12
+   NCOL = 12
 END IF
     
     
@@ -2431,30 +2431,30 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C           POSITIONS
     ! C
     ! C
-                KK = KK + 1
-                !IF (KK.EQ.250) THEN
-                IF (KK.EQ.NTOTAL/20) THEN
-                  ITOTRAY = KK + MM*(NTOTAL/20)
-                 IF (MM.EQ.0) THEN
-                  WRITE(6,*)'Generated ',ITOTRAY,' rays out of ',NTOTAL
-                 ELSE
-                  WRITE(6,*)'          ',ITOTRAY
-                 END IF
-                  KK = 0
-                  MM = MM + 1
-                END IF
+    KK = KK + 1
+    !IF (KK.EQ.250) THEN
+    IF (KK.EQ.NTOTAL/20) THEN
+        ITOTRAY = KK + MM*(NTOTAL/20)
+        IF (MM.EQ.0) THEN
+            WRITE(6,*)'Generated ',ITOTRAY,' rays out of ',NTOTAL
+        ELSE
+            WRITE(6,*)'          ',ITOTRAY
+        END IF
+        KK = 0
+        MM = MM + 1
+    END IF
     ! C
     ! C The following entry point is for the "optimized" source
     ! C
     ! C
     10001	CONTINUE
-        	IF ((F_WIGGLER.EQ.1).OR.(F_WIGGLER.EQ.3)) THEN
-    ! C
-    ! C Normal wiggler case
-    ! C
-     	  IF (F_WIGGLER.EQ.1) THEN
-     	    ARG_Y = GRID(2,ITIK)
-     	    CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
+    IF ((F_WIGGLER.EQ.1).OR.(F_WIGGLER.EQ.3)) THEN !-------! wiggler
+        ! C
+        ! C Normal wiggler case
+        ! C
+        IF (F_WIGGLER.EQ.1) THEN
+            ARG_Y = GRID(2,ITIK)
+            CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
             ! srio@esrf.eu 2014-05-19
             ! in wiggler some problems arise because spl_int
             ! does not return a Y value in the correct range. 
@@ -2465,164 +2465,167 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
                 print*,'SOURCESYNC: bad y_traj from SPL_INT, corrected with LIN_SPL: ',y_traj_old,'=>',y_traj
             endif
 
-     	    CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
-     	    CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE,     IER)
-     	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
-     	    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
-               END IF
-    ! C
-    ! C Elliptical wiggler case
-    ! C
-              IF (F_WIGGLER.EQ.3) THEN
-    	    ARG_Y = GRID(2,ITIK)
-    	    CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
-    	    CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
-    	    CALL SPL_INT (Y_Z,    NP_TRAJ, Y_TRAJ, Z_TRAJ,    IER)
-    	    CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE1,    IER)
-    	    CALL SPL_INT (Y_ZPRI, NP_TRAJ, Y_TRAJ, ANGLE2,    IER)
-    	    CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
-    	    CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
-              END IF
-     	  EPSI_PATH	= EPSI_PATH - PATH0	! now refer to wiggler's origin
-     	  IF (CURV.LT.0) THEN
-     	    POL_ANGLE	= 90.0D0		! instant orbit is CW
-     	  ELSE
-     	    POL_ANGLE	= -90.0D0		!		   CCW
-     	  END IF
-     	  IF (CURV.EQ.0) THEN
-     	    R_MAGNET	= 1.0D+20
-     	  ELSE
-     	    R_MAGNET	= ABS(1.0D0/CURV)
-     	  END IF
-     	  POL_ANGLE 	= TORAD*POL_ANGLE
+            CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
+            CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE,     IER)
+            CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
+            CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
+        END IF
+        ! C
+        ! C Elliptical wiggler case
+        ! C
+        IF (F_WIGGLER.EQ.3) THEN
+            ARG_Y = GRID(2,ITIK)
+            CALL SPL_INT (SEED_Y, NP_SY,   ARG_Y,  Y_TRAJ,    IER)
+            CALL SPL_INT (Y_X,    NP_TRAJ, Y_TRAJ, X_TRAJ,    IER)
+            CALL SPL_INT (Y_Z,    NP_TRAJ, Y_TRAJ, Z_TRAJ,    IER)
+            CALL SPL_INT (Y_XPRI, NP_TRAJ, Y_TRAJ, ANGLE1,    IER)
+            CALL SPL_INT (Y_ZPRI, NP_TRAJ, Y_TRAJ, ANGLE2,    IER)
+            CALL SPL_INT (Y_CURV, NP_TRAJ, Y_TRAJ, CURV,      IER)
+            CALL SPL_INT (Y_PATH, NP_TRAJ, Y_TRAJ, EPSI_PATH, IER)
+        END IF
+        EPSI_PATH = EPSI_PATH - PATH0 ! now refer to wiggler's origin
+        IF (CURV.LT.0) THEN
+            POL_ANGLE = 90.0D0  ! instant orbit is CW
+        ELSE
+            POL_ANGLE = -90.0D0  !     CCW
+        END IF
+        IF (CURV.EQ.0) THEN
+            R_MAGNET = 1.0D+20
+        ELSE
+            R_MAGNET = ABS(1.0D0/CURV)
+        END IF
+        POL_ANGLE  = TORAD*POL_ANGLE
     ! C above statement added 24 march 1992 to change POL_ANGLE to radians. clw.
     ! C
-         	ELSE IF (FSOURCE_DEPTH.EQ.4) THEN		! Synchrontron depth
-          ANGLE		=   GRID(2,ITIK) * (HDIV1 + HDIV2) - HDIV2
-    	  EPSI_PATH	=   ABS(R_ALADDIN)*ANGLE
-    ! C
-    ! C Undulator case : first interpolate for the photon energy.
-    ! C
-         	ELSE IF (F_WIGGLER.EQ.2) THEN
-     	  ESEED		= GRID(2,ITIK)* CDFW(NE)
-     	  DO 221 K = 1, NE-1
-     	    IF (ESEED.LE.CDFW(K+1)) GO TO 510
-     221	  CONTINUE
-     510    	  DK		= (ESEED - CDFW(K))/(CDFW(K+1) - CDFW(K))
-     	  KI		= K
-     	  PENERGY	= UENER(K) + DK*(UENER(K+1) - UENER(K))
-     	  Q_WAVE	= TWOPI*PENERGY/TOCM
-     ! C
-     ! C then interpolate for theta (Z').
-     ! C
-     	  ZSEED		= GRID(6,ITIK) 
-     
-     	  INDEX	= 1
-     	  DO 231 K = KI, KI+1
-     	      CZMAX	= ZSEED*CDFZ(NT,K)
-     	      DO 241 J = 1, NT-1
-     	        IF (CZMAX.LE.CDFZ(J+1,K)) THEN
-     		  JI(INDEX) = J
-         	    DZ(INDEX) = (CZMAX - CDFZ(J,K))/(CDFZ(J+1,K) - CDFZ(J,K))
-     		    THE_INT(INDEX) = UTHETA(J,K) + DZ(INDEX)* (UTHETA(J+1,K) - UTHETA(J,K))
-     		  GO TO 520
-     	        END IF	
-     241	      CONTINUE
-     520	      INDEX = INDEX + 1
-     231	  CONTINUE
-     
-     !	  THETA	= THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
-     !   warning use this instead : 
+    ELSE IF (FSOURCE_DEPTH.EQ.4) THEN  !-------! Bending magnet
+        ! Synchrontron depth
+        ANGLE  =  GRID(2,ITIK) * (HDIV1 + HDIV2) - HDIV2
+        EPSI_PATH =  ABS(R_ALADDIN)*ANGLE
+    ELSE IF (F_WIGGLER.EQ.2) THEN !-------! Undulator
+        ! C
+        ! C Undulator case : first interpolate for the photon energy.
+        ! C
+
+        ESEED  = GRID(2,ITIK)* CDFW(NE)
+        DO 221 K = 1, NE-1
+            IF (ESEED.LE.CDFW(K+1)) GO TO 510
+        221   CONTINUE
+        510 DK  = (ESEED - CDFW(K))/(CDFW(K+1) - CDFW(K))
+        KI = K
+        PENERGY = UENER(K) + DK*(UENER(K+1) - UENER(K))
+        Q_WAVE = TWOPI*PENERGY/TOCM
+        ! C
+        ! C then interpolate for theta (Z').
+        ! C
+        ZSEED  = GRID(6,ITIK) 
+        
+        INDEX = 1
+        DO 231 K = KI, KI+1
+            CZMAX = ZSEED*CDFZ(NT,K)
+            DO 241 J = 1, NT-1
+                IF (CZMAX.LE.CDFZ(J+1,K)) THEN
+                    JI(INDEX) = J
+                    DZ(INDEX) = (CZMAX - CDFZ(J,K))/(CDFZ(J+1,K) - CDFZ(J,K))
+                    THE_INT(INDEX) = UTHETA(J,K) + DZ(INDEX)* (UTHETA(J+1,K) - UTHETA(J,K))
+                    GO TO 520
+                END IF 
+            241 CONTINUE
+            520 INDEX = INDEX + 1
+        231 CONTINUE
+        
+        !   THETA = THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
+        !   warning use this instead : 
         THETABM=THE_INT(1) + DK*(THE_INT(2)-THE_INT(1))
-     
-     ! C
-     ! C Finally interpolate for phi (X').
-     ! C
-     	  XSEED		= GRID(4,ITIK) 
-     
-     	  INDEX	= 1
-     	  DO 251 K = KI, KI+1
-     	    JNOW = JI(K-KI+1)
-     	    DO 261 J = JNOW, JNOW + 1
-     	        CXMAX	= XSEED * CDFX(NP,J,K)
-     	        DO 271 I = 1, NP-1
-     	          IF (CXMAX.LE.CDFX(I+1,J,K)) THEN
-     		    II(INDEX) = I
-         	    DX(INDEX) = (CXMAX - CDFX(I,J,K)) /(CDFX(I+1,J,K) - CDFX(I,J,K))
-     	  	    PHI_INT(INDEX) = UPHI(I,J,K) + DX(INDEX)* (UPHI(I+1,J,K) - UPHI(I,J,K))
-     		    GO TO 530
-     	          END IF	
-     271	        CONTINUE
-     530	      INDEX = INDEX + 1
-     261	    CONTINUE
-     251	  CONTINUE
-     
-     	  PHI1 = PHI_INT(1) + DZ(1)*(PHI_INT(2) - PHI_INT(1))
-     	  PHI2 = PHI_INT(3) + DZ(2)*(PHI_INT(4) - PHI_INT(3))
-     	  PHI  = PHI1 + DK*(PHI2 - PHI1)
-     
-     ! C
-     ! C Also the degree of polarization.
-     ! C
-     
-     ! C ++++
-     ! C
-     ! C BEGIN BUG BUG BUG BUG (Tue Apr  8 21:25:51 CDT 1997)
-     ! C
-     ! C DELTAI, DELTAJ and DELTAK are used uninitialized here, and I have no 
-     ! C idea what these are supposed represent. I'm setting it to zero for 
-     ! C now, which is what most compilers do (not F77 standard however, and
-     ! C on some systems, you understandably get garbage). Also, fixed THETA3
-     ! C calculation (was THETA4 -- typo). -- MK
-     ! C
-     	  DELTAI = 0.0D0
-     	  DELTAJ = 0.0D0
-     	  DELTAK = 0.0D0
-     ! C
-     ! C END BUG  BUG
-     ! C
-     ! C ---
-     	  THETA1	= D_POL(I,J,K) + (D_POL(I,J,K+1)     - D_POL(I,J,K))*		DELTAK
-     	  THETA2	= D_POL(I,J+1,K) + (D_POL(I,J+1,K+1)   - D_POL(I,J+1,K))*		DELTAK
-     	  THETA3	= D_POL(I+1,J,K) + (D_POL(I+1,J,K+1)   - D_POL(I+1,J,K))*		DELTAK
-     	  THETA4	= D_POL(I+1,J+1,K) + (D_POL(I+1,J+1,K+1) - D_POL(I+1,J+1,K))* 	DELTAK
-     	  PHI1		= THETA1 + (THETA2-THETA1)*DELTAJ	
-     	  PHI2		= THETA3 + (THETA4-THETA3)*DELTAJ	
-     	  POL_DEG	= PHI1 + (PHI2-PHI1)*DELTAI
-     ! C
-     	  POL_ANGLE	= 90.0D0
-     	  EPSI_PATH	= 0.0D0
-     	  I_CHANGE	= 1
-     	  POL_ANGLE 	= TORAD*POL_ANGLE
-     ! C above statement added 24 march 1992 to change POL_ANGLE to radians. clw.
-     ! C
-     ! C If the cdf's are in polar coordinates switch them to cartesian angles.
-     ! C
-     	  IF (IANGLE.EQ.1) THEN
+        
+        ! C
+        ! C Finally interpolate for phi (X').
+        ! C
+        XSEED  = GRID(4,ITIK) 
+        
+        INDEX = 1
+        DO 251 K = KI, KI+1
+            JNOW = JI(K-KI+1)
+            DO 261 J = JNOW, JNOW + 1
+                CXMAX = XSEED * CDFX(NP,J,K)
+                    DO 271 I = 1, NP-1
+                        IF (CXMAX.LE.CDFX(I+1,J,K)) THEN
+                            II(INDEX) = I
+                            DX(INDEX) = (CXMAX - CDFX(I,J,K)) /(CDFX(I+1,J,K) - CDFX(I,J,K))
+                            PHI_INT(INDEX) = UPHI(I,J,K) + DX(INDEX)* (UPHI(I+1,J,K) - UPHI(I,J,K))
+                            GO TO 530
+                        END IF 
+                    271 CONTINUE
+                    530 INDEX = INDEX + 1
+            261 CONTINUE
+        251 CONTINUE
+        
+        PHI1 = PHI_INT(1) + DZ(1)*(PHI_INT(2) - PHI_INT(1))
+        PHI2 = PHI_INT(3) + DZ(2)*(PHI_INT(4) - PHI_INT(3))
+        PHI  = PHI1 + DK*(PHI2 - PHI1)
+        
+        ! C
+        ! C Also the degree of polarization.
+        ! C
+        
+        ! C ++++
+        ! C
+        ! C BEGIN BUG BUG BUG BUG (Tue Apr  8 21:25:51 CDT 1997)
+        ! C
+        ! C DELTAI, DELTAJ and DELTAK are used uninitialized here, and I have no 
+        ! C idea what these are supposed represent. I'm setting it to zero for 
+        ! C now, which is what most compilers do (not F77 standard however, and
+        ! C on some systems, you understandably get garbage). Also, fixed THETA3
+        ! C calculation (was THETA4 -- typo). -- MK
+        ! C
+        DELTAI = 0.0D0
+        DELTAJ = 0.0D0
+        DELTAK = 0.0D0
+        ! C
+        ! C END BUG  BUG
+        ! C
+        ! C ---
+        THETA1 = D_POL(I,J,K) + (D_POL(I,J,K+1)     - D_POL(I,J,K))*  DELTAK
+        THETA2 = D_POL(I,J+1,K) + (D_POL(I,J+1,K+1)   - D_POL(I,J+1,K))*  DELTAK
+        THETA3 = D_POL(I+1,J,K) + (D_POL(I+1,J,K+1)   - D_POL(I+1,J,K))*  DELTAK
+        THETA4 = D_POL(I+1,J+1,K) + (D_POL(I+1,J+1,K+1) - D_POL(I+1,J+1,K))*  DELTAK
+        PHI1  = THETA1 + (THETA2-THETA1)*DELTAJ 
+        PHI2  = THETA3 + (THETA4-THETA3)*DELTAJ 
+        POL_DEG = PHI1 + (PHI2-PHI1)*DELTAI
+        ! C
+        POL_ANGLE = 90.0D0
+        EPSI_PATH = 0.0D0
+        I_CHANGE = 1
+        POL_ANGLE  = TORAD*POL_ANGLE
+        ! C above statement added 24 march 1992 to change POL_ANGLE to radians. clw.
+        ! C
+        ! C If the cdf's are in polar coordinates switch them to cartesian angles.
+        ! C
+        IF (IANGLE.EQ.1) THEN
+            !!      A_Z = ASIN(SIN(THETA)*SIN(PHI))
+            !!      A_X = ACOS(COS(THETA)/COS(A_Z))
+            !!      THETA = A_Z
+            !!   warning use this instead : 
+            A_Z = ASIN(SIN(THETABM)*SIN(PHI))
+            A_X = ACOS(COS(THETABM)/COS(A_Z))
+            THETABM = A_Z
+            
+            PHI  = A_X
+        END IF
+        ! C
+        ! C Decide in which quadrant THETA and PHI are.
+        ! C
+        IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
+            !!      IF (WRAN(ISTAR1).LT.0.5) PHI = -PHI
+            !!      IF (WRAN(ISTAR1).LT.0.5) THETA = -THETA
+            
+            !!   warning use this instead : 
+            IF (WRAN(ISTAR1).LT.0.5) THETABM = -THETABM
+            IF (WRAN(ISTAR1).LT.0.5) PHI = -PHI
+            
+        END IF
+    END IF  !-------! Undulator ends.
 
-     !! 	    A_Z = ASIN(SIN(THETA)*SIN(PHI))
-     !! 	    A_X = ACOS(COS(THETA)/COS(A_Z))
-     !! 	    THETA	= A_Z
-     !!   warning use this instead : 
-     	    A_Z = ASIN(SIN(THETABM)*SIN(PHI))
-     	    A_X = ACOS(COS(THETABM)/COS(A_Z))
-     	    THETABM	= A_Z
-
-     	    PHI		= A_X
-     	  END IF
-     ! C
-     ! C Decide in which quadrant THETA and PHI are.
-     ! C
-     	  IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
-     !! 	    IF (WRAN(ISTAR1).LT.0.5)	PHI = -PHI
-     !! 	    IF (WRAN(ISTAR1).LT.0.5)	THETA = -THETA
-
-     !!   warning use this instead : 
-     	    IF (WRAN(ISTAR1).LT.0.5)	THETABM = -THETABM
-     	    IF (WRAN(ISTAR1).LT.0.5)	PHI = -PHI
-
-     	  END IF
-            END IF                          !Undulator ends.
+    !!
     
     	GO TO (1,2,3,4,5,5,7), FSOUR+1
     
