@@ -16,6 +16,7 @@ Module shadow_Pre_Sync
 
     use stringio
     use shadow_math
+    use shadow_beamio, only: beamWrite ! for emittance_test
     use shadow_globaldefinitions
     use shadow_synchrotron, only : srcdf ! needed by nphoton only
 
@@ -63,6 +64,7 @@ integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
 	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
 	real(kind=skr) :: emin,emax,estep,phimin,phimax,phistep
 	real(kind=skr) :: themin,themax,thestep,TOTPOWER
+	real(kind=skr) :: mx11,mx22,mx12,mz11,mz22,mz12
 !
 
     !---- Everything is private unless explicitly made public ----!
@@ -77,7 +79,7 @@ integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
     public ::  nphoton ! wiggler
     public ::  undul_set, undul_phot, undul_cdf  ! undulator
     public ::  undul_phot_dump ! undulator, create nphoton.spec, and ascii version of nphoton.dat
-    public ::  wiggler_spectrum ! wiggler
+    public ::  wiggler_spectrum, emittance_test ! wiggler
 
 
     !---- List of private functions ----!
@@ -792,6 +794,7 @@ SUBROUTINE epath_b(i_device)
          end do 
         else if (i_file.eq.1) then
          phase0=-pi
+phase0=0.0
          do i=1,npoints
                 yy(i)=(i-1)*ystep-per/2.d0
                 bz(i)=0.d0
@@ -3716,5 +3719,254 @@ subroutine wiggler_spectrum
 
 end subroutine wiggler_spectrum
 
+!
+! emittance_test: wiggler emittance
+!            test the wiggler emittance
+!
+! inputs (keyboard): 
+!            data for emittance (sigma, sigma' and waist position OR
+!                                Twiss parameters)
+! outputs: 
+!        shadow binary : a shadow binary file with the x,x',z,z' 
+!
+!
+subroutine emittance_test()
+     
+implicit none 
+
+character(len=sklen)                         :: outFile
+real(kind=skr), dimension(:,:), allocatable  :: ray
+
+real(kind=skr)    :: sigmaX,sigmaXp,sigmaZ,sigmaZp,rhoX,rhoZ, yCoor
+real(kind=skr)    :: x1,xp1,z1,zp1, dX, dZ
+real(kind=skr)    :: alphaX,betaX,gammaX,emittX, alphaZ,betaZ,gammaZ,emittZ
+real(kind=skr)    :: alphaX_old,betaX_old, alphaZ_old,betaZ_old
+real(kind=skr)    :: fpoint1,sX,sXp,sZ,sZp
+integer(kind=ski) :: nPoint1,ncol1,iFlag,iErr,i,j,IS,input_type
+    
+ncol1 = 18
+!IS = 57
+!
+! input section
+!
+print *,' '
+print *,'    *****       emittance_test     ****      '
+print *,' This application samples rays containing position and directions of the '   
+print *,' electrons at a given point of the storage ring, and writes them in a '
+print *,' SHADOW formatted file. '
+print *,' The input is either the electron beam data at waist (sigmas and position) '
+print *,' or electron beam data at the wanted position (sigmas and correlation OR '
+print *,' Twiss parameters). '
+print *,' '
+print *,' '
+
+
+print *,' This application samples rays containing position and directions of the '   
+outFile = rstring('     output file name (SHADOW binary, e.g. begin.dat): ')
+npoint1 = irint(  '     number of points (e.g. 20000): ') 
+print *,'Please enter input type: '
+print *,'    [0] second moment matrix elements'
+print *,'    [1] sigmas at waists and distances from them'
+print *,'    [2] optical functions (alpha, beta, gamma)'
+input_type = irint(  '     >?')
+
+select case(input_type)
+    case(0)
+        sigmaX =  rnumber("     sigmaX: ")
+        sigmaXp = rnumber("     sigmaXp: ")
+        rhoX =    rnumber("     rhoX: ")
+        sigmaZ =  rnumber("     sigmaZ: ")
+        sigmaZp = rnumber("     sigmaZp: ")
+        rhoZ =    rnumber("     rhoZ: ")
+        print *,'----- inputs --------------------------'
+        print *,"         "
+        print *,"         sigmaX,sigmaXp",sigmaX,sigmaXp
+        print *,"         sigmaZ,sigmaZp",sigmaZ,sigmaZp
+        print *,"         "
+    case(1)
+        yCoor =  rnumber("     y coordinate (y=0 for the device center): ")
+        sigmaX =  rnumber("     sigma X at waist: ")
+        sigmaXp = rnumber("     sigma prime X at waist: ")
+        dX =    rnumber("     distance from X waist to ID center (where y=0): ")
+        sigmaZ =  rnumber("     sigma Z at waist: ")
+        sigmaZp = rnumber("     sigma prime Z at waist: ")
+        dZ =    rnumber("     distance from Z waist to ID center (where y=0): ")
+
+        print *,'----- inputs (at waist)--------------------------'
+        print *,"         "
+        print *,"         sigmaX,sigmaXp",sigmaX,sigmaXp
+        print *,"         distance from X waist to ID center (where y=0): ",dX
+        print *,"         sigmaZ,sigmaZp",sigmaZ,sigmaZp
+        print *,"         distance from Z waist to ID center (where y=0): ",dZ
+        print *,"         "
+        print *,"         epsiX=sigmaX.sigmaXp: ",sigmaX*sigmaXp
+        print *,"         epsiZ=sigmaZ.sigmaZp: ",sigmaZ*sigmaZp
+
+
+        ! calculate sigmas and correlations at given point: 
+        ! TODO: check negative distance
+        sigmaX = sqrt( sigmaX**2 + ( (dX+yCoor)*sigmaXp)**2 )
+        sigmaXp = sigmaXp ! no change
+        rhoX = (dX+yCoor) * sigmaXp**2
+        rhoX = rhoX/sigmaX/sigmaXp
+
+        sigmaZ = sqrt( sigmaZ**2 + ((dZ+yCoor)*sigmaZp)**2 )
+        sigmaZp = sigmaZp ! no change
+        rhoZ = (dZ+yCoor) * sigmaZp**2
+        rhoZ = rhoZ/sigmaZ/sigmaZp
+
+        print *,'----- values at working point in the trajectory: '
+        print *,"         yCoor: ",yCoor
+        print *,"         "
+        print *,"         \sqrt{<x^2>}: ",sigmaX
+        print *,"               <x x'>: ",rhoX*sigmaX*sigmaXp
+        print *,"                 rhoX: ",rhoX
+        print *,"        \sqrt{<x'^2>}: ",sigmaXp
+        print *,"         "
+        print *,"         \sqrt{<z^2>}: ",sigmaZ
+        print *,"               <z z'>: ",rhoZ*sigmaZ*sigmaZp
+        print *,"                 rhoZ: ",rhoZ
+        print *,"        \sqrt{<z'^2>}: ",sigmaZp
+
+    case(2)
+        yCoor  =  rnumber("     y coordinate (y=0 for the ID center): ")
+        emittX =  rnumber("     emittance X (at y=0): ")
+        alphaX =  rnumber("     alpha X (at y=0): ")
+        betaX =  rnumber("     beta X (at y=0): ")
+        gammaX =  rnumber("     gamma X (at y=0): ")
+        emittZ =  rnumber("     emittance Z (at y=0): ")
+        alphaZ =  rnumber("     alpha Z (at y=0): ")
+        betaZ =  rnumber("     beta Z (at y=0): ")
+        gammaZ =  rnumber("     gamma Z (at y=0): ")
+
+        print *,''
+        print *,'----- inputs (at y=0)-----------------------------'
+        print *,"         "
+        print *,"         X,Z emittances: ",emittX,emittZ
+        print *,"         X alpha,beta,gamma: ",alphaX,betaX,gammaX
+        print *,"         Z alpha,beta,gamma: ",alphaZ,betaZ,gammaZ
+
+        ! if y!=0, move these values to the new position
+        if (abs(yCoor) .gt. 1e-12) then 
+            ! gamma and emittances do not change! 
+            alphaX_old = alphaX
+            alphaZ_old = alphaZ
+            betaX_old = betaX
+            betaZ_old = betaZ
+
+            betaX = betaX_old - 2*alphaX_old*yCoor+gammaX*yCoor*yCoor
+            betaZ = betaZ_old - 2*alphaZ_old*yCoor+gammaZ*yCoor*yCoor
+            alphaX = alphaX_old - gammaX*yCoor
+            alphaZ = alphaZ_old - gammaZ*yCoor
+            print *,''
+            print *,'----- Twiss parameters (at new y)------------------'
+            print *,"         "
+            print *,"         yCoor: ",yCoor
+            print *,"         X,Z emittances: ",emittX,emittZ
+            print *,"         X alpha,beta,gamma: ",alphaX,betaX,gammaX
+            print *,"         Z alpha,beta,gamma: ",alphaZ,betaZ,gammaZ
+        endif 
+
+        ! calculate sigmas and correlations at given point: 
+        sigmaX = sqrt( emittX*betaX)
+        sigmaXp = sqrt(emittX*gammaX)
+        rhoX = -emittX*alphaX
+        rhoX = rhoX/sigmaX/sigmaXp
+        sigmaZ = sqrt( emittZ*betaZ)
+        sigmaZp = sqrt(emittZ*gammaZ)
+        rhoZ = -emittZ*alphaZ
+        rhoZ = rhoZ/sigmaZ/sigmaZp
+
+        print *,'----- values at working point in the trajectory: '
+        print *,"         yCoor: ",yCoor
+        print *,"         "
+        print *,"         \sqrt{<x^2>}: ",sigmaX
+        print *,"               <x x'> : ",rhoX*sigmaX*sigmaXp
+        print *,"                 rhoX : ",rhoX
+        print *,"         \sqrt{<x'^2>}: ",sigmaXp
+        print *,"         "
+        print *,"         \sqrt{<z^2>}: ",sigmaZ
+        print *,"               <z z'> : ",rhoZ*sigmaZ*sigmaZp
+        print *,"                 rhoZ : ",rhoZ
+        print *,"         \sqrt{<z'^2>}: ",sigmaZp
+    case default
+end select
+ 
+!
+! allocate arrays
+!
+if (ALLOCATED(RAY)) DEALLOCATE(RAY)
+    if (.not. ALLOCATED(RAY)) then
+        ALLOCATE(RAY(18,NPOINT1),stat=ierr)
+        if (ierr /= 0) then
+            call leave ('EMITTANCE_TEST','Error allocating array',IERR)
+        end if
+        ray = 0.0d0
+end if
+ 
+!
+! fill array
+!
+do i=1,npoint1
+   ray(10,i) = 1.0 ! lost ray flag
+   ray(11,i) = 1.0 ! k (energy)
+   ray(12,i) = i   ! ray counter
+   ray(7,i)  = 1.0 ! Ex_sigma
+   !TODO: check if call is with rho or rho^2
+   call binormal(sigmax,sigmaxp,rhoX,x1,xp1,IS)
+   !OLD call gauss(sigmax,sigmaxp,yCoor,x1,xp1,IS)
+   ray(1,i) = x1
+   ray(4,i) = xp1
+   call binormal(sigmaz,sigmazp,rhoZ,z1,zp1,IS)
+   ! OLD call gauss(sigmaz,sigmazp,yCoor,z1,zp1,IS)
+
+   ray(3,i) = z1
+   ray(6,i) = zp1
+end do
+
+!compute moments
+mx11 = 0.0
+mx22 = 0.0 
+mx12 = 0.0
+mz11 = 0.0
+mz22 = 0.0
+mz12 = 0.0
+do i=1,npoint1
+   mx11 = mx11 + ray(1,i)*ray(1,i)
+   mx22 = mx22 + ray(4,i)*ray(4,i)
+   mz11 = mz11 + ray(3,i)*ray(3,i)
+   mz22 = mz22 + ray(6,i)*ray(6,i)
+
+   mx12 = mx12 + ray(1,i)*ray(4,i)
+   mz12 = mz12 + ray(3,i)*ray(6,i)
+end do
+
+fpoint1 = float(npoint1)
+print*,' '
+print*,' '
+print*,' '
+print*,'<x2>, <xp2>, <x xp>: ',mx11/fpoint1,mx22/fpoint1,mx12/fpoint1
+sX = sqrt(mx11/fpoint1)
+sXp = sqrt(mx22/fpoint1)
+print*,'sigmaX, sigmaXp, rhoX: ',sX,sXp,mx12/fpoint1/sX/sXp
+print*,'original sigmaX, sigmaXp, rhoX: ',sigmaX,sigmaXp,rhoX
+
+print*,' '
+print*,'<z2>, <zp2>, <z zp>: ',mz11/fpoint1,mz22/fpoint1,mz12/fpoint1
+sZ = sqrt(mz11/fpoint1)
+sZp = sqrt(mz22/fpoint1)
+print*,'sigmaZ, sigmaZp, rhoZ: ',sZ,sZp,mz12/fpoint1/sz/szp
+print*,'original sigmaZ, sigmaZp, rhoZ: ',sigmaZ,sigmaZp,rhoZ
+print*,' '
+print*,' '
+print*,' '
+
+CALL beamWrite(ray,ierr,ncol1,npoint1,outFile)
+print*,'File written to disk: '//trim(outfile)
+
+if (allocated( ray ) ) deallocate( ray )
+
+
+end subroutine emittance_test
 
 End Module shadow_Pre_Sync

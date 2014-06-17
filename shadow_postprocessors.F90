@@ -4795,7 +4795,7 @@ end subroutine shtranslation
    end subroutine histo3
 
 !
-! TRANSLATE: propagates the beam in vacuum to a plane perpendiculat to the 
+! retrace: propagates the beam in vacuum to a plane perpendiculat to the 
 !            optical axis
 !
 ! inputs: 

@@ -32,7 +32,7 @@ Module shadow_math
 !----                                 versor, proj, vsum, vdist
 
     public :: wran, mysqrt
-    public :: rotate, spl_int, lin_int, atan_2, gauss
+    public :: rotate, spl_int, lin_int, atan_2, gauss, binormal
     public :: scalar, dot, cross, norm, vector, versor, proj, vsum, vdist
     public :: gnormal, rotvector, mfp, cross_m_flag
     public :: qsf,cubspl
@@ -766,6 +766,80 @@ end function mysqrt
 !C 
         RETURN
         END SUBROUTINE GAUSS
+
+
+!------------------------------------------------------------------------------------------------
+
+! C +++
+! C  SUBROUTINE BINORMAL
+! C
+! C  PURPOSE  Generate a bivariate normal distribution with
+! C           independent sigmas and a correlation
+! C
+! C  INPUT  sigma1, sigma2, rho (correlation)
+! C
+! C  OUTPUT  X,X1 two binormal variate
+! C
+! C  ALGORITHM  compute the Cholesky decomposition
+! C
+! C  TEST use emittance_test preprocessor
+! C
+! C  srio@esrf.eu 20140610: written, based on gauss()
+! C
+! C  
+! C ---
+        SUBROUTINE BINORMAL (sigma1,sigma2,rho,x1,x2,IS)
+
+        implicit none
+        real(kind=skr),       intent(in)   :: sigma1, sigma2, rho
+        real(kind=skr),       intent(out)  :: x1, x2
+        integer(kind=ski),    intent(out)  :: is
+
+        real(kind=skr)                     :: r1,r2,z1,z2
+        real(kind=skr)                     :: U11,U12,U21,U22
+
+!C 
+!C the covariance matrix is:
+!C 
+!     [  c11  c12  ]     [  sigma1^2           rho*sigma1*sigma2   ]
+!     [  c21  c22  ]  =  [  rho*sigma1*sigma2  sigma2^2            ]
+!
+!
+!        C11 =   sigma1**2 
+!        C22 =   sigma2**2 
+!        C21 =   rho*sigma1*sigma2
+
+!
+! calculate U bu Cholesky decomposition of C
+!
+! in Mathematica: 
+! cov = {{S1^2, rho S1 S2}, {rho S1 S2, S2^2}}
+! Uc = FullSimplify[CholeskyDecomposition[cov]]
+! {{Sqrt[S1^2], (rho S1 S2)/Sqrt[S1^2]}, {0, Sqrt[ S2 (S2 - rho Conjugate[rho] Conjugate[S2])]}}
+! 
+
+        U11 = sigma1
+        U21 = sigma2*rho
+        U12 = 0.0
+        U22 = sigma2 * sqrt( 1.0-rho**2 ) 
+        
+!C 
+!C  Entry for computation 
+!C  Generates first the two normal variates with sigma=1 (Box & Muller)
+!C 
+        R1 = WRAN(IS)
+        R2 = WRAN(IS)
+        Z1 = SQRT(-2*LOG(R1))*COS(TWOPI*R2)
+        Z2 = SQRT(-2*LOG(R1))*SIN(TWOPI*R2)
+!C 
+!C  generates now the new variates
+!C 
+        x1 = Z1*U11 + Z2*U12
+        x2 = Z1*U21 + Z2*U22
+
+        RETURN
+        END SUBROUTINE BINORMAL
+!------------------------------------------------------------------------------------------------
 
 
 ! C

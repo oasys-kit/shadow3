@@ -357,7 +357,7 @@ SELECT CASE (inCommandLow)
      print *,'                    : sourcinfo mirinfo sysinfo'
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
      print *,'                    : retrace minmax reflag histo3'
-     print *,'                    : prerefl_test, pre_mlayer_scan'
+     print *,'                    : prerefl_test pre_mlayer_scan emittance_test '
      print *,'  [OTHER]           : exit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
@@ -377,6 +377,9 @@ SELECT CASE (inCommandLow)
      inCommand=""
   CASE ("wiggler_spectrum")
      CALL wiggler_spectrum()
+     inCommand=""
+  CASE ("emittance_test")
+     CALL emittance_test()
      inCommand=""
   CASE ("jntpscalc")
      CALL jntpscalc()

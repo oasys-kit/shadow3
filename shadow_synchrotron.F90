@@ -215,6 +215,7 @@ Module shadow_synchrotron
 !C-----------------------------------------------------------------------
 !C                                                                       
 SUBROUTINE ICSEVU  (X,Y,NX,C,IC,U,S,M,IER)                        
+      implicit none
       integer(kind=ski) ::             NX,IC,M,IER                                    
       real(kind=skr)    ::    X(NX),Y(NX),C(IC,3),U(M),S(M)                  
 !C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
@@ -339,6 +340,7 @@ End Subroutine icsevu
 !C                                                                       
 SUBROUTINE ICSCCU (X,Y,NX,C,IC,IER)                               
 !C                                  SPECIFICATIONS FOR ARGUMENTS         
+      implicit none
       integer(kind=ski) ::            NX,IC,IER                                      
       real(kind=skr) ::    X(NX),Y(NX),C(IC,3)                            
 !C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
@@ -516,6 +518,7 @@ End  Subroutine icsccu
 !C                                                                       
 SUBROUTINE ZBRENT (F,EPS,NSIG,A,B,MAXFN,IER)                      
 !C                                  SPECIFICATIONS FOR ARGUMENTS         
+      implicit none
       integer(kind=ski)         :: NSIG,MAXFN,IER                                 
       real(kind=skr)  ::    F,EPS,A,B 
 !C                                  SPECIFICATIONS FOR LOCAL VARIABLES   
@@ -628,62 +631,67 @@ End  Subroutine zbrent
 !C---
 SUBROUTINE BSKM(X,BK,IQ,ORD)
 
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+implicit none
+! todo: remove implicits
+!       implicit real(kind=skr) (a-h,o-z)
+!       implicit integer(kind=ski)        (i-n)
 
-	  G13 = 2.678938534707748D0
-	  G23 = 1.354117939426400D0
-	  K = 0
-	  BK = 0.0D0
+real(kind=skr),intent(in)    :: x,ord
+integer(kind=ski),intent(in) :: iq
+real(kind=skr),intent(out)   :: bk
 
-	IF (X.LT.10.1) THEN
-	IF (IQ.EQ.1)THEN
-	  PP = (X/2)**(-ORD)/G23-(X/2)**ORD/G13*3
-	GO TO 250
-230	DO 240 J = 1,K
-	  PPP = PPP*(X/2.D0)**2/J/FLOAT(3*J-2)*3.0D0
-240	  PPM = PPM*(X/2.D0)**2/J/FLOAT(3*J-1)*3.0D0
-	  PPP = PPP/G13*(X/2.D0)**ORD*3.0D0/(3*J-2)
-	  PPM = PPM/G23*(X/2.D0)**(-ORD)
-	  PP = PPM-PPP
-250	  PP = PP*PI/2.D0/SIN(ORD*PI)
-	  BK = BK+PP
-	  	IF(ABS(PP).LT.1.0D-20) RETURN
-	  K = K+1
-	  PPP = 1.0D0
-	  PPM = 1.0D0
-	GOTO230
+real(kind=skr)     :: g13, g23, pp, ppm, ppp, rmu, zz
+integer(kind=ski)  :: k,j
 
-	ELSE
+G13 = 2.678938534707748D0
+G23 = 1.354117939426400D0
+K = 0
+BK = 0.0D0
 
-	  PP = (X/2.D0)**(-ORD)/G13-(X/2.D0)**ORD/G23*3.0D0/2.D0
-	GO TO 350
-330	DO 340 J = 1,K
-	  PPP = PPP*(X/2.D0)**2/J/FLOAT(3*J-1)*3.0D0
-340	  PPM = PPM*(X/2.D0)**2/J/FLOAT(3*J-2)*3.0D0
-	  PPP = PPP/G23*(X/2.D0)**ORD*3.0D0/(3*J-1)
-	  PPM = PPM/G13*(X/2.D0)**(-ORD)
-	  PP = PPM-PPP
-350	  PP = PP*PI/2.D0/SIN(ORD*PI)
-	  BK = BK+PP
-	IF(ABS(PP).LT.1.0D-20) RETURN
-	  K = K+1
-	  PPP = 1.0D0
-	  PPM = 1.0D0
-	GO TO 330
-
-	END IF
-
-	ELSE
-	  ZZ = 8*X
-	  BK = 1.0D0
-	  RMU = 4*ORD**2
-	  BK = (PI/2.D0/X)**0.5D0*EXP(-X)
-	  BK = BK*(1+(RMU-1)/ZZ+(RMU-1)*(RMU-9)/2/ZZ**2+(RMU-1)*(RMU-9)*&
+IF (X.LT.10.1) THEN
+    IF (IQ.EQ.1)THEN
+        PP = (X/2)**(-ORD)/G23-(X/2)**ORD/G13*3
+        GO TO 250
+        230 DO 240 J = 1,K
+            PPP = PPP*(X/2.D0)**2/J/FLOAT(3*J-2)*3.0D0
+        240 PPM = PPM*(X/2.D0)**2/J/FLOAT(3*J-1)*3.0D0
+        PPP = PPP/G13*(X/2.D0)**ORD*3.0D0/(3*J-2)
+        PPM = PPM/G23*(X/2.D0)**(-ORD)
+        PP = PPM-PPP
+        250 PP = PP*PI/2.D0/SIN(ORD*PI)
+        BK = BK+PP
+        IF(ABS(PP).LT.1.0D-20) RETURN
+        K = K+1
+        PPP = 1.0D0
+        PPM = 1.0D0
+        GOTO 230
+    ELSE
+        PP = (X/2.D0)**(-ORD)/G13-(X/2.D0)**ORD/G23*3.0D0/2.D0
+        GO TO 350
+        330 continue
+        DO 340 J = 1,K
+            PPP = PPP*(X/2.D0)**2/J/FLOAT(3*J-1)*3.0D0
+        340 PPM = PPM*(X/2.D0)**2/J/FLOAT(3*J-2)*3.0D0
+        PPP = PPP/G23*(X/2.D0)**ORD*3.0D0/(3*J-1)
+        PPM = PPM/G13*(X/2.D0)**(-ORD)
+        PP = PPM-PPP
+        350 PP = PP*PI/2.D0/SIN(ORD*PI)
+        BK = BK+PP
+        IF(ABS(PP).LT.1.0D-20) RETURN
+        K = K+1
+        PPP = 1.0D0
+        PPM = 1.0D0
+        GO TO 330
+    END IF
+ELSE
+    ZZ = 8*X
+    BK = 1.0D0
+    RMU = 4*ORD**2
+    BK = (PI/2.D0/X)**0.5D0*EXP(-X)
+    BK = BK*(1+(RMU-1)/ZZ+(RMU-1)*(RMU-9)/2/ZZ**2+(RMU-1)*(RMU-9)*&
                (RMU-25)/6.D0/ZZ**3)
-	END IF
-	RETURN
+END IF
+RETURN
 
 End Subroutine bskm
 
@@ -703,119 +711,126 @@ End Subroutine bskm
 !C---
 Subroutine PIECESPL (G, Y, N, IER)
 
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+! todo: remove implicits
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	real(kind=skr),dimension(5,N) :: G
-	real(kind=skr),dimension(N)   :: Y
-	real(kind=skr),dimension(5,N) :: GTEMP
-	real(kind=skr),dimension(N)   :: YTEMP, SLOPE
-	integer(kind=ski)   :: N,IER
+real(kind=skr),dimension(5,N) :: G
+real(kind=skr),dimension(N)   :: Y
+integer(kind=ski)   :: N,IER
+
+real(kind=skr),dimension(5,N) :: GTEMP
+real(kind=skr),dimension(N)   :: YTEMP, SLOPE
+
+
+integer(kind=ski)   :: i, ibottom, ifirst, itop,ntemp
+real(kind=skr)      :: slope1, slope2
+
 
 !C
 !C First calculate the slope for each pair of data point.  
 !C
-	DO 11 I = 1, N-1
-	  IF (G(1,I).EQ.G(1,I+1)) THEN
-	    SLOPE(I)	= 1.0D20
-	  ELSE
-	    SLOPE(I)	= ABS( (Y(I+1)-Y(I)) / (G(1,I+1)-G(1,I)) )
-	  END IF
-11	CONTINUE
+DO 11 I = 1, N-1
+    IF (G(1,I).EQ.G(1,I+1)) THEN
+        SLOPE(I) = 1.0D20
+    ELSE
+        SLOPE(I) = ABS( (Y(I+1)-Y(I)) / (G(1,I+1)-G(1,I)) )
+    END IF
+11 CONTINUE
 
 !C
 !C Check if the slope increase 2.5 times more than adjacent one.
 !C
-	SLOPE1	= SLOPE(1)
-	DO 21 I = 2, N-1
-	  SLOPE2	= SLOPE(I)
-	  IF (SLOPE2.GT.2.5D0*SLOPE1) THEN
-	    IFIRST	= 1
-	    IBOTTOM	= I
-	    GO TO 25
-	  END IF
-	  SLOPE1	= SLOPE2
-21	CONTINUE
+SLOPE1 = SLOPE(1)
+DO 21 I = 2, N-1
+    SLOPE2 = SLOPE(I)
+    IF (SLOPE2.GT.2.5D0*SLOPE1) THEN
+        IFIRST = 1
+        IBOTTOM = I
+        GO TO 25
+    END IF
+    SLOPE1 = SLOPE2
+21 CONTINUE
 !C
 !C Normal case. Can get by with one single spline.
 !C
-	CALL	CUBSPL	(G, Y, N, IER)
-100	CONTINUE
+CALL CUBSPL (G, Y, N, IER)
+100 CONTINUE
 
-	RETURN
+RETURN
 !C
 !C Piecewise splines case.
 !C
 !C Looks for limit of the spline (IFIRST -> IBOTTOM)
 !C
-20	SLOPE1	= SLOPE(IFIRST)
-	DO 31 I = IFIRST+1, N-1		
-	  SLOPE2	= SLOPE(I)
-	  IF (SLOPE2.GT.2.5D0*SLOPE1) THEN
-	    IBOTTOM = I			! Index at start of slope increase
-	    GO TO 25
-	  ELSE
-	    SLOPE1 = SLOPE2
-	  END IF
-31	CONTINUE
-	IBOTTOM = I
+20 SLOPE1 = SLOPE(IFIRST)
+DO 31 I = IFIRST+1, N-1 
+    SLOPE2 = SLOPE(I)
+    IF (SLOPE2.GT.2.5D0*SLOPE1) THEN
+        IBOTTOM = I ! Index at start of slope increase
+        GO TO 25
+    ELSE
+        SLOPE1 = SLOPE2
+    END IF
+31 CONTINUE
+IBOTTOM = I
 
 !C
 !C Looks for limit of the linear part (IBOTTOM -> ITOP).
 !C
-25	DO 41 I = IBOTTOM+1, N-1
-	  SLOPE2	= SLOPE(I)
-	  IF (SLOPE2.LT.SLOPE1) THEN
-	    ITOP = I			! Index at finish of slope increase
-	    GO TO 30
-	  END IF
-41	CONTINUE
-	ITOP	= N
+25 DO 41 I = IBOTTOM+1, N-1
+    SLOPE2 = SLOPE(I)
+    IF (SLOPE2.LT.SLOPE1) THEN
+        ITOP = I ! Index at finish of slope increase
+        GO TO 30
+    END IF
+41 CONTINUE
+ITOP = N
 
-30	NTEMP	= IBOTTOM - IFIRST + 1
+30 NTEMP = IBOTTOM - IFIRST + 1
 !C
 !C The spline needs at least 4 points.  If less, might as well use linear.
 !C
-	IF (NTEMP.LT.4) THEN
-	  IBOTTOM	= IFIRST
-	  GO TO 40
-	END IF
+IF (NTEMP.LT.4) THEN
+    IBOTTOM = IFIRST
+    GO TO 40
+END IF
 !C
 !C If at least 4 points, use the spline.
 !C
-	DO 51 I = IFIRST, IBOTTOM
-	  GTEMP(1,I-IFIRST+1)	= G(1,I)
-	  YTEMP(I-IFIRST+1)	= Y(I)
-51	CONTINUE
+DO 51 I = IFIRST, IBOTTOM
+    GTEMP(1,I-IFIRST+1) = G(1,I)
+    YTEMP(I-IFIRST+1) = Y(I)
+51 CONTINUE
 !C
 !C Build the spline and store it in G.
 !C
-	CALL	CUBSPL	(GTEMP, YTEMP, NTEMP, IER)
-	DO 61 I = IFIRST, IBOTTOM-1
-	  G(2,I)	= GTEMP(2,I-IFIRST+1)
-	  G(3,I)	= GTEMP(3,I-IFIRST+1)
-	  G(4,I)	= GTEMP(4,I-IFIRST+1)
-	  G(5,I)	= GTEMP(5,I-IFIRST+1)
-61	CONTINUE
+CALL CUBSPL (GTEMP, YTEMP, NTEMP, IER)
+DO 61 I = IFIRST, IBOTTOM-1
+    G(2,I) = GTEMP(2,I-IFIRST+1)
+    G(3,I) = GTEMP(3,I-IFIRST+1)
+    G(4,I) = GTEMP(4,I-IFIRST+1)
+    G(5,I) = GTEMP(5,I-IFIRST+1)
+61 CONTINUE
 !C
 !C Build the linear part
 !C
-40	DO 71 I = IBOTTOM, ITOP-1
-	  G(2,I)	= Y(I)
-	  G(3,I)	= SLOPE(I)
-	  G(4,I)	= 0.0D0
-	  G(5,I)	= 0.0D0
-71	CONTINUE
+40 DO 71 I = IBOTTOM, ITOP-1
+    G(2,I) = Y(I)
+    G(3,I) = SLOPE(I)
+    G(4,I) = 0.0D0
+    G(5,I) = 0.0D0
+71 CONTINUE
 !C
 !C Move to the next segment of the data
 !C
-	IFIRST	= ITOP
-	IF (IBOTTOM.GE.N.OR.ITOP.GE.N) THEN
-	  GO TO 100			! Finish
-	ELSE
-	  GO TO 20			! Continue search
-	END IF
+IFIRST = ITOP
+IF (IBOTTOM.GE.N.OR.ITOP.GE.N) THEN
+    GO TO 100 ! Finish
+ELSE
+    GO TO 20 ! Continue search
+END IF
 
 End Subroutine piecespl
 
@@ -958,118 +973,123 @@ End Subroutine setup
 !C	PURPOSE		Performs actual SR computations.
 !C
 !C---
-	SUBROUTINE COMPUTE
+SUBROUTINE COMPUTE
 
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+! todo: remove implicits
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
+real(kind=skr)    :: arg2, arg3, cr_ener
+integer(kind=ski) :: i, i1000, i1001, ier1, ier2, ier3, iq
+real(kind=skr)    :: ord, par_max, perp_max, ppar_min, pper_min, ptot_max, ptot_min
+real(kind=skr)    :: r_lcrit, ring_gamma, sig_eq, sum_par, sum_perp, sum_ptot, tot_pwr
 
-	DO 100 IC=1,NDIM_TRAJ
+DO 100 IC=1,NDIM_TRAJ
 
-	 PSI = - PSIMAX + (IC-1)*STEP	
- 	 ARG = (1 + GAMM**2*PSI**2)
-	 X = ARG**1.5D0*FCT
-	 IQ = 1
-	 ORD = 1.0D0/3.0D0
+  PSI = - PSIMAX + (IC-1)*STEP 
+  ARG = (1 + GAMM**2*PSI**2)
+  X = ARG**1.5D0*FCT
+  IQ = 1
+  ORD = 1.0D0/3.0D0
 
-	CALL BSKM(X,BK,IQ,ORD)
+  CALL BSKM(X,BK,IQ,ORD)
 
-	 ARG2 = BK**2*ARG*CONST*(ARG - 1)
-	  PPER(IC,2) = ARG2
-	 PPER(IC,1) = PSI*1000
-	 IQ = 2
-	 ORD = 2/3.0D0
+  ARG2 = BK**2*ARG*CONST*(ARG - 1)
+  PPER(IC,2) = ARG2
+  PPER(IC,1) = PSI*1000
+  IQ = 2
+  ORD = 2/3.0D0
 
-	CALL BSKM(X,BK,IQ,ORD)
+  CALL BSKM(X,BK,IQ,ORD)
 
-	 ARG3 = BK**2*CONST*ARG**2
-	 PPAR(IC,2) = ARG3
-	 PPAR(IC,1) = PSI*1000
-	  PTOT(IC,2) = ARG2 + ARG3
-	 PTOT(IC,1) = PSI*1000
+  ARG3 = BK**2*CONST*ARG**2
+  PPAR(IC,2) = ARG3
+  PPAR(IC,1) = PSI*1000
+  PTOT(IC,2) = ARG2 + ARG3
+  PTOT(IC,1) = PSI*1000
 
-100	CONTINUE
+100 CONTINUE
 !** Generates the cumulative distrib. functions by a tapezoidal integration **
  
-	 SUM_PAR  	= 0.0D0
-	 SUM_PERP 	= 0.0D0
-	 SUM_PTOT 	= 0.0D0
+SUM_PAR   = 0.0D0
+SUM_PERP  = 0.0D0
+SUM_PTOT  = 0.0D0
 
-	 ANG_ARR(1)	= - PSIMAX
+ANG_ARR(1) = - PSIMAX
 
-	DO 200 I=2,NDIM_TRAJ
-	 PSI = - PSIMAX + (I-1)*STEP
-	 ANG_ARR(I) = PSI
-	 SUM_PAR  = SUM_PAR  + (PPAR(I,2) + PPAR(I-1,2))/2*STEP
-	 SUM_PERP = SUM_PERP + (PPER(I,2) + PPER(I-1,2))/2*STEP
-	 SUM_PTOT = SUM_PTOT + (PTOT(I,2) + PTOT(I-1,2))/2*STEP
-	 PPAR_INT(I) = SUM_PAR
-	 PPER_INT(I) = SUM_PERP
-200	 PTOT_INT(I) = SUM_PTOT
+DO 200 I=2,NDIM_TRAJ
+  PSI = - PSIMAX + (I-1)*STEP
+  ANG_ARR(I) = PSI
+  SUM_PAR  = SUM_PAR  + (PPAR(I,2) + PPAR(I-1,2))/2*STEP
+  SUM_PERP = SUM_PERP + (PPER(I,2) + PPER(I-1,2))/2*STEP
+  SUM_PTOT = SUM_PTOT + (PTOT(I,2) + PTOT(I-1,2))/2*STEP
+  PPAR_INT(I) = SUM_PAR
+  PPER_INT(I) = SUM_PERP
+200  PTOT_INT(I) = SUM_PTOT
 !C
 !C Computes some useful data
 !C
-     	CR_ENER	=   2218*BENER**3/RAD
-     	R_LCRIT =   12398.4D0/CR_ENER
-     	TOT_PWR	=   88.5D0*BENER**4/RAD
-     	RING_GAMMA = 1957*BENER
-     	SIG_EQ	=   1.54D0*(CR_ENER/PHOT)**0.38D0/RING_GAMMA
-     	OPEN (22,FILE='FLUX',STATUS='UNKNOWN')
-	REWIND (22)
-     	WRITE (22,*) '-----------------------------------------------'
-     	WRITE (22,1001) BENER,RING_GAMMA,RAD
-     	WRITE (22,1002)	CR_ENER,R_LCRIT
-     	WRITE (22,1003) TOT_PWR
-     	WRITE (22,*) 'Integrated flux at ',PHOT,' eV'
-     	WRITE (22,*) 'within limiting vertical angles (rads): '
-     	WRITE (22,*) -PSIMAX,PSIMAX
-	WRITE (22,*) 'Units: 	Photons/sec/mrad/ma/eV'
-     	WRITE (22,1000) 'parallel      : ',SUM_PAR
-     	WRITE (22,1000) 'perpendicular : ',SUM_PERP
-     	WRITE (22,1000) 'total         : ',SUM_PTOT
-     	WRITE (22,1004) SIG_EQ
-     	CLOSE (22)
+CR_ENER =   2218*BENER**3/RAD
+R_LCRIT =   12398.4D0/CR_ENER
+TOT_PWR =   88.5D0*BENER**4/RAD
+RING_GAMMA = 1957*BENER
+SIG_EQ =   1.54D0*(CR_ENER/PHOT)**0.38D0/RING_GAMMA
+OPEN (22,FILE='FLUX',STATUS='UNKNOWN')
+ REWIND (22)
+ WRITE (22,*) '-----------------------------------------------'
+ WRITE (22,1001) BENER,RING_GAMMA,RAD
+ WRITE (22,1002) CR_ENER,R_LCRIT
+ WRITE (22,1003) TOT_PWR
+ WRITE (22,*) 'Integrated flux at ',PHOT,' eV'
+ WRITE (22,*) 'within limiting vertical angles (rads): '
+ WRITE (22,*) -PSIMAX,PSIMAX
+ WRITE (22,*) 'Units:  Photons/sec/mrad/ma/eV'
+ WRITE (22,1000) 'parallel      : ',SUM_PAR
+ WRITE (22,1000) 'perpendicular : ',SUM_PERP
+ WRITE (22,1000) 'total         : ',SUM_PTOT
+ WRITE (22,1004) SIG_EQ
+CLOSE (22)
 
-        print *,'File written to disk: FLUX'
-1000	FORMAT (1X,A,2X,E12.5)
-1001	FORMAT (1X,'Machine Energy: ',G12.5,' GeV. GAMMA: ', &
+print *,'File written to disk: FLUX'
+1000 FORMAT (1X,A,2X,E12.5)
+1001 FORMAT (1X,'Machine Energy: ',G12.5,' GeV. GAMMA: ', &
                 G12.5,'    Radius: ',G12.5,' m')
-1002	FORMAT (1X,'Critical Energy= ',G12.5, &
+1002 FORMAT (1X,'Critical Energy= ',G12.5, &
                    ' eV, Critical Wavelength= ',G12.5,' Angs.')
-1003	FORMAT (1X,'Total Radiated Power= ',G12.5,' kW')
-1004	FORMAT (1X,'Approximated Gaussian width: ',g12.5,' rads')
+1003 FORMAT (1X,'Total Radiated Power= ',G12.5,' kW')
+1004 FORMAT (1X,'Approximated Gaussian width: ',g12.5,' rads')
 !** Adjust now the c.d.f. between 0-1
 
-	PPAR_MIN = PPAR_INT(1)
-	PPER_MIN = PPER_INT(1)
-	PTOT_MIN = PTOT_INT(1)
+PPAR_MIN = PPAR_INT(1)
+PPER_MIN = PPER_INT(1)
+PTOT_MIN = PTOT_INT(1)
 
-	DO 250 I=1,NDIM_TRAJ
-	PPAR_INT(I) = PPAR_INT(I) - PPAR_MIN
-	PPER_INT(I) = PPER_INT(I) - PPER_MIN
-250	PTOT_INT(I) = PTOT_INT(I) - PTOT_MIN
+DO 250 I=1,NDIM_TRAJ
+ PPAR_INT(I) = PPAR_INT(I) - PPAR_MIN
+ PPER_INT(I) = PPER_INT(I) - PPER_MIN
+250 PTOT_INT(I) = PTOT_INT(I) - PTOT_MIN
 
-	PAR_MAX  = PPAR_INT(NDIM_TRAJ)
-	PERP_MAX = PPER_INT(NDIM_TRAJ)
-	PTOT_MAX = PTOT_INT(NDIM_TRAJ)
+PAR_MAX  = PPAR_INT(NDIM_TRAJ)
+PERP_MAX = PPER_INT(NDIM_TRAJ)
+PTOT_MAX = PTOT_INT(NDIM_TRAJ)
 
-	DO 300 I=1,NDIM_TRAJ
-	PPAR_INT(I) = PPAR_INT(I)/PAR_MAX
-	PPER_INT(I) = PPER_INT(I)/PERP_MAX
-300	PTOT_INT(I) = PTOT_INT(I)/PTOT_MAX
+DO 300 I=1,NDIM_TRAJ
+ PPAR_INT(I) = PPAR_INT(I)/PAR_MAX
+ PPER_INT(I) = PPER_INT(I)/PERP_MAX
+300 PTOT_INT(I) = PTOT_INT(I)/PTOT_MAX
 
-	!i1000 = 1000
-	!i1001 = 1001
-	i1000 = NDIM_TRAJ-1
-	i1001 = NDIM_TRAJ
-	CALL ICSCCU (ANG_ARR,PPAR_INT,i1001,SPLI_1,i1000,IER1)
-	CALL ICSCCU (ANG_ARR,PPER_INT,i1001,SPLI_2,i1000,IER2)
-	CALL ICSCCU (ANG_ARR,PTOT_INT,i1001,SPLI_3,i1000,IER3)
+!i1000 = 1000
+!i1001 = 1001
+i1000 = NDIM_TRAJ-1
+i1001 = NDIM_TRAJ
+CALL ICSCCU (ANG_ARR,PPAR_INT,i1001,SPLI_1,i1000,IER1)
+CALL ICSCCU (ANG_ARR,PPER_INT,i1001,SPLI_2,i1000,IER2)
+CALL ICSCCU (ANG_ARR,PTOT_INT,i1001,SPLI_3,i1000,IER3)
 
-	IF (IER1.NE.0.OR.IER2.NE.0.OR.IER3.NE.0)  &
+IF (IER1.NE.0.OR.IER2.NE.0.OR.IER3.NE.0)  &
           WRITE(6,*)'Error in ICSCCU ',IER1,IER2,IER3
 
-	RETURN
+RETURN
 End Subroutine compute
 
 !C+++
@@ -1080,35 +1100,38 @@ End Subroutine compute
 !C---
 SUBROUTINE FILESAVE
 
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+implicit none
 
-			CHARACTER *9 	FILSAV(3)
-     			CHARACTER *5	VALUE
+character(len=9),dimension(3)  :: filsav
+character(len=5)               :: value
+!CHARACTER *9 	FILSAV(3)
+!CHARACTER *5	VALUE
+!integer (kind=ski)  ::  
+real(kind=skr)      :: x_in, pol_tot
+integer(kind=ski)   :: i,k, iphot
 
-     	IPHOT	=   PHOT
+IPHOT =   PHOT
 
-     	WRITE (VALUE,100)  IPHOT
-100	FORMAT (I5.5)
-	FILSAV(1) = 'SPAR'//VALUE
-     	FILSAV(2) = 'SPER'//VALUE
-     	FILSAV(3) = 'STOT'//VALUE
+WRITE (VALUE,100)  IPHOT
+100 FORMAT (I5.5)
+FILSAV(1) = 'SPAR'//VALUE
+FILSAV(2) = 'SPER'//VALUE
+FILSAV(3) = 'STOT'//VALUE
 
-	DO 200 IC = 1,3
-	OPEN(UNIT = 20,FILE=FILSAV(IC),STATUS = 'UNKNOWN')
-	REWIND (20)
-	  IF (IC.EQ.1)THEN
-	   WRITE(20,110) ((PPAR(I,K), K = 1,2), I = 1,NP,10)
-	  ELSE IF (IC.EQ.2) THEN
- 	   WRITE(20,110) ((PPER(I,K),K = 1,2),I = 1,NP,10)
-	  ELSE
-	   WRITE(20,110) ((PTOT(I,K),K = 1,2),I = 1,NP,10)
-	  END IF
-200	CLOSE(20)
-110	FORMAT(1X,G12.5,10X,G12.5)
+DO 200 IC = 1,3
+    OPEN(UNIT = 20,FILE=FILSAV(IC),STATUS = 'UNKNOWN')
+    REWIND (20)
+    IF (IC.EQ.1)THEN
+        WRITE(20,110) ((PPAR(I,K), K = 1,2), I = 1,NP,10)
+    ELSE IF (IC.EQ.2) THEN
+        WRITE(20,110) ((PPER(I,K),K = 1,2),I = 1,NP,10)
+    ELSE
+        WRITE(20,110) ((PTOT(I,K),K = 1,2),I = 1,NP,10)
+    END IF
+200 CLOSE(20)
+110 FORMAT(1X,G12.5,10X,G12.5)
 
-	RETURN 
+RETURN 
 End Subroutine filesave
  
 
@@ -1124,34 +1147,42 @@ End Subroutine filesave
 !C---
 SUBROUTINE SOLVE(Y_IN,X_OUT,I_FLAG)
 
-        ! todo: remove implicits
-	implicit real(kind=skr) (a-h,o-z)
-	implicit integer(kind=ski)        (i-n)
+! todo: remove implicits
+!implicit real(kind=skr) (a-h,o-z)
+!implicit integer(kind=ski)        (i-n)
+implicit none
 
-	R_INPUT = Y_IN
-	EPS      = 0.0D0
-	N_DIGITS = 4
-	VAR_1	 = - PSIMAX
-	VAR_2	 =   PSIMAX
-	MAX_CALL = 50
+real(kind=skr),intent(in)      :: y_in
+integer(kind=ski),intent(in)   :: i_flag
+real(kind=skr),intent(out)     :: x_out
 
-	IF (I_FLAG.EQ.1) THEN
-	    CALL ZBRENT (POL_PAR,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
-	    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
-	ELSE IF (I_FLAG.EQ.2) THEN
-	    CALL ZBRENT (POL_PER,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
-	    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
-	ELSE IF (I_FLAG.EQ.3) THEN
-	    CALL ZBRENT (POL_TOT,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
-	    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
+real(kind=skr)      :: eps, var_1, var_2
+integer(kind=ski)   :: max_call, n_digits
 
-	ELSE
-		CALL LEAVE ('ALADDIN','Error in Flag call to ALADDIN',I_FLAG)
-	END IF
 
-	X_OUT = VAR_2
+R_INPUT = Y_IN
+EPS      = 0.0D0
+N_DIGITS = 4
+VAR_1 = - PSIMAX
+VAR_2 =   PSIMAX
+MAX_CALL = 50
 
-	RETURN
+IF (I_FLAG.EQ.1) THEN
+    CALL ZBRENT (POL_PAR,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
+    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
+ELSE IF (I_FLAG.EQ.2) THEN
+    CALL ZBRENT (POL_PER,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
+    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
+ELSE IF (I_FLAG.EQ.3) THEN
+    CALL ZBRENT (POL_TOT,EPS,N_DIGITS,VAR_1,VAR_2,MAX_CALL,IER)
+    IF (IER.NE.0) WRITE(6,*)'Err.',IER,'in ZBRENT'
+ELSE
+    CALL LEAVE ('ALADDIN','Error in Flag call to ALADDIN',I_FLAG)
+END IF
+
+X_OUT = VAR_2
+
+RETURN
 End Subroutine solve
 
 
@@ -1677,10 +1708,6 @@ SUBROUTINE WHTICDF (RAD33,CORREC,PSEED,ASEED,WAVE_NO,PSI,POLAR)
 	RETURN
 End Subroutine whticdf
 
-    !
-    !
-    !
-
 !C+++
 !C	SUBROUTINE	WHITE
 !C
@@ -1769,14 +1796,16 @@ End Subroutine white
 ! C	OUTPUTS		File BEGIN.DAT
 ! C
 ! C	MODIFICATIONS	Included wiggler and undulator source (2/26/88)
+! C	                srio@esrf.eu 20140617 fixed emittance effects. Implicit none: Viva!!
 ! C
 ! C---
 SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
 
 ! todo: remove implicits
-implicit real(kind=skr) (a-e,g-h,o-z)
-implicit integer(kind=ski)        (f,i-n)
+!implicit real(kind=skr) (a-e,g-h,o-z)
+!implicit integer(kind=ski)        (f,i-n)
+implicit none
 
 integer(kind=ski), intent(in)                         :: npoint1
 real(kind=skr), dimension(18,npoint1), intent(in out) :: ray
@@ -1789,16 +1818,11 @@ character(len=sklen)       :: errmsg
     
 !!srio for SR, force 18 columns
 
-
 !! needed for calling source_bound
 real(kind=skr),dimension(3)  :: XDUM, YDUM
-    
 real(kind=skr),dimension(3)  :: DIREC,AP_VEC,E_TEMP,SB_POS
 real(kind=skr),dimension(3)  :: VTEMP,A_VEC,A_TEMP, E_BEAM
-
 real(kind=skr), dimension(6,NPOINT1) :: grid
-    
-    
 real(kind=skr),dimension(10)  :: SIGXL,SIGZL
     
 ! insertion device arrays
@@ -1812,9 +1836,6 @@ real(kind=skr),dimension(:),allocatable :: p_temp,ang2_temp,abd2_temp
 real(kind=skr) :: YRAN,DPS_RAN1,DPS_RAN2
 real(kind=skr) :: TMP_A,TMP_B,DPS_RAN3
 
-!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E) :: CDFX,D_POL,UPHI
-!real(kind=skr),dimension(NDIM_A,NDIM_E)        :: CDFZ,UTHETA
-!real(kind=skr),dimension(NDIM_E)               :: CDFW,UENER
 real(kind=skr),dimension(:,:,:),allocatable :: CDFX,D_POL,UPHI
 real(kind=skr),dimension(:,:),allocatable   :: CDFZ,UTHETA
 real(kind=skr),dimension(:),allocatable     :: CDFW,UENER
@@ -1824,10 +1845,25 @@ real(kind=skr),dimension(4)        :: II,DX,PHI_INT
 real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
    
 integer(kind=ski) :: n_rej=0, k_rej=0
-    
 real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
 
+! removing implicits...
+real(kind=skr)    :: ax_a_z,ang_cone,angin,angin1,angin2,angle,angle1,angle2,angle3,anglev
+real(kind=skr)    :: anglex, arg_ang, arg_ener, arg_vx, arg_vz, arg_x, arg_y, arg_z
+real(kind=skr)    :: ax, az, cin, cl_vx, cl_vz, cl_x, a_x, a_z, cl_xn, cl_y, cl_z, cl_zn
+real(kind=skr)    :: correc, curv, cxmax, czmax, deltai, deltaj, deltak, denom, dir_x, dir_z
+real(kind=skr)    :: dk, epsi_path, epsi_wx, epsi_wz, epsi_xold, epsi_zold, eseed
+integer(kind=ski) :: i,i0,i1,i_change,iangle,idumm,iflag,index,indexmom,indexspa,istat,itest
+integer(kind=ski) :: itik, itmp, itotray, j, jnow, k, ki, kk, mm, n_test, ne, nmom
+integer(kind=ski) :: np_sy, np_traj, krej, nrej, nspace, nt, ntotal
 
+real(kind=skr)    :: path0, path_step, phasex, phasez, phi, penergy, phi1, phi2, phi_x, phi_z
+real(kind=skr)    :: phir, phot_ch, q_wave, rad_max, rad_min, radius, rhox, rhoz 
+real(kind=skr)    :: rsigmax, rsigmaz, rsigmaxp, rsigmazp, seedin, sigmaxp, sigmazp
+real(kind=skr)    :: step_vx, step_vz, step_x, step_xn, step_y, step_z, step_zn
+real(kind=skr)    :: temp, tempx, tempy, tempz, theta1, theta2, theta3, theta4, thetar
+real(kind=skr)    :: x_traj, xin, xmax1, xmax2, xrand, xseed, y_traj, y_traj_old, yin
+real(kind=skr)    :: z_traj, zin, zmax1, zmax2, zrand, zseed
 
 ! load gfile (moved from gen_source)
     
@@ -2145,10 +2181,15 @@ ELSE IF (F_WIGGLER.EQ.2) THEN
     ! C  FGRID= 0
     FSOUR= 3
     F_COHER= 1
-ELSE
+ELSE    
+    ! C
+    ! C Bending magnet case
+    ! C
     RAD_MIN= ABS(R_MAGNET)
     RAD_MAX= ABS(R_MAGNET)
 END IF
+
+
 
 ! C
 ! C Prepares some SR variables; the vertical divergence replaces the emittance
@@ -2167,7 +2208,7 @@ POL_ANGLE     =   TORAD*POL_ANGLE
 ! C namelist instead of EPSI/SIGMA.  6/25/93 clw.
 ! C
     
-IF (FSOUR.EQ.3) THEN
+IF (FSOUR.EQ.3) THEN   ! warning.... This is done for BM and ID's also
     EPSI_XOLD = EPSI_X
     EPSI_ZOLD = EPSI_Z
     IF (SIGMAX.NE.0.0D0) THEN
@@ -2246,6 +2287,7 @@ IF (F_PHOT.EQ.1) THEN
          31 CONTINUE
     END IF
 END IF
+
 ! C
 ! C If the S.R. case has been chosen, set up the subroutine for the
 ! C  vertical distribution.
@@ -2258,6 +2300,10 @@ IF (FDISTR.EQ.4)  THEN
     i0 = 0
     CALL WHITE (RAD_MIN,RAD_MAX,DUMMY,DUMMY,DUMMY,DUMMY,DUMMY,i0)
 END IF
+
+
+! ==============================  GRID SETUP ================================
+!   TODO: remove this section, useless for Synchrotron sources. 
 ! C
 ! C Calculate the total number of rays.
 ! C
@@ -2421,6 +2467,10 @@ ELSE IF (FGRID.EQ.4.OR.FGRID.EQ.5) THEN
         END IF
     171   CONTINUE
 END IF
+
+!
+! ===============================   END GRID SETUP ===============================
+!
 
 KK = 0
 MM = 0
@@ -2627,185 +2677,233 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
 
     !!
     
-    	GO TO (1,2,3,4,5,5,7), FSOUR+1
+    ! fsour  =  0 - spatial source type/shape in X-Z plane.  Options are:
+    !               point (0), rectangle (1), ellipse (2), gaussian (3).
+
+    GO TO (1,2,3,4,5,5,7), FSOUR+1
     
+    !
+    !    POSITIONS: start sampling position coordinates (XXX,YYY,ZZZ)
     1	CONTINUE
     ! C
     ! C Point source **
     ! C
     xxx = 0.0d0
     zzz = 0.0d0
-    	GO TO 111
+    GO TO 111
     
     2	CONTINUE
     ! C
     ! C Rectangular source 
     ! C
-    	XXX 		= (-1.0D0 + 2.0D0*GRID(1,ITIK))*WXSOU/2
-    	ZZZ 		= (-1.0D0 + 2.0D0*GRID(3,ITIK))*WZSOU/2
-    	GO TO 111
+    XXX = (-1.0D0 + 2.0D0*GRID(1,ITIK))*WXSOU/2
+    ZZZ = (-1.0D0 + 2.0D0*GRID(3,ITIK))*WZSOU/2
+    GO TO 111
     
     3	CONTINUE
     ! C
     ! C Elliptical source **
     ! C Uses a transformation algorithm to generate a uniform variate distribution
     ! C
-    	IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
-    	  PHI		= TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
-    	ELSE
-    	  PHI 		= TWOPI*GRID(1,ITIK)
-    	END IF
-    	RADIUS 		= SQRT(GRID(3,ITIK))
-    	XXX 		= WXSOU*RADIUS*COS(PHI)
-    	ZZZ 		= WZSOU*RADIUS*SIN(PHI)
-    	GO TO 111
+    IF (FGRID.EQ.1.OR.FGRID.EQ.2) THEN
+      PHI = TWOPI*GRID(1,ITIK)*(IDO_X_S-1)/IDO_X_S
+    ELSE
+      PHI = TWOPI*GRID(1,ITIK)
+    END IF
+    RADIUS = SQRT(GRID(3,ITIK))
+    XXX = WXSOU*RADIUS*COS(PHI)
+    ZZZ = WZSOU*RADIUS*SIN(PHI)
+    GO TO 111
     
     4	CONTINUE
     ! C
     ! C Gaussian -- In order to accomodate the generation nof finite emittance
     ! C beams, we had to remove the 'grid' case.
+    ! C Includes IDs
     ! C 
-    	ARG_X 		= GRID(1,ITIK)
-    	ARG_Z 		= GRID(3,ITIK)
+    ARG_X = GRID(1,ITIK)
+    ARG_Z = GRID(3,ITIK)
     ! C
     ! C Compute the actual distance (EPSI_W*) from the orbital focus
     ! C
-    	EPSI_WX		= EPSI_DX + EPSI_PATH
-    	EPSI_WZ		= EPSI_DZ + EPSI_PATH
+    EPSI_WX = EPSI_DX + EPSI_PATH
+    EPSI_WZ = EPSI_DZ + EPSI_PATH
 
-         	CALL GAUSS (SIGMAX, EPSI_X, EPSI_WX, XXX, E_BEAM(1), istar1)
-         	CALL GAUSS (SIGMAZ, EPSI_Z, EPSI_WZ, ZZZ, E_BEAM(3), istar1)
+    ! BUG srio@esrf.eu found that these routine does not make the 
+    ! calculation correctly. Changed to new one BINORMAL
+    !CALL GAUSS (SIGMAX, EPSI_X, EPSI_WX, XXX, E_BEAM(1), istar1)
+    !CALL GAUSS (SIGMAZ, EPSI_Z, EPSI_WZ, ZZZ, E_BEAM(3), istar1)
+    !
+    ! calculation of the electrom beam moments at the current position 
+    ! (sX,sZ) = (epsi_wx,epsi_ez): 
+    ! <x2> = sX^2 + sigmaX^2
+    ! <x x'> = sX sigmaXp^2
+    ! <x'2> = sigmaXp^2                 (same for Z)
+ 
+    ! then calculate the new recalculated sigmas (rSigmas) and correlation rho of the 
+    ! normal bivariate distribution at the point in the electron trajectory
+    ! rsigmaX  = sqrt(<x2>)
+    ! rsigmaXp = sqrt(<x'2>)
+    ! rhoX =  <x x'>/ (rsigmaX rsigmaXp)      (same for Z)
+        
+    if (abs(sigmaX) .lt. 1e-15) then  !no emittance
+        sigmaXp = 0.0d0
+        XXX = 0.0
+        E_BEAM(1) = 0.0
+    else
+        sigmaXp = epsi_Xold/sigmaX    ! true only at waist, use epsi_xOld as it has been redefined :(
+        rSigmaX = sqrt( (epsi_wX**2) * (sigmaXp**2) + sigmaX**2 ) 
+        rSigmaXp = sigmaXp
+        rhoX = epsi_wx * sigmaXp**2 / (rSigmaX * rSigmaXp) 
+        CALL BINORMAL (rSigmaX, rSigmaXp, rhoX, XXX, E_BEAM(1), istar1)
+    endif
+
+    if (abs(sigmaZ) .lt. 1e-15) then  !no emittance
+        sigmaZp = 0.0d0
+        ZZZ = 0.0
+        E_BEAM(3) = 0.0
+    else
+        sigmaZp = epsi_Zold/sigmaZ
+        rSigmaZ = sqrt( (epsi_wZ**2) * (sigmaZp**2) + sigmaZ**2 ) 
+        rSigmaZp = sigmaZp
+        rhoZ = epsi_wZ * SigmaZp**2 /(rSigmaZ*rSigmaZp)
+        CALL BINORMAL (rSigmaZ, rSigmaZp, rhoZ, ZZZ, E_BEAM(3), istar1)
+    endif
+
     ! C
     ! C For normal wiggler, XXX is perpendicular to the electron trajectory at 
     ! C the point defined by (X_TRAJ,Y_TRAJ,0).
     ! C
-    IF (F_WIGGLER.EQ.1) THEN
-    	  YYY	= Y_TRAJ - XXX*SIN(ANGLE)
-    	  XXX	= X_TRAJ + XXX*COS(ANGLE)
-    	  GO TO 550
-    ELSE IF (F_WIGGLER.EQ.2) THEN
-    	  ANGLEX	= E_BEAM(1) + PHI
-    !! 	  ANGLEV	= E_BEAM(3) + THETA
-    !! warning: use this inestead
-    	  ANGLEV	= E_BEAM(3) + THETABM
-    	  DIREC(1)	= TAN(ANGLEX)
-    	  DIREC(2)	= 1.0D0
-    	  DIREC(3)	= TAN(ANGLEV)/COS(ANGLEX)
-    	  CALL	NORM	(DIREC,DIREC)
-    	  GO TO 1111	  
-    ELSE IF (F_WIGGLER.EQ.3) THEN
-              VTEMP(1) = XXX
-              VTEMP(2) = 0.0D0
-              VTEMP(3) = ZZZ
-              ANGLE1= -ANGLE1
-              ANGLE3= 0.0D0
-              CALL ROTATE(VTEMP,ANGLE3,ANGLE2,ANGLE1,VTEMP)
-              XXX=X_TRAJ + VTEMP(1)
-              YYY=Y_TRAJ + VTEMP(2)
-              ZZZ=Z_TRAJ + VTEMP(3)
-              !added srio@esrf.eu 20131105
-              go to 550
+    IF (F_WIGGLER.EQ.1) THEN   ! normal wiggler
+        YYY = Y_TRAJ - XXX*SIN(ANGLE)
+        XXX = X_TRAJ + XXX*COS(ANGLE)
+        GO TO 550
+    ELSE IF (F_WIGGLER.EQ.2) THEN ! undulator
+        ANGLEX = E_BEAM(1) + PHI
+        !!  ANGLEV = E_BEAM(3) + THETA
+        !! warning: use this inestead
+        ANGLEV = E_BEAM(3) + THETABM
+        DIREC(1) = TAN(ANGLEX)
+        DIREC(2) = 1.0D0
+        DIREC(3) = TAN(ANGLEV)/COS(ANGLEX)
+        CALL NORM (DIREC,DIREC)
+        GO TO 1111 
+    ELSE IF (F_WIGGLER.EQ.3) THEN  ! eliptical wiggler
+        VTEMP(1) = XXX
+        VTEMP(2) = 0.0D0
+        VTEMP(3) = ZZZ
+        ANGLE1= -ANGLE1
+        ANGLE3= 0.0D0
+        CALL ROTATE(VTEMP,ANGLE3,ANGLE2,ANGLE1,VTEMP)
+        XXX=X_TRAJ + VTEMP(1)
+        YYY=Y_TRAJ + VTEMP(2)
+        ZZZ=Z_TRAJ + VTEMP(3)
+        !added srio@esrf.eu 20131105
+        go to 550
     END IF
-    	GO TO 111
+    GO TO 111
     
     5 	CONTINUE
     ! C
     ! C Ellipses in phase space (spatial components).
     ! C
-    	IF (FGRID.EQ.4) THEN
-    	  PHI_X		= TWOPI * GRID(4,ITIK)
-    	  PHI_Z		= TWOPI * GRID(6,ITIK)
-    	ELSE
-    	  PHI_X		= TWOPI * GRID(4,ITIK) * (IDO_XN-1) / IDO_XN
-    	  PHI_Z		= TWOPI * GRID(6,ITIK) * (IDO_ZN-1) / IDO_ZN
-    	END IF
-    	XXX		= GRID(1,ITIK)*SIGMAX*COS(PHI_X)
-    	ZZZ		= GRID(3,ITIK)*SIGMAZ*COS(PHI_Z)
-    	GO TO 111
+    IF (FGRID.EQ.4) THEN
+      PHI_X = TWOPI * GRID(4,ITIK)
+      PHI_Z = TWOPI * GRID(6,ITIK)
+    ELSE
+      PHI_X = TWOPI * GRID(4,ITIK) * (IDO_XN-1) / IDO_XN
+      PHI_Z = TWOPI * GRID(6,ITIK) * (IDO_ZN-1) / IDO_ZN
+    END IF
+    XXX = GRID(1,ITIK)*SIGMAX*COS(PHI_X)
+    ZZZ = GRID(3,ITIK)*SIGMAZ*COS(PHI_Z)
+    GO TO 111
     
     7	CONTINUE
     
-    	GOTO 550
+    GOTO 550
     
-     111	CONTINUE
+    111	CONTINUE
     ! C
     ! C---------------------------------------------------------------------
     ! C                      DEPTH
     ! C
     ! C
-    	 GO TO (110,220,330,440)  FSOURCE_DEPTH
+    GO TO (110,220,330,440)  FSOURCE_DEPTH
     ! C
     ! C No depth case.
     ! C
     YYY = 0.0d0
-    110	 GO TO 550
+    110 GO TO 550
     ! C
     ! C Uniform depth distribution
     ! C
-     220	YYY 		= (-1.0D0 + 2.0D0*GRID(2,ITIK))*WYSOU/2
-    	 GO TO 550
+    220 YYY = (-1.0D0 + 2.0D0*GRID(2,ITIK))*WYSOU/2
+    GO TO 550
     ! C
     ! C Gaussian depth distribution 
     ! C
-    330	ARG_Y 		= GRID(2,ITIK)
+    330 ARG_Y  = GRID(2,ITIK)
     
-    	CALL MDNRIS (ARG_Y,YYY,IER)
-    	  IF (IER.NE.0) WRITE(6,*)'Warning ! Error in YYY,MNDRIS (SOURCE)'
+    CALL MDNRIS (ARG_Y,YYY,IER)
+    IF (IER.NE.0) WRITE(6,*)'Warning ! Error in YYY,MNDRIS (SOURCE)'
     
-    	YYY 		= YYY*SIGMAY
+    YYY  = YYY*SIGMAY
     
-    	 GO TO 550
+    GO TO 550
     ! C
     ! C Synchrotron depth distribution
     ! C
     440	CONTINUE
     ! CC	R_ALADDIN NEGATIVE FOR COUNTER-CLOCKWISE SOURCE	
-    	IF (R_ALADDIN.LT.0) THEN
-    	  YYY		=   (ABS(R_ALADDIN) + XXX) * SIN(ANGLE)
-    	ELSE
-    	  YYY 		=   ( R_ALADDIN - XXX) * SIN(ANGLE)
-    	END IF
-    	XXX 		=   COS(ANGLE) * XXX + &
-          				R_ALADDIN * (1.0D0 - COS(ANGLE))
+    IF (R_ALADDIN.LT.0) THEN
+        YYY = (ABS(R_ALADDIN) + XXX) * SIN(ANGLE)
+    ELSE
+        YYY = ( R_ALADDIN - XXX) * SIN(ANGLE)
+    END IF
+    XXX  =   COS(ANGLE) * XXX + R_ALADDIN * (1.0D0 - COS(ANGLE))
     
+
+
     550	CONTINUE
+
     ! C
     ! C---------------------------------------------------------------------
     ! C             DIRECTIONS
     ! C
     ! C   Generates now the direction of the rays.
+    ! C   Stire them un DIREC(1-3)
     ! C
     ! C
-    101	CONTINUE
-    	I_CHANGE	= 1
-    	GO TO (11,11,33,44,55,44,77), FDISTR
+    101 CONTINUE
+    I_CHANGE = 1
+    GO TO (11,11,33,44,55,44,77), FDISTR
     
-    11	CONTINUE
+    11 CONTINUE
     ! C
     ! C   Uniform distribution ( Isotrope emitter ) and cosine  source
     ! C
     ! C   Distinction not ready yet. Not important for small apertures 
     ! C
-         	XMAX1 		=   TAN(HDIV1)
-         	XMAX2		= - TAN(HDIV2)
-         	ZMAX1		=   TAN(VDIV1)
-    	ZMAX2		= - TAN(VDIV2)
-    	XRAND 		= (GRID(4,ITIK)*(XMAX1 - XMAX2) + XMAX2)
-         	ZRAND 		= (GRID(6,ITIK)*(ZMAX1 - ZMAX2) + ZMAX2)
-    	THETAR 		= ATAN(SQRT(XRAND**2+ZRAND**2))
-        	CALL 	ATAN_2 (ZRAND,XRAND,PHIR)
-    	DIREC(1) 	= COS(PHIR)*SIN(THETAR)
-         	DIREC(2) 	= COS(THETAR)
-    	DIREC(3) 	= SIN(PHIR)*SIN(THETAR)
+    XMAX1 =   TAN(HDIV1)
+    XMAX2 = - TAN(HDIV2)
+    ZMAX1 =   TAN(VDIV1)
+    ZMAX2 = - TAN(VDIV2)
+    XRAND  = (GRID(4,ITIK)*(XMAX1 - XMAX2) + XMAX2)
+    ZRAND  = (GRID(6,ITIK)*(ZMAX1 - ZMAX2) + ZMAX2)
+    THETAR = ATAN(SQRT(XRAND**2+ZRAND**2))
+    CALL ATAN_2 (ZRAND,XRAND,PHIR)
+    DIREC(1) = COS(PHIR)*SIN(THETAR)
+    DIREC(2) = COS(THETAR)
+    DIREC(3) = SIN(PHIR)*SIN(THETAR)
     ! C     	ARG	=   GRID(6,ITIK)*(SIN(VDIV1) + SIN(VDIV2)) - SIN(VDIV2)
     ! C     	PHIR	=   GRID(4,ITIK)*(HDIV1 + HDIV2) - HDIV1
     ! C     	THETAR  =   ASIN(ARG)
     ! C     	DIREC(1)	=   SIN(PHIR)*COS(THETAR)
     ! C     	DIREC(2)	=   COS(PHIR)*COS(THETAR)
     ! C     	DIREC(3)	=   SIN(THETAR)
-    	GO TO 1111
+    GO TO 1111
     
-    33 	CONTINUE
+    33  CONTINUE
     ! C
     ! C Gaussian emitter 
     ! C Note : an emitter cannot have an angular gaussian distribution, as a
@@ -2814,25 +2912,25 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C distribution onto an ideal image plane, independent in x and z. This 
     ! C approximation will not break down for large sigma.
     ! C
-    	ARG_VX 		= GRID(4,ITIK)
-    	ARG_VZ 		= GRID(6,ITIK)
+    ARG_VX = GRID(4,ITIK)
+    ARG_VZ = GRID(6,ITIK)
     
-    	CALL MDNRIS (ARG_VX,DIR_X,IER)
-    	  IF (IER.NE.0) WRITE(6,*) 'Warning !Error in DIR_X:MNDRIS(SOURCE)'
+    CALL MDNRIS (ARG_VX,DIR_X,IER)
+    IF (IER.NE.0) WRITE(6,*) 'Warning !Error in DIR_X:MNDRIS(SOURCE)'
     
-    	DIREC(1) 	= DIR_X*SIGDIX
+    DIREC(1) = DIR_X*SIGDIX
     
-    	CALL MDNRIS (ARG_VZ,DIR_Z,IER)
-    	  IF (IER.NE.0) WRITE(6,*)'Warning !Error in DIR_Z:MNDRIS(SOURCE)'
+    CALL MDNRIS (ARG_VZ,DIR_Z,IER)
+    IF (IER.NE.0) WRITE(6,*)'Warning !Error in DIR_Z:MNDRIS(SOURCE)'
     
-    	DIREC(3) 	= DIR_Z*SIGDIZ
-    	DIREC(2) 	= 1.0D0
+    DIREC(3) = DIR_Z*SIGDIZ
+    DIREC(2) = 1.0D0
     
-    	CALL NORM (DIREC,DIREC)
+    CALL NORM (DIREC,DIREC)
     
-    	GO TO 1111
+    GO TO 1111
     
-    44	CONTINUE
+    44 CONTINUE
     ! C
     ! C Synchrotron source 
     ! C Note. The angle of emission IN PLANE is the same as the one used
@@ -2841,12 +2939,12 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C The electron beam emittance is included at this stage. Note that if
     ! C EPSI = 0, we'll have E_BEAM = 0.0, with no changes.
     ! C
-        IF (F_WIGGLER.EQ.3) ANGLE=0        ! Elliptical Wiggler.
-        ANGLEX		=   ANGLE + E_BEAM(1)
-    	DIREC(1) 	=   TAN(ANGLEX)
-        IF (R_ALADDIN.LT.0.0D0) DIREC(1) = - DIREC(1)
-    	DIREC(2) 	=   1.0D0
-    	ARG_ANG 	=   GRID(6,ITIK)
+    IF (F_WIGGLER.EQ.3) ANGLE=0        ! Elliptical Wiggler.
+    ANGLEX =   ANGLE + E_BEAM(1)
+    DIREC(1)  =   TAN(ANGLEX)
+    IF (R_ALADDIN.LT.0.0D0) DIREC(1) = - DIREC(1)
+    DIREC(2)  =   1.0D0
+    ARG_ANG  =   GRID(6,ITIK)
     ! C
     ! C In the case of SR, we take into account the fact that the electron
     ! C trajectory is not orthogonal to the field. This will give a correction
@@ -2854,75 +2952,79 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C magnetic field strength; this will linearly shift the critical energy
     ! C and, with it, the energy of the emitted photon.
     ! C
-         E_TEMP(3)	=   TAN(E_BEAM(3))/COS(E_BEAM(1))
-         E_TEMP(2)	=   1.0D0
-         E_TEMP(1)	=   TAN(E_BEAM(1))
-         	 CALL	NORM	(E_TEMP,E_TEMP)
-         	 CORREC	=   SQRT(1.0D0-E_TEMP(3)**2)
-    4400    IF (FDISTR.EQ.6) THEN
-    	  CALL ALADDIN1 (ARG_ANG,ANGLEV,F_POL,IER)
-         	  Q_WAVE	=   TWOPI*PHOTON(1)/TOCM*CORREC
-         	  POL_DEG	=   ARG_ANG
-            ELSE IF (FDISTR.EQ.4) THEN
-         	  ARG_ENER	=   WRAN (ISTAR1)
-    	  RAD_MIN	=   ABS(R_MAGNET)
+    E_TEMP(3) =   TAN(E_BEAM(3))/COS(E_BEAM(1))
+    E_TEMP(2) =   1.0D0
+    E_TEMP(1) =   TAN(E_BEAM(1))
+    CALL NORM (E_TEMP,E_TEMP)
+    CORREC =   SQRT(1.0D0-E_TEMP(3)**2)
+    4400 CONTINUE
+    IF (FDISTR.EQ.6) THEN
+        CALL ALADDIN1 (ARG_ANG,ANGLEV,F_POL,IER)
+        Q_WAVE =   TWOPI*PHOTON(1)/TOCM*CORREC
+        POL_DEG =   ARG_ANG
+    ELSE IF (FDISTR.EQ.4) THEN
+        ARG_ENER =   WRAN (ISTAR1)
+        RAD_MIN =   ABS(R_MAGNET)
 
-		  i1 = 1
-         	  CALL WHITE  &
-          	      (RAD_MIN,CORREC,ARG_ENER,ARG_ANG,Q_WAVE,ANGLEV,POL_DEG,i1)
-            END IF
-          	IF (ANGLEV.LT.0.0) I_CHANGE = -1
-         	ANGLEV		=   ANGLEV + E_BEAM(3)
+        i1 = 1
+        CALL WHITE  &
+        (RAD_MIN,CORREC,ARG_ENER,ARG_ANG,Q_WAVE,ANGLEV,POL_DEG,i1)
+    END IF
+    IF (ANGLEV.LT.0.0) I_CHANGE = -1
+    ANGLEV =   ANGLEV + E_BEAM(3)
     ! C
     ! C Test if the ray is within the specified limits
     ! C
-         	IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
-         	 IF (ANGLEV.GT.VDIV1.OR.ANGLEV.LT.-VDIV2) THEN
-         	  ARG_ANG = WRAN(ISTAR1)
-    ! C
-    ! C If it is outside the range, then generate another ray.
-    ! C
-         	  GO TO 4400
-         	 END IF
-         	END IF
-    	DIREC(3) 	=   TAN(ANGLEV)/COS(ANGLEX)
-        	IF (F_WIGGLER.EQ.3) THEN
-               CALL ROTATE (DIREC, ANGLE3,ANGLE2,ANGLE1,DIREC)
-            END IF
-         	CALL	NORM	(DIREC,DIREC)
-         	GO TO 1111
-    55	CONTINUE
+    IF (FGRID.EQ.0.OR.FGRID.EQ.2) THEN
+        IF (ANGLEV.GT.VDIV1.OR.ANGLEV.LT.-VDIV2) THEN
+            ARG_ANG = WRAN(ISTAR1)
+            ! C
+            ! C If it is outside the range, then generate another ray.
+            ! C
+            GO TO 4400
+        END IF
+    END IF
+    DIREC(3)  =   TAN(ANGLEV)/COS(ANGLEX)
+    IF (F_WIGGLER.EQ.3) THEN
+        CALL ROTATE (DIREC, ANGLE3,ANGLE2,ANGLE1,DIREC)
+    END IF
+    CALL NORM (DIREC,DIREC)
+    GO TO 1111
+    55 CONTINUE
     ! C   Now generates a set of rays along a cone centered about the normal,
     ! C   plus a ray along the normal itself.
-    ! C     	
-    	IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
-    	  ANGLE	=   TWOPI*GRID(4,ITIK)*(IDO_VX-1)/IDO_VX
-    	ELSE
-    	  ANGLE	=   TWOPI*GRID(4,ITIK)
-    	END IF
+    ! C      
+    IF (FGRID.EQ.1.OR.FGRID.EQ.3) THEN
+        ANGLE =   TWOPI*GRID(4,ITIK)*(IDO_VX-1)/IDO_VX
+    ELSE
+        ANGLE =   TWOPI*GRID(4,ITIK)
+    END IF
     ! C temp fix -- 16 Jan 1987
-    ! C     	  ANG_CONE	=   CONE_MIN + 
-    ! C     $			(CONE_MAX - CONE_MIN)*GRID(6,ITIK)
-         	ANG_CONE	=   COS(CONE_MIN) - GRID(6,ITIK)*(COS(CONE_MIN)-COS(CONE_MAX))
-         	ANG_CONE	=  ACOS(ANG_CONE)
-         	DIREC(1)	=   SIN(ANG_CONE)*COS(ANGLE)
-         	DIREC(2)	=   COS(ANG_CONE)
-         	DIREC(3)	=   SIN(ANG_CONE)*SIN(ANGLE)
+    ! C      ANG_CONE =   CONE_MIN + 
+    ! C     $ (CONE_MAX - CONE_MIN)*GRID(6,ITIK)
+    ANG_CONE =   COS(CONE_MIN) - GRID(6,ITIK)*(COS(CONE_MIN)-COS(CONE_MAX))
+    ANG_CONE =  ACOS(ANG_CONE)
+    DIREC(1) =   SIN(ANG_CONE)*COS(ANGLE)
+    DIREC(2) =   COS(ANG_CONE)
+    DIREC(3) =   SIN(ANG_CONE)*SIN(ANGLE)
     ! C
-    	GO TO 1111
+    GO TO 1111
     
-    77	CONTINUE
+    77 CONTINUE
     ! C
     ! C Ellipses in phase space (momentum components).
     ! C
-    	ANGLEX		= GRID(1,ITIK)*SIGDIX*SIN(PHI_X)
-    	ANGLEV		= GRID(3,ITIK)*SIGDIZ*SIN(PHI_Z)
-    	DIREC(1)	= SIN(ANGLEX)
-    	DIREC(3)	= SIN(ANGLEV)
-    	DIREC(2)	= SQRT(1.0D0 - DIREC(1)**2 - DIREC(3)**2)
-    	GO TO 1111
+    ANGLEX = GRID(1,ITIK)*SIGDIX*SIN(PHI_X)
+    ANGLEV = GRID(3,ITIK)*SIGDIZ*SIN(PHI_Z)
+    DIREC(1) = SIN(ANGLEX)
+    DIREC(3) = SIN(ANGLEV)
+    DIREC(2) = SQRT(1.0D0 - DIREC(1)**2 - DIREC(3)**2)
+    GO TO 1111
     
-    1111 	CONTINUE
+
+
+    1111  CONTINUE
+
     ! C
     ! C  ---------------------------------------------------------------------
     ! C                 POLARIZATION
@@ -2936,56 +3038,56 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C   the module ALADDIN, so that it is possible to take into account the
     ! C   angular dependence of the source polarization.
     ! C
-         	 A_VEC(1)		=   1.0D0
-         	 A_VEC(2)		=   0.0D0
-         	 A_VEC(3)		=   0.0D0
+    A_VEC(1) = 1.0D0
+    A_VEC(2) = 0.0D0
+    A_VEC(3) = 0.0D0
     ! C
     ! C   Rotate A_VEC so that it will be perpendicular to DIREC and with the
     ! C   right components on the plane.
     ! C 
-        	CALL	CROSS	(A_VEC,DIREC,A_TEMP)
-         	CALL	CROSS	(DIREC,A_TEMP,A_VEC)
-         	CALL	NORM	(A_VEC,A_VEC)
-    	CALL	CROSS	(A_VEC,DIREC,AP_VEC)
-    	CALL	NORM	(AP_VEC,AP_VEC)
+    CALL CROSS (A_VEC,DIREC,A_TEMP)
+    CALL CROSS (DIREC,A_TEMP,A_VEC)
+    CALL NORM (A_VEC,A_VEC)
+    CALL CROSS (A_VEC,DIREC,AP_VEC)
+    CALL NORM (AP_VEC,AP_VEC)
     
-    	IF (F_POLAR.EQ.1) THEN
-    ! C
-    ! C   WaNT A**2 = AX**2 + AZ**2 = 1 , instead of A_VEC**2 = 1 .
-    ! C
-    	 DENOM	= SQRT(1.0D0 - 2.0D0*POL_DEG + 2.0D0*POL_DEG**2)
-    	 AX	= POL_DEG/DENOM
-    	 CALL	SCALAR	(A_VEC,AX,A_VEC)
-    ! C
-    ! C   Same procedure for AP_VEC
-    ! C
-    	 AZ	= (1-POL_DEG)/DENOM
-    	 CALL	SCALAR 	(AP_VEC,AZ,AP_VEC)
-    	ELSE
-    !srio ! C
-    !srio ! C If don't want the full polarization, then POL_DEG is only defined in the 
-    !srio ! C case of synchrotron radiation.
-    !srio ! C
-      IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) THEN
-    	   IF (WRAN(ISTAR1).GT.POL_DEG) THEN
-    ! C
-    ! C A_VEC is along x or z -axis according to POL_DEG.
-    ! C
-    	     A_VEC(1)	= AP_VEC(1)
-    	     A_VEC(2)	= AP_VEC(2)
-    	     A_VEC(3)	= AP_VEC(3)
-    	   END IF
-    	 END IF
-     	END IF
+    IF (F_POLAR.EQ.1) THEN
+        ! C
+        ! C   WaNT A**2 = AX**2 + AZ**2 = 1 , instead of A_VEC**2 = 1 .
+        ! C
+        DENOM = SQRT(1.0D0 - 2.0D0*POL_DEG + 2.0D0*POL_DEG**2)
+        AX = POL_DEG/DENOM
+        CALL SCALAR (A_VEC,AX,A_VEC)
+        ! C
+        ! C   Same procedure for AP_VEC
+        ! C
+        AZ = (1-POL_DEG)/DENOM
+        CALL SCALAR  (AP_VEC,AZ,AP_VEC)
+    ELSE
+        !srio ! C
+        !srio ! C If don't want the full polarization, then POL_DEG is only defined in the 
+        !srio ! C case of synchrotron radiation.
+        !srio ! C
+        IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) THEN
+            IF (WRAN(ISTAR1).GT.POL_DEG) THEN
+                ! C
+                ! C A_VEC is along x or z -axis according to POL_DEG.
+                ! C
+                A_VEC(1) = AP_VEC(1)
+                A_VEC(2) = AP_VEC(2)
+                A_VEC(3) = AP_VEC(3)
+            END IF
+        END IF
+    END IF
     ! C
     ! C Now the phases of A_VEC and AP_VEC.
     ! C
-    	 IF (F_COHER.EQ.1) THEN
-    	   PHASEX	= 0.0D0
-    	 ELSE
-    	   PHASEX	= WRAN(ISTAR1) * TWOPI
-    	 END IF
-    	 PHASEZ		= PHASEX + POL_ANGLE*I_CHANGE
+    IF (F_COHER.EQ.1) THEN
+        PHASEX = 0.0D0
+    ELSE
+        PHASEX = WRAN(ISTAR1) * TWOPI
+    END IF
+    PHASEZ = PHASEX + POL_ANGLE*I_CHANGE
     ! C
     ! C---------------------------------------------------------------------
     ! C            PHOTON   ENERGY
@@ -2997,117 +3099,116 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
     ! C
     ! C In the case of SR, Q_WAVE is already known
     ! C
-    	IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) GO TO 2050
-         	GO TO (2020,2030,2040,2045)	F_COLOR
+    IF (FDISTR.EQ.4.OR.FDISTR.EQ.6.OR.F_WIGGLER.NE.0) GO TO 2050
+    GO TO (2020,2030,2040,2045) F_COLOR
     
-    2010	CONTINUE
+    2010 CONTINUE
     ! C
     ! C Not interested in the photon energy. Set at 0.0
     ! C
-         	GO TO 2050
+    GO TO 2050
     
-    2020	CONTINUE
+    2020 CONTINUE
     ! C
     ! CSingle line. 
     ! C
-         	Q_WAVE	=   TWOPI*PHOTON(1)/TOCM
-         	GO TO 2050
+    Q_WAVE =   TWOPI*PHOTON(1)/TOCM
+    GO TO 2050
     
-    2030	CONTINUE
+    2030 CONTINUE
     ! C
     ! C Several photon energies (up to 10) with same relative intensities.
     ! C
-         	N_TEST	=   WRAN (ISTAR1)*N_COLOR + 1
-         	Q_WAVE	=   TWOPI*PHOTON(N_TEST)/TOCM
-         	GO TO 2050
+    N_TEST =   WRAN (ISTAR1)*N_COLOR + 1
+    Q_WAVE =   TWOPI*PHOTON(N_TEST)/TOCM
+    GO TO 2050
     
-    2040	CONTINUE
+    2040 CONTINUE
     ! C
     ! C Box photon distribution
     ! C
-         	PHOT_CH	=   PHOTON(1) + (PHOTON(2) - PHOTON(1))*WRAN(ISTAR1)
-         	Q_WAVE	=   TWOPI*PHOT_CH/TOCM
-         	GO TO 2050
+    PHOT_CH =   PHOTON(1) + (PHOTON(2) - PHOTON(1))*WRAN(ISTAR1)
+    Q_WAVE =   TWOPI*PHOT_CH/TOCM
+    GO TO 2050
     
-    2045	CONTINUE
+    2045 CONTINUE
     ! C
     ! C Several photon energies (up to 10) with different relative intensities.
     ! C
-    	RELINT(1)	=	RL1
-    	RELINT(2)	=	RL2
-    	RELINT(3)	=	RL3
-    	RELINT(4)	=	RL4
-    	RELINT(5)	=	RL5
-    	RELINT(6)	=	RL6
-    	RELINT(7)	=	RL7
-    	RELINT(8)	=	RL8
-    	RELINT(9)	=	RL9
-    	RELINT(10)	=	RL10
+    RELINT(1) = RL1
+    RELINT(2) = RL2
+    RELINT(3) = RL3
+    RELINT(4) = RL4
+    RELINT(5) = RL5
+    RELINT(6) = RL6
+    RELINT(7) = RL7
+    RELINT(8) = RL8
+    RELINT(9) = RL9
+    RELINT(10) = RL10
     
     ! C
-    ! C	Normalize so that each energy has a probability and so that the sum 
-    ! C	of the probabilities of all the energies is 1.
+    ! C Normalize so that each energy has a probability and so that the sum 
+    ! C of the probabilities of all the energies is 1.
     ! C
     
-    	TMP_A = 0
-    	DO 2046 J=1,N_COLOR
-    		TMP_A = TMP_A + RELINT(J) 	
-    2046	CONTINUE	
-    	DO 2047 J=1,N_COLOR
-    		RELINT(J)=RELINT(J)/TMP_A
-    2047	CONTINUE
+    TMP_A = 0
+    DO 2046 J=1,N_COLOR
+        TMP_A = TMP_A + RELINT(J)  
+    2046 CONTINUE 
+    DO 2047 J=1,N_COLOR
+        RELINT(J)=RELINT(J)/TMP_A
+    2047 CONTINUE
     
     ! C
-    ! C	Arrange the probabilities so that they comprise the (0,1) interval,
-    ! C	e.g. (energy1,0.3), (energy2, 0.1), (energy3, 0.6) is translated to
-    ! C	0.0, 0.3, 0.4, 1.0. Then a random number falling in an interval
-    ! C	assigned to a certain energy results in the ray being assigned that
-    ! C	photon energy.
+    ! C Arrange the probabilities so that they comprise the (0,1) interval,
+    ! C e.g. (energy1,0.3), (energy2, 0.1), (energy3, 0.6) is translated to
+    ! C 0.0, 0.3, 0.4, 1.0. Then a random number falling in an interval
+    ! C assigned to a certain energy results in the ray being assigned that
+    ! C photon energy.
     ! C
-    	TMP_B = 0
-    	DO 2048 J=1,N_COLOR
-    		TMP_B = TMP_B + RELINT(J)	
-    		PRELINT(J) = TMP_B
-    2048	CONTINUE
+    TMP_B = 0
+    DO 2048 J=1,N_COLOR
+        TMP_B = TMP_B + RELINT(J) 
+        PRELINT(J) = TMP_B
+    2048 CONTINUE
     
-    	DPS_RAN3 = WRAN(ISTAR1)
-    	IF (DPS_RAN3.GE.0.AND.DPS_RAN3.LE.PRELINT(1)) THEN
-         		Q_WAVE = TWOPI*PHOTON(1)/TOCM
-    	END IF
-    		
-    	DO 2049 J=2,N_COLOR
-    	  IF (DPS_RAN3.GT.PRELINT(J-1).AND.DPS_RAN3.LE.PRELINT(J)) THEN
-         	    Q_WAVE = TWOPI*PHOTON(J)/TOCM
-    	  END IF
+    DPS_RAN3 = WRAN(ISTAR1)
+    IF (DPS_RAN3.GE.0.AND.DPS_RAN3.LE.PRELINT(1)) THEN
+        Q_WAVE = TWOPI*PHOTON(1)/TOCM
+    END IF
     
-    2049	CONTINUE
-    
-         	GO TO 2050
+    DO 2049 J=2,N_COLOR
+        IF (DPS_RAN3.GT.PRELINT(J-1).AND.DPS_RAN3.LE.PRELINT(J)) THEN
+            Q_WAVE = TWOPI*PHOTON(J)/TOCM
+        END IF
+    2049 CONTINUE
+   
+    GO TO 2050
     
     ! C
     ! C Create the final array 
     ! C
-    2050	CONTINUE
+    2050 CONTINUE
 
-    ray (1,ITIK) 	=   XXX
-    ray (2,ITIK) 	=   YYY
-    ray (3,ITIK) 	=   ZZZ
-    ray (4,ITIK) 	=    DIREC(1)
-    ray (5,ITIK) 	=    DIREC(2)
-    ray (6,ITIK) 	=    DIREC(3)
-    ray (7,ITIK)	=   A_VEC(1)
-    ray (8,ITIK)	=   A_VEC(2)
-    ray (9,ITIK)	=   A_VEC(3)
-    ray (10,ITIK)	=   1.0D0
-    ray (11,ITIK)	=   Q_WAVE
-    ray (12,ITIK)	=   dble(ITIK)
+    ray (1,ITIK)        =   XXX
+    ray (2,ITIK)        =   YYY
+    ray (3,ITIK)        =   ZZZ
+    ray (4,ITIK)        =    DIREC(1)
+    ray (5,ITIK)        =    DIREC(2)
+    ray (6,ITIK)        =    DIREC(3)
+    ray (7,ITIK)        =   A_VEC(1)
+    ray (8,ITIK)        =   A_VEC(2)
+    ray (9,ITIK)        =   A_VEC(3)
+    ray (10,ITIK)       =   1.0D0
+    ray (11,ITIK)       =   Q_WAVE
+    ray (12,ITIK)       =   dble(ITIK)
     IF (F_POLAR.EQ.1) THEN
-       ray (13,ITIK)	=   0.0D0
-       ray (14,ITIK)  	=   PHASEX
-       ray (15,ITIK)  	=   PHASEZ
-       ray    (16,ITIK)	=   AP_VEC(1)
-       ray    (17,ITIK)	=   AP_VEC(2)
-       ray    (18,ITIK)	=   AP_VEC(3)
+        ray (13,ITIK)   =   0.0D0
+        ray (14,ITIK)   =   PHASEX
+        ray (15,ITIK)   =   PHASEZ
+        ray (16,ITIK)   =   AP_VEC(1)
+        ray (17,ITIK)   =   AP_VEC(2)
+        ray (18,ITIK)   =   AP_VEC(3)
     END IF
 
 
