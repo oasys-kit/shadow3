@@ -5109,174 +5109,178 @@ SUBROUTINE NORMAL (PIN,VOUT)
 ! C---
 SUBROUTINE RESET
 
-!todo: implicit none  In fact, the implicit here is useless, 
+implicit none
+integer(kind=ski)  :: i,j
+
+!DONE: implicit none  In fact, the implicit here is useless, 
 !                     only the common variables are affected!
-	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-	IMPLICIT INTEGER(kind=ski)        (F,I-N)
+!IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+!IMPLICIT INTEGER(kind=ski)        (F,I-N)
 ! C
-     	WRITE(6,*)'Call to RESET'
+WRITE(6,*)'Call to RESET'
 ! C
 ! C  FLAGS block
 ! C
-     	FMIRR		= 	0
-	F_TORUS		= 	0
-     	FCYL		= 	0
-     	FANG		=	0
-     	FSTAT		=	0
-     	FANG1		=	0
-     	FSLIT		=	0
-     	FGRID		=	0
-     	F_NEW		=	0
-     	FSOURCE_DEPTH	=	0
-     	FSOUR		=	0
-     	FDISTR		=	0
-	F_OPD		= 	0
-     	F_POL		=	0
-     	F_RIPPLE	=	0
-     	F_MOVE		=	0
-     	F_DEFAULT	=	0
-     	F_CENTRAL	=	0
-     	FHIT_C		=	1
-     	F_COLOR		=	0
-     	F_CONVEX	=	0
-     	F_EXT		=	0
-     	F_GRATING	=	0
-     	F_CRYSTAL	=	0
-     	F_PHOT_CENT	=	0
-     	F_MONO		=	0
-     	F_HUNT		=       1
-     	F_PLATE		=	0
-     	F_COHER		=	0
-     	F_PW		=	2
-     	F_VIRTUAL	=       0
-     	F_REFLEC	=	0
-     	F_RULING	=	0
-     	F_SCREEN	=	0
-     	F_SIDE		=	0
-     	F_REFL		=       0
-     	F_G_S		=	0
-     	F_READ_RIP	=	0
-     	F_R_RAN		=	0
-     	FSTAT		=	1
-     	F_PHOT		=	0
-     	F_REFRAC	=	0
-     	FSHAPE		=	0
-     	F_PW_C		=	0
-     	FWRITE		=	0
-     	FZP		=	0
-        F_BRAGG_A       =       0
-        F_JOHANSSON     =       0
-        F_MOSAIC        =       0
-        F_ROUGHNESS     =       0
-        FDUMMY          =       0
-        F_ANGLE         =       0
-        F_R_IND         =       0
+FMIRR  =  0
+F_TORUS  =  0
+FCYL  =  0
+!FANG  = 0
+FSTAT  = 0
+!FANG1  = 0
+FSLIT  = 0
+FGRID  = 0
+F_NEW  = 0
+FSOURCE_DEPTH = 0
+FSOUR  = 0
+FDISTR  = 0
+F_OPD  =  0
+F_POL  = 0
+F_RIPPLE = 0
+F_MOVE  = 0
+F_DEFAULT = 0
+F_CENTRAL = 0
+FHIT_C  = 1
+F_COLOR  = 0
+F_CONVEX = 0
+F_EXT  = 0
+F_GRATING = 0
+F_CRYSTAL = 0
+F_PHOT_CENT = 0
+F_MONO  = 0
+F_HUNT  = 1
+F_PLATE  = 0
+F_COHER  = 0
+F_PW  = 2
+F_VIRTUAL = 0
+F_REFLEC = 0
+F_RULING = 0
+F_SCREEN = 0
+F_SIDE  = 0
+F_REFL  = 0
+F_G_S  = 0
+!F_READ_RIP = 0
+F_R_RAN  = 0
+FSTAT  = 1
+F_PHOT  = 0
+F_REFRAC = 0
+FSHAPE  = 0
+F_PW_C  = 0
+FWRITE  = 0
+FZP  = 0
+F_BRAGG_A = 0
+F_JOHANSSON = 0
+F_MOSAIC = 0
+F_ROUGHNESS = 0
+!FDUMMY = 0
+F_ANGLE = 0
+F_R_IND = 0
 ! C
 ! C  CALC block
 ! C
-     	N_PLATES   	=	0
-     	N_SCREEN	=	0
-! C	NPOINT	carried on;
-     	DO 11 I=1,10
-     	I_SCREEN(I)	=	0
-     	I_SLIT(I)	=	0
-     	K_SLIT(I)	=	0
-     	I_STOP(I)	=	0
-     	I_ABS(I)	=	0
-     	FILE_ABS(I)	=	'NONE SPECIFIED'
-     	FILE_SCR_EXT(I)	=	'NONE SPECIFIED'
-11     	CONTINUE
+N_PLATES = 0
+N_SCREEN = 0
+! C NPOINT carried on;
+DO 11 I=1,10
+    I_SCREEN(I) = 0
+    I_SLIT(I) = 0
+    K_SLIT(I) = 0
+    I_STOP(I) = 0
+    I_ABS(I) = 0
+    FILE_ABS(I) = 'NONE SPECIFIED'
+    FILE_SCR_EXT(I) = 'NONE SPECIFIED'
+11 CONTINUE
 ! C
 ! C  SYSTEM block
 ! C
-     	ALPHA		=	0.0D0
-     	SSOUR		=	0.0D0
-     	SIMAG		=	0.0D0
-     	THETA		=	0.0D0
-     	RDSOUR		=	0.0D0
-     	RTHETA		=	0.0D0
-     	TIMDIS		=	0.0D0
-     	DELTA		=	0.0D0
-     	RDELTA		=	0.0D0
-     	ALPHA_S		=	0.0D0
-     	OFF_SOUX	=	0.0D0
-     	OFF_SOUY	=	0.0D0
-     	OFF_SOUZ	=	0.0D0
-     	DO 100 I=1,3
-     	PSOUR(I)	=	0.0D0
-     	PSREAL(I)	=	0.0D0
+ALPHA  = 0.0D0
+SSOUR  = 0.0D0
+SIMAG  = 0.0D0
+THETA  = 0.0D0
+RDSOUR  = 0.0D0
+RTHETA  = 0.0D0
+!TIMDIS  = 0.0D0
+DELTA  = 0.0D0
+RDELTA  = 0.0D0
+ALPHA_S  = 0.0D0
+OFF_SOUX = 0.0D0
+OFF_SOUY = 0.0D0
+OFF_SOUZ = 0.0D0
+DO 100 I=1,3
+    PSOUR(I) = 0.0D0
+    PSREAL(I) = 0.0D0
 100     continue
 ! C
 ! C  MIRROR block
 ! C
-     	RLEN		=	0.0D0
-     	RLEN1		=	0.0D0
-     	RLEN2		=	0.0D0
-     	RMIRR		=	0.0D0
-     	AXMAJ		=	0.0D0
-     	AXMIN		=	0.0D0
-     	AFOCI		=	0.0D0
-     	ECCENT		=	0.0D0
-     	R_MAJ		=	0.0D0
-     	R_MIN		=	0.0D0
-     	RWIDX		=	0.0D0
-     	RWIDX1		=	0.0D0
-     	RWIDX2		=	0.0D0
-     	CONE_A		=	0.0D0
-     	PARAM		=	0.0D0
+!RLEN  = 0.0D0
+RLEN1  = 0.0D0
+RLEN2  = 0.0D0
+RMIRR  = 0.0D0
+AXMAJ  = 0.0D0
+AXMIN  = 0.0D0
+!AFOCI  = 0.0D0
+!ECCENT  = 0.0D0
+R_MAJ  = 0.0D0
+R_MIN  = 0.0D0
+!RWIDX  = 0.0D0
+RWIDX1  = 0.0D0
+RWIDX2  = 0.0D0
+CONE_A  = 0.0D0
+PARAM  = 0.0D0
 
-     	DO 200 I=1,10
-200	CCC(I)		=	0.0D0
+DO 200 I=1,10
+200 CCC(I)  = 0.0D0
+
 ! C
 ! C GRATING block
 ! C
-     	RULING		=	0.0D0
-     	ORDER		=	0.0D0
-     	BETA		=	0.0D0
-     	PHOT_CENT 	=	0.0D0
-     	R_LAMBDA  	=	0.0D0
-     	HUNT_H		=	0.0D0
-     	HUNT_L		=	0.0D0
-     	BLAZE		=	0.0D0
-     	D_SPACING	=	0.0D0
-     	AZIM_FAN	=	0.0D0
-     	DIST_FAN	=	0.0D0
-     	COMA_FAC	=	0.0D0
-	RUL_A1		= 	0.0D0
-	RUL_A2		= 	0.0D0
-	RUL_A3		= 	0.0D0
-	RUL_A4		= 	0.0D0
-        A_BRAGG         =       0.0D0
+RULING  = 0.0D0
+ORDER  = 0.0D0
+BETA  = 0.0D0
+PHOT_CENT  = 0.0D0
+R_LAMBDA   = 0.0D0
+HUNT_H  = 0.0D0
+HUNT_L  = 0.0D0
+BLAZE  = 0.0D0
+D_SPACING = 0.0D0
+AZIM_FAN = 0.0D0
+DIST_FAN = 0.0D0
+COMA_FAC = 0.0D0
+RUL_A1  =  0.0D0
+RUL_A2  =  0.0D0
+RUL_A3  =  0.0D0
+RUL_A4  =  0.0D0
+A_BRAGG         =       0.0D0
 ! C
 ! C CRYSTAL Block
 ! C
-        SPREAD_MOS      =       0.0D0
-        R_JOHANSSON     =       0.0D0
-        THICKNESS       =       0.0D0
+SPREAD_MOS = 0.0D0
+R_JOHANSSON = 0.0D0
+THICKNESS = 0.0D0
 ! C
 ! C  MIRROR block
 ! C
-     	X_ROT		=	0.0D0
-     	Y_ROT		=	0.0D0
-     	Z_ROT		=	0.0D0
-     	OFFX		=	0.0D0
-     	OFFY		=	0.0D0
-     	OFFZ		=	0.0D0
-     	DO 300 I=1,3
-     	U_MIR(I)   	=	0.0D0
-     	V_MIR(I)   	=	0.0D0
-300     W_MIR(I)   	=	0.0D0
-     	U_MIR(1)   	=    1.0D0
-     	V_MIR(2)   	=    1.0D0
-     	W_MIR(3)   	=    1.0D0
+X_ROT  = 0.0D0
+Y_ROT  = 0.0D0
+Z_ROT  = 0.0D0
+OFFX  = 0.0D0
+OFFY  = 0.0D0
+OFFZ  = 0.0D0
+DO 300 I=1,3
+    U_MIR(I)    = 0.0D0
+    V_MIR(I)    = 0.0D0
+300     W_MIR(I)    = 0.0D0
+U_MIR(1)    =    1.0D0
+V_MIR(2)    =    1.0D0
+W_MIR(3)    =    1.0D0
 ! C
 ! C  SLIT block
 ! C
-     	SLLEN		=	0.0D0
-     	SLWID		=	0.0D0
-     	SLTILT		=	0.0D0
-     	COD_LEN		=	0.0D0
-     	COD_WID		=	0.0D0
+SLLEN  = 0.0D0
+SLWID  = 0.0D0
+SLTILT  = 0.0D0
+COD_LEN  = 0.0D0
+COD_WID  = 0.0D0
 ! C
 ! C  SOURCE block
 ! C
@@ -5292,141 +5296,141 @@ SUBROUTINE RESET
 ! C
 ! C  IMAGE block
 ! C
-     	THETA_I		=	0.0D0
-     	ALPHA_I		=	0.0D0
-     	DO 400 I=1,3
-     	RIMCEN(I)	=	0.0D0
-     	VNIMAG(I)	=	0.0D0
-     	UXIM(I)		=	0.0D0
-     	VZIM(I)		=	0.0D0
-     	C_STAR(I)	=	0.0D0
-     	C_PLATE(I)	=	0.0D0
-     	UX_PL(I)	=	0.0D0
-     	VZ_PL(I)	=	0.0D0
-400     WY_PL(I)	=	0.0D0
+THETA_I  = 0.0D0
+ALPHA_I  = 0.0D0
+DO 400 I=1,3
+    RIMCEN(I) = 0.0D0
+    VNIMAG(I) = 0.0D0
+    UXIM(I)  = 0.0D0
+    VZIM(I)  = 0.0D0
+    C_STAR(I) = 0.0D0
+    C_PLATE(I) = 0.0D0
+    UX_PL(I) = 0.0D0
+    VZ_PL(I) = 0.0D0
+400 WY_PL(I) = 0.0D0
 
-     	DO 500 I=1,5
-500     D_PLATE(I)	=	0.0D0
+DO 500 I=1,5
+500     D_PLATE(I) = 0.0D0
 ! C
 ! C  AXIS block
 ! C
-! C	CENTRAL carried through;
-     	T_INCIDENCE	=	0.0D0
-     	T_REFLECTION	=	0.0D0
-     	T_SOURCE	=	0.0D0
-     	T_IMAGE		=	0.0D0
+! C CENTRAL carried through;
+T_INCIDENCE = 0.0D0
+T_REFLECTION = 0.0D0
+T_SOURCE = 0.0D0
+T_IMAGE  = 0.0D0
 ! C
 ! C  RIPPLE block
 ! C
-     	X_RIP_AMP	=	0.0D0
-     	Y_RIP_AMP	=	0.0D0
-     	X_RIP_WAV	=	0.0D0
-     	Y_RIP_WAV	=	0.0D0
-     	X_PHASE		=	0.0D0
-     	Y_PHASE		=	0.0D0
-        ROUGH_X         =       0.0D0
-        ROUGH_Y         =       0.0D0
+X_RIP_AMP = 0.0D0
+Y_RIP_AMP = 0.0D0
+X_RIP_WAV = 0.0D0
+Y_RIP_WAV = 0.0D0
+X_PHASE  = 0.0D0
+Y_PHASE  = 0.0D0
+ROUGH_X         =       0.0D0
+ROUGH_Y         =       0.0D0
 ! C
 ! C SEGMENT Block
 ! C
-        F_SEGMENT       =       0
-        ISEG_XNUM       =       1
-        ISEG_YNUM       =       1
-        SEG_LENX        =       0.0D0
-        SEG_LENY        =       0.0D0
+F_SEGMENT       =       0
+ISEG_XNUM       =       1
+ISEG_YNUM       =       1
+SEG_LENX        =       0.0D0
+SEG_LENY        =       0.0D0
 ! C
 ! C FACET Block
 ! C
-        F_FACET         =       0
-        F_POLSEL        =       0
-        IFAC_X          =       0
-        IFAC_Y          =       0
-        F_FAC_ORIENT    =       0
-        F_FAC_LATT      =       0
-        RFAC_LENX       =       0.0D0
-        RFAC_LENY       =       0.0D0
-        RFAC_PHAX       =       0.0D0
-        RFAC_PHAY       =       0.0D0
-        RFAC_DELX1      =       0.0D0
-        RFAC_DELX2      =       0.0D0
-        RFAC_DELY1      =       0.0D0
-        RFAC_DELY2      =       0.0D0
+F_FACET         =       0
+F_POLSEL        =       0
+!IFAC_X          =       0
+!IFAC_Y          =       0
+F_FAC_ORIENT    =       0
+F_FAC_LATT      =       0
+RFAC_LENX       =       0.0D0
+RFAC_LENY       =       0.0D0
+RFAC_PHAX       =       0.0D0
+RFAC_PHAY       =       0.0D0
+RFAC_DELX1      =       0.0D0
+RFAC_DELX2      =       0.0D0
+RFAC_DELY1      =       0.0D0
+RFAC_DELY2      =       0.0D0
 ! C
 ! C Kumakhov (KOMA) Block
 ! C
-        F_KOMA          =       0
-        F_KOMA_BOUNCE   =       0
-        F_EXIT_SHAPE    =       0
-        F_INC_MNOR_ANG  =       0
-        F_KOMA_CA       =       0
-        F_DOT           =       0
-        I_KOMA          =       0
-        KOXX            =       0
-        RKOMA_CX        =       0.0D0
-        RKOMA_CY        =       0.0D0
-        ZKO_LENGTH      =       0.0D0
+F_KOMA          =       0
+F_KOMA_BOUNCE   =       0
+F_EXIT_SHAPE    =       0
+F_INC_MNOR_ANG  =       0
+F_KOMA_CA       =       0
+!F_DOT           =       0
+!I_KOMA          =       0
+!KOXX            =       0
+RKOMA_CX        =       0.0D0
+RKOMA_CY        =       0.0D0
+ZKO_LENGTH      =       0.0D0
 ! C
 ! C  LIGHT block
 ! C
-     	R_IND_OBJ	=       1.0D0
-     	R_IND_IMA	=       1.0D0
-        R_ATTENUATION_OBJ =     0.0D0
-        R_ATTENUATION_IMA =     0.0D0
-     	ALFA		=	0.0D0
-     	GAMMA		=	0.0D0
-     	POL_ANGLE	=	0.0D0
-     	POL_DEG		=	0.0D0
-! C	PHxx	not used again
+R_IND_OBJ =       1.0D0
+R_IND_IMA =       1.0D0
+R_ATTENUATION_OBJ =     0.0D0
+R_ATTENUATION_IMA =     0.0D0
+ALFA  = 0.0D0
+GAMMA  = 0.0D0
+POL_ANGLE = 0.0D0
+POL_DEG  = 0.0D0
+! C PHxx not used again
 
 ! C
 ! C  SCREENS block
 ! C
-     	DO 41 I = 1,3
-     	DO 51 J = 1,2
-     	UX_SCR(I,J)	=	0.0D0
-     	WY_SCR(I,J)	=	0.0D0
-     	VZ_SCR(I,J)	=	0.0D0
-51     	CONTINUE
-41     	CONTINUE
-     	DO 61 I=1,10
-     	RX_SLIT(I)	=	0.0D0
-     	RZ_SLIT(I)	=	0.0D0
-     	SL_DIS(I)	=	0.0D0
-     	THICK(I)	=	0.0D0
-61     	CONTINUE
+DO 41 I = 1,3
+    DO 51 J = 1,2
+        UX_SCR(I,J) = 0.0D0
+        WY_SCR(I,J) = 0.0D0
+        VZ_SCR(I,J) = 0.0D0
+    51 CONTINUE
+41 CONTINUE
+DO 61 I=1,10
+    RX_SLIT(I) = 0.0D0
+    RZ_SLIT(I) = 0.0D0
+    SL_DIS(I) = 0.0D0
+    THICK(I) = 0.0D0
+61 CONTINUE
 ! C
 ! C  HOLO block
 ! C
-     	HOLO_R1		=	0.0D0
-     	HOLO_R2		=	0.0D0
-     	HOLO_DEL	=	0.0D0
-     	HOLO_GAM	=	0.0D0
-     	HOLO_W		=	0.0D0
-     	HOLO_RT1	=	0.0D0
-     	HOLO_RT2	=	0.0D0
-     	DO 71 I=1,3
-     	HOLO1(I)	=	0.0D0
-     	HOLO2(I)	=	0.0D0
-71     	CONTINUE
+HOLO_R1  = 0.0D0
+HOLO_R2  = 0.0D0
+HOLO_DEL = 0.0D0
+HOLO_GAM = 0.0D0
+HOLO_W  = 0.0D0
+HOLO_RT1 = 0.0D0
+HOLO_RT2 = 0.0D0
+DO 71 I=1,3
+    HOLO1(I) = 0.0D0
+    HOLO2(I) = 0.0D0
+71      CONTINUE
 ! C
 ! C Names Block
 ! C
-     	FILE_MIR	=	'NONE SPECIFIED'
-     	FILE_REFL	=	'NONE SPECIFIED'
-     	FILE_RIP	=	'NONE SPECIFIED'
-	FILE_SOURCE	=	'NONE SPECIFIED'
-        FILE_ROUGH      =       'NONE SPECIFIED'
-        FILE_KOMA       =       'NONE SPECIFIED'
-        FILE_KOMA_CA    =       'NONE SPECIFIED'
-        FILE_SEGMENT    =       'NONE SPECIFIED'
-        FILE_SEGP       =       'NONE SPECIFIED'
-        FILE_FAC        =       'NONE SPECIFIED'
-        FILE_R_IND_OBJ  =       'NONE SPECIFIED'
-        FILE_R_IND_IMA  =       'NONE SPECIFIED'
+FILE_MIR = 'NONE SPECIFIED'
+FILE_REFL = 'NONE SPECIFIED'
+FILE_RIP = 'NONE SPECIFIED'
+FILE_SOURCE = 'NONE SPECIFIED'
+FILE_ROUGH      =       'NONE SPECIFIED'
+FILE_KOMA       =       'NONE SPECIFIED'
+FILE_KOMA_CA    =       'NONE SPECIFIED'
+FILE_SEGMENT    =       'NONE SPECIFIED'
+FILE_SEGP       =       'NONE SPECIFIED'
+FILE_FAC        =       'NONE SPECIFIED'
+FILE_R_IND_OBJ  =       'NONE SPECIFIED'
+FILE_R_IND_IMA  =       'NONE SPECIFIED'
 
-     	WRITE(6,*)'Exit from RESET'
+WRITE(6,*)'Exit from RESET'
 
-     	RETURN
+RETURN
 
 End Subroutine reset
 
@@ -8992,9 +8996,8 @@ End Subroutine mirror1
 ! C
 ! C---
 ! #if defined(unix) || HAVE_F77_CPP
-SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
+SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate,iSysFileOpened)
 
-        ! todo: remove implicits
         ! implicit real(kind=skr) (a-e,g-h,o-z)
         ! implicit integer(kind=ski)        (f,i-n)
         implicit none
@@ -9008,14 +9011,17 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
         character(len=sklen)  :: arg
         LOGICAL               :: IRET
         !INTEGER                IPASS
-        !DATA         IPASS        / 0 /
-        !SAVE                IPASS
+        !DATA         iSysFileOpened        / 0 /
+        !SAVE                iSysFileOpened
         !integer(kind=ski)            :: iTerminate
-        integer(kind=ski),save       :: ipass=0
+        !integer(kind=ski),save       :: iSysFileOpened=0
+        integer(kind=ski),intent(inout) :: iSysFileOpened
 
 
         !integer(kind=ski)            :: iTerminate, iFlag
-        integer(kind=ski)            :: irestart, irest, f_new, iwhat, idumm, iend, nold
+        integer(kind=ski)            :: irestart, irest, f_new, iwhat
+        integer(kind=ski)            :: idumm, iend, nold
+        integer(kind=ski)            :: i
 
 
 ! C
@@ -9027,31 +9033,31 @@ SUBROUTINE SWITCH_INP (OUTP,IFLAG,iTerminate)
 ! C
 ! C Tests for continuation or new optical system
 ! C
-        iTerminate = 0
+iTerminate = 0
 
-        IF (IFLAG.EQ.0) THEN
-          WRITE(6,*)'Mode selected is: '//trim(OUTP)
-          WRITE(6,*)' '
-          WRITE(6,*)'Options: to start anew                 [ 0 ] ' 
-          WRITE(6,*)'            to restart from a given OE [ 1 ] '
-          WRITE(6,*)' '
-          IRESTART = IRINT ('Then ? ')
-          WRITE(6,*)' '
-          IF (IRESTART.EQ.0) THEN
-            IFLAG = 1
-          ELSE
-            IREST =   IRINT ('Previous element number: ')
-            CALL READ_AXIS  (IREST)
-            IFLAG = IREST + 1
-            FILESOURCE = RSTRING ('Image file of the previous OE ? ')
-            F_NEW = 0
-          END IF
-        ELSE
+IF (IFLAG.EQ.0) THEN
+    WRITE(6,*)'Mode selected is: '//trim(OUTP)
+    WRITE(6,*)' '
+    WRITE(6,*)'Options: to start anew                 [ 0 ] ' 
+    WRITE(6,*)'            to restart from a given OE [ 1 ] '
+    WRITE(6,*)' '
+    IRESTART = IRINT ('Then ? ')
+    WRITE(6,*)' '
+    IF (IRESTART.EQ.0) THEN
+        IFLAG = 1
+    ELSE
+        IREST =   IRINT ('Previous element number: ')
+        CALL READ_AXIS  (IREST)
+        IFLAG = IREST + 1
+        FILESOURCE = RSTRING ('Image file of the previous OE ? ')
+        F_NEW = 0
+    END IF
+ELSE
 ! C
 ! C Increments counter
 ! C
-          IFLAG = IFLAG + 1
-        END IF
+    IFLAG = IFLAG + 1
+END IF
              
 ! C
 ! C Parses for matches
@@ -9061,7 +9067,7 @@ IF ((OUTP.EQ.'menu').OR.(OUTP.EQ.'systemfile'))  THEN
 ! C
 ! C   MENU  case
 ! C
-        IF (IPASS.EQ.0) THEN
+    IF (iSysFileOpened.EQ.0) THEN
           OPEN (37, FILE='systemfile.dat', STATUS='old', IOSTAT=IWHAT)
 ! C
 ! C
@@ -9073,65 +9079,72 @@ IF ((OUTP.EQ.'menu').OR.(OUTP.EQ.'systemfile'))  THEN
               CALL  LEAVE  ('SWITCH_INP-E-error:', 'systemfile.dat not found', &
                                idumm)
           ELSE
-              IPASS = 1
+              iSysFileOpened = 1
           END IF
-        END IF ! (IPASS.EQ.0)
+          ! if iflag > 1 it means that we are running systemfile
+          ! starting from a given OE. Thus jump (iflag-1) lines
+          ! in systemfile.dat
+          IF (IFLAG .GT. 1) THEN
+              DO i=1,(IFLAG-1)
+                READ (37, 1000, IOSTAT=IEND) INFILE
+              END DO
+          END IF
+    END IF ! (iSysFileOpened.EQ.0)
 ! C
 ! C System file found and opened succesfully; read in OE filename
 ! C
-        READ (37, 1000, IOSTAT=IEND) INFILE
+    READ (37, 1000, IOSTAT=IEND) INFILE
 ! C
 ! C No more files to input; end of OS
 ! C
-        IF (IEND.NE.0) THEN
+    IF (IEND.NE.0) THEN
           !STOP
           iTerminate = 1
           RETURN
-        END IF
+    END IF
 ! C
 ! C read in NAMELIST block
 ! C
-        IDUMM = 0
-        IF (IFLAG.GT.1) THEN
+    IDUMM = 0
+    IF (IFLAG.GT.1) THEN
           NOLD = NPOINT
           CALL RWNAME (INFILE,'R_OE', IDUMM)
           NPOINT = NOLD
-        ELSE
+    ELSE
           CALL RWNAME (INFILE,'R_OE', IDUMM)
-        END IF
+    END IF
 
 
-        IF (IDUMM.NE.0) THEN
+    IF (IDUMM.NE.0) THEN
           WRITE(6,*)'Error reading from file '//trim(INFILE)
           CALL LEAVE ('SWITCH_INP', 'Check contents of SYSTEMFILE',IDUMM)
-        END IF
-        GO TO 2000
-END IF ! (OUTP.EQ.'MENU')
+    END IF
+    GO TO 2000
+END IF ! (OUTP.EQ.'MENU' or 'SYSTEMFILE')
 
 ! C
 ! C This cannot be a MENU case
 ! C
 
-        IF (IFLAG.GT.1) THEN
-          print *,''
-          IDUMM        =   IYES ('Do you want to change input mode ? ')
-          print *,''
-            IF (IDUMM.EQ.1) THEN
-10            WRITE(6,*)'Enter 1 for PROMPT, 2 for BATCH, 3 for SYSTEMFILE'
-              IDUMM = IRINT ('Then ? ')
-              IF (IDUMM.EQ.1) THEN
-                OUTP = 'prompt'
-              ELSE IF (IDUMM.EQ.2) THEN
-                OUTP = 'batch'
-              ELSE IF (IDUMM.EQ.3) THEN
-                OUTP = 'systemfile'
-              ELSE
-                WRITE(6,*)'What ?? '
-                GO TO 10
-              END IF
-            END IF
+IF (IFLAG.GT.1) THEN
+    print *,''
+    IDUMM        =   IYES ('Do you want to change input mode ? ')
+    print *,''
+    IF (IDUMM.EQ.1) THEN
+10      WRITE(6,*)'Enter 1 for PROMPT, 2 for BATCH, 3 for SYSTEMFILE'
+        IDUMM = IRINT ('Then ? ')
+        IF (IDUMM.EQ.1) THEN
+            OUTP = 'prompt'
+        ELSE IF (IDUMM.EQ.2) THEN
+            OUTP = 'batch'
+        ELSE IF (IDUMM.EQ.3) THEN
+            OUTP = 'systemfile'
+        ELSE
+            WRITE(6,*)'What ?? '
+            GO TO 10
         END IF
-
+    END IF
+END IF
 IF (OUTP.EQ.'prompt') THEN
 ! C--------------------------------------------------------------
 ! C              
@@ -12160,7 +12173,8 @@ SUBROUTINE Shadow3Trace
         integer(kind=ski)       :: ncol1,np,iflag,ierr
 
         real(kind=skr),dimension(:,:),allocatable :: ray,phase,ap
-	logical                                   :: logicalFlag=.true.
+	logical                                   :: logicalFlag !=.true.
+        integer(kind=ski)                         :: iSysFileOpened
 
         print *,''
         print *,'Ray Tracing Selected. Begin procedure.'
@@ -12175,6 +12189,8 @@ SUBROUTINE Shadow3Trace
         icount = 0
         ipass  = 1
         nsave = 0
+        logicalFlag = .true.
+        iSysFileOpened = 0
 
 ! C
 ! C Start by inquiring about the optical system
@@ -12185,8 +12201,8 @@ SUBROUTINE Shadow3Trace
 ! input variables (start.xx)
 !
           CALL Reset
-          CALL Switch_Inp (mode,icount,iTerminate)
-          IF (iTerminate == 1) RETURN
+          CALL Switch_Inp (mode,icount,iTerminate,iSysFileOpened)
+          IF (iTerminate == 1) go to 333 ! RETURN
 
 !
 ! it is necessary to allocate main arrays (ray, phase, ap) here, 
@@ -12238,11 +12254,22 @@ SUBROUTINE Shadow3Trace
           CALL Trace_Step (nsave, icount, ipass, ray, phase, ap)
         END DO ! end do while infinite loop
 
-        IF (ALLOCATED(ray)) DEALLOCATE(ray)
-        IF (ALLOCATED(ap)) DEALLOCATE(ap)
-        IF (ALLOCATED(phase)) DEALLOCATE(phase)
+!
+! clean and exit
+!
+333     continue 
 
-        RETURN
+IF (ALLOCATED(ray)) DEALLOCATE(ray)
+IF (ALLOCATED(ap)) DEALLOCATE(ap)
+IF (ALLOCATED(phase)) DEALLOCATE(phase)
+
+! close systemfile.dat file
+if ( trim(mode) .eq. "systemfile" ) then
+    close(37)
+    iSysFileOpened = 0
+endif
+
+RETURN
 
 END SUBROUTINE Shadow3Trace
 

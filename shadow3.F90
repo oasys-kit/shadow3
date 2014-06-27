@@ -300,7 +300,7 @@ SELECT CASE (inCommandLow)
      inCommand=""
   CASE ("exit")
      !STOP "GO ended."
-     EXIT
+     go to 333 !EXIT
   CASE ("citation")
      print *,' 1)                                                          '
      print *,' F. Cerrina and M. Sanchez del Rio                         '
@@ -397,6 +397,7 @@ END SELECT
 
 END DO ! infinite loop
 
+333 continue
 print *,'Exit shadow3'
 
 END PROGRAM Shadow3

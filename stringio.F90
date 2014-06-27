@@ -273,7 +273,9 @@ Module stringIO
 	ELSE
      	  GO TO 1
 	END IF
-    20	RSTRING (1:2) = '^Z'
+    20	continue
+        !RSTRING (1:2) = '^Z'
+        RSTRING = "EXIT"
      	RETURN
     1000	FORMAT (1X,A)
     1010	FORMAT (A)

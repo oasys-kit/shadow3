@@ -955,7 +955,7 @@ Subroutine pretransfocator
     real(kind=skr)         :: crl_diameter, crl_R, crl_R2, crl_interThickness
     real(kind=skr)         :: crl_thickness, crl_fs_before, crl_fs_after
     integer(kind=ski)      :: crl_nlenses, crl_shape, crl_cylindrical
-    integer(kind=ski)      :: ierr, iaccumulated=0, icrl=0
+    integer(kind=ski)      :: ierr, iaccumulated, icrl
     character(len=sklen)   :: crl_file
     character(len=1)       :: ctmp="#"
     
@@ -966,6 +966,19 @@ Subroutine pretransfocator
     ref1=1d0
     att0=0d0
     att1=0d0
+
+    !bug fixed srio@esrf.eu 20140627, vonstett@esrf.fr wrote (20130513): 
+    !I had edited mytransfocator.dat and re-run precrl and runcrl several
+    !times while playing around, but then I got the weird effect that o.e.'s
+    !up to 102 were created for a 11-lens CRL, and the result didn't make
+    !sense any more.
+    !So apparently some values didn't get reset properly, as the created
+    !crl.* file starts like this:
+    !FMIRR(81) = 10
+    !FWRITE(81) = 3
+    !FHIT_C(81) = 1 
+    iaccumulated=0
+    icrl=0
 
     print *,' '
     print *,'The transfocator stack of CRLs must be defined in "transfocator definition" file: '
