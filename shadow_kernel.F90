@@ -7471,7 +7471,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 
 if (check_perp_comp( ray(4,itik), ray(5,itik), ray(6,itik), &
                      ray(7,itik), ray(8,itik), ray(9,itik), &
-                     ap(1,itik), ap(2,itik), ap(3,itik)) .gt. 1d-6) then 
+                     ap(1,itik), ap(2,itik), ap(3,itik)) .gt. 1d-4) then 
    print*,'MIRROR: Warning (before calculations): lack of perpendicularity in ray: ', itik
 end if
 
@@ -10894,7 +10894,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     real(kind=skr),dimension(4)  :: II,DX,PHI_INT
     real(kind=skr),dimension(10) :: RELINT,PRELINT
     
-    integer(kind=ski) :: n_rej=0, k_rej=0
+    integer(kind=ski) :: n_rej=0, k_rej=0, nrejected
     
     real(kind=skr)    :: xxx=0,yyy=0,zzz=0
 
@@ -11362,15 +11362,48 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ARG_VX  = GRID(4,ITIK)
        ARG_VZ  = GRID(6,ITIK)
        
+       nrejected = 0 
+3300   continue
        CALL MDNRIS (ARG_VX,DIR_X,IER)
        IF (IER.NE.0) WRITE(6,*) 'Warning !Error in DIR_X:MNDRIS(SOURCE)'
        
        DIREC(1)  = DIR_X*SIGDIX
+       ! reject rays after defined limits
+       IF ( (ABS(HDIV1) + ABS(HDIV2)) .GT. 1e-9 ) THEN
+           IF ( (DIREC(1) .LT. -HDIV2 ) .OR. (DIREC(1) .GT. HDIV1 )) THEN
+             nrejected = nrejected + 1
+             arg_vx = wran(istar1)
+             !print*,'rejected: ',direc(1),-hdiv2,hdiv1,arg_vx
+             if (nrejected .GT. 5000) then 
+               ITMP=1
+               CALL LEAVE ('SOURCEGEOM','Too many rejected rays (5000) due to H Gaussian limits. Check them.',ITMP)
+             endif
+             GOTO 3300
+           ENDIF
+       ENDIF
+      
        
+       nrejected = 0 
+3301   continue
        CALL MDNRIS (ARG_VZ,DIR_Z,IER)
        IF (IER.NE.0) WRITE(6,*)'Warning !Error in DIR_Z:MNDRIS(SOURCE)'
        
        DIREC(3)  = DIR_Z*SIGDIZ
+       ! reject rays after defined limits
+       IF ( (ABS(VDIV1) + ABS(VDIV2)) .GT. 1e-9 ) THEN
+           IF ( (DIREC(3) .LT. -VDIV2 ) .OR. (DIREC(3) .GT. VDIV1 )) THEN
+             nrejected = nrejected + 1
+             arg_vz = wran(istar1)
+             !print*,'rejected: ',direc(3),-vdiv2,vdiv1,arg_vz
+             if (nrejected .GT. 5000) then 
+               ITMP=1
+               CALL LEAVE ('SOURCEGEOM','Too many rejected rays (5000) due to V Gaussian limits. Check them.',ITMP)
+             endif
+             GOTO 3301
+           ENDIF
+       ENDIF
+      
+
        DIREC(2)  = 1.0D0
        
        CALL NORM (DIREC,DIREC)
