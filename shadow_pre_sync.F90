@@ -1045,7 +1045,7 @@ SUBROUTINE NPhoton
         real(kind=skr)    :: ang_num, angle, angle1, angle2, bener, cdf, curv_max, curv_min
         real(kind=skr)    :: gamma1, phot_max, phot_min, pnum, rad, step, tot_num
         real(kind=skr)    :: tmp
-        integer(kind=ski) :: i, i_wig, iflag
+        integer(kind=ski) :: i, i_wig, iflag, i_wig_binary 
 
         !C
         !C Read in the CDF of G0, and generated the spline coefficients.
@@ -1064,10 +1064,17 @@ SUBROUTINE NPhoton
         WRITE(6,*) ' '
         WRITE(6,*) 'Type of Wiggler.'
         WRITE(6,*) 'Enter:'
-        WRITE(6,*) 'for normal wiggler   [1]'
-        WRITE(6,*) 'for elliptical wiggler [2]'
+        WRITE(6,*) 'for normal wiggler [1] (-1 for ascii output)'
+        WRITE(6,*) 'for elliptical wiggler [2] (-2 for ascii output)'
         I_WIG=IRINT('Then? ')
 
+        if (i_wig .le. 0) then
+            i_wig_binary = 0
+        else
+            i_wig_binary = 1
+        endif
+
+        i_wig = abs(i_wig)
 
 
         ! first scan the file to get the number of points
@@ -1193,20 +1200,33 @@ SUBROUTINE NPhoton
 !C
 !C Creates the binary file that serves as input to SHADOW.
 !C
-        OPEN   (21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
-        REWIND   (21)
-        WRITE   (21) NP,STEP,BENER,1.0D0/CURV_MAX, &
-                 1.0D0/CURV_MIN,EMIN,EMAX
+        if (i_wig_binary .eq. 1) then
+            OPEN   (21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='UNFORMATTED')
+            REWIND   (21)
+            WRITE (21) NP,STEP,BENER,1.0D0/CURV_MAX, 1.0D0/CURV_MIN,EMIN,EMAX
+        else
+            OPEN (21,FILE=OUTFILE,STATUS='UNKNOWN',FORM='FORMATTED')
+            REWIND (21)
+            WRITE (21,*) NP,STEP,BENER,1.0D0/CURV_MAX, 1.0D0/CURV_MIN,EMIN,EMAX
+        endif
         !DO 499 I = 1, NP
         DO I = 1, NP
             CDF      = PHOT_CDF(I)/TOT_NUM
             IF (I_WIG.EQ.2) THEN
                 ANGLE1  = ATAN2 (BETAX(I),BETAY(I))
                 ANGLE2  = ASIN  (BETAZ(I))
-                WRITE (21) X(I),Y(I),Z(I),CDF,ANGLE1,ANGLE2, CURV(I)
+                if (i_wig_binary .eq. 1) then
+                    WRITE (21) X(I),Y(I),Z(I),CDF,ANGLE1,ANGLE2, CURV(I)
+                else
+                    WRITE (21,*) X(I),Y(I),Z(I),CDF,ANGLE1,ANGLE2, CURV(I)
+                endif
             ELSE
                 ANGLE = ATAN2 (BETAX(I),BETAY(I))
-                WRITE (21) X(I),Y(I),CDF,ANGLE,CURV(I)
+                if (i_wig_binary .eq. 1) then
+                    WRITE (21) X(I),Y(I),CDF,ANGLE,CURV(I)
+                else
+                    WRITE (21,*) X(I),Y(I),CDF,ANGLE,CURV(I)
+                endif
                 !C
             ENDIF
         ! 499         CONTINUE

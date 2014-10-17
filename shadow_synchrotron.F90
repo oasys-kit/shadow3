@@ -1844,7 +1844,7 @@ real(kind=skr),dimension(10)       :: RELINT,PRELINT
 real(kind=skr),dimension(4)        :: II,DX,PHI_INT
 real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
    
-integer(kind=ski) :: n_rej=0, k_rej=0
+integer(kind=ski) :: n_rej=0, k_rej=0, f_wiggler_binary
 real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
 
 ! removing implicits...
@@ -1898,8 +1898,22 @@ IF (F_WIGGLER.EQ.1) THEN
     ! C Normal wigger case:
     ! C read in the wiggler trajectory, tangent and radius, and other parameters
     ! C
+    !OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
+
+    f_wiggler_binary = 0
+    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='FORMATTED')
+    READ (29,*,err=898) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
+
+go to 899
+
+898  continue
+    ! try binary file
+    close(29)
     OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
     READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
+    f_wiggler_binary = 1
+
+899  continue
 
     !array allocation
     allocate( y_temp(NP_TRAJ) )
@@ -1921,7 +1935,11 @@ IF (F_WIGGLER.EQ.1) THEN
      
 
     DO 13 I = 1, NP_TRAJ
-        READ (29) XIN,YIN,SEEDIN,ANGIN,CIN
+        if (f_wiggler_binary .EQ. 0) then
+            READ (29,*) XIN,YIN,SEEDIN,ANGIN,CIN
+        else
+            READ (29) XIN,YIN,SEEDIN,ANGIN,CIN
+        endif
         ! C+++
         ! C The program will build the splines for generating the stocastic source.
         ! C the splines are defined by:
