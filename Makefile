@@ -51,24 +51,26 @@
 SO=.so
 EXE=
 COMPILEOPT=-D_COMPILE4NIX
+STATIC = -static
+#STATIC = -static -static-libgfortran -static-libgcc
 
 #settings for mac
-#SO=.dylib
+#SO=.so
 #EXE=
 #COMPILEOPT=-D_COMPILE4MAX
+#STATIC = 
 
 #settings for windows
 #SO=.dll
 #EXE=.exe
 #COMPILEOPT=-D_COMPILE4WIN
+#STATIC = -static
 
 
 #
 # customize compiler and flags
 #
 FC = gfortran
-STATIC = -static
-#STATIC = -static -static-libgfortran -static-libgcc
 FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 LINKFLAGS = $(32BITS) $(STATIC)
 

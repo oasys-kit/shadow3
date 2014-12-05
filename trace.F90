@@ -23,6 +23,7 @@ Program	Trace
 	integer(kind=ski)       :: icount,ipass,nsave
 	integer(kind=ski)       :: numarg
 	integer(kind=ski)       :: ncol1,np,iflag,ierr,iTerminate
+	integer(kind=ski)       :: iSysFileOpened=0
 
         real(kind=skr),dimension(:,:),allocatable :: ray,phase,ap
 	logical				          :: logicalFlag=.true.
@@ -72,7 +73,7 @@ Program	Trace
         ! input variables (start.xx)
         !
         CALL Reset
-   	CALL Switch_Inp (mode,icount,iTerminate)
+   	CALL Switch_Inp (mode,icount,iTerminate,iSysFileOpened)
         IF (iTerminate == 1) STOP 
 
         !
