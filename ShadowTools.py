@@ -22,7 +22,11 @@ from Shadow.ShadowToolsPrivate import Histo1_Ticket as Histo1_Ticket
 from Shadow.ShadowToolsPrivate import plotxy_Ticket as plotxy_Ticket
 import os
 
-A2EV = 50676.89919462
+#A2EV = 50676.89919462
+codata_h = numpy.array(6.62606957e-34)
+codata_ec = numpy.array(1.602176565e-19)
+codata_c = numpy.array(299792458.0)
+A2EV = 2.0*numpy.pi/(codata_h*codata_c/codata_ec*1e2)
 
 def getshonecol(beam,col):
   """
