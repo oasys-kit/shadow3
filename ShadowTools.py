@@ -29,7 +29,7 @@ codata_c = numpy.array(299792458.0)
 A2EV = 2.0*numpy.pi/(codata_h*codata_c/codata_ec*1e2)
 
 def getshonecol(beam,col):
-  """
+  '''
   Extract a column from a shadow file (eg. begin.dat) or a Shadow.Beam instance. 
   The column are numbered in the fortran convention, i.e. starting from 1.
   It returns a numpy.array filled with the values of the chosen column.
@@ -79,7 +79,7 @@ def getshonecol(beam,col):
           31   S1-stokes = |Es|^2 - |Ep|^2
           32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
           33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
-  """
+  '''
   try: stp.getshonecol_CheckArg(beam,col)
   except stp.ArgsError as e: raise e
   col=col-1
@@ -125,8 +125,8 @@ def getshonecol(beam,col):
 
 
 def getshcol(beam,col):
-  """
-  Extract multiple columns from a shadow file (eg."begin.dat") or a Shadow.Beam instance. 
+  '''
+  Extract multiple columns from a shadow file (eg.'begin.dat') or a Shadow.Beam instance. 
   The column are numbered in the fortran convention, i.e. starting from 1.
   It returns a numpy.array filled with the values of the chosen column.
   
@@ -175,7 +175,7 @@ def getshcol(beam,col):
           31   S1-stokes = |Es|^2 - |Ep|^2
           32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
           33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
-  """
+  '''
   try: stp.getshcol_CheckArg(beam,col)
   except stp.ArgsError as e: raise e
   if isinstance(beam,sd.Beam):
@@ -189,8 +189,8 @@ def getshcol(beam,col):
     ret.append(getshonecol(bm,c))
   return tuple(ret)
 
-def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,title="HISTO1",xtitle=None,ytitle=None,calfwhm=0,noplot=0):
-  """
+def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,title='HISTO1',xtitle=None,ytitle=None,calfwhm=0,noplot=0):
+  '''
   Plot the histogram of a column, simply counting the rays, or weighting with the intensity.
   It returns a ShadowTools.Histo1_Ticket which contains the histogram data, and the figure.
   
@@ -211,7 +211,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
            1   weight with intensity (look at 23 |E|^2 total intensity)
      write    : 
            0   don't write any file
-           1   write the histogram into the file "HISTO1".
+           1   write the histogram into the file 'HISTO1'.
      title    : title of the figure, it will appear on top of the window.
      xtitle   : label for the x axis.
      ytitle   : label for the y axis.
@@ -222,8 +222,8 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
            0   plot the histogram
            1   don't plot the histogram
   orientation :
-  "vertical"   x axis for data, y for intensity
-  "horizontal"   y axis for data, x for intensity
+  'vertical'   x axis for data, y for intensity
+'horizontal'   y axis for data, x for intensity
      plotxy   : 
            0   standalone version
            1   to use within plotxy
@@ -267,7 +267,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
           31   S1-stokes = |Es|^2 - |Ep|^2
           32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
           33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
-  """
+  '''
   try: stp.Histo1_CheckArg(beam,col,xrange,yrange,nbins,nolost,ref,write,title,xtitle,ytitle,calfwhm,noplot)
   except stp.ArgsError as e: raise e  
   col=col-1
@@ -288,30 +288,30 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
     x, a, w = getshcol(beam,(col+1,10,ref))
   if nolost==0: 
     t = numpy.where(a!=-3299)
-    ytitle = "All rays"
+    ytitle = 'All rays'
   if nolost==1: 
     t = numpy.where(a==1.0)
-    ytitle = "Good rays"
+    ytitle = 'Good rays'
   if nolost==2: 
     t = numpy.where(a!=1.0)
-    ytitle = "Lost rays"
+    ytitle = 'Lost rays'
   if len(t[0])==0:
     print ("no rays match the selection, the histogram will not be plotted")
     return 
   if ref==0:
-    ytitle = "counts " + ytitle
-    h,bins,patches = axHist.hist(x[t],bins=nbins,range=xrange,histtype="step",alpha=0.5)
+    ytitle = 'counts ' + ytitle
+    h,bins,patches = axHist.hist(x[t],bins=nbins,range=xrange,histtype='step',alpha=0.5)
     if yrange==None: yrange = [0.0, numpy.max(h)*1.1]
     hw=h
   if ref>=22: 
-    ytitle = (stp.getLabel(ref-1))[0] + " " + ytitle
+    ytitle = (stp.getLabel(ref-1))[0] + ' ' + ytitle
     h,bins = numpy.histogram(x[t],range=xrange,bins=nbins)
-    hw,bins,patches = axHist.hist(x[t],range=xrange, bins=nbins,histtype="step",alpha=0.5,weights=w[t])
+    hw,bins,patches = axHist.hist(x[t],range=xrange, bins=nbins,histtype='step',alpha=0.5,weights=w[t])
     if yrange==None: yrange = [0.0, numpy.max(hw)*1.1]
   fwhm = None
   if calfwhm==1:
     fwhm, tf, ti = stp.calcFWHM(hw,bins[1]-bins[0])
-    axHist.plot([bins[ti],bins[tf+1]],[max(h)*0.5,max(h)*0.5],"x-")
+    axHist.plot([bins[ti],bins[tf+1]],[max(h)*0.5,max(h)*0.5],'x-')
     print ("fwhm = %g" % fwhm)
   if write==1: stp.Histo1_write(title,bins,h,hw,col,beam,ref-1)  
 
@@ -346,8 +346,8 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
 
 
 
-def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title="PLOTXY",xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
-  """
+def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title='PLOTXY',xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
+  '''
   Draw the scatter or contour or pixel-like plot of two columns of a Shadow.Beam instance or of a given shadow file, along with histograms for the intensity on the top and right side.
   Inumpy.ts:
      beam     : str instance with the name of the shadow file to be loaded, or a Shadow.Beam initialized instance.
@@ -423,7 +423,7 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
           31   S1-stokes = |Es|^2 - |Ep|^2
           32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
           33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
-  """
+  '''
   if nbins_h==None: nbins_h=nbins+1
   try: 
     stp.plotxy_CheckArg(beam,cols1,cols2,nbins,nbins_h,level,xrange,yrange,nolost,title,xtitle,ytitle,noplot,calfwhm,contour)
@@ -486,7 +486,7 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
         pass
     X, Y = numpy.mgrid[xrange[0]:xrange[1]:nbins*1.0j,yrange[0]:yrange[1]:nbins*1.0j]
     L = numpy.linspace(numpy.amin(grid),numpy.amax(grid),level)
-    if contour==1 or contour==2: axScatter.contour(X, Y, grid, colors="k", levels=L)
+    if contour==1 or contour==2: axScatter.contour(X, Y, grid, colors='k', levels=L)
     if contour==3 or contour==4: axScatter.contour(X, Y, grid, levels=L)
     if contour==5 or contour==6: axScatter.pcolor(X, Y, grid)  
   #axScatter.set_xlim(xrange)
@@ -496,9 +496,9 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   #axScatter.axis(ymin=yrange[0],ymax=yrange[1])
   
   for tt in axScatter.get_xticklabels():
-    tt.set_size("x-small")
+    tt.set_size('x-small')
   for tt in axScatter.get_yticklabels():
-    tt.set_size("x-small")
+    tt.set_size('x-small')
   
   #if ref==0: col4 = numpy.ones(len(col4),dtype=float)
   
@@ -508,25 +508,25 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   binx = numpy.linspace(xrange[0],xrange[1],nbins_h)
   biny = numpy.linspace(yrange[0],yrange[1],nbins_h)
   if contour==0 or contour==1 or contour==3 or contour==5:
-    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,histtype="step",color="k")
-    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,orientation="horizontal",histtype="step",color="k")
+    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,histtype='step',color='k')
+    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,orientation='horizontal',histtype='step',color='k')
   if contour==2 or contour==4 or contour==6:
-    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,weights=col4[t],histtype="step",color="b")
-    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,weights=col4[t],orientation="horizontal",histtype="step",color="b")
+    hx, binx, patchx = axHistx.hist(col1[t],bins=binx,range=xrange,weights=col4[t],histtype='step',color='b')
+    hy, biny, patchy = axHisty.hist(col2[t],bins=biny,range=yrange,weights=col4[t],orientation='horizontal',histtype='step',color='b')
   for tl in axHistx.get_xticklabels(): tl.set_visible(False)
   for tl in axHisty.get_yticklabels(): tl.set_visible(False)
   for tt in axHisty.get_xticklabels():
     tt.set_rotation(270)
-    tt.set_size("x-small")
+    tt.set_size('x-small')
   for tt in axHistx.get_yticklabels():
-    tt.set_size("x-small")
+    tt.set_size('x-small')
 
   intensityinslit = 0.0
   if calfwhm>=1:
     fwhmx,txf, txi = stp.calcFWHM(hx,binx[1]-binx[0])
     fwhmy,tyf, tyi = stp.calcFWHM(hy,biny[1]-biny[0])
-    axHistx.plot([binx[txi],binx[txf+1]],[max(hx)*0.5,max(hx)*0.5],"x-")
-    axHisty.plot([max(hy)*0.5,max(hy)*0.5],[biny[tyi],biny[tyf+1]],"x-")
+    axHistx.plot([binx[txi],binx[txf+1]],[max(hx)*0.5,max(hx)*0.5],'x-')
+    axHisty.plot([max(hy)*0.5,max(hy)*0.5],[biny[tyi],biny[tyf+1]],'x-')
     print ("fwhm horizontal:  %g" % fwhmx)
     print ("fwhm vertical:    %g" % fwhmy)
   if calfwhm>=2:

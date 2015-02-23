@@ -53,77 +53,77 @@ def ErrorMsg(fromFunc,value):
   return ArgsError(value)
 
 def getshonecol_CheckArg(beam,col):
-  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg("getshonecol","beam")
-  if not isinstance(col,int): raise ErrorMsg("getshonecol","col")
-  if col<1 or col>33: raise ErrorMsg("getshonecol","col")
+  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg('getshonecol','beam')
+  if not isinstance(col,int): raise ErrorMsg('getshonecol','col')
+  if col<1 or col>33: raise ErrorMsg('getshonecol','col')
 
 def getshcol_CheckArg(beam,col): #the rest of checks are included in the function getshonecol_CheckArg 
-  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg("getshcol","beam")
-  if not isinstance(col,(int,tuple,list)): raise ErrorMsg("getshcol","col")
+  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg('getshcol','beam')
+  if not isinstance(col,(int,tuple,list)): raise ErrorMsg('getshcol','col')
   if isinstance(col, int): 
-    if col<1 or col>33: raise ErrorMsg("getshcol","col")
+    if col<1 or col>33: raise ErrorMsg('getshcol','col')
   else:
     for c in col:
-      if not isinstance(c,int): raise ErrorMsg("getshcol","col")
-      if c<1 or c>33: raise ErrorMsg("getshcol","col")
+      if not isinstance(c,int): raise ErrorMsg('getshcol','col')
+      if c<1 or c>33: raise ErrorMsg('getshcol','col')
 
 def Histo1_CheckArg(beam,col,xrange,yrange,nbins,nolost,ref,write,title,xtitle,ytitle,calfwhm,noplot):
-  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg("Histo1","beam")
-  if not isinstance(col,int): raise ErrorMsg("Histo1","col")  
-  if col<1 or col>33: raise ErrorMsg("Histo1","col")
+  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg('Histo1','beam')
+  if not isinstance(col,int): raise ErrorMsg('Histo1','col')  
+  if col<1 or col>33: raise ErrorMsg('Histo1','col')
   # the next 3 lines don't matter, it is a trick to pass the test when None
   if xrange==None: xrange=(1.0,2.0) 
   if yrange==None: yrange=(1.0,2.0) 
-  if xtitle==None: xtitle="pippo"  
-  if ytitle==None: ytitle="pippo"
-  if not isinstance(xrange,(tuple,list)): raise ErrorMsg("Histo1","xrange") 
-  if len(xrange)!=2: raise ErrorMsg("Histo1","xrange")
-  if not isinstance(xrange[0],(int,float)) or not isinstance(xrange[1],(int,float)): raise ErrorMsg("Histo1","xrange")
-  if not isinstance(yrange,(tuple,list)): raise ErrorMsg("Histo1","yrange")
-  if len(yrange)!=2: raise ErrorMsg("Histo1","yrange")
-  if not isinstance(yrange[0],(int,float)) or not isinstance(yrange[1],(int,float)): raise ErrorMsg("Histo1","yrange")
-  if not isinstance(nbins,int): raise ErrorMsg("Histo1","nbins")
-  if nbins<=0: raise ErrorMsg("Histo1","nbins")  
-  if nolost!=0 and nolost!=1 and nolost!=2: raise ErrorMsg("Histo1","nolost")
+  if xtitle==None: xtitle='pippo'  
+  if ytitle==None: ytitle='pippo'
+  if not isinstance(xrange,(tuple,list)): raise ErrorMsg('Histo1','xrange') 
+  if len(xrange)!=2: raise ErrorMsg('Histo1','xrange')
+  if not isinstance(xrange[0],(int,float)) or not isinstance(xrange[1],(int,float)): raise ErrorMsg('Histo1','xrange')
+  if not isinstance(yrange,(tuple,list)): raise ErrorMsg('Histo1','yrange')
+  if len(yrange)!=2: raise ErrorMsg('Histo1','yrange')
+  if not isinstance(yrange[0],(int,float)) or not isinstance(yrange[1],(int,float)): raise ErrorMsg('Histo1','yrange')
+  if not isinstance(nbins,int): raise ErrorMsg('Histo1','nbins')
+  if nbins<=0: raise ErrorMsg('Histo1','nbins')  
+  if nolost!=0 and nolost!=1 and nolost!=2: raise ErrorMsg('Histo1','nolost')
   if ref>=22 and ref<=33: ref = 1
-  if ref!=0 and ref!=1: raise ErrorMsg("Histo1","ref")
-  if write!=0 and write!=1: raise ErrorMsg("Histo1","write")
-  if not isinstance(title,str): raise ErrorMsg("Histo1","title")
-  if not isinstance(xtitle,str): raise ErrorMsg("Histo1","xtitle")
-  if not isinstance(ytitle,str): raise ErrorMsg("Histo1","ytitle")
-  if calfwhm!=0 and calfwhm!=1: raise ErrorMsg("Histo1","calfwhm")
-  if noplot!=0 and noplot!=1: raise ErrorMsg("Histo1","noplot")
+  if ref!=0 and ref!=1: raise ErrorMsg('Histo1','ref')
+  if write!=0 and write!=1: raise ErrorMsg('Histo1','write')
+  if not isinstance(title,str): raise ErrorMsg('Histo1','title')
+  if not isinstance(xtitle,str): raise ErrorMsg('Histo1','xtitle')
+  if not isinstance(ytitle,str): raise ErrorMsg('Histo1','ytitle')
+  if calfwhm!=0 and calfwhm!=1: raise ErrorMsg('Histo1','calfwhm')
+  if noplot!=0 and noplot!=1: raise ErrorMsg('Histo1','noplot')
   
 def plotxy_CheckArg(beam,cols1,cols2,nbins,nbins_h,level,xrange,yrange,nolost,title,xtitle,ytitle,noplot,calfwhm,contour):
-  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg("plotxy","beam")
-  if cols1<1 or cols1>33: raise ErrorMsg("plotxy","cols1")
-  if cols2<1 or cols2>33: raise ErrorMsg("plotxy","cols2")
-  if not isinstance(nbins,int): raise ErrorMsg("plotxy","nbins")
-  if nbins<=0: raise ErrorMsg("plotxy","nbins")
-  if not isinstance(nbins_h,int): raise ErrorMsg("plotxy","nbins_h")
-  if nbins_h<=0: raise ErrorMsg("plotxy","nbins_h")
-  if not isinstance(level,int): raise ErrorMsg("plotxy","level")
-  if level<=0: raise ErrorMsg("plotxy","level")
+  if not isinstance(beam,(sd.Beam,str)): raise ErrorMsg('plotxy','beam')
+  if cols1<1 or cols1>33: raise ErrorMsg('plotxy','cols1')
+  if cols2<1 or cols2>33: raise ErrorMsg('plotxy','cols2')
+  if not isinstance(nbins,int): raise ErrorMsg('plotxy','nbins')
+  if nbins<=0: raise ErrorMsg('plotxy','nbins')
+  if not isinstance(nbins_h,int): raise ErrorMsg('plotxy','nbins_h')
+  if nbins_h<=0: raise ErrorMsg('plotxy','nbins_h')
+  if not isinstance(level,int): raise ErrorMsg('plotxy','level')
+  if level<=0: raise ErrorMsg('plotxy','level')
   # the next 4 lines don't matter, it is a trick to pass the test when None
   if xrange==None: xrange=(1.0,2.0) 
   if yrange==None: yrange=(1.0,2.0) 
-  if xtitle==None: xtitle="pippo"
-  if ytitle==None: ytitle="pippo" 
-  if not isinstance(xrange,(tuple,list)): raise ErrorMsg("plotxy","xrange") 
-  if len(xrange)!=2: raise ErrorMsg("plotxy","xrange")
-  if not isinstance(xrange[0],(int,float)) or not isinstance(xrange[1],(int,float)): raise ErrorMsg("plotxy","xrange")
-  if not isinstance(yrange,(tuple,list)): raise ErrorMsg("plotxy","yrange")
-  if len(yrange)!=2: raise ErrorMsg("plotxy","yrange")
-  if not isinstance(yrange[0],(int,float)) or not isinstance(yrange[1],(int,float)): raise ErrorMsg("plotxy","yrange")
-  if nolost!=0 and nolost!=1 and nolost!=2: raise ErrorMsg("plotxy","nolost")
-  if not isinstance(title,str): raise ErrorMsg("plotxy","title")
-  if not isinstance(xtitle,str): raise ErrorMsg("plotxy","xtitle")
-  if not isinstance(ytitle,str): raise ErrorMsg("plotxy","ytitle")
-  if noplot!=0 and noplot!=1: raise ErrorMsg("plotxy","noplot")
-  #if ref!=0 and ref!=1: raise ErrorMsg("plotxy","ref")
-  if calfwhm!=0 and calfwhm!=1 and calfwhm!=2: raise ErrorMsg("plotxy","calfwhm")
-  if not isinstance(contour,int): raise ErrorMsg("plotxy","contour")
-  if contour<0 or contour>6: raise ErrorMsg("plotxy","contour")
+  if xtitle==None: xtitle='pippo'
+  if ytitle==None: ytitle='pippo' 
+  if not isinstance(xrange,(tuple,list)): raise ErrorMsg('plotxy','xrange') 
+  if len(xrange)!=2: raise ErrorMsg('plotxy','xrange')
+  if not isinstance(xrange[0],(int,float)) or not isinstance(xrange[1],(int,float)): raise ErrorMsg('plotxy','xrange')
+  if not isinstance(yrange,(tuple,list)): raise ErrorMsg('plotxy','yrange')
+  if len(yrange)!=2: raise ErrorMsg('plotxy','yrange')
+  if not isinstance(yrange[0],(int,float)) or not isinstance(yrange[1],(int,float)): raise ErrorMsg('plotxy','yrange')
+  if nolost!=0 and nolost!=1 and nolost!=2: raise ErrorMsg('plotxy','nolost')
+  if not isinstance(title,str): raise ErrorMsg('plotxy','title')
+  if not isinstance(xtitle,str): raise ErrorMsg('plotxy','xtitle')
+  if not isinstance(ytitle,str): raise ErrorMsg('plotxy','ytitle')
+  if noplot!=0 and noplot!=1: raise ErrorMsg('plotxy','noplot')
+  #if ref!=0 and ref!=1: raise ErrorMsg('plotxy','ref')
+  if calfwhm!=0 and calfwhm!=1 and calfwhm!=2: raise ErrorMsg('plotxy','calfwhm')
+  if not isinstance(contour,int): raise ErrorMsg('plotxy','contour')
+  if contour<0 or contour>6: raise ErrorMsg('plotxy','contour')
 
 
 def setGoodRange(col):
@@ -161,7 +161,7 @@ def Histo1_write(title,bins,h,w,col,beam,ref):
   if isinstance(beam,str): usubtitle = os.getcwd()+beam
   now = str(datetime.datetime.now())  
   usubtitle += " "+now+" "+getpass.getuser()+"@"+socket.gethostname()
-  file = open(title,"w")  
+  file = open(title,'w')  
   print ("#F HISTO1", file = file)
   print ("#C This file has been created using histo1 (python ShadowTools)", file = file)
   print ("#D "+now, file = file)

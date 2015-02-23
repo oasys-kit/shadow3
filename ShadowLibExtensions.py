@@ -19,8 +19,11 @@ class Beam(ShadowLib.Beam):
   def retrace(self,dist):
     try:
       tof = (-self.rays[:,1].flatten() + dist)/self.rays[:,4].flatten()
+
       self.rays[:,0] += tof*self.rays[:,3].flatten()
+      self.rays[:,1] += tof*self.rays[:,4].flatten()
       self.rays[:,2] += tof*self.rays[:,5].flatten()
+
     except AttributeError:
       print ("retrace: No rays")
 
@@ -60,7 +63,7 @@ class GeometricSource(ShadowLib.Source):
     self.ISTAR1 = seed
     self.NCOL = 18 # shadow3 it will be rewritten anyway
 
-  def setSpaceDistribution(self,transverse="gauss",longitude="no",param=zeros(3)):
+  def setSpaceDistribution(self,transverse='gauss',longitude='no',param=zeros(3)):
     distTran = {'point':0 ,'rectangle':1,'ellipse':2,'gauss':3}
     distLong = {'no':1 ,'flat':2,'gauss':3}#,'synchrotron':4} synchrotron implemented in a different class
     try:
@@ -82,7 +85,7 @@ class GeometricSource(ShadowLib.Source):
     except KeyError:
       print ("setSpaceDistribution: wrong distribution name")
 #TODO    
-#  def setAngleDistribution(self,angle="gauss",)
+#  def setAngleDistribution(self,angle='gauss',)
 
 #
 # TODO: Put all classes starting with capital letter
@@ -107,12 +110,12 @@ class OE(ShadowLib.OE):
                  i_stop=zeros(10), 
                  k_slit=zeros(10),
                  thick=zeros(10),
-                 file_abs=array(["", "", "", "", "", "", "", "", "", ""]),
+                 file_abs=array(['', '', '', '', '', '', '', '', '', '']),
                  rx_slit=zeros(10),
                  rz_slit=zeros(10),
                  cx_slit=zeros(10),
                  cz_slit=zeros(10),
-                 file_src_ext=array(["", "", "", "", "", "", "", "", "", ""])
+                 file_src_ext=array(['', '', '', '', '', '', '', '', '', ''])
                  ):
     self.F_SCREEN = 1
     if n_screen<=10 and n_screen>0: 
@@ -172,8 +175,8 @@ class OE(ShadowLib.OE):
 
 
   def setCylindric(self,cyl_ang=0.0):
-    self.FCYL = 1
-    self.CYL_ANG = cyl_ang
+    self.FCYL=1
+    self.CIL_ANG=cyl_ang
     return self
 
 
@@ -196,7 +199,7 @@ class OE(ShadowLib.OE):
     self.F_REFLEC = 0
     return self
 
-  def setReflectivityFull(self,f_refl=0,file_refl="GAAS.SHA",rparams=zeros(2,dtype=float64),f_thick=0):
+  def setReflectivityFull(self,f_refl=0,file_refl='GAAS.SHA',rparams=zeros(2,dtype=float64),f_thick=0):
     self.F_REFLEC = 1
     self.F_REFL = f_refl
     self.FILE_REFL = file_refl
@@ -205,14 +208,14 @@ class OE(ShadowLib.OE):
     self.F_THICK = f_thick
     return self
 
-  def setReflectivityScalar(self,f_refl=0,file_refl="GAAS.SHA",rparams=zeros(2,dtype=float64),f_thick=0):
+  def setReflectivityScalar(self,f_refl=0,file_refl='GAAS.SHA',rparams=zeros(2,dtype=float64),f_thick=0):
     self.F_REFLEC = 2
     self.F_REFL = f_refl
     self.FILE_REFL = file_refl
     self.F_THICK = f_thick
     return self
 
-  def setMultilayer(self,f_reflec=1,file_refl="GAAS.SHA",f_thick=0):
+  def setMultilayer(self,f_reflec=1,file_refl='GAAS.SHA',f_thick=0):
     self.F_REFLEC = f_reflec
     self.F_REFL = 2
     self.FILE_REFL = file_refl
@@ -324,7 +327,7 @@ class OE(ShadowLib.OE):
     return self
 
 
-  def setPoly(self,file_mir=""):
+  def setPoly(self,file_mir=''):
     self.FMIRR = 9
     self.F_EXT = 1
     self.FILE_MIR = file_mir
@@ -338,7 +341,7 @@ class OE(ShadowLib.OE):
     return self
 
 
-  def setRipple(self,f_g_s=0,xyAmpWavPha=array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=float64),file_rip=""):
+  def setRipple(self,f_g_s=0,xyAmpWavPha=array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=float64),file_rip=''):
     self.F_RIPPLE = 1
     self.F_G_S = f_g_s
     self.X_RIP_AMP = xyAmpWavPha[0]
@@ -351,7 +354,7 @@ class OE(ShadowLib.OE):
     return self
 
 
-  def setDimensions(self,fshape=0,params=zeros(4,dtype=float64)):
+  def setDimensions(self,fshape=0,params=array([0.0,0.0,0.0,0.0],dtype=float64)):
     self.FHIT_C = 1
     self.FSHAPE = fshape
     self.RLEN1  = params[0]
@@ -491,21 +494,21 @@ class Beamline(list):
         txt = item
         item = OE()
         item.load(txt)
-    if not isinstance(item,self.type): raise TypeError( "item is not of type %s" % self.type )
+    if not isinstance(item,self.type): raise TypeError( 'item is not of type %s' % self.type )
     super(Beamline,self).append(item)
 
   def trace(self,beam):
     if beam.rays==None:
-      raise ValueError( "beam not initialized yet" )
+      raise ValueError( 'beam not initialized yet' )
 
     for i in range(len(self)):
       beam.traceOE(self[i],i+1)
       if self[i].F_WRITE==1 or self[i].F_WRITE==2:  beam.write("star.%02d" % i+1)
 
   def prepareInputShadow3Executables(self):
-    f = file("system.dat","w")
+    f = file('system.dat','w')
     for i in range(len(self)):
-      f.write("start.%02d\n" % i+1)
+      f.write('start.%02d\n' % i+1)
       self[i].write("start.%02d" % i+1)
     f.close()
 
