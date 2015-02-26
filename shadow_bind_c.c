@@ -190,7 +190,7 @@ void CShadowSetupDefaultSource(poolSource* Src)
   Src->F_COLOR =  1;
   Src->F_PHOT =  0;
   Src->F_POL =  3;
-  Src->F_POLAR =  0;
+  Src->F_POLAR =  1;
   Src->F_OPD =  1;
   Src->F_WIGGLER =  0;
   Src->F_BOUND_SOUR =  0;

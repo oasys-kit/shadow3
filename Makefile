@@ -100,8 +100,8 @@ CXX = g++
 #CXX = x86_64-w64-mingw32-g++
 #CXX = i686-w64-mingw32-g++
 
-PY = python
-#PY = python3
+#PY = python
+PY = python3
 
 #-fopenmp -g
 CFLAGS = -fPIC $(32BITS)
