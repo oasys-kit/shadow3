@@ -74,92 +74,89 @@ Module shadow_PreProcessors
 !C			IMSL function IBCCCU
 !C---
 SUBROUTINE PRESURFACE
-	implicit none
 
-	character(len=sklen) :: inFile,outFile
+    implicit none
+    character(len=sklen) :: inFile,outFile
 
+    !C The dimensions of WK should be 2*NX*NY + 2*MAX(NX,NY).  If so, the
+    !C size of WK for NX=101, NY=101 should be 20604 *not* 20602 as above.
+    !C Below I have used the correct formula and have dimensioned WK for 501
+    !C points, as I have CSPL, X, Y, and Z.
 
-!C The dimensions of WK should be 2*NX*NY + 2*MAX(NX,NY).  If so, the
-!C size of WK for NX=101, NY=101 should be 20604 *not* 20602 as above.
-!C Below I have used the correct formula and have dimensioned WK for 501
-!C points, as I have CSPL, X, Y, and Z.
+    real(kind=skr),dimension(:),allocatable       :: WK
+    real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
+    integer(kind=ski)   :: iErr,iWhat,nx,ny,i,j,iEr,ic,nw,iTmp
 
-	real(kind=skr),dimension(:),allocatable       :: WK
-	real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
-	integer(kind=ski)   :: iErr,iWhat,nx,ny,i,j,iEr,ic,nw,iTmp
+    ! todo: by now, only allocatable in Y direction. To continue with X
+    !       (problema in calling imsl stuff...)
+    real(kind=skr),dimension(501)     :: X
+    real(kind=skr),dimension(:,:),allocatable :: Z
+    !real(kind=skr),dimension(:),allocatable   :: X,Y
+    real(kind=skr),dimension(:),allocatable   :: Y
 
-! todo: by now, only allocatable in Y direction. To continue with X
-!       (problema in calling imsl stuff...)
-        real(kind=skr),dimension(501)     :: X
-     	real(kind=skr),dimension(:,:),allocatable :: Z
-        !real(kind=skr),dimension(:),allocatable   :: X,Y
-        real(kind=skr),dimension(:),allocatable   :: Y
+1   INFILE    =   RSTRING ('File containing the surface mesh ? ')
+    OPEN    (20, FILE=INFILE, STATUS='OLD', IOSTAT = IERR)
 
+    IF (IERR.NE.0) THEN
+        WRITE(6,*)'Cannot access ',INFILE
+        IWHAT = IYES ('Retry ? ')
+        IF (IWHAT.EQ.1) GOTO 1
+        STOP
+    END IF
+    READ (20,*) NX, NY
 
+    IF (NX.LT.4.OR.NY.LT.4) THEN
+        WRITE(6,*)'Not enough points to define arrays. Must be at',&
+                  ' least 4 points in each direction.'
+        STOP 'Please retry with larger arrays.'
+    END IF
 
-1     	INFILE	=   RSTRING ('File containing the surface mesh ? ')
-        OPEN	(20, FILE=INFILE, STATUS='OLD', IOSTAT = IERR)
+    IF (NX.GT.501) THEN
+        WRITE(6,*)'Arrays X too large: '
+        WRITE(6,*)'Maximum allowed is 501 points in X, unlimited in Y.'
+        STOP 'Please retry with smaller arrays.'
+    END IF
 
-    	IF (IERR.NE.0) THEN
-    	  WRITE(6,*)'Cannot access ',INFILE
-    	  IWHAT = IYES ('Retry ? ')
-    	 IF (IWHAT.EQ.1) GOTO 1
-    	  STOP
-    	END IF
-     	READ (20,*) NX, NY
+    nw = 2*501*ny+2*max(501,ny)
+    allocate(Z(501,NY))    
+    allocate(Y(NY))
+    allocate(CSPL(2,501,2,NY))
+    allocate(WK(nw))
+    ic = 1+max(501,ny)
 
-     	IF (NX.LT.4.OR.NY.LT.4) THEN
-     	  WRITE(6,*)'Not enough points to define arrays. Must be at',&
-      		' least 4 points in each direction.'
-     	  STOP 'Please retry with larger arrays.'
-     	END IF
-
-     	IF (NX.GT.501) THEN
-     	  WRITE(6,*)'Arrays X too large: '
-     	  WRITE(6,*)'Maximum allowed is 501 points in X, unlimited in Y.'
-     	  STOP 'Please retry with smaller arrays.'
-     	END IF
-
-        nw = 2*501*ny+2*max(501,ny)
-        allocate(Z(501,NY))	
-        allocate(Y(NY))
-	allocate(CSPL(2,501,2,NY))
-	allocate(WK(nw))
-	ic = 1+max(501,ny)
-
-     	WRITE(6,*)'Setting up ',NX,' by ',NY,' array.'
-!C
-!C Reads in Y array
-!C
-     	READ (20,*) (Y(I),I=1,NY)
-!C
-!C Now read X and Z arrays
-!C
-     	DO 10 I=1,NX
-     	  READ (20,*) X(I),(Z(I,J),J=1,NY)
-10    	CONTINUE
-     	WRITE(6,*)'Array read correctly. Compute spline.'
-!C
-!C Call IMSL routine to compute spline. Now use 501 points instead of 101.
-!C
-        iTmp = 501
-     	CALL	IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
-     	
-	IF (IER.EQ.132) THEN
-     	  WRITE(6,*)'The X and/or Y array are/is not ordered properly.' 
-          WRITE(6,*)'Please check data in ',INFILE
-	  STOP
-     	END IF
-     	WRITE(6,*)'Spline succesfully completed.'
-     	OUTFILE	=   RSTRING ('Please enter file-name for storage: ')
-     	OPEN (20, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
-	REWIND (20)
-     	 WRITE (20)	NX, NY
-     	 WRITE (20)	X,Y
-     	 WRITE (20)	CSPL
-     	CLOSE (20)
-     	WRITE(6,*)'Task completed. Spline stored in ',OUTFILE
-	RETURN
+    WRITE(6,*)'Setting up ',NX,' by ',NY,' array.'
+    !C
+    !C Reads in Y array
+    !C
+    READ (20,*) (Y(I),I=1,NY)
+    !C
+    !C Now read X and Z arrays
+    !C
+    DO I=1,NX
+        READ (20,*) X(I),(Z(I,J),J=1,NY)
+    END DO
+    WRITE(6,*)'Array read correctly. Compute spline.'
+    !C
+    !C Call IMSL routine to compute spline. Now use 501 points instead of 101.
+    !C
+    iTmp = 501
+    CALL IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
+         
+    IF (IER.EQ.132) THEN
+        WRITE(6,*)'The X and/or Y array are/is not ordered properly.' 
+        WRITE(6,*)'Please check data in ',INFILE
+        STOP
+    END IF
+    WRITE(6,*)'Spline succesfully completed.'
+    OUTFILE = RSTRING ('Please enter file-name for storage: ')
+    OPEN (20, FILE=OUTFILE, STATUS='UNKNOWN', FORM='UNFORMATTED')
+      REWIND (20)
+      WRITE (20) NX, NY
+      WRITE (20) X,Y
+      WRITE (20) CSPL
+      CLOSE (20)
+    WRITE(6,*)'Task completed. Spline stored in ',OUTFILE
+    RETURN
 END SUBROUTINE PreSurface
 
 !

@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 import numpy 
 import Shadow.ShadowLibExtensions as sd
 import sys
@@ -28,6 +28,7 @@ codata_ec = numpy.array(1.602176565e-19)
 codata_c = numpy.array(299792458.0)
 A2EV = 2.0*numpy.pi/(codata_h*codata_c/codata_ec*1e2)
 
+#TODO: delete. Implemented for beam object
 def getshonecol(beam,col):
   '''
   Extract a column from a shadow file (eg. begin.dat) or a Shadow.Beam instance. 
@@ -124,6 +125,7 @@ def getshonecol(beam,col):
 
 
 
+#TODO: delete. Implemented for beam object
 def getshcol(beam,col):
   '''
   Extract multiple columns from a shadow file (eg.'begin.dat') or a Shadow.Beam instance. 
@@ -189,6 +191,7 @@ def getshcol(beam,col):
     ret.append(getshonecol(bm,c))
   return tuple(ret)
 
+#TODO: delete. Implemented for beam object
 def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,title='HISTO1',xtitle=None,ytitle=None,calfwhm=0,noplot=0):
   '''
   Plot the histogram of a column, simply counting the rays, or weighting with the intensity.
@@ -593,16 +596,369 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   ticket.averagey = numpy.average( col2[t] )
   ticket.intensityinslit = intensityinslit
   return ticket  
-  
-if __name__=="__main__":
-  import Shadow as sd
-  from matplotlib import pyplot as plt
-  a = sd.Beam()
-  a.load("begin.dat")
-  ticket1 = histo1(a,1,nbins=25,noplot=1,calfwhm=1)
-  ticket1.figure.show()
-  raw_inumpy.t()
-  ticket1 = plotxy(a,(1,3),noplot=1)
-  ticket1.figure.show()
-  raw_inumpy.t()
 
+#
+# waviness
+#
+def waviness_write(dic1,file="waviness.inp"):
+    f = open(file,'w')
+    f.write("%s"%(dic1["file"]))
+    f.write("%d %d \n"%(dic1["npointx"],dic1["npointy"]) )
+    f.write("%f %f \n"%(dic1["width"],dic1["xlength"]) )
+    f.write("%d %f \n"%(dic1["nharmonics"],dic1["slp"]) )
+    f.write("%d \n"%(dic1["iseed"]) )
+    c = dic1["c"]
+    y = dic1["y"]
+    g = dic1["g"]
+    for i in range(dic1["nharmonics"]+1): 
+        f.write("%f  %f  %f \n"%(c[i],y[i],g[i]) )
+     
+
+    f.close()
+
+def waviness_read(file="waviness.inp"):
+
+    with open(file) as f:
+        filedat = f.readline()
+        #print("filedat= %s "%(filedat))
+
+        npointx, npointy = [int(x) for x in f.readline().split()]
+        #print("npointx= %d, npointy= %d"%(npointx,npointy))
+
+        width, xlength = [float(x) for x in f.readline().split()]
+        #print("width= %f, xlength= %f"%(width,xlength))
+
+
+        nharmonics, slp = [float(x) for x in f.readline().split()]
+        nharmonics = int(nharmonics)
+        #print("nharmonics= %d, slp= %f"%(nharmonics,slp))
+
+        iseed = int(f.readline())
+
+        #print("iseed= %d"%(iseed))
+
+        array1 = [[float(x) for x in line.split()] for line in f]
+        array1 = numpy.array(array1)
+        #print("array1.shape",array1.shape)
+
+        return { "file":filedat, "npointx":npointx, "npointy":npointy, \
+                 "width":width, "xlength":xlength, "nharmonics":nharmonics, \
+                 "slp":slp, "iseed":iseed, \
+                 "c":array1[:,0].copy(), "y":array1[:,1].copy(), "g":array1[:,2].copy() }
+
+
+
+def slopes(z,x,y):
+    """
+    ;+
+    ; NAME:
+    ;	slopes
+    ; PURPOSE:
+    ;       This function calculates the slope errors of a surface along the mirror 
+    ;       length y and mirror width x. 
+    ; CATEGORY:
+    ;	SHADOW tools
+    ; CALLING SEQUENCE:
+    ;	(slope,slopesrms) = slopes(z,x,y)
+    ; INPUTS:
+    ;	x: the width array of dimensions (Nx)
+    ;	y: the length array of dimensions (Ny)
+    ;	z: the surface array of dimensions (Nx,Ny)
+    ; OUTPUTS:
+    ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
+    ;            along y in out[0,:,:] and along Y in out[1,:,:]
+    ;	slopesrms: a 4-dim array with 
+    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec, 
+    ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
+    ;
+    ; MODIFICATION HISTORY:
+    ;       MSR 1994 written
+    ;       08-04-15 srio@esrf.eu makes calculations in double precision.
+    ;       2014-09-11 documented
+    ;       2012-02-10 srio@esrf.eu python version
+    ;-
+    ;
+    """
+
+    nx = z.shape[0]
+    ny = z.shape[1]
+
+    slope = numpy.zeros((2,nx,ny))
+
+    #; 
+    #; slopes in x direction
+    #;
+    for i in range(nx-1):
+        step = x[i+1] - x[i]
+        slope[0,i,:] = numpy.arctan( (z[i+1,:] - z[i,:] ) / step )
+    slope[0,nx-1,:] = slope[0,nx-2,:]
+
+    #;
+    #; slopes in y direction
+    #; 
+    for i in range(ny-1):
+        step = y[i+1] - y[i]
+        slope[1,:,i] = numpy.arctan( (z[:,i+1] - z[:,i] ) / step )
+    slope[1,:,ny-1] = slope[1,:,ny-2]
+
+    slopermsX = slope[0,:,:].std()
+    slopermsY = slope[1,:,:].std()
+    slopermsXsec = slopermsX*180.0/numpy.pi*3600.0
+    slopermsYsec = slopermsY*180.0/numpy.pi*3600.0
+    slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+
+    print('\n **** slopes: ****')
+    print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
+    print('                               : %f urad'%(slopermsX*1e6))
+    print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
+    print('                               : %f urad'%(slopermsY*1e6))
+    print(' *****************')
+
+    return (slope,slopesrms)
+
+
+def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
+    """
+      write_shadowSurface: writes a mesh in the SHADOW/presurface format
+      SYNTAX: 
+           out = write_shadowSurface(z,x,y,outFile=outFile)
+      INPUTS:
+           z - 2D array of heights
+           x - 1D array of spatial coordinates along mirror width.
+           y - 1D array of spatial coordinates along mirror length.
+     
+      OUTPUTS:
+           out - 1=Success, 0=Failure
+           outFile - output file in SHADOW format. If undefined, the
+                     file is names "presurface.dat"
+     
+    """
+    out = 1
+
+    try:
+       fs = open(outFile, 'w')
+    except IOError:
+       out = 0
+       print ("Error: can\'t open file: "+outFile)
+       return 
+    else:
+        # dimensions
+        fs.write( repr(xx.size)+" "+repr(yy.size)+" \n" ) 
+        # y array
+        for i in range(yy.size): 
+            fs.write(' ' + repr(yy[i]) )
+        fs.write("\n")
+        # for each x element, the x value and the corresponding z(y)
+        # profile
+        for i in range(xx.size): 
+            tmps = ""
+            for j in range(yy.size): 
+                tmps = tmps + "  " + repr(s[j,i])
+            fs.write(' ' + repr(xx[i]) + " " + tmps )
+            fs.write("\n")
+        fs.close()
+        print ("write_shadow_surface: File for SHADOW "+outFile+" written to disk.")
+
+
+def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=113.1,\
+                  nharmonics=3,slp=0.9, iseed=2387427,\
+                  c=[1.0,1.0,1.0,1.0],y=[0.0,0.0,0.0,0.0],g=[0.0,0.0,0.0,0.0]):
+
+    """
+    ;+
+    ; NAME: 	WAVINESS_CALC
+    ;
+    ; PURPOSE:      This program generates a random error surface
+    ;
+    ;               The main method for slope errors (called hereafter waviness) is 
+    ;               described in: 
+    ;                  M. Sanchez del Rio and A. Marcelli,
+    ;                  NIM-A319 (1992) 170-177
+    ;                  http://dx.doi.org/10.1016/0168-9002(92)90550-N
+    ; 
+    ;               An alternative method (called hereafter harmonic_sum) consists
+    ;               in a simple sum of harmonics:
+    ;                 z = \sum_{n=1}^{N} {b_n cos( 2 \pi l/L + \psi_n) }
+    ;
+    ;                 (see e.g., Eq 11 in Shi et al, J Synchrotron Rad. 21 (2014)
+    ;                  http://dx.doi.org/10.1107/S160057751400650X )
+    ;
+    ;               The switching of one or another method is done via the
+    ;               sign of "Estimated Slope Error RMS [arcsec]" in the 
+    ;               input interface, or slp in the input structure,
+    ;               Set >0 for waviness, <0 for harmonic_sum
+    ;
+    ; CATEGORY:     SHADOW tools
+    ;	
+    ; CALLING SEQUENCE:
+    ;	out = waviness_calc(input)
+    ; INPUT KEYWORDS:
+    ;                file: name of the output file
+    ;                npointx: number of points along mirror width
+    ;                npointy: number of points along mirror width
+    ;                xlength:  the mirror length (apologies for the X)
+    ;                width: is the mirror width
+    ;                nharmonics: is n_max in Eq.8 (see reference)
+    ;                slp: estimation of the target slope error RMS in arcsec
+    ;                       for the default method (waviness). Must be >0
+    ;                       For the other method (see later) it must be negative,
+    ;                iseed: seed to initializa random generator
+    ;                c: an array of coeff C_n in Eq. 9. 
+    ;                     Only the first N+1 indices are read.
+    ;                y: an array of coeff y_n^0 in Eq. 8 normalized.
+    ;                     This is the initial constant shift. 
+    ;                     One means the profile can be shifted to any position 
+    ;                     along the mirror length. Zero means no initial shift.
+    ;                g: an array of coeff g_n (random shift) in Eq. 8 normalized.
+    ;                       
+    ;
+    ;                For the alternative method (harmonic_sum): 
+    ;
+    ;                   To use this method, slp must be set negative. 
+    ;                   In this method the profile is:
+    ;                   z(y) = \sum_{n=1}^{N}
+    ;                    { b_0 n^{g_n} cos( 2 \pi (0.5+(y/L) + r_n y_g ) }
+    ;                   or in other words, a sum of N harmonics with a power
+    ;                   law of exponent g_n.
+    ;
+    ;                   y is the coordinate along the mirror, with zero in the 
+    ;                     mirror center.
+    ;                   b_0 is a constant equal to abs(SLP) 
+    ;                   g_n is the exponent of n stored in g for each harmonic
+    ;                   L is the mirror length xlength
+    ;                   r_n is a random value in [0,1) for each harmonic
+    ;                   y_g is a normalized interval to apply the random shift
+    ;                     stored in Y. 0 means no random shift, 1 means shift in 
+    ;                     the full mirror length.
+    ;                   Note that in this method c[0],y[0] and g[0] are not used
+    ;                     as summation index starts with one.
+    ; 
+    ;	OUTPUT: 
+    ;                   the surface x, y, z
+    ;
+    ; MODIFICATION HISTORY:
+    ;			June 1991	first version
+    ;			September 1991	update 
+    ;			October 1991	moved to Sun
+    ;			September 1992	distribution version
+    ;			February 2006	translated to IDL (srio@esrf.fr)
+    ;			2014-09-09 srio@esrf.eu dimensionated to 5000pts.
+    ;                                added new method (SLP<0). Added doc.
+    ;                   2015-02-10 srio@esrf.eu python version
+    ;
+    ;-
+    """
+    method = 0
+    if (slp < 0):
+        method = 1
+        print('waviness_calc: Using method: harmonic sum')
+    else:
+        print('waviness_calc: Using standard method')
+
+    zz=numpy.zeros((npointx,npointy))
+    # ;c
+    # ;c  input
+    # ;c
+    yfact = 1.0
+    slp = slp/3600.0 * numpy.pi / 180.0   # pass to rads
+    xfact = xlength / numpy.pi
+
+    if (method == 0):
+        xntot = 0.0
+        coe = numpy.zeros(nharmonics+1)
+        shi = numpy.zeros(nharmonics+1)
+        shin = numpy.zeros(nharmonics+1)
+        ranc = numpy.zeros(nharmonics+1)
+
+        xx = numpy.zeros(npointx)
+
+        for i in range(nharmonics+1):
+            a1 = c[i]
+            a2 = y[i]
+            a3 = g[i]
+            xntot = xntot + a1
+            #; eq 9 in ref.
+            amp = slp * xlength / (0.5 + float(i) ) / numpy.sqrt(2.) / numpy.pi
+            coe[i] = a1 * amp
+            # 
+            shin[i] = a2
+            ranc[i] = a3 
+
+        for i in range(nharmonics+1):
+            coe[i] = coe[i] / numpy.sqrt(xntot)   # for a single harmonic
+
+        #         ;c
+        #         ;c	begin calculations
+        #         ;c
+        stp = numpy.pi/(npointy-1)
+        stpx = width/(npointx-1)
+        stpy = xlength/(npointy-1)
+
+
+        for k in range(npointx):
+            xx[k] = -(width / 2.0) + stpx * k
+            for j in range(nharmonics+1):
+                tmp = numpy.random.rand()
+                shi[j] = shin[j] * numpy.pi + tmp * numpy.pi * ranc[j]
+
+            y = numpy.zeros(npointy)
+            for j in range(nharmonics+1):
+                x = -numpy.pi / 2.0 + numpy.arange(npointy) * stp
+                nn = float(j)
+                ynew = coe[j]*( (-1.0)**nn * numpy.cos((2.0 * nn + 1.0) * (x + shi[j])))
+                y = ynew + y
+
+            x = x * xfact
+            yy = x
+            y = y * yfact
+            zz[k,:] = y
+    else:
+        xx = numpy.linspace(-width/2.,width/2.,npointx)
+        yy = numpy.linspace(-xlength/2.,xlength/2.,npointy)
+        for k in range(npointx):
+            zz1 = yy*0.0
+            for j in range(1,nharmonics+1):
+                arg = 2.0 * numpy.pi * j * (0.5 + yy/xlength)
+                ran1 = 2.0 * numpy.pi * numpy.random.rand() * y[j]
+                zz1 = zz1 + c[j]*float(j)**(g[j])*numpy.cos(arg+ran1)
+            zz[k,:] = zz1 * numpy.abs(slp) # global multiplicative factor slp
+
+    return (xx,yy,zz)
+
+
+if __name__=="__main__":
+  #import Shadow as sd
+  #from matplotlib import pyplot as plt
+  #a = sd.Beam()
+  #a.load("begin.dat")
+  #ticket1 = histo1(a,1,nbins=25,noplot=1,calfwhm=1)
+  #ticket1.figure.show()
+  #raw_inumpy.t()
+  #ticket1 = plotxy(a,(1,3),noplot=1)
+  #ticket1.figure.show()
+  #raw_inumpy.t()
+
+  #
+  #test waviness
+  #
+  do_waviness = 1
+  if do_waviness:
+      myfile = "waviness.inp"
+      try:
+          f = open(myfile)
+          f.close()
+          tmp = waviness_read(file=myfile)
+    
+          (x,y,z) = waviness_calc(\
+                        file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
+                        width=tmp["width"],xlength=tmp["xlength"],\
+                        nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
+                        c=tmp["c"],y=tmp["y"], g=tmp["g"])
+          
+          waviness_write(tmp,file="tmp.inp")
+      except:
+          (x,y,z) = waviness_calc()
+    
+      write_shadow_surface(z.T,x,y,outFile='waviness.dat')
+      slopes(z,x,y)
+ 

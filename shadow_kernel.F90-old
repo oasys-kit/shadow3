@@ -6975,20 +6975,16 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
         !implicit integer(kind=ski)        (f,i-n)
         implicit none
 
-        real(kind=skr), intent(in)        :: xin, yin
-        real(kind=skr), intent(out)       :: zout
-        integer(kind=ski), intent(out)    :: serr
-        integer(kind=ski), intent(inout)  :: ierr
+        real(kind=skr), intent(in)   :: xin, yin
+        real(kind=skr), intent(out)  :: zout
 
 
         !DIMENSION CSPL (2,201,2,201),X(201),Y(201),PDS(6)
-        !DIMENSION X(501),PDS(6)
-	real(kind=skr),dimension(501)                 :: X
-	real(kind=skr),dimension(:),allocatable       :: Y
-     	real(kind=skr),dimension(:,:,:,:),allocatable :: CSPL
-	real(kind=skr),dimension(6)                   :: PDS
+        DIMENSION X(501),PDS(6)
+	real(kind=skr),dimension(:),allocatable :: Y
+     	real(kind=skr),dimension(:,:,:,:),allocatable ::  CSPL
 
-        !INTEGER(KIND=ski) SERR
+        INTEGER(KIND=ski) SERR
         !DIMENSION       VVOUT(3)
      	real(kind=skr),dimension(3) ::  vvout
         ! new to access directly data file (before presirface) srio@esrf.eu 20150227
@@ -6996,16 +6992,15 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
         character(len=sklen) :: stmp
 	real(kind=skr),dimension(:,:),allocatable :: Z
 	real(kind=skr),dimension(:),allocatable   :: wk
-        integer(kind=ski) :: i,j,ic,iTmp2,nw,ier
-        integer(kind=ski) :: nx,ny
-	real(kind=skr)    :: dsdx, dsdy
 ! C
 ! C SAVE the variables that need to be saved across subsequent invocations
-! C of this subroutine. 
+! C of this subroutine. Note: D_SPACING is not included in the SAVE block
+! C because it's included in the COMMON.BLK file.
 ! C
         SAVE NX, NY, X, Y, CSPL
-
-
+! D
+! D	FILE_RIP	= 'SURFACE'
+! D
         SERR = 0
         IF (IERR.EQ.-1) THEN
             ! C 
@@ -7017,12 +7012,14 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                 print *,'SUR_SPLINE: Error: File not found: '//trim(FILE_RIP)
                 ierr = -1000
                 return
+            else
+                print *,'>>>>>>SUR_SPLINE: File found: '//trim(FILE_RIP)
+                print *,'>>>>>>SUR_SPLINE: formatted: '//trim(stmp)
             endif
             if (trim(stmp) .ne. "FORMATTED") then 
                OPEN  (20, FILE=FILE_RIP, STATUS='OLD', FORM='UNFORMATTED')
                READ  (20) NX, NY
-               if ((NX .gt. 100000) .or. (NY .gt. 1000000) .or. & 
-                   (NX .lt. 0) .or. (NY .lt. 0)) then 
+               if ((NX .gt. 100000) .or. (NY .gt. 1000000)) then 
                    !
                    ! unrealistic numbers mean that the file is perhaps ASCII
                    ! so presurface is not run
@@ -7031,6 +7028,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                    CLOSE(20)
                    goto 1010
                endif
+               print*,'>>>>>>>>>>>>>>>>>>>>> NX,NY: ',NX,NY
 
                allocate( Y(NY) )
                allocate( CSPL(2,501,2,NY) )
@@ -7045,12 +7043,13 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                ! compute "on the fly" the spline as presurface has not been used. 
                ! This part has been copied from shadow_preprocessors->presurface
                !
-               !print*,'SUR_SPLINE: data input file before presurface.'
+               print*,'SUR_SPLINE: It seems that you did not run presurface on surface error file.'
+               print*,'            Trying to do it...'
                OPEN  (20, FILE=FILE_RIP, STATUS='OLD', FORM='FORMATTED')
                READ  (20,*) NX, NY
                if ((nx .lt. 4) .or. (ny .lt. 4)) then
-                  !print *,'SUR_SPLINE: Error: Not enough points to define arrays. Must be at'
-                  !print *,'            least 4 points in each direction.'
+                  print *,'SUR_SPLINE: Error: Not enough points to define arrays. Must be at'
+                  print *,'            least 4 points in each direction.'
                   ierr = -1000
                   return
                endif
@@ -7061,6 +7060,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                   ierr = -1000
                   return
                endif
+               print*,'>>>>>>>>>>>>>>>>>>>>> NX,NY: ',NX,NY
                nw = 2*501*ny+2*max(501,ny)
                allocate(Z(501,NY))    
                allocate(WK(nw))
@@ -7073,18 +7073,18 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                  READ (20,*) X(I),(Z(I,J),J=1,NY)
                END DO
                CLOSE (20)
-               !WRITE(6,*)'SUR_SPLINE: Array read correctly. Compute spline.'
+               WRITE(6,*)'SUR_SPLINE: Array read correctly. Compute spline.'
                !C
                !C Call IMSL routine to compute spline. Now use 501 points instead of 101.
                !C
-               iTmp2 = 501
-               CALL IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp2, WK, IER)
+               iTmp = 501
+               CALL IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp, WK, IER)
                IF (IER.EQ.132) THEN
                    WRITE(6,*)'SUR_SPLINE: Error: The X and/or Y array are/is not ordered properly.' 
                    WRITE(6,*)'            Please check data in '//trim(FILE_RIP)
                    STOP
                END IF
-               !WRITE(6,*)'SUR_SPLINE: Spline succesfully completed.'
+               WRITE(6,*)'SUR_SPLINE: Spline succesfully completed.'
 
             endif
 

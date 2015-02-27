@@ -1355,7 +1355,7 @@ class Source(ShadowLib.Source):
             txt += 'Magnetic Radius = %17.9g  m.  Beam Energy = %17.9g  GeV.\n'%(self.R_MAGNET,self.BENER)
             txt += 'Beam Emittancies. EPSI_X: %17.9g EPSI_Z: %17.9g \n'%(self.EPSI_X,self.EPSI_Z)
             txt += 'Distance from Waist.   X: %17.9g      Z: %17.9g \n'%(self.EPSI_DX,self.EPSI_DZ)
-            txt += 'Polarization Used: %d \n'%(TPOL[str(self.F_POL)])
+            txt += 'Polarization Used: %s \n'%(TPOL[str(self.F_POL)])
         # !C
         # !C Photon Energy
         # !C
