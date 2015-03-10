@@ -12,6 +12,7 @@ Contents:
 1 Geometry of a CRL.
 2 Example: Simulating the CRL of Snigirev et al. Nature 384, p49 (1996)
 3 Transfocators
+4 Python
 
 --------------------------------------------------------------------------------
 
@@ -216,5 +217,32 @@ Example: the following line creates the input for Snigirev's lens discussd in pr
 30  4 1 300e-4  -1.0 600e-4 25e-4 625e-4  3000  189.87 Al5_55.dat
 
 
+4) Python
+---------
+
+A set of routines have been written in python to define lenses, CRLs and 
+transfocators. See ShadowLibExtensions.py file for code and examples. The 
+Syntax is the following: 
+
+lens = Shadow.compoundOE()
+lens.append_lens(1000.0,1000.0,surface_shape=1,convex_to_the_beam=1,\
+    diameter=None,cylinder_angle=None,radius=1000.0,interthickness=5.0,\
+    refraction_index=1.5,attenuation_coefficient=0.0, use_ccc=0)
+
+crl = Shadow.compoundOE(name = 'crl_snigirev1996')
+crl.append_crl(crl_fs_before, crl_fs_after, nlenses=crl_nlenses, \
+    surface_shape=crl_shape, convex_to_the_beam=0,diameter=crl_diameter,\
+    prerefl_file=crl_file, refraction_index=refraction_index, \
+    attenuation_coefficient=attenuation_coefficient, \
+    cylinder_angle=crl_cylinder, radius=crl_r, interthickness=crl_interthickness,\
+    use_ccc=1)
+
+tf = Shadow.compoundOE(name='TF ID30B')
+
+tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, \
+    radius=tf_radii,empty_slots=0, surface_shape=4, convex_to_the_beam=0, \
+    diameter=None, refraction_index=refraction_index, \
+    attenuation_coefficient=attenuation_coefficient, \
+    cylinder_angle=0.0,interthickness=50e-4,thickness=0.3,use_ccc=0)
 
 ------------------------------------------------------------------------

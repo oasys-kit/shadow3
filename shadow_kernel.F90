@@ -4482,6 +4482,12 @@ SAVE        QMIN, QMAX, QSTEP, DEPTH0, NREFL, TFILM, &
 ! C		 1	Reflection case
 ! C		 2	Absorption case
 ! C
+
+!todo: compute phases for the usual Fresnel reflection (mirrors). They 
+!      are set to zero here to avoid NaN in Macs. srio@esrf.eu 20150310
+phases = 0.0
+phasep = 0.0
+
 IF (K_WHAT.EQ.0) THEN
     IF (F_REFL.EQ.0) THEN  !mirror
        !

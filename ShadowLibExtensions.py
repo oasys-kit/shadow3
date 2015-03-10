@@ -25,6 +25,46 @@ class Beam(ShadowLib.Beam):
     except AttributeError:
       print ('retrace: No rays')
 
+  def trace_compoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,write_star_files=0):
+      """
+      traces a compound optical element
+
+      IMPORTANT: Note that shadow3 changes the values of the OE when tracing (i.e., oe1 changes after
+                 beam.traceOE(oe1) ). The same happens with compoundOE: Each oe inside compoundOE is
+                 changed after tracing.
+
+      :param compoundOE: input object
+      :param from_oe: index of the first oe (for tracing compoundOE after an existing system) (default=1)
+      :param write_start_files: 0=No (default), 1=Yes
+      :param write_end_files:  0=No (default), 1=Yes
+      :param write_star_files:  0=No (default), 1=Yes
+      :return: a list of the OE objects after tracing (the info of end.xx files)
+      """
+      oe_index = from_oe
+      oe_n = compoundOE.number_oe()
+      list = []
+
+
+      for i,oe in enumerate(compoundOE.list):
+        print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,oe_index))
+
+        if write_start_files:
+            oe.write("start.%02d"%(oe_index))
+            print("File written to disk: start.%02d"%(oe_index))
+
+        beam.traceOE(oe,oe_index)
+
+        list.append(oe)
+        if write_star_files:
+            beam.write("star.%02d"%(oe_index))
+            print("File written to disk: star.%02d"%(oe_index))
+        if write_end_files:
+            oe.write("end.%02d"%(oe_index))
+            print("File written to disk: end.%02d"%(oe_index))
+        oe_index += 1
+
+      return list
+
   def getStandardDeviations(self,weighted=True):
     try:
       if len(self.rays)==0:
@@ -275,6 +315,7 @@ class Beam(ShadowLib.Beam):
 
       Possible choice for col are:
                1   X spatial coordinate [user's unit]
+               1   X spatial coordinate [user's unit]
                2   Y spatial coordinate [user's unit]
                3   Z spatial coordinate [user's unit]
                4   X' direction or divergence [rads]
@@ -319,15 +360,15 @@ class Beam(ShadowLib.Beam):
       ticket['xrange'] = xrange
 
 
-      col = col - 1
+      coli = col - 1
       if ref == 1: ref = 23
 
 
       if ref==0:
-        x, a = self.getshcol((col+1,10))
+        x, a = self.getshcol((col,10))
         w = numpy.ones(len(x))
       else:
-        x, a, w = self.getshcol((col+1,10,ref))
+        x, a, w = self.getshcol((col,10,ref))
 
       if factor != 1.0: x *= factor
 
@@ -382,6 +423,7 @@ class Beam(ShadowLib.Beam):
           print ('#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN', file = file)
           print ('#C COLUMN 3 CORRESPONDS TO INTENSITY', file = file)
           print ('#C COLUMN 4 CORRESPONDS TO ERROR: SIGMA_INTENSITY', file = file)
+          print ('#C col = %d'%(col), file = file)
           print ('#C nolost = %d'%(nolost), file = file)
           print ('#C nbins = %d'%(nbins), file = file)
           print ('#C ref = %d'%(ref), file = file)
@@ -506,8 +548,6 @@ class OE(ShadowLib.OE):
     self.FILE_SRC_EXT = file_src_ext
 
     return self
-
-
 
     #SCR_NUMBER automastically set
 
@@ -857,7 +897,6 @@ class OE(ShadowLib.OE):
 
 
   def mirinfo(self, title=None):
-    pass
     '''
     mimics SHADOW mirinfo postprocessor. Returns a text array.
     :return:
@@ -882,6 +921,7 @@ class OE(ShadowLib.OE):
 
     TOPLIN = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
     T20 = '                    '
+    T60 = T20 + T20 + T20
     txt += TOPLIN
     txt += '********************   MIRROR  DESCRIPTION   ********************\n'
 
@@ -1140,60 +1180,349 @@ class OE(ShadowLib.OE):
 
 
 # not yet ready
-class Beamline(list):
-  def __init__(self):
-    self = list.__init__()
-    self.type = type(OE)
+class compoundOE():
+  def __init__(self,list=None, name=''):
+    if list == None:
+        self.list = []
+    else:
+        self.list = list
+    self.name = name
+    self = list #.__init__()
+    #self.type = type(OE)
 
-  def append(self,item):
-    if isinstance(item,str):
-      if item.find('crl.')!=-1: 
-        self.appendCRL(item)
+  def set_name(self,name):
+      self.name = name
+
+  def number_oe(self):
+      return len(self.list)
+
+
+  def print(self):
+      print("CompoundOE name: %s, found %d elements"%(self.name,self.number_oe()))
+      for i,j in enumerate(self.list):
+          print('oe %d, p=%f, q=%f'%(1+i,j.T_SOURCE,j.T_IMAGE))
+
+  def mirinfo(self):
+      txt = ""
+      for i,oe in enumerate(self.list):
+          txt += oe.mirinfo(title="oe %d in compoundOE name: %s "%(i+1,self.name))
+      return txt
+
+  def append_oe(self,item):
+    if isinstance(item, OE):
+        self.list.append(item)
+    else:
+        print("Failed to append: only OE can be appended. ")
+    return self
+
+  def append_lens(self,p,q,surface_shape=1,convex_to_the_beam=1,diameter=None,cylinder_angle=None,\
+                  prerefl_file=None, refraction_index=1.0, attenuation_coefficient=0.0,\
+                  radius=500e-2,interthickness=0.001,use_ccc=0):
+      """
+      Adds and sets a lens (two interfaces) to the compound optical element
+
+      :param p: distance source-first lens interface
+      :param q: distance last lens interface to image plane
+      :param surface_shape: 1=sphere 4=paraboloid, 5=plane (other surfaces not yet implamented)
+      :param convex_to_the_beam: convexity of the first interface exposed to the beam 0=No, 1=Yes
+                                 the second interface has opposite convexity
+      :param diameter: lens diameter. Set to None for infinite dimension
+      :param cylinder_angle: None=not cylindrical, 0=meridional 90=sagittal
+      :param prerefl_file:file name (from prerefl) to get the refraction index. If set
+                then the keywords refraction_index and attenuation_coefficient are not used.
+      :param refraction_index: n (real) #ignored if prerefl_file points to file.
+      :param attenuation_coefficient:mu (real); ignored if prerefl file points to file.      :param radius: lens radius (for pherical, or radius at the tip for paraboloid)
+      :param interthickness: lens thickness (distance between the two interfaces at the center of the lenses)
+      :param use_ccc 0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
+      :return:
+      """
+      oe1 = OE()
+      oe2 = OE()
+
+      #set constant values for both interfaces
+      oe1.T_INCIDENCE = 0.0
+      oe1.T_REFLECTION = 180.0
+      oe2.T_INCIDENCE = 0.0
+      oe2.T_REFLECTION = 180.0
+      oe1.F_REFRAC = 1
+      oe2.F_REFRAC = 1
+
+      oe1.F_EXT = 1
+      oe2.F_EXT = 2
+
+      # write no output files. If wanted they are written by python in trace_compoundOE
+      oe1.FWRITE = 3
+      oe2.FWRITE = 3
+
+
+
+      if use_ccc:
+          oe1.FMIRR = 10
+          oe2.FMIRR = 10
       else:
-        txt = item
-        item = OE()
-        item.load(txt)
-    if not isinstance(item,self.type): raise TypeError( 'item is not of type %s' % self.type )
-    super(Beamline,self).append(item)
+          oe1.FMIRR = surface_shape
+          oe2.FMIRR = surface_shape
+      #set values that depend on the interface number
 
-  def trace(self,beam):
-    if beam.rays==None:
-      raise ValueError( 'beam not initialized yet' )
+      oe1.T_SOURCE = p
+      oe1.T_IMAGE = interthickness*0.5
+      oe2.T_SOURCE = interthickness*0.5
+      oe2.T_IMAGE = q
 
-    for i in range(len(self)):
-      beam.traceOE(self[i],i+1)
-      if self[i].F_WRITE==1 or self[i].F_WRITE==2:  beam.write('star.%02d' % i+1)
+      #refraction index
+      if prerefl_file != None and prerefl_file!= "":
+          oe1.F_R_IND = 2 #keyboard in object space, file in image space
+          oe1.R_IND_OBJ = 1.0
+          oe1.R_ATTENUATION_OBJ = 0.0
+          oe1.FILE_R_IND_IMA = prerefl_file.encode('utf-8')
 
-  def prepareInputShadow3Executables(self):
-    f = file('system.dat','w')
-    for i in range(len(self)):
-      f.write('start.%02d\n' % i+1)
-      self[i].write('start.%02d' % i+1)
+          oe2.F_R_IND = 1 #file in object space, keyboard in image space
+          oe2.FILE_R_IND_OBJ = prerefl_file.encode('utf-8')
+          oe2.R_IND_IMA = 1.0
+          oe2.R_ATTENUATION_IMA = 0.0
+      else:
+          oe1.F_R_IND = 0
+          oe1.R_IND_OBJ = 1.0
+          oe1.R_ATTENUATION_OBJ = 0.0
+          oe1.R_IND_IMA = refraction_index
+          oe1.R_ATTENUATION_IMA = attenuation_coefficient
+
+          oe2.F_R_IND = 0
+          oe2.R_IND_OBJ = refraction_index
+          oe2.R_ATTENUATION_OBJ = attenuation_coefficient
+          oe2.R_IND_IMA = 1.0
+          oe2.R_ATTENUATION_IMA = 0.0
+
+      #diameter
+      if diameter == None:
+          oe1.FHIT_C = 0
+          oe2.FHIT_C = 0
+      else:
+          oe1.FHIT_C = 1
+          oe2.FHIT_C = 1
+          oe1.FSHAPE = 1 #ellipse
+          oe2.FSHAPE = 1
+          oe1.RWIDX1 = diameter*0.5
+          oe2.RWIDX1 = diameter*0.5
+          oe1.RWIDX2 = diameter*0.5
+          oe2.RWIDX2 = diameter*0.5
+          oe1.RLEN1 = diameter*0.5
+          oe2.RLEN1 = diameter*0.5
+          oe1.RLEN2 = diameter*0.5
+          oe2.RLEN2 = diameter*0.5
+
+      #radii
+      if surface_shape == 1: #spherical
+        oe1.RMIRR = radius
+        oe2.RMIRR = radius
+        oe1.CCC =  numpy.array([1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,-2.0*radius,0.0])
+        oe2.CCC =  numpy.array([1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,-2.0*radius,0.0])
+      if surface_shape == 4: #parabolical
+        oe1.PARAM = radius
+        oe2.PARAM = radius
+        oe1.CCC = numpy.array([1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,-2.0*radius,0.0])
+        oe2.CCC = numpy.array([1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,-2.0*radius,0.0])
+
+      if surface_shape != 1 and surface_shape != 4 and surface_shape != 5:
+          print("Error setting lens: surface shape not implemented")
+
+      if convex_to_the_beam == 1:
+          if use_ccc == 0:
+              oe1.F_CONVEX = 1
+              oe2.F_CONVEX = 0
+          else:
+              oe1.F_CONVEX = 0 # note that the needed changes are done here, nothing to do in shadow3
+              oe2.F_CONVEX = 0
+          oe1.CCC[4] = -oe1.CCC[4]
+          oe1.CCC[5] = -oe1.CCC[5]
+          oe1.CCC[8] = -oe1.CCC[8]
+      else:
+          if use_ccc == 0:
+              oe1.F_CONVEX = 0
+              oe2.F_CONVEX = 1
+          else:
+              oe1.F_CONVEX = 0
+              oe2.F_CONVEX = 0 # note that the needed changes are done here, nothing to do in shadow3
+          oe2.CCC[4] = -oe2.CCC[4]
+          oe2.CCC[5] = -oe2.CCC[5]
+          oe2.CCC[8] = -oe2.CCC[8]
+
+      if cylinder_angle == None:
+          oe1.FCYL = 0
+          oe2.FCYL = 0
+      else:
+          oe1.FCYL = 1
+          oe2.FCYL = 1
+          oe1.CIL_ANG = cylinder_angle
+          oe2.CIL_ANG = cylinder_angle
+
+
+
+      self.append_oe(oe1)
+      self.append_oe(oe2)
+
+  def append_crl(self,p0,q0, nlenses=30, empty_slots=0, radius=500e-2, thickness=625e-4, interthickness=0.001, \
+                  surface_shape=1, convex_to_the_beam=1, diameter=None, cylinder_angle=None,\
+                  prerefl_file=None, refraction_index=1.0, attenuation_coefficient=0.0,\
+                  use_ccc=0):
+        """
+        Builds the stack of oe for a CRL.
+
+        Notes: if nlenses=0 sets a single "lens" with flat interfaces and no change of refraction index (like empty)
+
+                The refraction index should be input either by i) prerefl_index or ii) refraction_index and
+                attenuation_coefficient keywords. The first one is prioritary.
+
+                empty_slots: if different from zero, adds a distance equal to thickness*empty_slots to q0. The
+                intention is to simulate a lens that is off but the path should be considered.
+
+
+
+        :param p0:distance source-first lens interface
+        :param q0:distance last lens interface to image plane
+        :param nlenses: number of lenses
+        :param surface_shape:1=sphere 4=paraboloid, 5=plane (other surfaces not yet implamented)
+        :param convex_to_the_beam:convexity of the first interface exposed to the beam 0=No, 1=Yes
+                                 the second interface has opposite convexity
+        :param diameter:lens diameter. Set to None for infinite dimension
+        :param cylinder_angle:None=not cylindrical, 0=meridional 90=sagittal
+        :param prerefl_file:file name (from prerefl) to get the refraction index. If set
+                then the keywords refraction_index and attenuation_coefficient are not used.
+        :param refraction_index: n (real) #ignored if prerefl_file points to file.
+        :param attenuation_coefficient:mu (real); ignored if prerefl file points to file.
+        :param radius:lens radius (for pherical, or radius at the tip for paraboloid)
+        :param thickness: lens thickness (piling thickness)
+        :param interthickness:lens thickness (distance between the two interfaces at the center of the lenses)
+        :param use_ccc:0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
+        :return:
+        """
+        p_or_q = 0.5*(thickness - interthickness)
+
+        if nlenses == 0: # add an empty lens + a distance (empty_slots-1) for keeping the total distance
+            pi = p0 + p_or_q
+            qi = q0 + p_or_q + max(empty_slots-1,0)*thickness
+            self.append_lens(pi, qi, surface_shape=5, \
+                          interthickness=interthickness, \
+                          refraction_index=1.0, attenuation_coefficient=0.0, \
+                          use_ccc=use_ccc)
+        else:
+            for i in range(nlenses):
+                pi = p_or_q
+                qi = p_or_q
+                if i == 0:
+                    pi += p0
+                if i == nlenses-1:
+                    qi += q0 + empty_slots*thickness
+
+                self.append_lens(pi, qi, surface_shape=surface_shape, convex_to_the_beam=convex_to_the_beam,\
+                              diameter=diameter, cylinder_angle=cylinder_angle, radius=radius,\
+                              interthickness=interthickness, prerefl_file=prerefl_file, \
+                              refraction_index=refraction_index, attenuation_coefficient=attenuation_coefficient, \
+                              use_ccc=use_ccc)
+
+
+  def append_transfocator(self,p0,q0, nlenses=[4,8], empty_slots=0, radius=500e-2, thickness=625e-4, \
+                  interthickness=0.001, \
+                  surface_shape=1, convex_to_the_beam=1, diameter=None, cylinder_angle=None,\
+                  prerefl_file=None, refraction_index=1.0, attenuation_coefficient=0.0,\
+                  use_ccc=0):
+        """
+        Builds the stack of oe for a TRANSFOCATOR. A transfocator is a stack of CRLs. append_transfocator
+        is therefore very similar to append_crl, but now arguments are lists instead of scalar. However,
+        if the value of a particular keyword is an scalar and a list is expected, then it is automatically
+        replicated "nslots" times, where nslots=len(nlenses)
+
+        Notes: if nlenses=0 sets a single "lens" with flat interfaces and no change of refraction index (like empty)
+
+                The refraction index should be input either by i) prerefl_index or ii) refraction_index and
+                attenuation_coefficient keywords. The first one is prioritary.
+
+                empty_slots: if different from zero, adds a distance equal to thickness*empty_slots to q0. The
+                intention is to simulate a lens that is off but the path should be considered.
+
+                Note that all arrays must be "list". If you are using numpy arrays, convert them:  array.tolist()
+
+
+
+        :param p0 (list):distance previous continuation plane to first lens for each CRL
+                (usually [p,0,0,...]
+        :param q0 (scalar):distance last lens in each CRLto continuation plane
+        :param nlenses (list): number of lenses
+        :param surface_shape (list):1=sphere 4=paraboloid, 5=plane (other surfaces not yet implamented)
+        :param convex_to_the_beam (list):convexity of the first interface exposed to the beam 0=No, 1=Yes
+                                 the second interface has opposite convexity
+        :param diameter (list):lens diameter. Set to None for infinite dimension
+        :param cylinder_angle (list):None=not cylindrical, 0=meridional 90=sagittal
+        :param prerefl_file (list):file name (from prerefl) to get the refraction index. If set
+                then the keywords refraction_index and attenuation_coefficient are not used.
+        :param refraction_index (list): n (real) #ignored if prerefl_file points to file.
+        :param attenuation_coefficient (list):mu (real); ignored if prerefl file points to file.
+        :param radius (list):lens radius (for pherical, or radius at the tip for paraboloid)
+        :param thickness (list): lens thickness (piling thickness)
+        :param interthickness (list):lens thickness (distance between the two interfaces at the center of the lenses)
+        :param use_ccc (scalar):0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
+        :return:
+        """
+
+        # replicate inputs when they are scalar
+        nslots = len(nlenses)
+
+        if isinstance(p0, list) == False: p0 = [ p0 for i in range(nslots)]
+        if isinstance(q0, list) == False: q0 = [ q0 for i in range(nslots)]
+        if isinstance(empty_slots, list) == False: empty_slots = [ empty_slots for i in range(nslots)]
+        if isinstance(radius, list) == False: radius = [ radius for i in range(nslots)]
+        if isinstance(thickness, list) == False: thickness = [ thickness for i in range(nslots)]
+        if isinstance(interthickness, list) == False: interthickness = [ interthickness for i in range(nslots)]
+        if isinstance(surface_shape, list) == False: surface_shape = [ surface_shape for i in range(nslots)]
+        if isinstance(convex_to_the_beam, list) == False: convex_to_the_beam = [ convex_to_the_beam for i in range(nslots)]
+        if isinstance(diameter, list) == False: diameter = [ diameter for i in range(nslots)]
+        if isinstance(cylinder_angle, list) == False: cylinder_angle = [ cylinder_angle for i in range(nslots)]
+        if isinstance(prerefl_file, list) == False: prerefl_file = [ prerefl_file for i in range(nslots)]
+        if isinstance(refraction_index, list) == False: refraction_index = [ refraction_index for i in range(nslots)]
+        if isinstance(attenuation_coefficient, list) == False:
+            attenuation_coefficient = [ attenuation_coefficient for i in range(nslots)]
+
+
+
+        for i in range(len(nlenses)):
+            # print("Appending file **%s**"%(prerefl_file[i]))
+            # print("Calling append_crl with p0:%f, q0:%f, nlenses=%f, empty_slots=%f, \
+            #               radius=%f, thickness=%f, interthickness=%f, \
+            #               surface_shape=%f,convex_to_the_beam=%f,\
+            #               diameter=%f, cylinder_angle=%f,\
+            #               prerefl_file=%s, \
+            #               use_ccc=0"%(p0[i], q0[i],nlenses[i],empty_slots[i], \
+            #               radius[i], thickness[i], interthickness[i], \
+            #               surface_shape[i],convex_to_the_beam[i],\
+            #               diameter[i], cylinder_angle[i],\
+            #               prerefl_file[i]))
+
+            self.append_crl(p0[i], q0[i], nlenses=nlenses[i], empty_slots=empty_slots[i], \
+                          radius=radius[i], thickness=thickness[i], interthickness=interthickness[i], \
+                          surface_shape=surface_shape[i],convex_to_the_beam=convex_to_the_beam[i],\
+                          diameter=diameter[i], cylinder_angle=cylinder_angle[i],\
+                          prerefl_file=prerefl_file[i],refraction_index=refraction_index[i], \
+                          attenuation_coefficient=attenuation_coefficient[i],\
+                          use_ccc=0)
+
+
+  def dump_start_files(self,offset=0):
+    for i,oe in enumerate(self.list):
+      oe.write('start.%02d'%(i+1+offset))
+      print('File written to disk: start.%02d\n'%(i+1+offset))
+
+  def dump_systemfile(self,offset=0):
+    f = open('systemfile.dat','w')
+    for i,oe in enumerate(self.list):
+      f.write('start.%02d\n' %(i+1+offset))
     f.close()
+    print('File written to disk: systemfile.dat')
 
-  def distances(self):
-    distance = [ self[0].T_SOURCE ]
-    distance.extend( [ self[i-1].T_IMAGE+self[i].T_SOURCE for i in range(1,len(self))] )
-    distance.append(self[-1].T_IMAGE)
-    return distance
-
-  def writeDistances(self,f=sys.stdout):
-    dist = self.distances()
-    #print >>f, 'distance from source to oe1: %f' % dist[0]
-    print ('distance from source to oe1: %f' % dist[0], file = f)
-    for i in range(1,len(self)):
-      #print >>f, 'distance from oe%d to oe%d: %f' % (i,i+1,dist[i])
-      print ('distance from oe%d to oe%d: %f' % (i,i+1,dist[i]), file = f)
-    #print >>f, 'distance from oe%d to image' % (len(self),dist[-1])
-    #print >>f, 'distance from source to image' % (sum(dist))
-    print ('distance from oe%d to image' % (len(self),dist[-1]), file = f)
-    print ('distance from source to image' % (sum(dist)), file = f)
-
-  def appendCRL(self,crlfilename):
-    f = file(crlfilename,'r')
-    txt = f.read()
-    f.close()
-
+  def length(self):
+    length = 0.0
+    for i,oe in enumerate(self.list):
+        length += oe.T_SOURCE + oe.T_IMAGE
+    return length
 
 
 
@@ -1218,17 +1547,92 @@ class Source(ShadowLib.Source):
         self.VDIV2 = 1.0
         self.SIGDIX = sigmaxp
         self.SIGDIZ = sigmazp
+
     def set_spatial_gauss(self,sigmax, sigmaz):
         self.FSOUR = 3
         self.SIGMAX = sigmax
         self.SIGMAZ = sigmaz
+
     def set_gauss(self,sigmax,sigmaz,sigmaxp,sigmazp):
         self.set_divergence_gauss(sigmaxp,sigmazp)
         self.set_spatial_gauss(sigmax,sigmaz)
 
+    def set_energy_monochromatic(self,emin):
+        self.F_COLOR =  1
+        self.F_PHOT =  0 #eV
+        self.PH1 = emin
+
+    def set_energy_box(self,emin,emax):
+        self.F_COLOR =  3
+        self.F_PHOT =  0 #eV
+        self.PH1 = emin
+        self.PH2 = emax
+
+    def set_pencil(self):
+        self.FSOUR = 0
+        self.FDISTR = 1
+        self.HDIV1 = 0.0
+        self.HDIV2 = 0.0
+        self.VDIV1 = 0.0
+        self.VDIV2 = 0.0
+
+    def apply_gaussian_undulator(self, undulator_length_in_m=1.0,user_unit_to_m=1e2, verbose=1, und_e0=None):
+
+        #user_unit_to_m = 1e-2
+        codata_c = numpy.array(299792458.0)
+        codata_h = numpy.array(6.62606957e-34)
+        codata_ec = numpy.array(1.602176565e-19)
+        m2ev = codata_c*codata_h/codata_ec 
+
+        if und_e0 == None:
+            if self.F_COLOR ==  3: # box
+                und_e0 = 0.5*(self.PH1+self.PH2)
+            else:
+                und_e0 = self.PH1
 
 
+        lambda1 = m2ev/und_e0
+        if verbose:
+            print("---adding undulator radiation in Gaussian approximation:")
+            print('')
+            print("   photon energy [eV]: %f "%(und_e0))
+            print("   photon wavelength [A]: %f "%(lambda1*1e10))
+            
+        # calculate sizes of the photon undulator beam
+        # see formulas 25 & 30 in Elleaume (Onaki & Elleaume)
+        s_phot = 2.740/(4e0*numpy.pi)*numpy.sqrt(undulator_length_in_m*lambda1)
+        sp_phot = 0.69*numpy.sqrt(lambda1/undulator_length_in_m)
+    
+        if verbose:
+            print('')
+            print('   RMS electon size H/V [um]: '+
+                         repr(self.SIGMAX*1e6*user_unit_to_m)+ ' /  '+
+                         repr(self.SIGMAZ*1e6*user_unit_to_m) )
+            print('   RMS electon divergence H/V[urad]: '+
+                         repr(self.SIGDIX*1e6)+ ' /  '+
+                         repr(self.SIGDIZ*1e6)  )
+            print('')
+            print('   RMS radiation size [um]: '+repr(s_phot*1e6))
+            print('   RMS radiation divergence [urad]: '+repr(sp_phot*1e6))
+            print('')
+            print('   Photon beam (convolution): ')
+    
+        photon_h = numpy.sqrt( self.SIGMAX**2 + (s_phot/user_unit_to_m)**2)
+        photon_v = numpy.sqrt( self.SIGMAZ**2 + (s_phot/user_unit_to_m)**2)
+        photon_hp = numpy.sqrt(self.SIGDIX**2 + sp_phot**2 )
+        photon_vp = numpy.sqrt(self.SIGDIZ**2 + sp_phot**2 )
 
+        if verbose:
+            print('   RMS size H/V [um]: '+ repr(photon_h*1e6*user_unit_to_m) + '  /  '+repr(photon_v*1e6*user_unit_to_m))
+            print('   RMS divergence H/V [um]: '+ repr(photon_hp*1e6) + '  /  '+repr(photon_vp*1e6))
+ 
+        self.SIGMAX = photon_h
+        self.SIGMAZ = photon_v
+        self.SIGDIX = photon_hp
+        self.SIGDIZ = photon_vp
+    
+
+ 
     def sourcinfo(self,title=None):
         '''
         mimics SHADOW sourcinfo postprocessor. Returns a text array.
@@ -1437,29 +1841,27 @@ class Source(ShadowLib.Source):
         txt += TOPLIN
         return (txt)
 
-
 if __name__ == '__main__':
     #
     # test
     #
-    write_shadowfiles = 1
-    do_test = 2 # 1=only source ; 2= source and trace
+    do_test = 6 # 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
+                # 6=ID30B
 
-    if do_test >= 1:
-        print('running >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> source')
+    if ((do_test == 1) or (do_test == 2)):
         src = Source()
 
         #set Gaussian source
         sh, sv, shp, svp = 100e-4, 10e-4, 10e-6, 1e-6
         src.set_gauss(sh, sv, shp, svp)
-        if write_shadowfiles: src.write('start.00')
+        src.write('start.00')
 
         #run shadow source
         beam = Beam()
         beam.genSource(src)
-        if write_shadowfiles:
-            beam.write('begin.dat')
-            src.write('end.00')
+
+        beam.write('begin.dat')
+        src.write('end.00')
 
         #analyze source results
         print('Intensity source, all, good and lost rays: %f, %f, %f , '%\
@@ -1478,16 +1880,15 @@ if __name__ == '__main__':
         ticket_h = beam.histo1(col=6, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref=1)
         print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2.35,svp))
 
-    if do_test >= 2:
-        print('running >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trace')
+    if do_test == 2:
 
         oe1 = OE()
-        if write_shadowfiles: oe1.write('start.01')
+        oe1.write('start.01')
         #oe1.load('tmp/start.01')
         beam.traceOE(oe1,1)
-        if write_shadowfiles:
-            oe1.write('end.01')
-            beam.write('star.01')
+
+        oe1.write('end.01')
+        beam.write('star.01')
 
         #analysis
         #print(beam.getshonecol(11,nolost=1))
@@ -1511,9 +1912,308 @@ if __name__ == '__main__':
         else:
             print('Error in histogram calculations')
 
+    if do_test == 3:
+        # example ESRF ID30B, data in m,rad
+        emittH = 3.9e-9
+        emittV = 10e-12
+        betaH = 35.6
+        betaV = 3.0
+        sigmaH = numpy.sqrt(emittH/betaH)
+        sigmaV = numpy.sqrt(emittV/betaV)
+        sigmaHp = emittH/sigmaH
+        sigmaVp = emittV/sigmaV
+
+        src = Source()
+        src.set_gauss(sigmaH*1e2, sigmaV*1e2, sigmaHp, sigmaVp) #cm,rad
+        src.set_energy_monochromatic(14000.0)
+
+        print("BEFORE sH: %f um,sV: %f um, sHp: %f urad, sVp: %f  urad"%\
+              (src.SIGMAX*1e4,src.SIGMAZ*1e4,src.SIGDIX*1e6,src.SIGDIZ*1e6))
+        src.apply_gaussian_undulator(undulator_length_in_m=2.8,\
+            user_unit_to_m=1e-2,verbose=1)
+        print("AFTER  sH: %f um,sV: %f um, sHp: %f urad, sVp: %f  urad"%\
+              (src.SIGMAX*1e4,src.SIGMAZ*1e4,src.SIGDIX*1e6,src.SIGDIZ*1e6))
+
+        src.write('start.00')
+        print("File written to disk: start.00")
+        # create source
+        beam = Beam()
+        beam.genSource(src)
+        beam.write("beginG.dat")
+        print("File written to disk: beginG.dat")
+        src.write('end.00')
+        print("File written to disk: end.00")
+
+    if do_test == 4:
+        print("setting lens system like Example: lens_single_sysplot.ws")
+
+        src = Source()
+        src.set_energy_monochromatic(4600)
+        src.set_gauss(0.2,0.2,1e-6,1e-6)
+        src.NPOINT = 5000
+        src.ISTAR1 = 677543155
+        src.write("start.00")
+
+
+        # create source
+        beam = Beam()
+        beam.genSource(src)
+        src.write("end.00")
+        beam.write("begin.dat")
+
+        lens = compoundOE()
+        lens.append_lens(1000.0,1000.0,surface_shape=1,convex_to_the_beam=1,diameter=None,cylinder_angle=None,\
+                         radius=1000.0,interthickness=5.0,\
+                         refraction_index=1.5,attenuation_coefficient=0.0, \
+                         use_ccc=0)
+
+        #lens.dump_start_files()--
+        listEnd = beam.trace_compoundOE(lens,write_start_files=1,write_end_files=1,write_star_files=1)
+        lens.print()
+        print(lens.mirinfo())
 
 
 
+    if do_test == 5:
+        print("setting CRL system like Example: crl_snigirev1996.ws")
+
+        src = Source()
+        src.set_energy_monochromatic(14000)
+        src.set_spatial_gauss(0.00638,0.00638)
+        #conical
+        src.FDISTR = 5
+        src.CONE_MIN = 0.0
+        src.CONE_MAX = 10e-6
+
+        src.NPOINT = 5000
+        src.ISTAR1 = 677543155
+        src.write("start.00")
+
+        # create source
+        beam = Beam()
+        beam.genSource(src)
+        beam.write("begin.dat")
+        src.write("end.00")
+
+        # crl parameters
+        crl_nlenses = 30            # number of lenses
+        crl_shape = 1               #1=Sphere 4=Paraboloid 5=Plan
+        crl_cylinder = 0.0          #None: no cylindrical, 0=meridional, 1=sagittal         :
+        crl_r = 300e-4              #radius (at tip for parabolas) or major axis for ell/hyp      :
+        crl_diameter = None         # 600e-4       #lens physical aperture
+        crl_interthickness = 25e-4  #thickness between two interfaces (in material)
+        crl_thickness = 625e-4      #total thickness of a single lens
+        crl_fs_before = 3000.0      #free space before the first lens
+        crl_fs_after = 189.87       #free space after the last lens
+
+
+        # shadow3> prerefl_test
+        #     prerefl_test: calculates refraction index for a given energy
+        #                   using a file created by the prerefl preprocessor.
+        #
+        #  File Name (from prerefl): Al5_55.dat
+        #  Photon energy [eV]:   14000
+        #  ------------------------------------------------------------------------
+        #  Inputs:
+        #     prerefl file: Al5_55.dat gives for E=   14000.000000000000      eV:
+        #     energy [eV]:                          14000.000000000000
+        #     wavelength [A]:                      0.88560137800029992
+        #     wavenumber (2 pi/lambda) [cm^-1]:     709482351.55332136
+        #  Outputs:
+        #     refraction index = (1-delta) + i*beta :
+        #     delta:                             2.7710264971503307E-006
+        #     beta:                              1.7175194768200010E-008
+        #     real(n):                          0.99999722897350285
+        #     attenuation coef [cm^-1]:          24.370995145057691
+        #  ------------------------------------------------------------------------
+        crl_file = "" # "Al5_55.dat"     #material file (from prerefl preprocessor)
+        refraction_index = 0.99999722897350285
+        attenuation_coefficient = 24.370995145057691
+
+
+        # initialize compound oe
+        crl = compoundOE(name = 'crl_snigirev1996')
+
+        # method 0: manuel loop, 1: use append_crl
+        method = 1
+
+        if method == 0:
+            p0 = crl_fs_before
+            q0 = crl_fs_after
+            p_or_q = 0.5*(crl_thickness - crl_interthickness)
+            for i in range(crl_nlenses):
+                pi = p_or_q
+                qi = p_or_q
+                if i == 0:
+                    pi = crl_fs_before
+                if i == crl_nlenses-1:
+                    qi = crl_fs_after
+
+                crl.append_lens(pi,qi,surface_shape=crl_shape,\
+                                convex_to_the_beam=0,diameter=crl_diameter,\
+                                prerefl_file=crl_file, \
+                                refraction_index=refraction_index, attenuation_coefficient=attenuation_coefficient,\
+                                cylinder_angle=crl_cylinder,radius=crl_r,interthickness=crl_interthickness,\
+                                use_ccc=1)
+        else:
+            crl.append_crl(crl_fs_before, crl_fs_after, nlenses=crl_nlenses, surface_shape=crl_shape, \
+                           convex_to_the_beam=0,diameter=crl_diameter,\
+                           prerefl_file=crl_file,\
+                           refraction_index=refraction_index, attenuation_coefficient=attenuation_coefficient, \
+                           cylinder_angle=crl_cylinder,radius=crl_r,interthickness=crl_interthickness,\
+                           use_ccc=1)
+
+
+        # trace system
+        beam.trace_compoundOE(crl,\
+                  write_start_files=0,write_end_files=0,write_star_files=0)
+
+        #write only last result file
+        beam.write("star.60")
+        print("\nFile written to disk: star.60")
+        print("\nNumber of interfaces: %d"%(crl.number_oe()))
+        #crl.dump_systemfile()        # lens.print()
+        #print(crl.mirinfo())
+
+
+
+    if do_test == 6:
+        print("setting Transfocator for ID30B")
+
+        #
+        # Gaussian undulator source
+        #
+
+        #ID30 TDR data, pag 10, in m
+        emittH = 3.9e-9
+        emittV = 10e-12
+        betaH = 35.6
+        betaV = 3.0
+
+        sigmaXp = numpy.sqrt(emittH/betaH)
+        sigmaZp = numpy.sqrt(emittV/betaV)
+        sigmaX = emittH/sigmaXp
+        sigmaZ = emittV/sigmaZp
+        print("\n\nElectron sizes H:%f um, V:%fu m;\nelectron divergences: H:%f urad, V:%f urad"%\
+              (sigmaX*1e6, sigmaZ*1e6, sigmaXp*1e6, sigmaZp*1e6))
+
+        # set Gaussian undulator source at 14 keV
+        src = Source()
+        photon_energy_ev = 14000
+        src.set_energy_monochromatic(photon_energy_ev)
+
+        src.set_gauss(sigmaX*1e2,sigmaZ*1e2,sigmaXp,sigmaZp)
+
+        print("\n\nElectron sizes stored H:%f um, V:%f um;\nelectron divergences: H:%f urad, V:%f urad"%\
+              (src.SIGMAX*1e4,src.SIGMAZ*1e4,src.SIGDIX*1e6,src.SIGDIZ*1e6))
+
+        src.apply_gaussian_undulator(undulator_length_in_m=2.8, user_unit_to_m=1e-2, verbose=1)
+
+        print("\n\nElectron sizes stored (undulator) H:%f um, V:%f um;\nelectron divergences: H:%f urad, V:%f urad"%\
+              (src.SIGMAX*1e4,src.SIGMAZ*1e4,src.SIGDIX*1e6,src.SIGDIZ*1e6))
+
+        src.NPOINT = 5000
+        src.ISTAR1 = 677543155
+
+
+        src.write("start.00")
+
+        # create source
+        beam = Beam()
+        beam.genSource(src)
+        beam.write("begin.dat")
+        src.write("end.00")
+
+        #
+        # transfocator id30B
+        #
+
+        #set transfocator units in cm ================================================================================
+
+
+        # geometry of the TF
+
+        tf_slots   = [  1,  2,  4,  8,   1,   2,   1]  # slots
+        tf_on_off  = [  1,  1,  1,  1,   1,   1,   1]  # set (1) or unset (0)
+
+        nslots = len(tf_slots)
+
+        tf_lens_thickness = [0.3 for i in range(nslots)]   #total thickness of a single lens in cm
+        # for each slot, positional gap  of the first lens in cm
+        tf_step    = [  4,   4, 1.9, 6.1,   4,   4, tf_lens_thickness[-1]]
+        tf_radii   = [.05, .05, .05, .05, 0.1, 0.1, 0.15]  # radii of the lenses in cm
+
+
+        # File Name (from prerefl): Be5_55.dat
+        # Photon energy [eV]:   14000
+        # ------------------------------------------------------------------------
+        # Inputs:
+        #    prerefl file: Be5_55.dat gives for E=   14000.000000000000      eV:
+        #    energy [eV]:                          14000.000000000000
+        #    wavelength [A]:                      0.88560137800029992
+        #    wavenumber (2 pi/lambda) [cm^-1]:     709482351.55332136
+        # Outputs:
+        #    refraction index = (1-delta) + i*beta :
+        #    delta:                             1.7354949043424384E-006
+        #    beta:                              4.4123016940187606E-010
+        #    real(n):                          0.99999826450509566
+        #    attenuation coef [cm^-1]:         0.62609003632702676
+        # ------------------------------------------------------------------------
+        refraction_index = 0.99999826450509566
+        attenuation_coefficient = 0.626090036
+
+        # position of the TF measured from the center of the transfocator
+        tf_p = 5960
+        tf_q = 1000 # 9760 - tf_p
+
+        #calculated values
+
+        # these are distances p and q with TF length removed
+        tf_length = numpy.array(tf_step).sum()  #tf length in cm
+        tf_fs_before = tf_p - 0.5*tf_length     #distance from source to center of transfocator
+        tf_fs_after  = tf_q - 0.5*tf_length     # distance from center of transfocator to image
+
+        # for each slot, these are the empty distances before and after the lenses
+        tf_p0 = numpy.zeros(nslots)
+        tf_q0 = numpy.array(tf_step) - (numpy.array(tf_slots) * tf_lens_thickness)
+        # add now the p q distances
+        tf_p0[0]  += tf_fs_before
+        tf_q0[-1] += tf_fs_after
+
+        nlenses = numpy.array(tf_slots)*numpy.array(tf_on_off)
+        empty_slots = (numpy.array(tf_slots)-nlenses)
+
+
+        # # this is for calculations with xraylib (focal distances)
+        # xrl_symbol = "Be"
+        # xrl_density = 1.845
+
+
+        # build transfocator
+        tf = compoundOE(name='TF ID30B')
+
+        tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, radius=tf_radii,\
+                        empty_slots=0, surface_shape=4, convex_to_the_beam=0, diameter=None,\
+               #prerefl_file="Be5_55.dat",\
+               refraction_index=refraction_index,attenuation_coefficient=attenuation_coefficient, \
+               cylinder_angle=0.0,interthickness=50e-4,thickness=0.3,\
+               use_ccc=0)
+
+        #trace system
+        tf.dump_systemfile()
+        beam.trace_compoundOE(tf,\
+                 write_start_files=0,write_end_files=0,write_star_files=0)
+
+        #write only last result file
+        beam.write("star_tf.dat")
+        print("\nFile written to disk: star_tf.dat")
+
+        print("\nLens stack: ",nlenses," empty slots: ",empty_slots)
+        print("\nNumber of interfaces: %d"%(tf.number_oe()))
+        print("\nTotal beamline length (from compound element) %f m"%(1e-2*tf.length()))
+        print("\nTotal Transfocator length %f m"%(1e-2*tf_length))
+        print("\nTotal Transfocator length (from compound element): %f cm "%(tf.length()-tf_fs_after-tf_fs_before))
+        print("\ntf_fs_before: %f m, tf_fs_after: %f m"%(tf_fs_before*1e-2,tf_fs_after*1e-2))
 
 
 
