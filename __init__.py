@@ -5,7 +5,7 @@
 #
 from __future__ import print_function
 #from Shadow import ShadowLib
-from Shadow.ShadowLibExtensions import OE, Source, Beam 
+from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE 
 
 # Defined in C, not used at main level
 #from Shadow.ShadowLib import saveBeam, FastCDFfromZeroIndex, FastCDFfromOneIndex, FastCDFfromTwoIndex

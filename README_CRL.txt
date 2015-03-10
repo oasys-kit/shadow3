@@ -224,12 +224,12 @@ A set of routines have been written in python to define lenses, CRLs and
 transfocators. See ShadowLibExtensions.py file for code and examples. The 
 Syntax is the following: 
 
-lens = Shadow.compoundOE()
+lens = Shadow.CompoundOE()
 lens.append_lens(1000.0,1000.0,surface_shape=1,convex_to_the_beam=1,\
     diameter=None,cylinder_angle=None,radius=1000.0,interthickness=5.0,\
     refraction_index=1.5,attenuation_coefficient=0.0, use_ccc=0)
 
-crl = Shadow.compoundOE(name = 'crl_snigirev1996')
+crl = Shadow.CompoundOE(name = 'crl_snigirev1996')
 crl.append_crl(crl_fs_before, crl_fs_after, nlenses=crl_nlenses, \
     surface_shape=crl_shape, convex_to_the_beam=0,diameter=crl_diameter,\
     prerefl_file=crl_file, refraction_index=refraction_index, \
@@ -237,7 +237,7 @@ crl.append_crl(crl_fs_before, crl_fs_after, nlenses=crl_nlenses, \
     cylinder_angle=crl_cylinder, radius=crl_r, interthickness=crl_interthickness,\
     use_ccc=1)
 
-tf = Shadow.compoundOE(name='TF ID30B')
+tf = Shadow.CompoundOE(name='TF ID30B')
 
 tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, \
     radius=tf_radii,empty_slots=0, surface_shape=4, convex_to_the_beam=0, \

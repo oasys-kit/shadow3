@@ -25,7 +25,7 @@ class Beam(ShadowLib.Beam):
     except AttributeError:
       print ('retrace: No rays')
 
-  def trace_compoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,write_star_files=0):
+  def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,write_star_files=0):
       """
       traces a compound optical element
 
@@ -1180,7 +1180,7 @@ class OE(ShadowLib.OE):
 
 
 # not yet ready
-class compoundOE():
+class CompoundOE():
   def __init__(self,list=None, name=''):
     if list == None:
         self.list = []
@@ -1250,7 +1250,7 @@ class compoundOE():
       oe1.F_EXT = 1
       oe2.F_EXT = 2
 
-      # write no output files. If wanted they are written by python in trace_compoundOE
+      # write no output files. If wanted they are written by python in traceCompoundOE
       oe1.FWRITE = 3
       oe2.FWRITE = 3
 
@@ -1961,14 +1961,14 @@ if __name__ == '__main__':
         src.write("end.00")
         beam.write("begin.dat")
 
-        lens = compoundOE()
+        lens = CompoundOE()
         lens.append_lens(1000.0,1000.0,surface_shape=1,convex_to_the_beam=1,diameter=None,cylinder_angle=None,\
                          radius=1000.0,interthickness=5.0,\
                          refraction_index=1.5,attenuation_coefficient=0.0, \
                          use_ccc=0)
 
         #lens.dump_start_files()--
-        listEnd = beam.trace_compoundOE(lens,write_start_files=1,write_end_files=1,write_star_files=1)
+        listEnd = beam.traceCompoundOE(lens,write_start_files=1,write_end_files=1,write_star_files=1)
         lens.print()
         print(lens.mirinfo())
 
@@ -2032,7 +2032,7 @@ if __name__ == '__main__':
 
 
         # initialize compound oe
-        crl = compoundOE(name = 'crl_snigirev1996')
+        crl = CompoundOE(name = 'crl_snigirev1996')
 
         # method 0: manuel loop, 1: use append_crl
         method = 1
@@ -2065,7 +2065,7 @@ if __name__ == '__main__':
 
 
         # trace system
-        beam.trace_compoundOE(crl,\
+        beam.traceCompoundOE(crl,\
                   write_start_files=0,write_end_files=0,write_star_files=0)
 
         #write only last result file
@@ -2190,7 +2190,7 @@ if __name__ == '__main__':
 
 
         # build transfocator
-        tf = compoundOE(name='TF ID30B')
+        tf = CompoundOE(name='TF ID30B')
 
         tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, radius=tf_radii,\
                         empty_slots=0, surface_shape=4, convex_to_the_beam=0, diameter=None,\
@@ -2201,7 +2201,7 @@ if __name__ == '__main__':
 
         #trace system
         tf.dump_systemfile()
-        beam.trace_compoundOE(tf,\
+        beam.traceCompoundOE(tf,\
                  write_start_files=0,write_end_files=0,write_star_files=0)
 
         #write only last result file
