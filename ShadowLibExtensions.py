@@ -8,6 +8,7 @@ import sys
 import Shadow.ShadowLib as ShadowLib
 import numpy
 import inspect
+import copy
 
 
 class Beam(ShadowLib.Beam):
@@ -15,6 +16,12 @@ class Beam(ShadowLib.Beam):
     ShadowLib.Beam.__init__(self)
     if N is not None:
       self.SetRayZeros(N)
+
+  def duplicate(self):
+      beam_copy = Beam()
+      beam_copy.rays = copy.deepcopy(self.rays)
+      return beam_copy
+
 
   def retrace(self,dist):
     try:
@@ -25,7 +32,8 @@ class Beam(ShadowLib.Beam):
     except AttributeError:
       print ('retrace: No rays')
 
-  def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,write_star_files=0):
+  def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,\
+                      write_star_files=0, write_mirr_files=0):
       """
       traces a compound optical element
 
@@ -35,9 +43,10 @@ class Beam(ShadowLib.Beam):
 
       :param compoundOE: input object
       :param from_oe: index of the first oe (for tracing compoundOE after an existing system) (default=1)
-      :param write_start_files: 0=No (default), 1=Yes
-      :param write_end_files:  0=No (default), 1=Yes
-      :param write_star_files:  0=No (default), 1=Yes
+      :param write_start_files: 0=No (default), 1=Yes (all), 2: only first and last ones
+      :param write_end_files:  0=No (default), 1=Yes (all), 2: only first and last ones
+      :param write_star_files:  0=No (default), 1=Yes (all), 2: only first and last ones
+      :param write_mirr_files:  0=No (default), 1=Yes (all), 2: only first and last ones
       :return: a list of the OE objects after tracing (the info of end.xx files)
       """
       oe_index = from_oe
@@ -48,48 +57,67 @@ class Beam(ShadowLib.Beam):
       for i,oe in enumerate(compoundOE.list):
         print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,oe_index))
 
-        if write_start_files:
+        iwrite = 0
+        if write_mirr_files == 1: iwrite = 1
+        if write_mirr_files == 2 and i == 0: iwrite = 1
+        if write_mirr_files == 2 and i == oe_n-1: iwrite = 1
+        if iwrite:
+            oe.FWRITE = 1
+        iwrite = 0
+        if write_start_files == 1: iwrite = 1
+        if write_start_files == 2 and i == 0: iwrite = 1
+        if write_start_files == 2 and i == oe_n-1: iwrite = 1
+
+        if iwrite:
             oe.write("start.%02d"%(oe_index))
             print("File written to disk: start.%02d"%(oe_index))
 
-        beam.traceOE(oe,oe_index)
+
+
+
+
+        self.traceOE(oe,oe_index)
 
         list.append(oe)
-        if write_star_files:
-            beam.write("star.%02d"%(oe_index))
+
+        iwrite = 0
+        if write_star_files == 1: iwrite = 1
+        if write_star_files == 2 and i == 0: iwrite = 1
+        if write_star_files == 2 and i == oe_n-1: iwrite = 1
+        if iwrite == 1:
+            self.write("star.%02d"%(oe_index))
             print("File written to disk: star.%02d"%(oe_index))
-        if write_end_files:
+
+
+        iwrite = 0
+        if write_end_files == 1: iwrite = 1
+        if write_end_files == 2 and i == 0: iwrite = 1
+        if write_end_files == 2 and i == oe_n-1: iwrite = 1
+        if write_end_files == 1:
             oe.write("end.%02d"%(oe_index))
             print("File written to disk: end.%02d"%(oe_index))
+
         oe_index += 1
 
       return list
 
-  def getStandardDeviations(self,weighted=True):
-    try:
-      if len(self.rays)==0:
-        raise AttributeError
-      if weighted:
-        w = beam.rays[:,6]*beam.rays[:,6] + beam.rays[:,7]*beam.rays[:,7] + beam.rays[:,8]*beam.rays[:,8] 
-        w+= beam.rays[:,15]*beam.rays[:,15] + beam.rays[:,16]*beam.rays[:,16] + beam.rays[:,17]*beam.rays[:,17]
-        xStd  = wstd(self.rays[:,0],w)
-        yStd  = wstd(self.rays[:,1],w)
-        zStd  = wstd(self.rays[:,2],w)
-        xpStd = wstd(self.rays[:,3],w)
-        ypStd = wstd(self.rays[:,4],w)
-        zpStd = wstd(self.rays[:,5],w)
-        eStd  = wstd(self.rays[:,10],w)/AE2V
+  def get_standard_deviation(self,col, nolost=1, ref=0):
+      '''
+      returns the standard deviation of one viariable in the beam
+      :param col: variable (shadow column number)
+      :param nolost: 0 = use all rays, 1=good only, 2= lost only
+      :param ref: 0 = no weight, 1=weight with intensity (col23)
+      :return:
+      '''
+      x = self.getshonecol(col=col,nolost=nolost)
+      if ref == 0:
+          return x.std()
       else:
-        xStd  = self.rays[:,0].std()
-        yStd  = self.rays[:,1].std()
-        zStd  = self.rays[:,2].std()
-        xpStd = self.rays[:,3].std()
-        ypStd = self.rays[:,4].std()
-        zpStd = self.rays[:,5].std()
-        eStd  = self.rays[:,10].std()/AE2V
-      return xStd,yStd,zStd,xpStd,ypStd,zpStd,eStd
-    except AttributeError:
-      print ('getStandardDeviations: No rays')
+          w = self.getshonecol(23,nolost=nolost)
+          average = numpy.average(x, weights=w)
+          variance = numpy.average( (x-average)**2, weights=w)
+          return(numpy.sqrt(variance))
+
 
 
   #added srio 2015
@@ -193,21 +221,21 @@ class Beam(ShadowLib.Beam):
         column =  2*E2s*E2p*Sin
 
     if nolost == 0:
-        return column
+        return column.copy()
 
     if nolost == 1:
         f  = numpy.where(ray[:,9] > 0.0)
         if len(f[0])==0:
             print ('getshonecol: no GOOD rays, returning empty array')
             return numpy.empty(0)
-        return column[f]
+        return column[f].copy()
 
     if nolost == 2:
         f  = numpy.where(ray[:,9] < 0.0)
         if len(f[0])==0:
             print ('getshonecol: no BAD rays, returning empty array')
             return numpy.empty(0)
-        return column[f]
+        return column[f].copy()
 
     return None
 
@@ -411,7 +439,7 @@ class Beam(ShadowLib.Beam):
       # See James, Rep. Prog. Phys., Vol 43 (1980) pp 1145-1189 (special attention to pag. 1184)
       h_sigma = numpy.sqrt( h2 - h*h/float(len(t)) )
 
-      if write != None:
+      if write != None and write != "":
           file = open(write,'w')
           print ('#F %s'%(write), file = file)
           print ('#C This file has been created using Shadow.Beam.histo1() ', file = file)
@@ -762,7 +790,7 @@ class OE(ShadowLib.OE):
     return self
 
 
-  def setDimensions(self,fshape=0,params=numpy.zeros(4,dtype=numpy.float64)):
+  def setDimensions(self,fshape=1,params=numpy.zeros(4,dtype=numpy.float64)):
     self.FHIT_C = 1
     self.FSHAPE = fshape
     self.RLEN1  = params[0]
@@ -1066,6 +1094,8 @@ class OE(ShadowLib.OE):
     if self.FHIT_C == 0:
         txt += 'Mirror dimensions                       UNLIMITED\n'
     else:
+        if self.FSHAPE == 0:
+            txt += 'Invalid o.e. dimensions ( FSHAPE=0 )\n'
         if self.FSHAPE == 1:
             txt += 'Mirror dimensions ( rectangular ):\n'
             txt += '          X plus: %f, X minus: %f, Y plus: %f, Y minus: %f\n'%\
@@ -1073,7 +1103,7 @@ class OE(ShadowLib.OE):
         if self.FSHAPE == 2:
             txt += 'Mirror dimensions ( elliptical ) :\n'
             txt += '          Major Axis: %f, Minor axis: %f \n'%\
-                    (self.RWIDX1,self.RWIDX2)
+                    (self.RWIDX2,self.RLEN2)
         if self.FSHAPE == 3:
             txt += 'Mirror dimensions ( elliptical + hole )\n'
             txt += 'A. Outside border: %f, %f\n'%\
@@ -1091,14 +1121,15 @@ class OE(ShadowLib.OE):
     if self.F_EXT == 1:
         txt += 'Mirror parameters                       EXTERNAL\n'
     else:
-        txt += 'Mirror parameters                       COMPUTED\n'
-        if self.F_DEFAULT == 1:
-            txt += 'Same configuration as Central Axis      YES\n'
-        else:
-            txt += 'Same configuration as Central Axis      NO\n'
-        txt += 'Objective focus at                       %f\n'%(self.SSOUR)
-        txt += 'Image focus at                           %f\n'%(self.SIMAG)
-        txt += 'Incidence angle                          %f\n'%(self.THETA*180.0/numpy.pi)
+        if self.FMIRR != 10:
+            txt += 'Mirror parameters                       COMPUTED\n'
+            if self.F_DEFAULT == 1:
+                txt += 'Same configuration as Central Axis      YES\n'
+            else:
+                txt += 'Same configuration as Central Axis      NO\n'
+            txt += 'Objective focus at                       %f\n'%(self.SSOUR)
+            txt += 'Image focus at                           %f\n'%(self.SIMAG)
+            txt += 'Incidence angle                          %f\n'%(self.THETA*180.0/numpy.pi)
 
 
     txt += 'Parameters used follow:\n'
@@ -1300,14 +1331,14 @@ class CompoundOE():
       else:
           oe1.FHIT_C = 1
           oe2.FHIT_C = 1
-          oe1.FSHAPE = 1 #ellipse
-          oe2.FSHAPE = 1
-          oe1.RWIDX1 = diameter*0.5
-          oe2.RWIDX1 = diameter*0.5
+          oe1.FSHAPE = 2 #ellipse
+          oe2.FSHAPE = 2
+          oe1.RWIDX1 = 0.0
+          oe2.RWIDX1 = 0.0
           oe1.RWIDX2 = diameter*0.5
           oe2.RWIDX2 = diameter*0.5
-          oe1.RLEN1 = diameter*0.5
-          oe2.RLEN1 = diameter*0.5
+          oe1.RLEN1 = 0.0
+          oe2.RLEN1 = 0.0
           oe1.RLEN2 = diameter*0.5
           oe2.RLEN2 = diameter*0.5
 
@@ -2202,7 +2233,7 @@ if __name__ == '__main__':
         #trace system
         tf.dump_systemfile()
         beam.traceCompoundOE(tf,\
-                 write_start_files=0,write_end_files=0,write_star_files=0)
+                 write_start_files=2,write_end_files=2,write_star_files=2,write_mirr_files=2)
 
         #write only last result file
         beam.write("star_tf.dat")

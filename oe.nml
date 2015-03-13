@@ -71,8 +71,8 @@
 				  slit real (0), entrance slit real, exit
 				  slit virtual (1), entrance slit virtual,
 				  exit slit real (2), both virtual (3).
- fshape	=             0 - for fhit_c=1: mirror shape rectangular (0), full
- 			  ellipse (1), ellipse with hole (2).
+ fshape	=             0 - for fhit_c=1: mirror shape rectangular (1), full
+ 			  ellipse (2), ellipse with hole (3).
  fhit_c	=             0 - flag: mirror dimensions finite: yes (1), no(0).
  f_mono	=             0 - f_grating,f_central=1 - monochromator type: TGM/
  			  Seya (0), ERG (1), Constant Incidence Angle (2),
