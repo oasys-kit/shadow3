@@ -440,29 +440,24 @@ class Beam(ShadowLib.Beam):
       h_sigma = numpy.sqrt( h2 - h*h/float(len(t)) )
 
       if write != None and write != "":
-          file = open(write,'w')
-          print ('#F %s'%(write), file = file)
-          print ('#C This file has been created using Shadow.Beam.histo1() ', file = file)
-          #print ('#D '+now, file = file)
-          #print ('#UTITLE', file = file)
-          #print ('#USUBTITLE '+usubtitle, file = file)
-          #print ('#UTTEXT', file = file)
-          print ('#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN', file = file)
-          print ('#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN', file = file)
-          print ('#C COLUMN 3 CORRESPONDS TO INTENSITY', file = file)
-          print ('#C COLUMN 4 CORRESPONDS TO ERROR: SIGMA_INTENSITY', file = file)
-          print ('#C col = %d'%(col), file = file)
-          print ('#C nolost = %d'%(nolost), file = file)
-          print ('#C nbins = %d'%(nbins), file = file)
-          print ('#C ref = %d'%(ref), file = file)
-          print (' ', file = file)
-          print ('#S 1 histogram', file = file)
-          print ('#N 4' , file = file)
-          #print ('#L '+getLabel(col)[1]+'  '+(getLabel(col))[1]+'  '+'intensity (rays)'+'  '+(getLabel(ref))[1], file = file)
-          print ('#L X1  X2  Y  YERR', file = file)
+          f = open(write,'w')
+          f.write('#F %s'%(write))
+          f.write('#C This file has been created using Shadow.Beam.histo1() ')
+          f.write('#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN')
+          f.write('#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN')
+          f.write('#C COLUMN 3 CORRESPONDS TO INTENSITY')
+          f.write('#C COLUMN 4 CORRESPONDS TO ERROR: SIGMA_INTENSITY')
+          f.write('#C col = %d'%(col))
+          f.write('#C nolost = %d'%(nolost))
+          f.write('#C nbins = %d'%(nbins))
+          f.write('#C ref = %d'%(ref),)
+          f.write(' ')
+          f.write('#S 1 histogram')
+          f.write('#N 4')
+          f.write('#L X1  X2  Y  YERR')
           for i in range(len(h)):
-            print ('%f\t%f\t%f\t%f' % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], h_sigma[i] ), file = file)
-          file.close()
+            f.write('%f\t%f\t%f\t%f' % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], h_sigma[i] ))
+          f.close()
           print('histo1: file written to disk: %s'%(write))
 
 
@@ -1227,8 +1222,7 @@ class CompoundOE():
   def number_oe(self):
       return len(self.list)
 
-
-  def print(self):
+  def info(self):
       print("CompoundOE name: %s, found %d elements"%(self.name,self.number_oe()))
       for i,j in enumerate(self.list):
           print('oe %d, p=%f, q=%f'%(1+i,j.T_SOURCE,j.T_IMAGE))
@@ -2000,7 +1994,7 @@ if __name__ == '__main__':
 
         #lens.dump_start_files()--
         listEnd = beam.traceCompoundOE(lens,write_start_files=1,write_end_files=1,write_star_files=1)
-        lens.print()
+        lens.info()
         print(lens.mirinfo())
 
 
@@ -2103,7 +2097,7 @@ if __name__ == '__main__':
         beam.write("star.60")
         print("\nFile written to disk: star.60")
         print("\nNumber of interfaces: %d"%(crl.number_oe()))
-        #crl.dump_systemfile()        # lens.print()
+        #crl.dump_systemfile()        # lens.info()
         #print(crl.mirinfo())
 
 
