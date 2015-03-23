@@ -667,7 +667,7 @@ class OE(ShadowLib.OE):
 
   def setSphericAuto(self,fparams=None):#):f_default=0,ssour=0.0,simag=0.0,theta=0.0):
     self.FMIRR = 1
-    if fparams==None:
+    if fparams == None:
       self.setAutoFocus(1)
     else:
       self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
@@ -1392,7 +1392,7 @@ class CompoundOE():
       self.append_oe(oe1)
       self.append_oe(oe2)
 
-  def append_crl(self,p0,q0, nlenses=30, empty_slots=0, radius=500e-2, thickness=625e-4, interthickness=0.001, \
+  def append_crl(self,p0,q0, nlenses=30, slots_empty=0, radius=500e-2, thickness=625e-4, interthickness=0.001, \
                   surface_shape=1, convex_to_the_beam=1, diameter=None, cylinder_angle=None,\
                   prerefl_file=None, refraction_index=1.0, attenuation_coefficient=0.0,\
                   use_ccc=0):
@@ -1404,7 +1404,7 @@ class CompoundOE():
                 The refraction index should be input either by i) prerefl_index or ii) refraction_index and
                 attenuation_coefficient keywords. The first one is prioritary.
 
-                empty_slots: if different from zero, adds a distance equal to thickness*empty_slots to q0. The
+                slots_empty: if different from zero, adds a distance equal to thickness*slots_empty to q0. The
                 intention is to simulate a lens that is off but the path should be considered.
 
 
@@ -1429,9 +1429,9 @@ class CompoundOE():
         """
         p_or_q = 0.5*(thickness - interthickness)
 
-        if nlenses == 0: # add an empty lens + a distance (empty_slots-1) for keeping the total distance
+        if nlenses == 0: # add an empty lens + a distance (slots_empty-1) for keeping the total distance
             pi = p0 + p_or_q
-            qi = q0 + p_or_q + max(empty_slots-1,0)*thickness
+            qi = q0 + p_or_q + max(slots_empty-1,0)*thickness
             self.append_lens(pi, qi, surface_shape=5, \
                           interthickness=interthickness, \
                           refraction_index=1.0, attenuation_coefficient=0.0, \
@@ -1443,7 +1443,7 @@ class CompoundOE():
                 if i == 0:
                     pi += p0
                 if i == nlenses-1:
-                    qi += q0 + empty_slots*thickness
+                    qi += q0 + slots_empty*thickness
 
                 self.append_lens(pi, qi, surface_shape=surface_shape, convex_to_the_beam=convex_to_the_beam,\
                               diameter=diameter, cylinder_angle=cylinder_angle, radius=radius,\
@@ -1452,7 +1452,7 @@ class CompoundOE():
                               use_ccc=use_ccc)
 
 
-  def append_transfocator(self,p0,q0, nlenses=[4,8], empty_slots=0, radius=500e-2, thickness=625e-4, \
+  def append_transfocator(self,p0,q0, nlenses=[4,8], slots_empty=0, radius=500e-2, thickness=625e-4, \
                   interthickness=0.001, \
                   surface_shape=1, convex_to_the_beam=1, diameter=None, cylinder_angle=None,\
                   prerefl_file=None, refraction_index=1.0, attenuation_coefficient=0.0,\
@@ -1468,7 +1468,7 @@ class CompoundOE():
                 The refraction index should be input either by i) prerefl_index or ii) refraction_index and
                 attenuation_coefficient keywords. The first one is prioritary.
 
-                empty_slots: if different from zero, adds a distance equal to thickness*empty_slots to q0. The
+                slots_empty: if different from zero, adds a distance equal to thickness*slots_empty to q0. The
                 intention is to simulate a lens that is off but the path should be considered.
 
                 Note that all arrays must be "list". If you are using numpy arrays, convert them:  array.tolist()
@@ -1500,7 +1500,7 @@ class CompoundOE():
 
         if isinstance(p0, list) == False: p0 = [ p0 for i in range(nslots)]
         if isinstance(q0, list) == False: q0 = [ q0 for i in range(nslots)]
-        if isinstance(empty_slots, list) == False: empty_slots = [ empty_slots for i in range(nslots)]
+        if isinstance(slots_empty, list) == False: slots_empty = [ slots_empty for i in range(nslots)]
         if isinstance(radius, list) == False: radius = [ radius for i in range(nslots)]
         if isinstance(thickness, list) == False: thickness = [ thickness for i in range(nslots)]
         if isinstance(interthickness, list) == False: interthickness = [ interthickness for i in range(nslots)]
@@ -1517,18 +1517,18 @@ class CompoundOE():
 
         for i in range(len(nlenses)):
             # print("Appending file **%s**"%(prerefl_file[i]))
-            # print("Calling append_crl with p0:%f, q0:%f, nlenses=%f, empty_slots=%f, \
+            # print("Calling append_crl with p0:%f, q0:%f, nlenses=%f, slots_empty=%f, \
             #               radius=%f, thickness=%f, interthickness=%f, \
             #               surface_shape=%f,convex_to_the_beam=%f,\
             #               diameter=%f, cylinder_angle=%f,\
             #               prerefl_file=%s, \
-            #               use_ccc=0"%(p0[i], q0[i],nlenses[i],empty_slots[i], \
+            #               use_ccc=0"%(p0[i], q0[i],nlenses[i],slots_empty[i], \
             #               radius[i], thickness[i], interthickness[i], \
             #               surface_shape[i],convex_to_the_beam[i],\
             #               diameter[i], cylinder_angle[i],\
             #               prerefl_file[i]))
 
-            self.append_crl(p0[i], q0[i], nlenses=nlenses[i], empty_slots=empty_slots[i], \
+            self.append_crl(p0[i], q0[i], nlenses=nlenses[i], slots_empty=slots_empty[i], \
                           radius=radius[i], thickness=thickness[i], interthickness=interthickness[i], \
                           surface_shape=surface_shape[i],convex_to_the_beam=convex_to_the_beam[i],\
                           diameter=diameter[i], cylinder_angle=cylinder_angle[i],\
@@ -2212,7 +2212,7 @@ if __name__ == '__main__':
         tf_q0[-1] += tf_fs_after
 
         nlenses = numpy.array(tf_slots)*numpy.array(tf_on_off)
-        empty_slots = (numpy.array(tf_slots)-nlenses)
+        slots_empty = (numpy.array(tf_slots)-nlenses)
 
 
         # # this is for calculations with xraylib (focal distances)
@@ -2224,7 +2224,7 @@ if __name__ == '__main__':
         tf = CompoundOE(name='TF ID30B')
 
         tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, radius=tf_radii,\
-                        empty_slots=0, surface_shape=4, convex_to_the_beam=0, diameter=None,\
+                        slots_empty=0, surface_shape=4, convex_to_the_beam=0, diameter=None,\
                #prerefl_file="Be5_55.dat",\
                refraction_index=refraction_index,attenuation_coefficient=attenuation_coefficient, \
                cylinder_angle=0.0,interthickness=50e-4,thickness=0.3,\
@@ -2239,7 +2239,7 @@ if __name__ == '__main__':
         beam.write("star_tf.dat")
         print("\nFile written to disk: star_tf.dat")
 
-        print("\nLens stack: ",nlenses," empty slots: ",empty_slots)
+        print("\nLens stack: ",nlenses," empty slots: ",slots_empty)
         print("\nNumber of interfaces: %d"%(tf.number_oe()))
         print("\nTotal beamline length (from compound element) %f m"%(1e-2*tf.length()))
         print("\nTotal Transfocator length %f m"%(1e-2*tf_length))
