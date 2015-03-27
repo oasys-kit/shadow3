@@ -22,7 +22,6 @@ class Beam(ShadowLib.Beam):
       beam_copy.rays = copy.deepcopy(self.rays)
       return beam_copy
 
-
   def retrace(self,dist):
     try:
       tof = (-self.rays[:,1].flatten() + dist)/self.rays[:,4].flatten()
@@ -40,6 +39,12 @@ class Beam(ShadowLib.Beam):
       IMPORTANT: Note that shadow3 changes the values of the OE when tracing (i.e., oe1 changes after
                  beam.traceOE(oe1) ). The same happens with compoundOE: Each oe inside compoundOE is
                  changed after tracing.
+
+                 Note also that when using write_*_files keyword, the files are written by python, not
+                  by SHADOW (so FWRITE is not changed), with the exception of write_mirr_files. In this case
+                  the code changes FWRITE=1 (mirror files only). Therefore, if you want not to overwrite
+                  FWRITE (e.g., for writing screen.xx files), you should set write_mirr_files=0 and then
+                  the behavious of FWRITE is conserved.
 
       :param compoundOE: input object
       :param from_oe: index of the first oe (for tracing compoundOE after an existing system) (default=1)
@@ -72,10 +77,6 @@ class Beam(ShadowLib.Beam):
             oe.write("start.%02d"%(oe_index))
             print("File written to disk: start.%02d"%(oe_index))
 
-
-
-
-
         self.traceOE(oe,oe_index)
 
         list.append(oe)
@@ -87,7 +88,6 @@ class Beam(ShadowLib.Beam):
         if iwrite == 1:
             self.write("star.%02d"%(oe_index))
             print("File written to disk: star.%02d"%(oe_index))
-
 
         iwrite = 0
         if write_end_files == 1: iwrite = 1
@@ -119,9 +119,7 @@ class Beam(ShadowLib.Beam):
           return(numpy.sqrt(variance))
 
 
-
   #added srio 2015
-
 
   def getshonecol(self,col, nolost=0):
     '''
@@ -185,7 +183,6 @@ class Beam(ShadowLib.Beam):
     col=col-1
     ray = self.rays
 
-
     column = None
 
     if col>=0 and col<18 and col!=10:  column =  ray[:,col]
@@ -239,17 +236,13 @@ class Beam(ShadowLib.Beam):
 
     return None
 
-
-
-
-
   def getshcol(self,col,nolost=0):
       '''
       Extract multiple columns from a shadow file (eg.'begin.dat') or a Shadow.Beam instance.
       The column are numbered in the fortran convention, i.e. starting from 1.
       It returns a numpy.array filled with the values of the chosen column.
 
-      Inumpy.ts:
+      Inputs:
          beam     : str instance with the name of the shadow file to be loaded. OR
                     Shadow.Beam initialized instance.
          col      : tuple or list instance of int with the number of columns chosen.
@@ -295,7 +288,6 @@ class Beam(ShadowLib.Beam):
               32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
               33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
       '''
-
       ret = []
       if isinstance(col, int): return self.getshonecol(col,nolost=nolost)
       for c in col:
@@ -305,6 +297,21 @@ class Beam(ShadowLib.Beam):
   def intensity(self,nolost=0):
       w = self.getshonecol(23,nolost=nolost)
       return w.sum()
+
+  def nrays(self,nolost=0):
+      try:
+        w = self.getshonecol(12)
+      except Exception:
+          print("Error: Empty beam...")
+          return 0
+
+      if nolost == 0:
+          return w.size
+      if nolost == 1:
+          return numpy.array(numpy.where(w >= 0)).size
+      if nolost == 2:
+          return numpy.array(numpy.where(w < 0)).size
+
 
   def histo1(self,col,xrange=None,nbins=50,nolost=0,ref=0,write=None,factor=1.0):
       '''
@@ -377,7 +384,6 @@ class Beam(ShadowLib.Beam):
               32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
               33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
       '''
-
       #initialize return value
       ticket = {'error':1}
       # copy the inputs
@@ -460,8 +466,6 @@ class Beam(ShadowLib.Beam):
           f.close()
           print('histo1: file written to disk: %s'%(write))
 
-
-
       #
       # output
       ticket['error'] = 0
@@ -485,56 +489,59 @@ class Beam(ShadowLib.Beam):
 
       return ticket
 
+# commented srio@esrf.eu 2015-03-26 Never used...
 
-class GeometricSource(ShadowLib.Source):
-  def __init__(self):
-    ShadowLib.Source.__init__(self)
-
-  def setNumberRaysInit(self,nRays=5000,seed=6775431):
-    self.N = nRays
-    if(seed%2==0): seed += 1
-    self.ISTAR1 = seed
-    self.NCOL = 18 # shadow3 it will be rewritten anyway
-
-  def setSpaceDistribution(self,transverse='gauss',longitude='no',param=numpy.zeros(3)):
-    distTran = {'point':0 ,'rectangle':1,'ellipse':2,'gauss':3}
-    distLong = {'no':1 ,'flat':2,'gauss':3}#,'synchrotron':4} synchrotron implemented in a different class
-    try:
-      self.FSOUR = distType[transverse]
-      self.FSOURCE_DEPTH = distType[longitude]
-
-      if self.FSOUR in [1,2]:
-        self.WXSOU = param[0]
-        self.WZSOU = param[1]
-      if self.FSOUR==3:
-        self.SIGMAX = param[0]
-        self.SIGMAZ = param[1]
-
-      if self.FSOURCE_DEPTH==2:
-        self.WYSOU = param[2]
-      if self.FSOURCE_DEPTH==3:
-        self.SIGMAY = param[2]
-
-    except KeyError:
-      print ('setSpaceDistribution: wrong distribution name')
-#TODO    
-#  def setAngleDistribution(self,angle='gauss',)
-
+# class GeometricSource(ShadowLib.Source):
+#   def __init__(self):
+#     ShadowLib.Source.__init__(self)
 #
-# TODO: Put all classes starting with capital letter
-# in the meantime, bind as this one:  
+#   def setNumberRaysInit(self,nRays=5000,seed=6775431):
+#     self.N = nRays
+#     if(seed%2==0): seed += 1
+#     self.ISTAR1 = seed
+#     self.NCOL = 18 # shadow3 it will be rewritten anyway
 #
-class geometricSource(GeometricSource):
-  def __init__(self): 
-    print(' DEPRECATION WARNING: Use GeometricSource ')
-    GeometricSource.__init__(self)
+#   def setSpaceDistribution(self,transverse='gauss',longitude='no',param=numpy.zeros(3)):
+#     distTran = {'point':0 ,'rectangle':1,'ellipse':2,'gauss':3}
+#     distLong = {'no':1 ,'flat':2,'gauss':3}#,'synchrotron':4} synchrotron implemented in a different class
+#     try:
+#       self.FSOUR = distType[transverse]
+#       self.FSOURCE_DEPTH = distType[longitude]
+#
+#       if self.FSOUR in [1,2]:
+#         self.WXSOU = param[0]
+#         self.WZSOU = param[1]
+#       if self.FSOUR==3:
+#         self.SIGMAX = param[0]
+#         self.SIGMAZ = param[1]
+#
+#       if self.FSOURCE_DEPTH==2:
+#         self.WYSOU = param[2]
+#       if self.FSOURCE_DEPTH==3:
+#         self.SIGMAY = param[2]
+#
+#     except KeyError:
+#       print ('setSpaceDistribution: wrong distribution name')
+# #TODO
+# #  def setAngleDistribution(self,angle='gauss',)
+#
+# #
+# # TODO: Put all classes starting with capital letter
+# # in the meantime, bind as this one:
+# #
+# class geometricSource(GeometricSource):
+#   def __init__(self):
+#     print(' DEPRECATION WARNING: Use GeometricSource ')
+#     GeometricSource.__init__(self)
 
 class OE(ShadowLib.OE):
   def __init__(self):
     ShadowLib.OE.__init__(self)
 
-# here methods to initialize the OE
-  def setScreens(self, 
+  # here methods to initialize the OE
+
+  # renamed setScreens -> set_screens srio@esrf.eu
+  def set_screens(self,
                  n_screen=1, 
                  i_screen=numpy.zeros(10),
                  i_abs=numpy.zeros(10),
@@ -574,341 +581,363 @@ class OE(ShadowLib.OE):
 
     #SCR_NUMBER automastically set
 
+  def set_empty(self,T_INCIDENCE=0,T_REFLECTION=180.0,T_SOURCE=0.0,T_IMAGE=0.0,ALPHA=0.0):
+    """
+    Defines an empty optical element (useful as an arm, eg. to rotate reference frames)
+    By default, there is no change
 
-  def setOutput(self,fwrite=0):
-    self.FWRITE = fwrite
-    return self
-
-
-
-  def setFrameOfReference(self,source_distance=10.0,image_distance=20.0,source_angle=10.0,image_angle=10.0,alpha=0.0):
-    self.T_SOURCE     = source_distance
-    self.T_IMAGE      = image_distance
-    self.T_INCIDENCE  = source_angle
-    self.T_REFLECTION = image_angle
-    self.ALPHA        = alpha
-    return self
-
-
-  def setSeed(self,istar=12345701):
-    self.ISTAR1       = istar
-    return self
-
-
-  def setConvex(self):
-    self.F_CONVEX = 1
-    return self
-
-
-  def setConcave(self):
-    self.F_CONVEX = 0
-    return self
-
-
-  def setCylindric(self,cyl_ang=0.0):
-    self.FCYL = 1
-    self.CIL_ANG = cyl_ang
-    return self
-
-
-  def unsetCylinder(self):
-    self.FCYL = 0
-    return self
-
-
-  def setAutoFocus(self,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.F_EXT = 0
-    self.F_DEFAULT = f_default
-    if f_default==0:
-      self.SSOUR = ssour
-      self.SIMAG = simag
-      self.THETA = theta
-    return self
-
-
-  def unsetReflectivity(self):
-    self.F_REFLEC = 0
-    return self
-
-  def setReflectivityFull(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
-    self.F_REFLEC = 1
-    self.F_REFL = f_refl
-    self.FILE_REFL = file_refl
-    self.ALFA = rparams[0]
-    self.GAMMA = rparams[1]
-    self.F_THICK = f_thick
-    return self
-
-  def setReflectivityScalar(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
-    self.F_REFLEC = 2
-    self.F_REFL = f_refl
-    self.FILE_REFL = file_refl
-    self.F_THICK = f_thick
-    return self
-
-  def setMultilayer(self,f_reflec=1,file_refl='GAAS.SHA',f_thick=0):
-    self.F_REFLEC = f_reflec
-    self.F_REFL = 2
-    self.FILE_REFL = file_refl
-    self.F_THICK = f_thick
-    return self
-
-
-  def setSpheric(self,rmirr=20.0):
-    self.FMIRR = 1
-    self.F_EXT = 1
-    self.RMIRR = rmirr
-    return self
-
-  def setSphericAuto(self,fparams=None):#):f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 1
-    if fparams == None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-
-  def setEllipsoid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
-    self.FMIRR = 2
-    self.F_EXT = 1
-    self.ELL_THE = ell_the
-    self.AXMAJ = axmaj
-    self.AXMIN = axmin
-    return self
-
-  def setEllipsoidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 2
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-
-  def setToroid(self,f_torus=0,r_maj=0.0,r_min=0.0):
-    self.FMIRR = 3
-    self.F_EXT = 1
-    self.F_TORUS = f_torus
-    self.R_MAJ = r_maj
-    self.R_MIN = r_min
-    return self
-
-  def setToroidAuto(self,f_torus=0,r_maj=0.0,r_min=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 3
-    self.F_TORUS = f_torus
-    self.R_MAJ = r_maj
-    self.R_MIN = r_min
-    self.setAutoFocus(f_default,ssour,simag,theta)
-    return self
-
-
-  def setParaboloid(self,f_side=1,param=0.0):
-    self.FMIRR = 4
-    self.F_EXT = 1
-    self.F_SIDE = f_side
-    self.PARAM = param
-    return self
-
-  def setParaboloidAuto(self,f_side=1,fparams=None):#f_side=1,param=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0,f_side=0):
-    self.FMIRR = 4
-    self.F_SIDE = f_side
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparam[0],simag=fparam[1],theta=fparams[2])
-    return self
-
-
-  def setPlane(self):
-    self.FMIRR = 5
-    self.F_EXT = 1
-    return self
-
-
-  def setCodlingSlit(self,cod_len=0.0,cod_wid=0.0): # HERE ASK MANOLO, always 1 or 0
-    self.FMIRR = 6
-    self.F_EXT = 1
-    self.COD_LEN = 0.0
-    self.COD_WID = 0.0
-    return self
-
-
-  def setHyperboloid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
-    self.FMIRR = 7
-    self.F_EXT = 1
-    self.ELL_THE = ell_the
-    self.AXMAJ = axmaj
-    self.AXMIN = axmin
-    return self
-
-  def setHyperboloidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 2
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-
-  def setCone(self,cone_a=0.0):
-    self.FMIRR = 8
-    self.F_EXT = 1
-    self.CONE_A = cone_a
-    return self
-
-
-  def setPoly(self,file_mir=''):
-    self.FMIRR = 9
-    self.F_EXT = 1
-    self.FILE_MIR = file_mir
-    return self
-
-
-  def setCCC(self,ccc=numpy.array([1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64)):
-    self.FMIRR = 10
-    self.F_EXT = 1
-    self.CCC[:] = ccc[:]
-    return self
-
-
-  def setRipple(self,f_g_s=0,xyAmpWavPha=numpy.array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64),file_rip=''):
-    self.F_RIPPLE = 1
-    self.F_G_S = f_g_s
-    self.X_RIP_AMP = xyAmpWavPha[0]
-    self.X_RIP_WAV = xyAmpWavPha[1]
-    self.X_PHASE   = xyAmpWavPha[2]
-    self.Y_RIP_AMP = xyAmpWavPha[3]
-    self.Y_RIP_WAV = xyAmpWavPha[4]
-    self.Y_PHASE   = xyAmpWavPha[5]
-    self.FILE_RIP  = file_rip 
-    return self
-
-
-  def setDimensions(self,fshape=1,params=numpy.zeros(4,dtype=numpy.float64)):
-    self.FHIT_C = 1
-    self.FSHAPE = fshape
-    self.RLEN1  = params[0]
-    self.RLEN2  = params[1]
-    self.RWIDX1 = params[2]
-    self.RWIDX2 = params[3]
-    #TODO set self.FHIT_C = 0 elsewhere
+    :param T_INCIDENCE: incidence angle (default=0)
+    :param T_REFLECTION: reflection angle (default=180)
+    :param T_SOURCE: distance from previous o.e. (default=0)
+    :param T_IMAGE: ddistance to next or (default=0)
+    :param ALPHA: mirror oriantation angle (default=0)
+    :return:
+    """
+    self.F_REFRAC = 2
+    self.T_INCIDENCE = T_INCIDENCE
+    self.T_REFLECTION = T_REFLECTION
+    self.T_SOURCE = T_SOURCE
+    self.T_IMAGE = T_IMAGE
+    self.ALPHA = ALPHA
     return self
 
 
 
 
-  def setReflector(self):
-    self.F_REFRACT = 0
-    return self
+  # def setOutput(self,fwrite=0):
+  #   self.FWRITE = fwrite
+  #   return self
+  #
+  #
+  #
+  # def setFrameOfReference(self,source_distance=10.0,image_distance=20.0,source_angle=10.0,image_angle=10.0,alpha=0.0):
+  #   self.T_SOURCE     = source_distance
+  #   self.T_IMAGE      = image_distance
+  #   self.T_INCIDENCE  = source_angle
+  #   self.T_REFLECTION = image_angle
+  #   self.ALPHA        = alpha
+  #   return self
+  #
+  #
+  # def setSeed(self,istar=12345701):
+  #   self.ISTAR1       = istar
+  #   return self
+  #
+  #
+  # def setConvex(self):
+  #   self.F_CONVEX = 1
+  #   return self
+  #
+  #
+  # def setConcave(self):
+  #   self.F_CONVEX = 0
+  #   return self
+  #
+  #
+  # def setCylindric(self,cyl_ang=0.0):
+  #   self.FCYL = 1
+  #   self.CIL_ANG = cyl_ang
+  #   return self
+  #
+  #
+  # def unsetCylinder(self):
+  #   self.FCYL = 0
+  #   return self
+  #
+  #
+  # def setAutoFocus(self,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.F_EXT = 0
+  #   self.F_DEFAULT = f_default
+  #   if f_default==0:
+  #     self.SSOUR = ssour
+  #     self.SIMAG = simag
+  #     self.THETA = theta
+  #   return self
+  #
 
-
-  def setRefractor(self,r_ind_obj = 1.0,r_ind_ima = 1.0,r_attenuation_obj = 0.0,r_attenuation_ima = 0.0):
-    self.F_REFRACT = 1
-    self.R_IND_OBJ = r_ind_obj
-    self.R_IND_IMA = r_ind_ima
-    self.R_ATTENUATION_OBJ = r_attenuation_obj
-    self.R_ATTENUATION_IMA = r_attenuation_ima
-    return self
-
-
-  def unsetCrystal(self):
-    self.F_CRYSTAL = 0
-    return self
-
-  def setCrystal(self,file_refl=b'',a_bragg=0.0):
-    self.F_CRYSTAL = 1
-    self.FILE_REFL = file_refl
-    self.F_REFLECT = 0
-
-    if a_bragg!=0.0:
-      self.F_BRAGG_A = 1
-      self.A_BRAGG = a_bragg
-    return self
-
-
-  def setJohansson(self,r_johansson=None):
-    self.F_JOHANSSON = 1 
-    #TODO set self.F_JOHANSSON = 0 elsewhere
-    if r_johansson!=None:
-      self.F_EXT = 1
-      self.R_JOHANSSON=r_johansson
-    else:
-      self.F_EXT = 0
-    return self
- 
-
-  def setGratingRulingConstant(self,f_ruling=1,ruling=0.0):
-    self.F_GRATING = 1
-    self.F_RULING = f_ruling
-    self.RULING = ruling
-    return self
-
-
-  def setGratingHolographic(self,holo_params=numpy.zeros(7,dtype=numpy.float64),f_pw=2,f_pw_c=0,f_virtual=0):
-    self.F_GRATING = 1
-    self.F_RULING = 2
-    self.HOLO_R1 = holo_params[0]
-    self.HOLO_R2 = holo_params[1]
-    self.HOLO_DEL = holo_params[2]
-    self.HOLO_GAM = holo_params[3]
-    self.HOLO_W = holo_params[4]
-    self.HOLO_RT1 = holo_params[5]
-    self.HOLO_RT2 = holo_params[6]
-    self.F_PW = f_pw
-    self.F_PW_C = f_pw_c
-    self.F_VIRTUAL = f_virtual
-    return self
-
-
-  def setGratingFan(self,azim_fan=0.0,dist_fan=0.0,coma_fac=0.0):
-    self.F_GRATING = 1
-    self.F_RULING = 3
-    self.AZIM_FAN = azim_fan
-    self.DIST_FAN = dist_fan
-    self.COMA_FAC = coma_fac
-    return self
-
-
-  def setGratingReserved(self):
-    self.F_GRATING = 1
-    self.F_RULING = 4
-    return self
-
-
-  def setGratingPolynomial(self,poly_params=numpy.zeros(5,dtype=numpy.float64),f_rul_abs=0):
-    self.F_GRATING = 1
-    self.F_RULING = 5
-    self.F_RUL_ABS = f_rul_abs
-    self.RULING = poly_params[0]
-    self.RUL_A1 = poly_params[1]
-    self.RUL_A2 = poly_params[2]
-    self.RUL_A3 = poly_params[3]
-    self.RUL_A4 = poly_params[4]
-    return self
-
-  def setMosaic(self,mosaic_seed=4732093,spread_mos=0.0,thickness=0.0):
-    self.F_MOSAIC = 1
-    self.MOSAIC_SEED = mosaic_seed
-    self.SPREAD_MOS = spread_mos
-    self.THICKNESS = thickness
-    return self
-
-  def setAutoTuning(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0):
-    self.F_CENTRAL = 1
-    self.F_PHOT_CENT = f_phot_cent
-    self.PHOT_CENT = phot_cent
-    self.R_LAMBDA = r_lambda
-    return self
-
-  def setAutoMonochromator(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0,f_mono=0,f_hunt=1,hparam=numpy.zeros(3,dtype=numpy.float64)):
-    self.setAutoTuning(f_phot_cent=f_phot_cent,phot_cent=phot_cent,r_lambda=r_lambda)
-    self.F_MONO = f_mono
-    self.F_HUNT = f_hunt
-    self.HUNT_H = hparam[0]
-    self.HUNT_L = hparam[1]
-    self.BLAZE = hparam[2]
-    return self
+  # def unsetReflectivity(self):
+  #   self.F_REFLEC = 0
+  #   return self
+  #
+  # def setReflectivityFull(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
+  #   self.F_REFLEC = 1
+  #   self.F_REFL = f_refl
+  #   self.FILE_REFL = file_refl
+  #   self.ALFA = rparams[0]
+  #   self.GAMMA = rparams[1]
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  # def setReflectivityScalar(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
+  #   self.F_REFLEC = 2
+  #   self.F_REFL = f_refl
+  #   self.FILE_REFL = file_refl
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  # def setMultilayer(self,f_reflec=1,file_refl='GAAS.SHA',f_thick=0):
+  #   self.F_REFLEC = f_reflec
+  #   self.F_REFL = 2
+  #   self.FILE_REFL = file_refl
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  #
+  # def setSpheric(self,rmirr=20.0):
+  #   self.FMIRR = 1
+  #   self.F_EXT = 1
+  #   self.RMIRR = rmirr
+  #   return self
+  #
+  # def setSphericAuto(self,fparams=None):#):f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 1
+  #   if fparams == None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  #
+  # def setEllipsoid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
+  #   self.FMIRR = 2
+  #   self.F_EXT = 1
+  #   self.ELL_THE = ell_the
+  #   self.AXMAJ = axmaj
+  #   self.AXMIN = axmin
+  #   return self
+  #
+  # def setEllipsoidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 2
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  #
+  # def setToroid(self,f_torus=0,r_maj=0.0,r_min=0.0):
+  #   self.FMIRR = 3
+  #   self.F_EXT = 1
+  #   self.F_TORUS = f_torus
+  #   self.R_MAJ = r_maj
+  #   self.R_MIN = r_min
+  #   return self
+  #
+  # def setToroidAuto(self,f_torus=0,r_maj=0.0,r_min=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 3
+  #   self.F_TORUS = f_torus
+  #   self.R_MAJ = r_maj
+  #   self.R_MIN = r_min
+  #   self.setAutoFocus(f_default,ssour,simag,theta)
+  #   return self
+  #
+  #
+  # def setParaboloid(self,f_side=1,param=0.0):
+  #   self.FMIRR = 4
+  #   self.F_EXT = 1
+  #   self.F_SIDE = f_side
+  #   self.PARAM = param
+  #   return self
+  #
+  # def setParaboloidAuto(self,f_side=1,fparams=None):#f_side=1,param=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0,f_side=0):
+  #   self.FMIRR = 4
+  #   self.F_SIDE = f_side
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparam[0],simag=fparam[1],theta=fparams[2])
+  #   return self
+  #
+  #
+  # def setPlane(self):
+  #   self.FMIRR = 5
+  #   self.F_EXT = 1
+  #   return self
+  #
+  #
+  # def setCodlingSlit(self,cod_len=0.0,cod_wid=0.0): # HERE ASK MANOLO, always 1 or 0
+  #   self.FMIRR = 6
+  #   self.F_EXT = 1
+  #   self.COD_LEN = 0.0
+  #   self.COD_WID = 0.0
+  #   return self
+  #
+  #
+  # def setHyperboloid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
+  #   self.FMIRR = 7
+  #   self.F_EXT = 1
+  #   self.ELL_THE = ell_the
+  #   self.AXMAJ = axmaj
+  #   self.AXMIN = axmin
+  #   return self
+  #
+  # def setHyperboloidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 2
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  #
+  # def setCone(self,cone_a=0.0):
+  #   self.FMIRR = 8
+  #   self.F_EXT = 1
+  #   self.CONE_A = cone_a
+  #   return self
+  #
+  #
+  # def setPoly(self,file_mir=''):
+  #   self.FMIRR = 9
+  #   self.F_EXT = 1
+  #   self.FILE_MIR = file_mir
+  #   return self
+  #
+  #
+  # def setCCC(self,ccc=numpy.array([1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64)):
+  #   self.FMIRR = 10
+  #   self.F_EXT = 1
+  #   self.CCC[:] = ccc[:]
+  #   return self
+  #
+  #
+  # def setRipple(self,f_g_s=0,xyAmpWavPha=numpy.array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64),file_rip=''):
+  #   self.F_RIPPLE = 1
+  #   self.F_G_S = f_g_s
+  #   self.X_RIP_AMP = xyAmpWavPha[0]
+  #   self.X_RIP_WAV = xyAmpWavPha[1]
+  #   self.X_PHASE   = xyAmpWavPha[2]
+  #   self.Y_RIP_AMP = xyAmpWavPha[3]
+  #   self.Y_RIP_WAV = xyAmpWavPha[4]
+  #   self.Y_PHASE   = xyAmpWavPha[5]
+  #   self.FILE_RIP  = file_rip
+  #   return self
+  #
+  #
+  # def setDimensions(self,fshape=1,params=numpy.zeros(4,dtype=numpy.float64)):
+  #   self.FHIT_C = 1
+  #   self.FSHAPE = fshape
+  #   self.RLEN1  = params[0]
+  #   self.RLEN2  = params[1]
+  #   self.RWIDX1 = params[2]
+  #   self.RWIDX2 = params[3]
+  #   #TODO set self.FHIT_C = 0 elsewhere
+  #   return self
+  #
+  #
+  #
+  #
+  # def setReflector(self):
+  #   self.F_REFRACT = 0
+  #   return self
+  #
+  #
+  # def setRefractor(self,r_ind_obj = 1.0,r_ind_ima = 1.0,r_attenuation_obj = 0.0,r_attenuation_ima = 0.0):
+  #   self.F_REFRACT = 1
+  #   self.R_IND_OBJ = r_ind_obj
+  #   self.R_IND_IMA = r_ind_ima
+  #   self.R_ATTENUATION_OBJ = r_attenuation_obj
+  #   self.R_ATTENUATION_IMA = r_attenuation_ima
+  #   return self
+  #
+  #
+  # def unsetCrystal(self):
+  #   self.F_CRYSTAL = 0
+  #   return self
+  #
+  # def setCrystal(self,file_refl=b'',a_bragg=0.0):
+  #   self.F_CRYSTAL = 1
+  #   self.FILE_REFL = file_refl
+  #   self.F_REFLECT = 0
+  #
+  #   if a_bragg!=0.0:
+  #     self.F_BRAGG_A = 1
+  #     self.A_BRAGG = a_bragg
+  #   return self
+  #
+  #
+  # def setJohansson(self,r_johansson=None):
+  #   self.F_JOHANSSON = 1
+  #   #TODO set self.F_JOHANSSON = 0 elsewhere
+  #   if r_johansson!=None:
+  #     self.F_EXT = 1
+  #     self.R_JOHANSSON=r_johansson
+  #   else:
+  #     self.F_EXT = 0
+  #   return self
+  #
+  #
+  # def setGratingRulingConstant(self,f_ruling=1,ruling=0.0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = f_ruling
+  #   self.RULING = ruling
+  #   return self
+  #
+  #
+  # def setGratingHolographic(self,holo_params=numpy.zeros(7,dtype=numpy.float64),f_pw=2,f_pw_c=0,f_virtual=0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 2
+  #   self.HOLO_R1 = holo_params[0]
+  #   self.HOLO_R2 = holo_params[1]
+  #   self.HOLO_DEL = holo_params[2]
+  #   self.HOLO_GAM = holo_params[3]
+  #   self.HOLO_W = holo_params[4]
+  #   self.HOLO_RT1 = holo_params[5]
+  #   self.HOLO_RT2 = holo_params[6]
+  #   self.F_PW = f_pw
+  #   self.F_PW_C = f_pw_c
+  #   self.F_VIRTUAL = f_virtual
+  #   return self
+  #
+  #
+  # def setGratingFan(self,azim_fan=0.0,dist_fan=0.0,coma_fac=0.0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 3
+  #   self.AZIM_FAN = azim_fan
+  #   self.DIST_FAN = dist_fan
+  #   self.COMA_FAC = coma_fac
+  #   return self
+  #
+  #
+  # def setGratingReserved(self):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 4
+  #   return self
+  #
+  #
+  # def setGratingPolynomial(self,poly_params=numpy.zeros(5,dtype=numpy.float64),f_rul_abs=0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 5
+  #   self.F_RUL_ABS = f_rul_abs
+  #   self.RULING = poly_params[0]
+  #   self.RUL_A1 = poly_params[1]
+  #   self.RUL_A2 = poly_params[2]
+  #   self.RUL_A3 = poly_params[3]
+  #   self.RUL_A4 = poly_params[4]
+  #   return self
+  #
+  # def setMosaic(self,mosaic_seed=4732093,spread_mos=0.0,thickness=0.0):
+  #   self.F_MOSAIC = 1
+  #   self.MOSAIC_SEED = mosaic_seed
+  #   self.SPREAD_MOS = spread_mos
+  #   self.THICKNESS = thickness
+  #   return self
+  #
+  # def setAutoTuning(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0):
+  #   self.F_CENTRAL = 1
+  #   self.F_PHOT_CENT = f_phot_cent
+  #   self.PHOT_CENT = phot_cent
+  #   self.R_LAMBDA = r_lambda
+  #   return self
+  #
+  # def setAutoMonochromator(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0,f_mono=0,f_hunt=1,hparam=numpy.zeros(3,dtype=numpy.float64)):
+  #   self.setAutoTuning(f_phot_cent=f_phot_cent,phot_cent=phot_cent,r_lambda=r_lambda)
+  #   self.F_MONO = f_mono
+  #   self.F_HUNT = f_hunt
+  #   self.HUNT_H = hparam[0]
+  #   self.HUNT_L = hparam[1]
+  #   self.BLAZE = hparam[2]
+  #   return self
 
   def to_dictionary(self):
     mem = inspect.getmembers(self)
@@ -1233,11 +1262,27 @@ class CompoundOE():
           txt += oe.mirinfo(title="oe %d in compoundOE name: %s "%(i+1,self.name))
       return txt
 
-  def append_oe(self,item):
+  def add_drift_space_downstream(self,dd):
+      self.list[-1].T_IMAGE += dd
+
+  def add_drift_space_upstream(self,dd):
+      self.list[0].T_SOURCE += dd
+
+  def append(self,item):
+    """
+    :param item: an OE or CompoundOE to append
+    :return: the updated CompoundOE
+    """
     if isinstance(item, OE):
         self.list.append(item)
-    else:
-        print("Failed to append: only OE can be appended. ")
+        return self
+
+    if isinstance(item, CompoundOE):
+        for i in range(item.number_oe()):
+            self.list.append(item.list[i])
+        return self
+
+    print("Failed to append: object not understood: %s. "%type(item))
     return self
 
   def append_lens(self,p,q,surface_shape=1,convex_to_the_beam=1,diameter=None,cylinder_angle=None,\
@@ -1273,7 +1318,7 @@ class CompoundOE():
       oe2.F_REFRAC = 1
 
       oe1.F_EXT = 1
-      oe2.F_EXT = 2
+      oe2.F_EXT = 1
 
       # write no output files. If wanted they are written by python in traceCompoundOE
       oe1.FWRITE = 3
@@ -1382,9 +1427,10 @@ class CompoundOE():
           oe2.CIL_ANG = cylinder_angle
 
 
-
-      self.append_oe(oe1)
-      self.append_oe(oe2)
+      print("appending 2 elements")
+      self.append(oe1)
+      self.append(oe2)
+      return self
 
   def append_crl(self,p0,q0, nlenses=30, slots_empty=0, radius=500e-2, thickness=625e-4, interthickness=0.001, \
                   surface_shape=1, convex_to_the_beam=1, diameter=None, cylinder_angle=None,\
@@ -1421,6 +1467,7 @@ class CompoundOE():
         :param use_ccc:0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
         :return:
         """
+
         p_or_q = 0.5*(thickness - interthickness)
 
         if nlenses == 0: # add an empty lens + a distance (slots_empty-1) for keeping the total distance
@@ -1444,7 +1491,7 @@ class CompoundOE():
                               interthickness=interthickness, prerefl_file=prerefl_file, \
                               refraction_index=refraction_index, attenuation_coefficient=attenuation_coefficient, \
                               use_ccc=use_ccc)
-
+        return self
 
   def append_transfocator(self,p0,q0, nlenses=[4,8], slots_empty=0, radius=500e-2, thickness=625e-4, \
                   interthickness=0.001, \
@@ -1529,7 +1576,267 @@ class CompoundOE():
                           prerefl_file=prerefl_file[i],refraction_index=refraction_index[i], \
                           attenuation_coefficient=attenuation_coefficient[i],\
                           use_ccc=0)
+        return self
 
+  def append_kb(self, p0, q0, grazing_angles_mrad=[3.0,3.0],separation=100.0, mirror_orientation_angle=0,\
+          focal_positions=[0,0],shape=[2,2],\
+          dimensions1=[0,0],dimensions2=[0,0],\
+          reflectivity_kind=[0,0],reflectivity_files=["",""],surface_error_files=["",""]):
+      """
+      Appends a KB (Kirkpatrick-Baez) system
+      First mirror is focusing in vertical plane, second mirror focusses in horizontal plane.
+
+      Note that SHADOW rotates the image plane because the second mirror has mirror orientation angle 90 ded
+
+
+      :param p0: distance from previous source plane (continuation plane) to center of KB (!!!)
+      :param q0: distance from center of KB (!!!) to image plane (continuation plane)
+      :param grazing_angles_mrad: grazing angle in mrad for both mirrors. Default:  grazing_angles_mrad=[3.0,3.0]
+      :param separation: separation between the mirrors from center of first mirror (VFM) to center of second one (HFM).
+                                ()Default=100). The continuation plane is set in the middle.
+      :param mirror_orientation_angle: set the mirror orientation angle with respect to the previous o.e. for the
+                                first mirror of the  KB
+      :param focal_positions: the focal positions [p_focal,q_focal] measured from the center of KB.
+                                If set to [0,0] then uses p0 and q0
+      :param shape: the shape code for the surfaces 1=spherica, 2=elliptical. Default: shape=[2,2]
+      :param dimensions1: the dimensions [width,length] for the first mirror. Default: [0,0] meaning infinite dimensions.
+      :param dimensions2: the dimensions [width,length] for the second  mirror. Default: [0,0] meaning infinite dimensions.
+      :param reflectivity_kind: flag for reflectivity: 0=ideal reflector, 1=mirror, 2=multilayer. Default=[0,0]
+                                If reflectivity is set to mirror or multilayer, the corresponding file must be entered in
+                                the reflectivity_files keyword.
+      :param reflectivity_files: the reflectivity files, if needed. If mirror, the file must have been created
+                                by prerefl. If multilayer, the file must come from pre_mlayer.
+      :param surface_error_files: Set to file names containing the surface error mesh.
+                                Default: surface_error_files=["",""] which means that no surface error is considered.
+      :return:
+      """
+      oe1 = OE()
+      oe2 = OE()
+
+      #incidence angles
+      oe1.T_INCIDENCE = 90.0 - grazing_angles_mrad[0]*1e-3*180.0/numpy.pi
+      oe1.T_REFLECTION = oe1.T_INCIDENCE
+      oe2.T_INCIDENCE = 90.0 - grazing_angles_mrad[1]*1e-3*180.0/numpy.pi
+      oe2.T_REFLECTION = oe2.T_INCIDENCE
+      # orientation
+      oe1.ALPHA = mirror_orientation_angle # first VFM
+      oe2.ALPHA = 90.0 # second HFM
+
+      # distances
+      oe1.T_SOURCE = p0 - 0.5*separation
+      oe1.T_IMAGE = 0.5*separation
+      oe2.T_SOURCE = 0.5*separation
+      oe2.T_IMAGE = q0 - 0.5*separation
+
+      # mirror shape
+      oe1.FMIRR = shape[0] #1=spherical, 2=elliptical
+      oe2.FMIRR = shape[1]
+      oe1.FCYL = 1
+      oe2.FCYL = 1
+      oe1.CIL_ANG = 0
+      oe2.CIL_ANG = 0
+
+      # auto focusing
+
+      #focal positions from center of kb
+      if focal_positions[0] != 0:
+          pfocal = focal_positions[0]
+      else:
+          pfocal = p0
+
+      if focal_positions[1] != 0:
+          qfocal = focal_positions[1]
+      else:
+          qfocal = q0
+
+      oe1.F_EXT = 0 # internal
+      oe1.F_DEFAULT = 0
+      oe1.SSOUR = pfocal - 0.5*separation
+      oe1.SIMAG = 0.5*separation + qfocal
+      oe1.THETA = oe1.T_INCIDENCE
+
+      oe2.F_EXT = 0 # focii coincident=no
+      oe2.F_DEFAULT = 0
+      oe2.SSOUR = pfocal + 0.5*separation
+      oe2.SIMAG = qfocal - 0.5*separation
+
+
+
+      oe2.THETA = oe2.T_INCIDENCE
+
+      oe1.F_REFLEC = 0  # 0=skip reflectivity, 1=Full dependence
+      oe2.F_REFLEC = 0
+      oe1.F_REFL = 0 #prerefl
+      oe2.F_REFL = 0
+      oe1.FILE_REFL = ''.encode('utf-8')
+      oe2.FILE_REFL = ''.encode('utf-8')
+
+
+      if dimensions1 != [0,0]:
+          oe1.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
+          oe1.FSHAPE = 1  # rectangle
+          oe1.RWIDX1 = 0.5 * dimensions1[0]
+          oe1.RWIDX2 = 0.5 * dimensions1[0]
+          oe1.RLEN1  = 0.5 * dimensions1[1]
+          oe1.RLEN2  = 0.5 * dimensions1[1]
+      else:
+          oe1.FHIT_C = 0  #  mirror dimensions finite: yes (1), no(0).
+
+      if dimensions2 != [0,0]:
+          oe2.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
+          oe2.FSHAPE = 1  # rectangle
+          oe2.RWIDX1 = 0.5 * dimensions2[0]
+          oe2.RWIDX2 = 0.5 * dimensions2[0]
+          oe2.RLEN1  = 0.5 * dimensions2[1]
+          oe2.RLEN2  = 0.5 * dimensions2[1]
+
+      else:
+          oe2.FHIT_C = 0  #  mirror dimensions finite: yes (1), no(0).
+
+      #
+      # reflectivity
+      #
+      if reflectivity_kind[0] == 0:  # ideal
+          oe1.F_REFLEC = 0
+
+      if reflectivity_kind[0] == 1:  # mirror
+          oe1.F_REFLEC = 1
+          oe1.F_REFL = 0   # prerefl mirror
+          oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+
+      if reflectivity_kind[0] == 2:  # multilayer
+          oe1.F_REFLEC = 1
+          oe1.F_REFL = 2   # multilayer
+          oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+
+      if reflectivity_kind[1] == 0:  # ideal
+          oe2.F_REFLEC = 0
+
+      if reflectivity_kind[1] == 1:  # mirror
+          oe2.F_REFLEC = 1
+          oe2.F_REFL = 0   # prerefl mirror
+          oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+
+      if reflectivity_kind[1] == 2:  # multilayer
+          oe2.F_REFLEC = 1
+          oe2.F_REFL = 2   # multilayer
+          oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+
+      #
+      #surface errors
+      #
+
+      if surface_error_files[0] != "":
+        oe1.F_RIPPLE = 1
+        oe1.FILE_RIP = surface_error_files[0].encode('utf-8')
+        oe1.F_G_S = 2
+      else:
+        oe1.F_RIPPLE = 0
+
+      if surface_error_files[1] != "":
+        oe2.F_RIPPLE = 1
+        oe2.FILE_RIP = surface_error_files[1].encode('utf-8')
+        oe2.F_G_S = 2
+      else:
+        oe2.F_RIPPLE = 0
+
+      # write no output files. If wanted they are written by python in traceCompoundOE
+      oe1.FWRITE = 3
+      oe2.FWRITE = 3
+
+      self.append(oe1)
+      self.append(oe2)
+
+      return self
+
+
+  def append_monochromator_double_crystal(self, p0, q0, photon_energy_ev=14000,separation=0.0,\
+          dimensions1=[0,0],dimensions2=[0,0],\
+          reflectivity_file=""):
+      """
+      Appends a double crystal monochromator (with plane crystals)
+
+
+
+
+      :param p0: distance from previous source plane (continuation plane) to center of first mirror
+      :param q0: distance from center of second mirror to image plane (continuation plane)
+      :param set_photon_energy: photon energy in eV to set the monochromator
+      :param separation: separation between the crystals (Default=0). The continuation plane is set in the middle.
+      :param dimensions1: the dimensions [width,length] for the first mirror. Default: [0,0] meaning infinite dimensions.
+      :param dimensions2: the dimensions [width,length] for the second  mirror. Default: [0,0] meaning infinite dimensions.
+      :param reflectivity_files: the reflectivity files as created by bragg
+      :return:
+      """
+      oe1 = OE()
+      oe2 = OE()
+
+      # #incidence angles
+      # oe1.T_INCIDENCE = 90.0 - grazing_angles_mrad[0]*1e-3*180.0/numpy.pi
+      # oe1.T_REFLECTION = oe1.T_INCIDENCE
+      # oe2.T_INCIDENCE = 90.0 - grazing_angles_mrad[1]*1e-3*180.0/numpy.pi
+      # oe2.T_REFLECTION = oe2.T_INCIDENCE
+
+      oe1.F_CRYSTAL = 1
+      oe2.F_CRYSTAL = 1
+
+      # orientation
+      oe1.ALPHA = 0.0 # first VFM
+      oe2.ALPHA = 180.0 # second HFM
+      #
+      # distances
+      oe1.T_SOURCE = p0
+      oe1.T_IMAGE = 0.5*separation
+      oe2.T_SOURCE = 0.5*separation
+      oe2.T_IMAGE = q0
+      #
+      # crystal shape 5 (plane)
+      oe1.FMIRR = 5
+      oe2.FMIRR = 5
+
+      oe1.F_CENTRAL = 1
+      oe2.F_CENTRAL = 2
+      oe1.F_PHOT_CENT = 0 # eV
+      oe2.F_PHOT_CENT = 0 # eV
+      oe1.PHOT_CENT = photon_energy_ev
+      oe2.PHOT_CENT = photon_energy_ev
+
+
+
+      oe1.FILE_REFL = reflectivity_file.encode('utf-8')
+      oe2.FILE_REFL = reflectivity_file.encode('utf-8')
+      #
+      #
+      if dimensions1 != [0,0]:
+          oe1.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
+          oe1.FSHAPE = 1  # rectangle
+          oe1.RWIDX1 = 0.5 * dimensions1[0]
+          oe1.RWIDX2 = 0.5 * dimensions1[0]
+          oe1.RLEN1  = 0.5 * dimensions1[1]
+          oe1.RLEN2  = 0.5 * dimensions1[1]
+      else:
+          oe1.FHIT_C = 0  #  mirror dimensions finite: yes (1), no(0).
+
+      if dimensions2 != [0,0]:
+          oe2.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
+          oe2.FSHAPE = 1  # rectangle
+          oe2.RWIDX1 = 0.5 * dimensions2[0]
+          oe2.RWIDX2 = 0.5 * dimensions2[0]
+          oe2.RLEN1  = 0.5 * dimensions2[1]
+          oe2.RLEN2  = 0.5 * dimensions2[1]
+
+      else:
+          oe2.FHIT_C = 0  #  mirror dimensions finite: yes (1), no(0).
+
+
+      # write no output files. If wanted they are written by python in traceCompoundOE
+      oe1.FWRITE = 3
+      oe2.FWRITE = 3
+
+      self.append(oe1)
+      self.append(oe2)
+
+      return self
 
   def dump_start_files(self,offset=0):
     for i,oe in enumerate(self.list):
@@ -1572,26 +1879,31 @@ class Source(ShadowLib.Source):
         self.VDIV2 = 1.0
         self.SIGDIX = sigmaxp
         self.SIGDIZ = sigmazp
+        return self
 
     def set_spatial_gauss(self,sigmax, sigmaz):
         self.FSOUR = 3
         self.SIGMAX = sigmax
         self.SIGMAZ = sigmaz
+        return self
 
     def set_gauss(self,sigmax,sigmaz,sigmaxp,sigmazp):
         self.set_divergence_gauss(sigmaxp,sigmazp)
         self.set_spatial_gauss(sigmax,sigmaz)
+        return self
 
     def set_energy_monochromatic(self,emin):
         self.F_COLOR =  1
         self.F_PHOT =  0 #eV
         self.PH1 = emin
+        return self
 
     def set_energy_box(self,emin,emax):
         self.F_COLOR =  3
         self.F_PHOT =  0 #eV
         self.PH1 = emin
         self.PH2 = emax
+        return self
 
     def set_pencil(self):
         self.FSOUR = 0
@@ -1600,6 +1912,7 @@ class Source(ShadowLib.Source):
         self.HDIV2 = 0.0
         self.VDIV1 = 0.0
         self.VDIV2 = 0.0
+        return self
 
     def apply_gaussian_undulator(self, undulator_length_in_m=1.0,user_unit_to_m=1e2, verbose=1, und_e0=None):
 
@@ -1655,7 +1968,8 @@ class Source(ShadowLib.Source):
         self.SIGMAZ = photon_v
         self.SIGDIX = photon_hp
         self.SIGDIZ = photon_vp
-    
+
+        return self
 
  
     def sourcinfo(self,title=None):
@@ -1870,8 +2184,8 @@ if __name__ == '__main__':
     #
     # test
     #
-    do_test = 6 # 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
-                # 6=ID30B
+    do_test = 8 # 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
+                # 6=ID30B  # 7=ID23-2
 
     if ((do_test == 1) or (do_test == 2)):
         src = Source()
@@ -2241,4 +2555,80 @@ if __name__ == '__main__':
         print("\ntf_fs_before: %f m, tf_fs_after: %f m"%(tf_fs_before*1e-2,tf_fs_after*1e-2))
 
 
+    if do_test == 7:
+        print("setting KB for ID23-2")
 
+        # create source
+        src = Source()
+        src.set_energy_monochromatic(14200.0)
+        SIGMAX = 0.00374784
+        SIGMAZ = 0.000425671
+        SIGDIX = 0.000107037
+        SIGDIZ = 5.55325e-06
+        src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+        src.write("start.00")
+
+        beam = Beam()
+        beam.genSource(src)
+        beam.write("begin.dat")
+        src.write("end.00")
+
+        kb = CompoundOE(name='KB')
+        kb.append_kb(4275,180,separation=4315-4275,grazing_angles_mrad=[3.9,17.8],shape=[2,2], \
+                     dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
+                     surface_error_files=["waviness.dat","waviness.dat"])
+        kb.info()
+
+        #trace
+        kb.dump_systemfile()
+        beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
+
+    if do_test == 8:
+        print("setting double crystal monochromator")
+
+        # create source
+        src = Source()
+        src.set_energy_box(13990,14010)
+        SIGMAX = 0.00374784
+        SIGMAZ = 0.000425671
+        SIGDIX = 0.000107037
+        SIGDIZ = 5.55325e-06
+        src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+        src.write("start.00")
+
+        beam = Beam()
+        beam.genSource(src)
+        beam.write("begin.dat")
+        src.write("end.00")
+
+        dcm = CompoundOE(name='KB')
+
+        dcm.append_monochromator_double_crystal(4275,180,separation=10, photon_energy_ev=14000.0, \
+                     dimensions1=[6,20],dimensions2=[0,0],reflectivity_file="Si5_55.111" )
+
+
+
+        #trace
+        dcm.dump_systemfile()
+        beam.traceCompoundOE(dcm,write_start_files=1,write_end_files=1,write_star_files=1)
+
+        # print("\n\n")
+        # dcm.info()
+        # dcm.add_drift_space_upstream(200)
+        # dcm.add_drift_space_downstream(300)
+        #
+        # dcm.append(dcm)
+        #
+
+        dcm.info()
+        # oe4 = OE()
+        # oe4.set_empty(ALPHA=0)
+        # dcm.append(oe4)
+        # oe5 = (OE())
+        # oe5.set_empty(ALPHA=90)
+        # dcm.append(oe5)
+        print("total: %d, good: %d, lost: %d"%(beam.nrays(nolost=0),beam.nrays(nolost=1), beam.nrays(nolost=2) ))
+        beam = None
+        beam = Beam()
+        print("total: %d, good: %d, lost: %d"%(beam.nrays(nolost=0),beam.nrays(nolost=1), beam.nrays(nolost=2) ))
+        print("\n\n")

@@ -168,9 +168,29 @@ def setSrwBeamline():
 #HFM at 42 for now we do not use mono
 
 def setShadowBeamline():
-  hfm = sd.OE().setFrameOfReference(4200.,1300.,89.8567963,89.8567963,90.)
-  hfm = hfm.setEllipsoidAuto().setCylindric(0.)
-  hfm = hfm.setReflector().setScreens()#.setCrystal(file_refl='Si111_thick')
+  #hfm = sd.OE().setFrameOfReference(4200.,1300.,89.8567963,89.8567963,90.)
+  hfm = sd.OE()
+  hfm.T_SOURCE     = 4200
+  hfm.T_IMAGE      = 1300
+  hfm.T_INCIDENCE  = 89.8567963
+  hfm.T_REFLECTION = 89.8567963
+  hfm.ALPHA        = 90.0
+  
+  #hfm = hfm.setEllipsoidAuto().setCylindric(0.)
+  hfm.FMIRR = 2
+  hfm.F_EXT = 1
+  hfm.ELL_THE = 0.0
+  hfm.AXMAJ = 0.0
+  hfm.AXMIN = 0.0
+
+
+
+  #hfm = hfm.setReflector().set_screens()#.setCrystal(file_refl='Si111_thick')
+  hfm.F_REFRACT = 0
+  hfm.set_screens()
+
+
+
   #.setAutoTuning(0,12663.6,5000.)
   #small deviation from default
   hfm.I_SLIT[0] = 1
@@ -180,17 +200,49 @@ def setShadowBeamline():
   #no ripple now  
   #hfm = hfm.setRipple(2,np.array([0.,0.,0.,3.8e-8,1.,0.]),"mistral_80cm_4mm-sample.dat")
 
-  kbv = sd.OE().setFrameOfReference(1100.,25.,89.8567963,89.8567963,90.)
-  kbv = kbv.setEllipsoidAuto([6475.,100.,89.8567963]).setCylindric(0.)
+  #kbv = sd.OE().setFrameOfReference(1100.,25.,89.8567963,89.8567963,90.)
+  kbv = sd.OE()
+  kbv.T_SOURCE     = 1100.0
+  kbv.T_IMAGE      = 25.0
+  kbv.T_INCIDENCE  = 89.8567963
+  kbv.T_REFLECTION = 89.8567963
+  kbv.ALPHA        = 90 
+
+
+  #kbv = kbv.setEllipsoidAuto([6475.,100.,89.8567963]).setCylindric(0.)
+  kbv.SSOUR=6475.0 
+  kbv.SIMAG=100.0
+  kbv.THETA=89.8567963
+
   #kbv = kbv.setEllipsoidAuto([6700.,100.,89.8567963]).setCylindric(0.)
   kbv = kbv.setReflector()#.setDimensions(params=25.0*np.ones(4))#.setCrystal(file_refl='Si111_thick')
+  kbv.F_REFRACT = 0
+
   #.setAutoTuning(0,12663.6,5000.)
   #no ripple now
   #kbv = kbv.setRipple(2,np.array([0.,0.,0.,3.8e-8,1.,0.]),"mistral_80cm_4mm-sample.dat")
   
-  kbh = sd.OE().setFrameOfReference(25.,50.,89.8567963,89.8567963,-90.)
-  kbh = kbh.setEllipsoidAuto([1150.,50.,89.8567963]).setCylindric(0.)
-  kbh = kbh.setReflector()#.setDimensions(params=25.0*np.ones(4))#.setCrystal(file_refl='Si111_thick')
+  #kbh = sd.OE().setFrameOfReference(25.,50.,89.8567963,89.8567963,-90.)
+  kbh = sd.OE()
+  kbh.T_SOURCE     = 25.
+  kbh.T_IMAGE      = 50.0
+  kbh.T_INCIDENCE  = 89.8567963
+  kbh.T_REFLECTION = 89.8567963
+  kbh.ALPHA        = -90 
+
+
+  #kbh = kbh.setEllipsoidAuto([1150.,50.,89.8567963]).setCylindric(0.)
+  kbh.SSOUR=1150.0
+  kbh.SIMAG=50.0
+  kbh.THETA=89.8567963
+
+
+
+  #kbh = kbh.setReflector()#.setDimensions(params=25.0*np.ones(4))#.setCrystal(file_refl='Si111_thick')
+  kbh.F_REFRACT = 0
+
+
+
   #.setAutoTuning(0,12663.6,5000.)
   #no ripple now
   #kbv = kbv.setRipple(2,np.array([0.,0.,0.,3.8e-8,1.,0.]),"mistral_80cm_4mm-sample.dat")
