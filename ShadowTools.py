@@ -1,18 +1,11 @@
-#from __future__ import print_function
-import numpy 
+import numpy
 import Shadow.ShadowLibExtensions as sd
 import sys
-try: 
-    #import matplotlib.pyplot as plt
-    #from matplotlib import cm
-    #from matplotlib import figure as matfig
-    #import pylab
-    #import matplotlib
-    import matplotlib
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    from matplotlib import figure as matfig
-    import pylab
+import os
+try:
+    import matplotlib.pylab as plt
+    from matplotlib import collections
+
 except ImportError: 
     print(sys.exc_info()[1]) 
     pass
@@ -191,8 +184,96 @@ def getshcol(beam,col):
     ret.append(getshonecol(bm,c))
   return tuple(ret)
 
-#TODO: delete. Implemented for beam object
-def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,title='HISTO1',xtitle=None,ytitle=None,calfwhm=0,noplot=0):
+def histo1(beam, col, notitle=0, nofwhm=0,  bar=0,  **kwargs):
+    """
+    Plot the histogram of a column, as calculated by Shadow.Beam.histo1 using matplotlib
+
+    NOTE: This will replaces the old histo1 still available as histo1_old
+
+    :param beam: a Shadow.Beam() instance, or a file name with Shadow binary file
+    :param col: the Shadow column number (start from 1)
+    :param notitle: set to 1 to avoid displaying title
+    :param nofwhm: set to 1 to avoid labeling FWHM value
+    :param bar: 1=bar plot, 0=line plot
+    :param kwargs: keywords accepted by Shadow.Beam.histo1()
+    :return: the dictionary returned by Shadow.beam.histo1() with some keys added.
+    """
+
+    title = "histo1"
+
+    if isinstance(beam,str):
+        beam1 = sd.Beam()
+        beam1.load(beam)
+        title += " - file: "+beam
+        beam = beam1
+
+    tk2 = beam.histo1(col, **kwargs)
+
+
+
+    h = tk2["histogram"]
+    bins = tk2["bin_left"]
+    xrange = tk2["xrange"]
+    yrange = [0,1.1*numpy.max(h)]
+    fwhm = tk2["fwhm"]
+
+    xtitle = "column %d"%tk2["col"]
+    ytitle = "counts ("
+
+    if tk2["nolost"] == 0:
+        ytitle += " all rays"
+    if tk2["nolost"] == 1:
+        ytitle += " good rays"
+    if tk2["nolost"] == 2:
+        ytitle += " lost rays"
+
+    if tk2["ref"] == 0:
+        ytitle += " = weight: number of rays"
+    else:
+        if tk2["ref"] == 23:
+            ytitle += " - weight: intensity"
+        else:
+            ytitle += " - weight column: %d"%(tk2["ref"])
+
+    ytitle += ")"
+
+
+    if fwhm != None: print ("fwhm = %g" % fwhm)
+
+    fig0 = plt.figure()
+    ax = fig0.add_subplot(111)
+
+    ax.set_xlabel(xtitle)
+    ax.set_ylabel(ytitle)
+    if notitle != 1: ax.set_title(title)
+    ax.set_xlim(xrange[0],xrange[1])
+    ax.set_ylim(yrange[0],yrange[1])
+    ax.grid(True)
+
+    if bar:
+        l = ax.bar(bins, h, 1.0*(bins[1]-bins[0]),color='blue') #,error_kw=dict(elinewidth=2,ecolor='red'))
+    else:
+        l = plt.plot(tk2["bin_path"], tk2["histogram_path"], color='blue') #,error_kw=dict(elinewidth=2,ecolor='red'))
+
+    if tk2["fwhm"] != None:
+        hh = 0.5*numpy.max(tk2["histogram"])
+        lines = [ [ (tk2["fwhm_coordinates_h"][0],hh), \
+                    (tk2["fwhm_coordinates_h"][1],hh) ]]
+        print(lines)
+        lc = collections.LineCollection(lines,color='red',linewidths=2)
+        ax.add_collection(lc)
+        if nofwhm != 1:
+            if tk2["fwhm_coordinates_h"][0] < 0:
+                shift1 = 0.9
+            else:
+                shift1 = 1.0
+            ax.annotate('FWHM=%f'%tk2["fwhm"], xy=(shift1*tk2["fwhm_coordinates_h"][0],1.01*tk2["fwhm_coordinates_v"][0]))
+
+    plt.show()
+    return tk2
+
+#TODO: delete. Reimplemented using Shadow.beam.histo1()
+def histo1_old(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,title='HISTO1',xtitle=None,ytitle=None,calfwhm=0,noplot=0):
   '''
   Plot the histogram of a column, simply counting the rays, or weighting with the intensity.
   It returns a ShadowTools.Histo1_Ticket which contains the histogram data, and the figure.
@@ -275,9 +356,10 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   except stp.ArgsError as e: raise e  
   col=col-1
   if ref==1: ref = 23
+  #plot_nicc.ioff()
   plt.ioff()
   
-  figure = pylab.plt.figure()
+  figure = plt.figure()
   axHist = figure.add_axes([0.1,0.1,0.8,0.8])
 
   if ytitle!=None: 
@@ -304,13 +386,13 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   if ref==0:
     ytitle = 'counts ' + ytitle
     h,bins,patches = axHist.hist(x[t],bins=nbins,range=xrange,histtype='step',alpha=0.5)
-    if yrange==None: yrange = [0.0, numpy.max(h)*1.1]
+    if yrange==None: yrange = [0.0, numpy.max(h)]
     hw=h
   if ref>=22: 
     ytitle = (stp.getLabel(ref-1))[0] + ' ' + ytitle
     h,bins = numpy.histogram(x[t],range=xrange,bins=nbins)
     hw,bins,patches = axHist.hist(x[t],range=xrange, bins=nbins,histtype='step',alpha=0.5,weights=w[t])
-    if yrange==None: yrange = [0.0, numpy.max(hw)*1.1]
+    if yrange==None: yrange = [0.0, numpy.max(hw)]
   fwhm = None
   if calfwhm==1:
     fwhm, tf, ti = stp.calcFWHM(hw,bins[1]-bins[0])
@@ -330,7 +412,7 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   if yrange!=None: axHist.set_ylim(yrange)    
 
   if noplot==0: 
-    figure.show()  
+    plt.show()
   
   ticket = Histo1_Ticket()    
   ticket.histogram = hw
@@ -345,11 +427,364 @@ def histo1(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,titl
   ticket.fwhm = fwhm
   ticket.intensity = w[t].sum()
   return ticket
- 
 
 
+def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,viewer='okular',**kwargs):
+  """
+  A plotxy implemented for gnuplot.
+  It uses Shadow.beam.plotxy() for calculations.
+  It creates files for gnuplot (plotxy.gpl and plotxy_*.dat)
+  It can run gnuplot (system call) and display ps or pdf outputs
 
-def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title='PLOTXY',xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
+  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.plotxy
+  :param col_h: the H column for the plot. Irrelevant if beam is a dictionary
+  :param col_v: the V column for the plot. Irrelevant if beam is a dictionary
+  :param execute: set to 1 to make a system call to execute gnuplot (default=1)
+  :param ps: set to 1 to get postscript output (irrelevant if pdf=1
+  :param pdf: set to 1 for pdf output (prioritaire over ps)
+  :param viewer: set to the ps or pdf viewer (default='okular')
+  :param kwargs: keywords to be passed to Shadow.beam.plotxy()
+  :return: the dictionary produced by Shadow.beam.plotxy with some keys added
+  """
+  title = "plotxy"
+
+  if isinstance(beam,dict):
+    tkt = beam
+    col_h = tkt["col_h"]
+    col_v = tkt["col_v"]
+  else:
+    if isinstance(beam,str):
+      beam1 = sd.Beam()
+      beam1.load(beam)
+      title += " - file: "+beam
+      beam = beam1
+    tkt = beam.plotxy(col_h,col_v,**kwargs)
+
+  f = open("plotxy_histtop.dat",'w')
+  for i in range(tkt["nbins_h"]):
+      f.write("%12.5f  %12.5f \n"%( tkt["bin_h_left"][i], tkt["histogram_h"][i] ))
+      f.write("%12.5f  %12.5f \n"%( tkt["bin_h_right"][i], tkt["histogram_h"][i] ))
+  f.close()
+  print("File written to disk: plotxy_histside.dat")
+
+  f = open("plotxy_histside.dat",'w')
+  for i in range(tkt["nbins_v"]):
+      f.write("%12.5f  %12.5f \n"%( tkt["histogram_v"][i], tkt["bin_v_left"][i]  ))
+      f.write("%12.5f  %12.5f \n"%( tkt["histogram_v"][i], tkt["bin_v_right"][i]  ))
+  f.close()
+
+  print("File written to disk: plotxy_histtop.dat")
+
+  f = open("plotxy_grid.dat",'w')
+  f.write(" # plotxy grid data for plotxy.gpl\n")
+  f.write(" # Xbin Ybin Weight\n")
+  for i in range(tkt["nbins_h"]):
+    for j in range(tkt["nbins_v"]):
+        f.write("%25.20f  %25.20f  %25.20f\n"%(tkt["bin_h_center"][i],tkt["bin_v_center"][j], tkt["histogram"][i,j] ))
+    f.write("\n")
+  f.close()
+  print("File written to disk: plotxy_grid.dat")
+
+  txt = """
+    #GnuPlot command file for PLOTXY
+    #Minimum version: gnuplot 4.2 patchlevel 6
+    #
+    {set_terminal}
+
+    set multiplot
+
+    #
+    # top histogram
+    #
+    set lmargin screen 0.2125
+    set rmargin screen 0.70
+    set bmargin screen 0.75
+    set tmargin screen 0.90
+    unset xtics
+    unset x2tics
+    unset ytics
+    unset y2tics
+    unset key
+    unset xlabel
+    unset ylabel
+    unset x2label
+    unset y2label
+
+    set x2tics mirror
+    set x2label "  {title} "
+     set xrange[  {xrange[0]} :  {xrange[1]} ]
+     set yrange[*:*]
+    plot "plotxy_histtop.dat" u 1:2 w lines lt -1 notitle
+
+
+    #
+    # side histogram
+    #
+    set lmargin screen 0.10
+    set rmargin screen 0.2125
+    set bmargin screen 0.10
+    set tmargin screen 0.75
+    unset xtics
+    unset x2tics
+    unset ytics
+    unset y2tics
+    unset key
+    unset xlabel
+    unset ylabel
+    unset x2label
+    unset y2label
+
+    set ytics
+    set ylabel "Column  {col_v}"
+
+    set xrange[*:*]
+    set yrange[  {yrange[0]} :  {yrange[1]} ]
+    plot "plotxy_histside.dat" u (-$1):2 w lines lt -1 notitle
+
+    #
+    # scattered/contour plot
+    #
+    set lmargin screen 0.2125
+    set rmargin screen 0.70
+    set bmargin screen 0.10
+    set tmargin screen 0.75
+    unset xtics
+    unset x2tics
+    unset ytics
+    unset y2tics
+    unset key
+    unset xlabel
+    unset ylabel
+    unset x2label
+    unset y2label
+
+    set xlabel "Column  {col_h}"
+
+    set xrange[  {xrange[0]} :   {xrange[1]} ]
+    set yrange[  {yrange[0]} :   {yrange[1]} ]
+    #
+    # IF PIXEL UNCOMMENT THIS
+    #
+    set pm3d map
+    set palette gray
+    splot "./plotxy_grid.dat" u 1:2:3 notitle
+
+    #
+    # info column
+    #
+    set obj 10 rect from graph 1.20, graph 1 to graph 1.61, graph 0
+    set label "{label_id}"       at graph 1.21, graph 0.9
+    set label "{label_good}"       at graph 1.21, graph 0.5
+    set label "TOT  =    {nrays}"    at graph 1.21, graph 0.30
+    set label "LOST =    {lost_rays}"    at graph 1.21, graph 0.25
+    set label "GOOD =    {good_rays}"    at graph 1.21, graph 0.20
+    set label "INTENS =  {intensity}" at graph 1.21, graph 0.15
+    set label "{label_weight}"      at graph 1.21, graph 0.10
+    replot
+
+    unset multiplot
+
+    {set_pause}
+
+    """
+  #add kws to dictionnary to be used in the template
+
+  tkt["set_terminal"] = "set terminal x11 size 900,600"
+  tkt["set_pause"] = "pause -1 'Press <Enter> to end graphic '"
+  if ps:
+      tkt["set_terminal"] = "set terminal postscript \n    set output 'plotxy.ps' "
+      tkt["set_pause"] = ""
+  if pdf:
+      tkt["set_terminal"] = "set terminal pdf \n    set output 'plotxy.pdf' "
+      tkt["set_pause"] = ""
+
+  tkt["title"] = title
+  tkt["lost_rays"] = tkt["nrays"] - tkt["good_rays"]
+  tkt["label_id"] = os.getenv("USER")+"@"+os.getenv("HOST")
+  if tkt["ref"] == 0:
+      tkt["label_weight"] = "WEIGHT: RAYS"
+  else:
+      if tkt["ref"] == 1 or tkt["ref"] == 23:
+        tkt["label_weight"] = "WEIGHT: INTENSITY"
+      else:
+        tkt["label_weight"] = "WEIGHT: COLUMN %d"%(tkt["ref"])
+
+  if tkt["nolost"] == 0:
+      tkt["label_good"] = "--ALL RAYS"
+  elif tkt["nolost"] == 1:
+      tkt["label_good"] = "--GOOD ONLY"
+  else:
+      tkt["label_good"] = "--ONLY LOSSES"
+
+  txt2 = txt.format_map(tkt)
+
+  f = open("plotxy.gpl",'w')
+  f.write(txt2)
+  f.close()
+
+  print("File written to disk: plotxy.gpl")
+
+  if execute:
+      os.system("gnuplot plotxy.gpl")
+      if ps:
+          os.system(viewer+" plotxy.ps")
+      if pdf:
+        os.system(viewer+" plotxy.pdf")
+
+  return tkt
+
+
+def plotxy(beam,col_h,col_v, nofwhm=1, **kwargs):
+  """
+
+  plotxy implementation using matplotlib.
+  Calculations are done using Shadow.beam.plotxy()
+
+  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.plotxy
+  :param col_h: The column for the H coordinate in the plot (irrelevant of beam is a dictionary)
+  :param col_v: The column for the H coordinate in the plot (irrelevant of beam is a dictionary)
+  :param nofwhm: set to 0 to label the FWHM value in the plot (default do not label)
+  :param kwargs: keywrods passed to Shadow.Beam.plotxy
+  :return: the dictionary returned by Shadow.beam.plotxy() with some added keys.
+  """
+  title = "plotxy"
+
+  if isinstance(beam,dict):
+    tkt = beam
+    col_h = tkt["col_h"]
+    col_v = tkt["col_v"]
+  else:
+    if isinstance(beam,str):
+      beam1 = sd.Beam()
+      beam1.load(beam)
+      title += " - file: "+beam
+      beam = beam1
+    tkt = beam.plotxy(col_h,col_v,**kwargs)
+
+
+  xtitle = "Column %d"%tkt["col_h"]
+  ytitle = "Column %d"%tkt["col_v"]
+
+  figure = plt.figure(figsize=(12,8),dpi=96)
+
+  ratio = 8.0/12.0
+
+  rect_scatter = [0.10*ratio, 0.10, 0.65*ratio, 0.65]
+  rect_histx =   [0.10*ratio, 0.77, 0.65*ratio, 0.20]
+  rect_histy =   [0.77*ratio, 0.10, 0.20*ratio, 0.65]
+  rect_text =    [1.00*ratio, 0.10, 1.20*ratio, 0.65]
+
+  #
+  #main plot
+  #
+  axScatter = figure.add_axes(rect_scatter)
+  axScatter.set_xlabel(xtitle)
+  axScatter.set_ylabel(ytitle)
+
+  # axScatter.set_xlim(tkt["xrange"])
+  # axScatter.set_ylim(tkt["yrange"])
+
+  axScatter.axis(xmin=tkt["xrange"][0],xmax=tkt["xrange"][1])
+  axScatter.axis(ymin=tkt["yrange"][0],ymax=tkt["yrange"][1])
+  #axScatter.pcolor(tkt["bin_h_edges"], tkt["bin_v_edges"], tkt["histogram"].T)
+  axScatter.pcolormesh(tkt["bin_h_edges"], tkt["bin_v_edges"], tkt["histogram"].T)
+
+  for tt in axScatter.get_xticklabels():
+    tt.set_size('x-small')
+  for tt in axScatter.get_yticklabels():
+    tt.set_size('x-small')
+
+  #
+  #histograms
+  #
+  axHistx = figure.add_axes(rect_histx, sharex=axScatter)
+  axHisty = figure.add_axes(rect_histy, sharey=axScatter)
+
+  #for practical purposes, writes the full histogram path
+  tmp_h_b = []
+  tmp_h_h = []
+  for s,t,v in zip(tkt["bin_h_left"],tkt["bin_h_right"],tkt["histogram_h"]):
+    tmp_h_b.append(s)
+    tmp_h_h.append(v)
+    tmp_h_b.append(t)
+    tmp_h_h.append(v)
+  tmp_v_b = []
+  tmp_v_h = []
+  for s,t,v in zip(tkt["bin_v_left"],tkt["bin_v_right"],tkt["histogram_v"]):
+    tmp_v_b.append(s)
+    tmp_v_h.append(v)
+    tmp_v_b.append(t)
+    tmp_v_h.append(v)
+
+  axHistx.plot(tmp_h_b,tmp_h_h)
+  axHisty.plot(tmp_v_h,tmp_v_b)
+
+  for tl in axHistx.get_xticklabels(): tl.set_visible(False)
+  for tl in axHisty.get_yticklabels(): tl.set_visible(False)
+  for tt in axHisty.get_xticklabels():
+    tt.set_rotation(270)
+    tt.set_size('x-small')
+  for tt in axHistx.get_yticklabels():
+    tt.set_size('x-small')
+
+  if tkt["fwhm_h"] != None:
+      hh = 0.5*numpy.max(tkt["histogram_h"])
+      lines = [ [ (tkt["fwhm_coordinates_h"][0],hh), \
+                  (tkt["fwhm_coordinates_h"][1],hh) ]]
+      lc = collections.LineCollection(lines,color='red',linewidths=2)
+      axHistx.add_collection(lc)
+      if nofwhm != 1:
+          if tkt["fwhm_coordinates_h"][0] < 0:
+              shift1 = 0.9
+          else:
+              shift1 = 1.0
+          axHistx.annotate('FWHM=%f'%tkt["fwhm_h"], xy=(shift1*tkt["fwhm_coordinates_h"][0],1.01*hh))
+
+  if tkt["fwhm_v"] != None:
+      hh = 0.5*numpy.max(tkt["histogram_v"])
+      lines = [ [ (hh,tkt["fwhm_coordinates_v"][0]), \
+                  (hh,tkt["fwhm_coordinates_v"][1]) ]]
+      lc = collections.LineCollection(lines,color='green',linewidths=2)
+      axHisty.add_collection(lc)
+      if nofwhm != 1:
+          if tkt["fwhm_coordinates_v"][0] < 0:
+              shift1 = 0.9
+          else:
+              shift1 = 1.0
+          axHisty.annotate('FWHM=%f'%tkt["fwhm_v"], xy=(shift1*tkt["fwhm_coordinates_v"][0],1.01*hh))
+
+
+  if title!=None:
+    axHistx.set_title(title)
+  axText = figure.add_axes(rect_text)
+  if tkt["nolost"] == 0: axText.text(0.0,0.8,"ALL RAYS")
+  if tkt["nolost"] == 1: axText.text(0.0,0.8,"GOOD RAYS")
+  if tkt["nolost"] == 2: axText.text(0.0,0.8,"LOST RAYS")
+
+  #tmps = "intensity: %f"%(tkt["intensity"])
+
+  axText.text(0.0,0.7,"intensity: %8.2f"%(tkt["intensity"]))
+  axText.text(0.0,0.6,"total number of rays: "+str(tkt["nrays"]))
+  axText.text(0.0,0.5,"total good rays: "+str(tkt["good_rays"]))
+  axText.text(0.0,0.4,"total lost rays: "+str(tkt["nrays"]-tkt["nrays"]))
+  calfwhm = 1
+  if tkt["fwhm_h"] != None:
+    axText.text(0.0,0.3,"fwhm H: "+str(tkt["fwhm_h"]))
+  if tkt["fwhm_v"] != None:
+    axText.text(0.0,0.2,"fwhm V: "+str(tkt["fwhm_v"]))
+
+  if isinstance(beam,str): axText.text(0.0,0.1,"FILE: "+beam)
+  if isinstance(beam,sd.Beam): axText.text(0.0,0.1,"from Shadow.Beam instance")
+  if tkt["ref"] == 0:
+    axText.text(0.0,0.0,"WEIGHT: RAYS")
+  else:
+      axText.text(0.0,0.0,"WEIGHT: INTENSITY")
+  axText.set_axis_off()
+  plt.show()
+  return tkt
+
+#TODO: delete. Reimplemented using Shadow.Beam.plotxy()
+def plotxy_old(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title='PLOTXY',xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
   '''
   Draw the scatter or contour or pixel-like plot of two columns of a Shadow.Beam instance or of a given shadow file, along with histograms for the intensity on the top and right side.
   Inumpy.ts:
@@ -432,6 +867,7 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     stp.plotxy_CheckArg(beam,cols1,cols2,nbins,nbins_h,level,xrange,yrange,nolost,title,xtitle,ytitle,noplot,calfwhm,contour)
   except stp.ArgsError as e: 
     raise e
+  #plot_nicc.ioff()
   plt.ioff()
   col1,col2,col3,col4 = getshcol(beam,(cols1,cols2,10,23,))
 
@@ -456,8 +892,9 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
     print ("no point selected")
     return None
   
-  figure = pylab.plt.figure(figsize=(12,8),dpi=96)
-  
+  #figure = pylab.plt.figure(figsize=(12,8),dpi=96)
+  figure = plt.figure(figsize=(12,8),dpi=96)
+
   ratio = 8.0/12.0
   left, width = 0.1*ratio, 0.65*ratio
   bottom, height = 0.1, 0.65
@@ -579,7 +1016,8 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
   if isinstance(beam,sd.Beam): axText.text(0.0,0.1,"from Shadow3 Beam instance")
   axText.text(0.0,0.0,"DIR: "+os.getcwd())
   axText.set_axis_off()
-  pylab.plt.draw()
+  #pylab.plt.draw()
+  plt.draw()
   if noplot==0: figure.show()
   ticket = plotxy_Ticket()
   ticket.figure = figure
@@ -601,6 +1039,12 @@ def plotxy(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=Non
 # waviness
 #
 def waviness_write(dic1,file="waviness.inp"):
+    """
+    dumps an input waviness file from python dictionary
+    :param dic1: the input dictionary
+    :param file: the file name
+    :return: None
+    """
     f = open(file,'w')
     f.write("%s"%(dic1["file"]))
     f.write("%d %d \n"%(dic1["npointx"],dic1["npointy"]) )
@@ -612,11 +1056,14 @@ def waviness_write(dic1,file="waviness.inp"):
     g = dic1["g"]
     for i in range(dic1["nharmonics"]+1): 
         f.write("%f  %f  %f \n"%(c[i],y[i],g[i]) )
-     
-
     f.close()
 
 def waviness_read(file="waviness.inp"):
+    """
+    reads a waviness input file into a python dictionary
+    :param file: the file name
+    :return: a dictionary
+    """
 
     with open(file) as f:
         filedat = f.readline()
@@ -645,7 +1092,6 @@ def waviness_read(file="waviness.inp"):
                  "width":width, "xlength":xlength, "nharmonics":nharmonics, \
                  "slp":slp, "iseed":iseed, \
                  "c":array1[:,0].copy(), "y":array1[:,1].copy(), "g":array1[:,2].copy() }
-
 
 
 def slopes(z,x,y):
@@ -927,21 +1373,12 @@ def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=
 
 
 if __name__=="__main__":
-  #import Shadow as sd
-  #from matplotlib import pyplot as plt
-  #a = sd.Beam()
-  #a.load("begin.dat")
-  #ticket1 = histo1(a,1,nbins=25,noplot=1,calfwhm=1)
-  #ticket1.figure.show()
-  #raw_inumpy.t()
-  #ticket1 = plotxy(a,(1,3),noplot=1)
-  #ticket1.figure.show()
-  #raw_inumpy.t()
+
 
   #
   #test waviness
   #
-  do_waviness = 1
+  do_waviness = 0
   if do_waviness:
       myfile = "waviness.inp"
       try:
@@ -962,3 +1399,32 @@ if __name__=="__main__":
       write_shadow_surface(z.T,x,y,outFile='waviness.dat')
       slopes(z,x,y)
  
+  #
+  #test new plots
+  #
+  do_histo1 = 0
+  if do_histo1:
+      #t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
+      t = histo1("begin.dat",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
+
+  do_plotxy = 0
+  if do_plotxy:
+      nbins = 110
+
+      # t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
+
+      # import Shadow
+      # tmp = Shadow.Beam()
+      # tmp.load("begin.dat")
+      # tkt2 = tmp.plotxy(1,3,nbins=nbins, nolost=0, ref=1, \
+      #                      xrange=[-0.015,0.015], yrange=[-0.002,0.002])
+      # plotxy_gnuplot(tkt2,0,0,execute=1)
+      # plotxy(tkt2,0,0)
+
+
+      tkt = plotxy_gnuplot("begin.dat",1,3,nbins=nbins, nolost=1, ref=0, \
+                     xrange=[-0.015,0.015], yrange=[-0.002,0.002],execute=0,pdf=1)
+
+
+      # tkt = plotxy("begin.dat",1,3,nbins=nbins, nolost=1, \
+      #                xrange=[-0.015,0.015], yrange=[-0.002,0.002])

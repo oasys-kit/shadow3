@@ -12130,6 +12130,12 @@ SUBROUTINE DeAlloc
        iflag = 2
        call get_refraction_index (iflag,xin,yin,yin,yin,yin)
     end if 
+
+    ! sets the IDUMMY=1 to indicate that the oe has run
+    ! This variable can be used to see if the oe gfile has been 
+    ! processed or not by SHADOW. Thus if IDUMMY=0 is not processed
+    ! (corresponds to start.xx) and if IDUMMY=1 it is (end.xx)
+    IDUMMY = 1
     
     WRITE(6,*)'Exit from DEALLOC'
 

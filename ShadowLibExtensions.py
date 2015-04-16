@@ -37,14 +37,13 @@ class Beam(ShadowLib.Beam):
       traces a compound optical element
 
       IMPORTANT: Note that shadow3 changes the values of the OE when tracing (i.e., oe1 changes after
-                 beam.traceOE(oe1) ). The same happens with compoundOE: Each oe inside compoundOE is
-                 changed after tracing.
+                 beam.traceOE(oe1) ). This does not happen with compoundOE: Each oe inside compoundOE is
+                 copied before tracing.
 
                  Note also that when using write_*_files keyword, the files are written by python, not
                   by SHADOW (so FWRITE is not changed), with the exception of write_mirr_files. In this case
-                  the code changes FWRITE=1 (mirror files only). Therefore, if you want not to overwrite
-                  FWRITE (e.g., for writing screen.xx files), you should set write_mirr_files=0 and then
-                  the behavious of FWRITE is conserved.
+                  the code changes in the oe copy FWRITE=1 (mirror files only). This affects the returned
+                  list of oe's after tracing.
 
       :param compoundOE: input object
       :param from_oe: index of the first oe (for tracing compoundOE after an existing system) (default=1)
@@ -52,54 +51,100 @@ class Beam(ShadowLib.Beam):
       :param write_end_files:  0=No (default), 1=Yes (all), 2: only first and last ones
       :param write_star_files:  0=No (default), 1=Yes (all), 2: only first and last ones
       :param write_mirr_files:  0=No (default), 1=Yes (all), 2: only first and last ones
-      :return: a list of the OE objects after tracing (the info of end.xx files)
+      :return: a new compoundOE with the list of the OE objects after tracing (the info of end.xx files)
       """
-      oe_index = from_oe
-      oe_n = compoundOE.number_oe()
-      list = []
+      # oe_index = from_oe
+      # oe_n = compoundOE.number_oe()
+      # list = CompoundOE()
+      #
+      # for i,oe in enumerate(compoundOE.list):
+      #   print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,oe_index))
+      #
+      #   print(">>>>>>>>> FILE_SOURCE before 0",len(oe.FILE_SOURCE))
+      #   oe1 = oe.duplicate()
+      #   print(">>>>>>>>> FILE_SOURCE before 1",len(oe1.FILE_SOURCE))
+      #   iwrite = 0
+      #   if write_mirr_files == 1: iwrite = 1
+      #   if write_mirr_files == 2 and i == 0: iwrite = 1
+      #   if write_mirr_files == 2 and i == oe_n-1: iwrite = 1
+      #   if iwrite:
+      #       oe1.FWRITE = 1
+      #   iwrite = 0
+      #   if write_start_files == 1: iwrite = 1
+      #   if write_start_files == 2 and i == 0: iwrite = 1
+      #   if write_start_files == 2 and i == oe_n-1: iwrite = 1
+      #
+      #   if iwrite:
+      #       #TODO: check possible bug: the length of FILE_SOURCE is changed when writing start file
+      #       print(">>>>>>>> TRACE BEFORE WRITE  <<<<<< type(oe1.FILE_SOURCE)",i,(oe1.FILE_SOURCE),len(oe1.FILE_SOURCE))
+      #       #tmp = oe1.duplicate()
+      #       oe1.write("start.%02d"%(oe_index))
+      #       print(">>>>>>>> TRACE AFTER WRITE  <<<<<< type(oe1.FILE_SOURCE)",i,(oe1.FILE_SOURCE),len(oe1.FILE_SOURCE))
+      #
+      #       print("File written to disk: start.%02d"%(oe_index))
+      #
+      #   print(">>>>>>>>> FILE_SOURCE before",len(oe1.FILE_SOURCE),len(oe1.FILE_REFL))
+      #   #tmp = oe1.duplicate()
+      #   self.traceOE(oe1,oe_index)
+      #   print(">>>>>>>>> FILE_SOURCE after",len(oe1.FILE_SOURCE),len(oe1.FILE_REFL))
+      #
+      #   list.append(oe1)
+      #
+      #   iwrite = 0
+      #   if write_star_files == 1: iwrite = 1
+      #   if write_star_files == 2 and i == 0: iwrite = 1
+      #   if write_star_files == 2 and i == oe_n-1: iwrite = 1
+      #   if iwrite == 1:
+      #       self.write("star.%02d"%(oe_index))
+      #       print("File written to disk: star.%02d"%(oe_index))
+      #
+      #   iwrite = 0
+      #   if write_end_files == 1: iwrite = 1
+      #   if write_end_files == 2 and i == 0: iwrite = 1
+      #   if write_end_files == 2 and i == oe_n-1: iwrite = 1
+      #   if write_end_files == 1:
+      #       oe1.write("end.%02d"%(oe_index))
+      #       print("File written to disk: end.%02d"%(oe_index))
+      #
+      #   oe_index += 1
+      #
+      # return list
+
+      oe_n = len(compoundOE.list)
+      for i in range(oe_n):
+          print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,from_oe+i))
+
+          #if wanted to write mirr.xx, tell SHADOW to do it
+          if write_mirr_files == 1:
+            compoundOE.list[i].FWRITE = 1
+          if write_mirr_files == 2:
+            if i == 0 or i == oe_n-1:
+                compoundOE.list[i].FWRITE = 1
+          #dump start.xx files, if selected
+          if write_start_files == 1:
+            compoundOE.list[i].write("start.%02d"%(from_oe+i))
+          if write_start_files == 2:
+            if i == 0 or i == oe_n-1:
+                compoundOE.list[i].write("start.%02d"%(from_oe+i))
 
 
-      for i,oe in enumerate(compoundOE.list):
-        print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,oe_index))
 
-        iwrite = 0
-        if write_mirr_files == 1: iwrite = 1
-        if write_mirr_files == 2 and i == 0: iwrite = 1
-        if write_mirr_files == 2 and i == oe_n-1: iwrite = 1
-        if iwrite:
-            oe.FWRITE = 1
-        iwrite = 0
-        if write_start_files == 1: iwrite = 1
-        if write_start_files == 2 and i == 0: iwrite = 1
-        if write_start_files == 2 and i == oe_n-1: iwrite = 1
+          self.traceOE( compoundOE.list[i], from_oe+1)
 
-        if iwrite:
-            oe.write("start.%02d"%(oe_index))
-            print("File written to disk: start.%02d"%(oe_index))
+          #dump star.xx files, if selected
+          if write_star_files == 1:
+            self.write("star.%02d"%(from_oe+i))
+          if write_star_files == 2:
+            if i == 0 or i == oe_n-1:
+                self.write("star.%02d"%(from_oe+i))
+          #dump end.xx files, of selected
+          if write_end_files == 1:
+            compoundOE.list[i].write("end.%02d"%(from_oe+i))
+          if write_end_files == 2:
+            if i == 0 or i == oe_n-1:
+                compoundOE.list[i].write("end.%02d"%(from_oe+i))
 
-        self.traceOE(oe,oe_index)
-
-        list.append(oe)
-
-        iwrite = 0
-        if write_star_files == 1: iwrite = 1
-        if write_star_files == 2 and i == 0: iwrite = 1
-        if write_star_files == 2 and i == oe_n-1: iwrite = 1
-        if iwrite == 1:
-            self.write("star.%02d"%(oe_index))
-            print("File written to disk: star.%02d"%(oe_index))
-
-        iwrite = 0
-        if write_end_files == 1: iwrite = 1
-        if write_end_files == 2 and i == 0: iwrite = 1
-        if write_end_files == 2 and i == oe_n-1: iwrite = 1
-        if write_end_files == 1:
-            oe.write("end.%02d"%(oe_index))
-            print("File written to disk: end.%02d"%(oe_index))
-
-        oe_index += 1
-
-      return list
+      return
 
   def get_standard_deviation(self,col, nolost=1, ref=0):
       '''
@@ -300,7 +345,7 @@ class Beam(ShadowLib.Beam):
 
   def nrays(self,nolost=0):
       try:
-        w = self.getshonecol(12)
+        w = self.getshonecol(10)
       except Exception:
           print("Error: Empty beam...")
           return 0
@@ -331,8 +376,9 @@ class Beam(ShadowLib.Beam):
                1   Only good rays
                2   Only lost rays
          ref      :
-               0   only count the rays
-               1   weight with intensity (look at 23 |E|^2 total intensity)
+               0 (or None)  only count the rays
+               1   weight with intensity (look at col=23 |E|^2 total intensity)
+               other value: use that column as weight
          write    :
                None (default)   don't write any file
                file_name   write the histogram into the file 'file_name'.
@@ -386,6 +432,11 @@ class Beam(ShadowLib.Beam):
       '''
       #initialize return value
       ticket = {'error':1}
+
+      coli = col - 1
+      if ref == 1: ref = 23
+      if ref == None: ref = 0
+
       # copy the inputs
       ticket['col'] = col
       ticket['write'] = write
@@ -393,49 +444,50 @@ class Beam(ShadowLib.Beam):
       ticket['nbins'] = nbins
       ticket['xrange'] = xrange
 
-
-      coli = col - 1
-      if ref == 1: ref = 23
+      ticket['write'] = write
+      ticket['factor'] = factor
+      ticket['ref'] = ref
 
 
       if ref==0:
-        x, a = self.getshcol((col,10))
+        x = self.getshonecol(nolost=nolost)
         w = numpy.ones(len(x))
       else:
-        x, a, w = self.getshcol((col,10,ref))
+        x, w = self.getshcol((col,ref),nolost=nolost)
+
 
       if factor != 1.0: x *= factor
 
 
-      if nolost==0:
-        t = numpy.where(a!=-3299)
-
-      if nolost==1:
-        t = numpy.where(a > 0.0)
-
-      if nolost==2:
-        t = numpy.where(a < 0.0)
-
-      if nolost > 2:
-        print ('invalid value for nolost flag: %d'%(nolost))
-        #raise KeyError ('invalid value for nolost flag: %d'%(nolost))
-        return ticket
-
-
-      t = numpy.array(t)
-      t.shape = -1
-
-      if t.size == 0:
-        print ('no rays match the selection, the histogram will not be calculated')
-        return ticket
+      # if nolost==0:
+      #   t = numpy.where(a!=-3299)
+      #
+      # if nolost==1:
+      #   t = numpy.where(a > 0.0)
+      #
+      # if nolost==2:
+      #   t = numpy.where(a < 0.0)
+      #
+      # if nolost > 2:
+      #   print ('invalid value for nolost flag: %d'%(nolost))
+      #   #raise KeyError ('invalid value for nolost flag: %d'%(nolost))
+      #   return ticket
+      #
+      #
+      # t = numpy.array(t)
+      # t.shape = -1
+      #
+      # if t.size == 0:
+      #   print ('no rays match the selection, the histogram will not be calculated')
+      #   return ticket
 
       if xrange == None:
-          xrange = [x[t].min(), x[t].max() ]
+          xrange = [x.min(), x.max() ]
 
 
-      h,bins = numpy.histogram(x[t],bins=nbins,range=xrange,weights=w[t])
+      h,bins = numpy.histogram(x,bins=nbins,range=xrange,weights=w)
       #evaluate the histogram with squares of the weight for error calculations
-      h2,bins2 = numpy.histogram(x[t],bins=nbins,range=xrange,weights=(w*w)[t])
+      h2,bins2 = numpy.histogram(x,bins=nbins,range=xrange,weights=(w*w))
 
       #Evaluation of histogram error.
       # See Pag 17 in Salvat, Fernandez-Varea and Sempau
@@ -443,51 +495,183 @@ class Beam(ShadowLib.Beam):
       # Electron and Photon Transport, AEN NEA  (2003)
       #
       # See James, Rep. Prog. Phys., Vol 43 (1980) pp 1145-1189 (special attention to pag. 1184)
-      h_sigma = numpy.sqrt( h2 - h*h/float(len(t)) )
+      h_sigma = numpy.sqrt( h2 - h*h/float(len(w)) )
 
       if write != None and write != "":
           f = open(write,'w')
-          f.write('#F %s'%(write))
-          f.write('#C This file has been created using Shadow.Beam.histo1() ')
-          f.write('#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN')
-          f.write('#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN')
-          f.write('#C COLUMN 3 CORRESPONDS TO INTENSITY')
-          f.write('#C COLUMN 4 CORRESPONDS TO ERROR: SIGMA_INTENSITY')
-          f.write('#C col = %d'%(col))
-          f.write('#C nolost = %d'%(nolost))
-          f.write('#C nbins = %d'%(nbins))
-          f.write('#C ref = %d'%(ref),)
-          f.write(' ')
-          f.write('#S 1 histogram')
-          f.write('#N 4')
-          f.write('#L X1  X2  Y  YERR')
+          f.write('#F %s \n'%(write))
+          f.write('#C This file has been created using Shadow.Beam.histo1() \n')
+          f.write('#C COLUMN 1 CORRESPONDS TO ABSCISSAS IN THE CENTER OF EACH BIN\n')
+          f.write('#C COLUMN 2 CORRESPONDS TO ABSCISSAS IN THE THE LEFT CORNER OF THE BIN\n')
+          f.write('#C COLUMN 3 CORRESPONDS TO INTENSITY\n')
+          f.write('#C COLUMN 4 CORRESPONDS TO ERROR: SIGMA_INTENSITY\n')
+          f.write('#C col = %d\n'%(col))
+          f.write('#C nolost = %d\n'%(nolost))
+          f.write('#C nbins = %d\n'%(nbins))
+          f.write('#C ref = %d\n'%(ref),)
+          f.write(' \n')
+          f.write('#S 1 histogram\n')
+          f.write('#N 4\n')
+          f.write('#L X1  X2  Y  YERR\n')
           for i in range(len(h)):
-            f.write('%f\t%f\t%f\t%f' % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], h_sigma[i] ))
+            f.write('%f\t%f\t%f\t%f\n' % ( (bins[i]+bins[i+1])*0.5, bins[i], h[i], h_sigma[i] ))
           f.close()
           print('histo1: file written to disk: %s'%(write))
+
+
 
       #
       # output
       ticket['error'] = 0
       ticket['histogram'] = h
       ticket['histogram_sigma'] = h_sigma
-      ticket['bin_center'] = bins[:-1]+(bins[1]-bins[0])*0.5
+      bin_center = bins[:-1]+(bins[1]-bins[0])*0.5
+      ticket['bin_center'] = bin_center
       ticket['bin_left'] = bins[:-1]
+      ticket['bin_right'] = bins[:-1]+(bins[1]-bins[0])
       ticket['xrange'] = xrange
-      ticket['intensity'] = w[t].sum()
+      ticket['intensity'] = w.sum()
       ticket['fwhm'] = None
 
-      #CALCILATE fwhm
-      fwhmx = None
-      tt = numpy.where(h>max(h)*0.5)
-      if h[tt].size > 0:
+      #for practical purposes, writes the points the will define the histogram area
+      tmp_b = []
+      tmp_h = []
+      for s,t,v in zip(ticket["bin_left"],ticket["bin_right"],ticket["histogram"]):
+        tmp_b.append(s)
+        tmp_h.append(v)
+        tmp_b.append(t)
+        tmp_h.append(v)
+      ticket['histogram_path'] = numpy.array(tmp_h)
+      ticket['bin_path'] = numpy.array(tmp_b)
+
+      #CALCULATE fwhm
+      tt = numpy.where(h>=max(h)*0.5)
+      if h[tt].size > 1:
           binSize = bins[1]-bins[0]
-          #LIMITS
-          #txf = tt[0][-1]
-          #txi = tt[0][0]
-          ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0]+1)
+          ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0])
+          ticket['fwhm_coordinates_h'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
 
       return ticket
+
+  def get_good_range(self,icol, nolost=0):
+    """
+
+    :param icol: the column number (SHADOW convention, starting from 1)
+    :param nolost: lost rays flag (0=all, 1=good, 2=losses)
+    :return: [rmin,rmax] the selected range
+    """
+    col = self.getshonecol(icol,nolost=nolost)
+    if col.size == 0:
+      return [-1,1]
+    rmin = min(col)
+    rmax = max(col)
+    if rmin>0.0:
+        rmin = rmin*0.95
+    else:
+        rmin = rmin*1.05
+    if rmax<0.0:
+        rmax = rmax*0.95
+    else:
+        rmax = rmax*1.05
+    if rmin==rmax:
+        rmin = rmin*0.95
+        rmax = rmax*1.05
+    if rmin==0.0:
+        rmin = -1.0
+        rmax =  1.0
+    return [rmin,rmax]
+
+  def plotxy(self,col_h,col_v,nbins=25,ref=23, nbins_h=None, nbins_v=None, nolost=0,xrange=None,yrange=None):
+    """
+
+    performs a plotxy plot using matplotlib backend.
+
+    It uses Shadow.Beam.plotxy() for calculations
+
+    :param col_h: the horizontal column
+    :param col_v: the vertical column
+    :param nbins: number of bins
+    :param ref: ref=0:weight with rays, ref=1 or 23 weight with intensities, ref=col weight with col ,
+    :param nbins_h: number of bins in H
+    :param nbins_v: number of bins in V
+    :param nolost: 0 or None: all rays, 1=good rays, 2=only losses
+    :param xrange: range for H
+    :param yrange: range for V
+    :return: a dictionary as produced by Shadow.Beam.plotxy() and with some  keys added
+    """
+
+
+    ticket = {'error':1}
+
+    if ref == 1: ref = 23
+    if ref == None: ref = 0
+
+    if nbins_h == None: nbins_h = nbins
+    if nbins_v == None: nbins_v = nbins
+
+    # copy the inputs
+    ticket['col_h'] = col_h
+    ticket['col_v'] = col_v
+    ticket['nolost'] = nolost
+    ticket['nbins_h'] = nbins_h
+    ticket['nbins_v'] = nbins_v
+    ticket['ref'] = ref
+
+    (col1,col2) = self.getshcol((col_h,col_v),nolost=nolost)
+
+    if xrange==None: xrange = self.get_good_range(col_h,nolost=nolost)
+    if yrange==None: yrange = self.get_good_range(col_v,nolost=nolost)
+
+    if ref == 0:
+        weights = col1*0+1
+    else:
+        weights = self.getshonecol(ref,nolost=nolost)
+
+    (hh,xx,yy) = numpy.histogram2d(col1, col2, bins=[nbins_h,nbins_v], range=[xrange,yrange], normed=False, weights=weights)
+
+    ticket['xrange'] = xrange
+    ticket['yrange'] = yrange
+    ticket['bin_h_edges'] = xx
+    ticket['bin_v_edges'] = yy
+    ticket['bin_h_left'] = numpy.delete(xx,-1)
+    ticket['bin_v_left'] = numpy.delete(yy,-1)
+    ticket['bin_h_right'] = numpy.delete(xx,0)
+    ticket['bin_v_right'] = numpy.delete(yy,0)
+    ticket['bin_h_center'] = 0.5*(ticket['bin_h_left']+ticket['bin_h_right'])
+    ticket['bin_v_center'] = 0.5*(ticket['bin_v_left']+ticket['bin_v_right'])
+    ticket['histogram'] = hh
+    ticket['histogram_h'] = hh.sum(axis=1)
+    ticket['histogram_v'] = hh.sum(axis=0)
+    ticket['intensity'] = self.intensity(nolost=nolost)
+    ticket['nrays'] = self.nrays(nolost=0)
+    ticket['good_rays'] = self.nrays(nolost=1)
+
+
+    #CALCULATE fwhm
+
+    h = ticket['histogram_h']
+    tt = numpy.where(h>=max(h)*0.5)
+    if h[tt].size > 1:
+        binSize = ticket['bin_h_center'][1]-ticket['bin_h_center'][0]
+        ticket['fwhm_h'] = binSize*(tt[0][-1]-tt[0][0])
+        ticket['fwhm_coordinates_h'] = (ticket['bin_h_center'][tt[0][0]],ticket['bin_h_center'][tt[0][-1]])
+    else:
+        ticket["fwhm_h"] = None
+
+    h = ticket['histogram_v']
+    tt = numpy.where(h>=max(h)*0.5)
+    if h[tt].size > 1:
+        binSize = ticket['bin_v_center'][1]-ticket['bin_v_center'][0]
+        ticket['fwhm_v'] = binSize*(tt[0][-1]-tt[0][0])
+        ticket['fwhm_coordinates_v'] = (ticket['bin_v_center'][tt[0][0]],ticket['bin_v_center'][tt[0][-1]])
+    else:
+        ticket["fwhm_v"] = None
+
+    # print(">>>>Sum of H: ",ticket["histogram_h"].sum())
+    # print(">>>>Sum of V: ",ticket["histogram_v"].sum())
+    # print(">>>>Sum of I: ",ticket["histogram"].sum())
+    # print(">>>>Sum of W: ",weights.sum())
+    return ticket
 
 # commented srio@esrf.eu 2015-03-26 Never used...
 
@@ -826,10 +1010,11 @@ class OE(ShadowLib.OE):
   #
   #
   #
-  #
-  # def setReflector(self):
-  #   self.F_REFRACT = 0
-  #   return self
+
+  # used by Luca  TODO: remove
+  def setReflector(self):
+    self.F_REFRACT = 0
+    return self
   #
   #
   # def setRefractor(self,r_ind_obj = 1.0,r_ind_ima = 1.0,r_attenuation_obj = 0.0,r_attenuation_ima = 0.0):
@@ -840,20 +1025,21 @@ class OE(ShadowLib.OE):
   #   self.R_ATTENUATION_IMA = r_attenuation_ima
   #   return self
   #
-  #
-  # def unsetCrystal(self):
-  #   self.F_CRYSTAL = 0
-  #   return self
-  #
-  # def setCrystal(self,file_refl=b'',a_bragg=0.0):
-  #   self.F_CRYSTAL = 1
-  #   self.FILE_REFL = file_refl
-  #   self.F_REFLECT = 0
-  #
-  #   if a_bragg!=0.0:
-  #     self.F_BRAGG_A = 1
-  #     self.A_BRAGG = a_bragg
-  #   return self
+
+  # used by Luca, TODO: remove
+  def unsetCrystal(self):
+    self.F_CRYSTAL = 0
+    return self
+
+  def setCrystal(self,file_refl=b'',a_bragg=0.0):
+    self.F_CRYSTAL = 1
+    self.FILE_REFL = file_refl
+    self.F_REFLECT = 0
+
+    if a_bragg!=0.0:
+      self.F_BRAGG_A = 1
+      self.A_BRAGG = a_bragg
+    return self
   #
   #
   # def setJohansson(self,r_johansson=None):
@@ -947,15 +1133,224 @@ class OE(ShadowLib.OE):
         mydict[var[0]]= var[1]
     return(mydict)
 
+  # def duplicate(self):
+  #   oe_new = OE()
+  #   mem = inspect.getmembers(self)
+  #   for i,var in enumerate(mem):
+  #     if var[0].isupper():
+  #       tmp = getattr(self,var[0])
+  #       setattr(oe_new,var[0],var[1])
+  #   return(oe_new)
+
+  def duplicate(self):
+        new_oe = OE()
+
+        new_oe.FMIRR             = self.FMIRR
+        new_oe.F_TORUS           = self.F_TORUS
+        new_oe.FCYL              = self.FCYL
+        new_oe.F_EXT             = self.F_EXT
+        new_oe.FSTAT             = self.FSTAT
+        new_oe.F_SCREEN          = self.F_SCREEN
+        new_oe.F_PLATE           = self.F_PLATE
+        new_oe.FSLIT             = self.FSLIT
+        new_oe.FWRITE            = self.FWRITE
+        new_oe.F_RIPPLE          = self.F_RIPPLE
+        new_oe.F_MOVE            = self.F_MOVE
+        new_oe.F_THICK           = self.F_THICK
+        new_oe.F_BRAGG_A         = self.F_BRAGG_A
+        new_oe.F_G_S             = self.F_G_S
+        new_oe.F_R_RAN           = self.F_R_RAN
+        new_oe.F_GRATING         = self.F_GRATING
+        new_oe.F_MOSAIC          = self.F_MOSAIC
+        new_oe.F_JOHANSSON       = self.F_JOHANSSON
+        new_oe.F_SIDE            = self.F_SIDE
+        new_oe.F_CENTRAL         = self.F_CENTRAL
+        new_oe.F_CONVEX          = self.F_CONVEX
+        new_oe.F_REFLEC          = self.F_REFLEC
+        new_oe.F_RUL_ABS         = self.F_RUL_ABS
+        new_oe.F_RULING          = self.F_RULING
+        new_oe.F_PW              = self.F_PW
+        new_oe.F_PW_C            = self.F_PW_C
+        new_oe.F_VIRTUAL         = self.F_VIRTUAL
+        new_oe.FSHAPE            = self.FSHAPE
+        new_oe.FHIT_C            = self.FHIT_C
+        new_oe.F_MONO            = self.F_MONO
+        new_oe.F_REFRAC          = self.F_REFRAC
+        new_oe.F_DEFAULT         = self.F_DEFAULT
+        new_oe.F_REFL            = self.F_REFL
+        new_oe.F_HUNT            = self.F_HUNT
+        new_oe.F_CRYSTAL         = self.F_CRYSTAL
+        new_oe.F_PHOT_CENT       = self.F_PHOT_CENT
+        new_oe.F_ROUGHNESS       = self.F_ROUGHNESS
+        new_oe.F_ANGLE           = self.F_ANGLE
+        new_oe.NPOINT            = self.NPOINT
+        new_oe.NCOL              = self.NCOL
+        new_oe.N_SCREEN          = self.N_SCREEN
+        new_oe.ISTAR1            = self.ISTAR1
+        new_oe.CIL_ANG           = self.CIL_ANG
+        new_oe.ELL_THE           = self.ELL_THE
+        new_oe.N_PLATES          = self.N_PLATES
+        new_oe.IG_SEED           = self.IG_SEED
+        new_oe.MOSAIC_SEED       = self.MOSAIC_SEED
+        new_oe.ALPHA             = self.ALPHA
+        new_oe.SSOUR             = self.SSOUR
+        new_oe.THETA             = self.THETA
+        new_oe.SIMAG             = self.SIMAG
+        new_oe.RDSOUR            = self.RDSOUR
+        new_oe.RTHETA            = self.RTHETA
+        new_oe.OFF_SOUX          = self.OFF_SOUX
+        new_oe.OFF_SOUY          = self.OFF_SOUY
+        new_oe.OFF_SOUZ          = self.OFF_SOUZ
+        new_oe.ALPHA_S           = self.ALPHA_S
+        new_oe.RLEN1             = self.RLEN1
+        new_oe.RLEN2             = self.RLEN2
+        new_oe.RMIRR             = self.RMIRR
+        new_oe.AXMAJ             = self.AXMAJ
+        new_oe.AXMIN             = self.AXMIN
+        new_oe.CONE_A            = self.CONE_A
+        new_oe.R_MAJ             = self.R_MAJ
+        new_oe.R_MIN             = self.R_MIN
+        new_oe.RWIDX1            = self.RWIDX1
+        new_oe.RWIDX2            = self.RWIDX2
+        new_oe.PARAM             = self.PARAM
+        new_oe.HUNT_H            = self.HUNT_H
+        new_oe.HUNT_L            = self.HUNT_L
+        new_oe.BLAZE             = self.BLAZE
+        new_oe.RULING            = self.RULING
+        new_oe.ORDER             = self.ORDER
+        new_oe.PHOT_CENT         = self.PHOT_CENT
+        new_oe.X_ROT             = self.X_ROT
+        new_oe.D_SPACING         = self.D_SPACING
+        new_oe.A_BRAGG           = self.A_BRAGG
+        new_oe.SPREAD_MOS        = self.SPREAD_MOS
+        new_oe.THICKNESS         = self.THICKNESS
+        new_oe.R_JOHANSSON       = self.R_JOHANSSON
+        new_oe.Y_ROT             = self.Y_ROT
+        new_oe.Z_ROT             = self.Z_ROT
+        new_oe.OFFX              = self.OFFX
+        new_oe.OFFY              = self.OFFY
+        new_oe.OFFZ              = self.OFFZ
+        new_oe.SLLEN             = self.SLLEN
+        new_oe.SLWID             = self.SLWID
+        new_oe.SLTILT            = self.SLTILT
+        new_oe.COD_LEN           = self.COD_LEN
+        new_oe.COD_WID           = self.COD_WID
+        new_oe.X_SOUR            = self.X_SOUR
+        new_oe.Y_SOUR            = self.Y_SOUR
+        new_oe.Z_SOUR            = self.Z_SOUR
+        new_oe.X_SOUR_ROT        = self.X_SOUR_ROT
+        new_oe.Y_SOUR_ROT        = self.Y_SOUR_ROT
+        new_oe.Z_SOUR_ROT        = self.Z_SOUR_ROT
+        new_oe.R_LAMBDA          = self.R_LAMBDA
+        new_oe.THETA_I           = self.THETA_I
+        new_oe.ALPHA_I           = self.ALPHA_I
+        new_oe.T_INCIDENCE       = self.T_INCIDENCE
+        new_oe.T_SOURCE          = self.T_SOURCE
+        new_oe.T_IMAGE           = self.T_IMAGE
+        new_oe.T_REFLECTION      = self.T_REFLECTION
+
+        #TODO due to an incomprehensible bug, the FILE_SOURCE variable in oe
+        #changes from len=1024 to len=2048 when shadow runs. Therefore gives
+        #a crash when copying to a new object. With this we force the dimension
+        new_oe.FILE_SOURCE       = self.FILE_SOURCE[:1023]
+
+        new_oe.FILE_RIP          = self.FILE_RIP
+        new_oe.FILE_REFL         = self.FILE_REFL
+        new_oe.FILE_MIR          = self.FILE_MIR
+        new_oe.FILE_ROUGH        = self.FILE_ROUGH
+        new_oe.FZP               = self.FZP
+        new_oe.HOLO_R1           = self.HOLO_R1
+        new_oe.HOLO_R2           = self.HOLO_R2
+        new_oe.HOLO_DEL          = self.HOLO_DEL
+        new_oe.HOLO_GAM          = self.HOLO_GAM
+        new_oe.HOLO_W            = self.HOLO_W
+        new_oe.HOLO_RT1          = self.HOLO_RT1
+        new_oe.HOLO_RT2          = self.HOLO_RT2
+        new_oe.AZIM_FAN          = self.AZIM_FAN
+        new_oe.DIST_FAN          = self.DIST_FAN
+        new_oe.COMA_FAC          = self.COMA_FAC
+        new_oe.ALFA              = self.ALFA
+        new_oe.GAMMA             = self.GAMMA
+        new_oe.R_IND_OBJ         = self.R_IND_OBJ
+        new_oe.R_IND_IMA         = self.R_IND_IMA
+        new_oe.R_ATTENUATION_OBJ = self.R_ATTENUATION_OBJ
+        new_oe.R_ATTENUATION_IMA = self.R_ATTENUATION_IMA
+        new_oe.F_R_IND           = self.F_R_IND
+        new_oe.FILE_R_IND_OBJ    = self.FILE_R_IND_OBJ
+        new_oe.FILE_R_IND_IMA    = self.FILE_R_IND_IMA
+        new_oe.RUL_A1            = self.RUL_A1
+        new_oe.RUL_A2            = self.RUL_A2
+        new_oe.RUL_A3            = self.RUL_A3
+        new_oe.RUL_A4            = self.RUL_A4
+        new_oe.F_POLSEL          = self.F_POLSEL
+        new_oe.F_FACET           = self.F_FACET
+        new_oe.F_FAC_ORIENT      = self.F_FAC_ORIENT
+        new_oe.F_FAC_LATT        = self.F_FAC_LATT
+        new_oe.RFAC_LENX         = self.RFAC_LENX
+        new_oe.RFAC_LENY         = self.RFAC_LENY
+        new_oe.RFAC_PHAX         = self.RFAC_PHAX
+        new_oe.RFAC_PHAY         = self.RFAC_PHAY
+        new_oe.RFAC_DELX1        = self.RFAC_DELX1
+        new_oe.RFAC_DELX2        = self.RFAC_DELX2
+        new_oe.RFAC_DELY1        = self.RFAC_DELY1
+        new_oe.RFAC_DELY2        = self.RFAC_DELY2
+        new_oe.FILE_FAC          = self.FILE_FAC
+        new_oe.F_SEGMENT         = self.F_SEGMENT
+        new_oe.ISEG_XNUM         = self.ISEG_XNUM
+        new_oe.ISEG_YNUM         = self.ISEG_YNUM
+        new_oe.FILE_SEGMENT      = self.FILE_SEGMENT
+        new_oe.FILE_SEGP         = self.FILE_SEGP
+        new_oe.SEG_LENX          = self.SEG_LENX
+        new_oe.SEG_LENY          = self.SEG_LENY
+        new_oe.F_KOMA            = self.F_KOMA
+        new_oe.FILE_KOMA         = self.FILE_KOMA
+        new_oe.F_EXIT_SHAPE      = self.F_EXIT_SHAPE
+        new_oe.F_INC_MNOR_ANG    = self.F_INC_MNOR_ANG
+        new_oe.ZKO_LENGTH        = self.ZKO_LENGTH
+        new_oe.RKOMA_CX          = self.RKOMA_CX
+        new_oe.RKOMA_CY          = self.RKOMA_CY
+        new_oe.F_KOMA_CA         = self.F_KOMA_CA
+        new_oe.FILE_KOMA_CA      = self.FILE_KOMA_CA
+        new_oe.F_KOMA_BOUNCE     = self.F_KOMA_BOUNCE
+        new_oe.X_RIP_AMP         = self.X_RIP_AMP
+        new_oe.X_RIP_WAV         = self.X_RIP_WAV
+        new_oe.X_PHASE           = self.X_PHASE
+        new_oe.Y_RIP_AMP         = self.Y_RIP_AMP
+        new_oe.Y_RIP_WAV         = self.Y_RIP_WAV
+        new_oe.Y_PHASE           = self.Y_PHASE
+        new_oe.N_RIP             = self.N_RIP
+        new_oe.ROUGH_X           = self.ROUGH_X
+        new_oe.ROUGH_Y           = self.ROUGH_Y
+        new_oe.OE_NUMBER         = self.OE_NUMBER
+        new_oe.IDUMMY            = self.IDUMMY
+        new_oe.DUMMY             = self.DUMMY
+
+        new_oe.CX_SLIT      = copy.deepcopy(self.CX_SLIT)
+        new_oe.CZ_SLIT      = copy.deepcopy(self.CZ_SLIT)
+        new_oe.D_PLATE      = copy.deepcopy(self.D_PLATE)
+        new_oe.FILE_ABS     = copy.deepcopy(self.FILE_ABS)
+        new_oe.FILE_SCR_EXT = copy.deepcopy(self.FILE_SCR_EXT)
+        new_oe.I_ABS        = copy.deepcopy(self.I_ABS)
+        new_oe.I_SCREEN     = copy.deepcopy(self.I_SCREEN)
+        new_oe.I_SLIT       = copy.deepcopy(self.I_SLIT)
+        new_oe.I_STOP       = copy.deepcopy(self.I_STOP)
+        new_oe.K_SLIT       = copy.deepcopy(self.K_SLIT)
+        new_oe.RX_SLIT      = copy.deepcopy(self.RX_SLIT)
+        new_oe.RZ_SLIT      = copy.deepcopy(self.RZ_SLIT)
+        new_oe.SCR_NUMBER   = copy.deepcopy(self.SCR_NUMBER)
+        new_oe.SL_DIS       = copy.deepcopy(self.SL_DIS)
+        new_oe.THICK        = copy.deepcopy(self.THICK)
+        new_oe.CCC          = copy.deepcopy(self.CCC)
+
+        return new_oe
 
   def mirinfo(self, title=None):
     '''
     mimics SHADOW mirinfo postprocessor. Returns a text array.
-    :return:
+    :return: a text array with the result
     '''
     #
     txt = ''
-
 
     type1 = {}
     type1['1']  = 'SPHERICAL   '
@@ -1234,8 +1629,9 @@ class OE(ShadowLib.OE):
     return txt
 
 
-# not yet ready
+
 class CompoundOE():
+
   def __init__(self,list=None, name=''):
     if list == None:
         self.list = []
@@ -1243,7 +1639,6 @@ class CompoundOE():
         self.list = list
     self.name = name
     self = list #.__init__()
-    #self.type = type(OE)
 
   def set_name(self,name):
       self.name = name
@@ -1251,35 +1646,202 @@ class CompoundOE():
   def number_oe(self):
       return len(self.list)
 
-  def info(self):
-      print("CompoundOE name: %s, found %d elements"%(self.name,self.number_oe()))
-      for i,j in enumerate(self.list):
-          print('oe %d, p=%f, q=%f'%(1+i,j.T_SOURCE,j.T_IMAGE))
+  def info(self,file=''):
+    """
+    write a summary of the real distances, focal distances and orientation angles.
+    :param file: set to a file name to dump tesult into ir
+    :return: a text array
+    """
+    # print("CompoundOE name: %s, found %d elements"%(self.name,self.number_oe()))
+    # for i,j in enumerate(self.list):
+    #   print('oe %d, p=%f, q=%f'%(1+i,j.T_SOURCE,j.T_IMAGE))
+
+    txt = '  ********  SUMMARY OF DISTANCES ********\n'
+    txt += '   ** DISTANCES FOR ALL O.E. [cm] **           \n'
+    txt += "%12s %12s %12s %12s %12s %12s \n"%('OE','TYPE','p[cm]','q[cm]','src-oe','src-screen')
+
+
+    tot=0.0
+    alphatot=0.0
+    deflection_H = 0.0
+    deflection_V = 0.0
+    pihalf = numpy.pi/2
+    txt1 = ''
+    txt2 = ''
+    oeshape = '?'
+
+    for i,oe in enumerate(self.list):
+        #1) Distances summary
+        oetype = 'UNKNOWN'
+        if oe.F_REFRAC == 1:
+            oetype = 'REFRACTOR'
+        else:
+            oetype = 'MIRROR'
+        if oe.F_CRYSTAL == 1: oetype = 'CRYSTAL'
+        if oe.F_GRATING == 1: oetype = 'GRATING'
+        if oe.F_REFRAC == 2: oetype = 'EMPTY'
+
+        tot = tot + oe.T_SOURCE + oe.T_IMAGE
+        totoe = tot - oe.T_IMAGE
+        line="%12d %12s %12.2f %12.2f %12.2f %12.2f \n"%(i+1,oetype,oe.T_SOURCE,oe.T_IMAGE,totoe,tot)
+        txt1 += line
+
+        # 2) focusing summary
+
+        if oe.FMIRR != 5 and oe.FMIRR != 9:
+           if oe.FMIRR == 1:
+             if oe.FCYL == 0:
+                 oeshape='SPHERE'
+             else:
+                 oeshape='CYLINDER'
+           if oe.FMIRR == 2:
+             if oe.FCYL == 0:
+                 oeshape='ELLIPSOID'
+             else:
+                 oeshape='ELLIPSE'
+           if oe.FMIRR == 3:
+             oeshape='TOROID'
+           if oe.FMIRR == 4:
+             if oe.FCYL == 0:
+                 oeshape='PARABOLID'
+             else:
+                 oeshape='PARABOLA'
+           if oe.FMIRR == 6:
+             oeshape='CODLING SLIT'
+           if oe.FMIRR == 7:
+             if oe.FCYL == 0:
+                 oeshape='HYPERBOLOID'
+             else:
+                 oeshape='HYPERBOLA'
+           if oe.FMIRR == 8:
+             oeshape='CONE'
+           if oe.FMIRR == 9:
+             oeshape='POLYNOMIAL'
+           if oe.FMIRR == 10:
+             oeshape='CONIC COEFF'
+           if oe.F_DEFAULT == 1:
+             pp = oe.T_SOURCE
+             qq = oe.T_IMAGE
+           else:
+             pp = oe.SSOUR
+             qq = oe.SIMAG
+
+           if oe.F_EXT == 1:
+              line = "%10d %10s %10s %10s %10s \n"%( i+1,oeshape,'?','?','?')
+           else:
+              line = "%10d %10s %10.2f %10.2f %10.2f \n)'"%(i+1,oeshape,pp,qq,pp/qq)
+
+           txt2 += line
+
+        # 3) total deflection
+
+        alphatot = alphatot + oe.ALPHA
+        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg
+            torad =  numpy.pi/180.0
+        else:
+            torad = 1.0
+        deflection_H = deflection_H +  numpy.sin(alphatot*torad) *  ( (pihalf-oe.T_INCIDENCE*torad) + (pihalf-oe.T_REFLECTION*torad) )
+        deflection_V = deflection_V +  numpy.cos(alphatot*torad) *  ( (pihalf-oe.T_INCIDENCE*torad) + (pihalf-oe.T_REFLECTION*torad) )
+
+    txt += txt1
+    txt += '\n'
+    txt += '   ** FOCUSING ELEMENTS **           \n'
+    # focusing elements
+    line = "%10s %10s %10s %10s %10s \n"%('OE','SHAPE','p_foc','q_foc','1/M')
+    txt += line
+    txt += txt2
+
+
+    txt += '\n'
+    line = 'Sum of Alphas             %f \n'%(alphatot)
+    txt += line
+    line = 'Sum of Alphas Mod 180 deg %f \n'%( numpy.mod(alphatot*torad*180/numpy.pi,180))
+    txt += line
+    line = 'Sum of Alphas Mod 360 deg %f \n'%( numpy.mod(alphatot*torad*180/numpy.pi,360))
+    txt += line
+
+    txt += '\n'
+    if oe.IDUMMY != 1:
+        txt += "**Warning: SHADOW did not run, therefore autosetting angles are not considered**"
+    line = 'Total deflection angle H = %12.6f rad = %9.3f deg\n'%(deflection_H*torad,deflection_H*torad*180/numpy.pi)
+    txt += line
+    line = 'Total deflection angle V = %12.6f rad = %9.3f deg \n'%(deflection_V*torad,deflection_V*torad*180/numpy.pi)
+    txt += line
+
+    if file != '':
+        f = open(file,mode='w')
+        for line in txt:
+            f.write(line)
+        f.close()
+        print("File written to disk (compoundOE summary): ",file)
+
+    return(txt)
 
   def mirinfo(self):
+      """
+      Mimics the SHADOW mirinfo
+      :return: a text array
+      """
       txt = ""
       for i,oe in enumerate(self.list):
           txt += oe.mirinfo(title="oe %d in compoundOE name: %s "%(i+1,self.name))
       return txt
 
+  def get_oe_index(self,oe_index):
+      """
+      returns the pointer to the oe with index oe_index
+      :param oe_index:
+      :return:
+      """
+      if oe_index >= self.number_oe():
+          print("Error returning element index %d : Not enough optical elements (max index=%d)"%(oe_index,self.number_oe()-1))
+          return None
+      else:
+          tmp = self.list[oe_index]
+          return tmp
+
+  def duplicate(self):
+      """
+      Makes a copy of the compound optical element
+      :return:
+      """
+      new_coe = CompoundOE()
+      new_coe.set_name(self.name)
+      for i,oe in enumerate(self.list):
+          tmp = oe.duplicate()
+          new_coe.append(tmp)
+      return new_coe
+
+
   def add_drift_space_downstream(self,dd):
+      """
+      Adds empty space to the last element of the compound oe
+      :param dd: The distance
+      :return: None
+      """
       self.list[-1].T_IMAGE += dd
 
   def add_drift_space_upstream(self,dd):
+      """
+      Adds empty space before the first element of the compound oe
+      :param dd: The distance
+      :return: None
+      """
       self.list[0].T_SOURCE += dd
 
   def append(self,item):
     """
+    append an instance of Shadow.OW or Shadow.CompoundOE
     :param item: an OE or CompoundOE to append
-    :return: the updated CompoundOE
+    :return: the CompoundOE updated with a copy of item appended
     """
     if isinstance(item, OE):
-        self.list.append(item)
+        self.list.append(item.duplicate())
         return self
 
     if isinstance(item, CompoundOE):
         for i in range(item.number_oe()):
-            self.list.append(item.list[i])
+            self.list.append(item.list[i].duplicate())
         return self
 
     print("Failed to append: object not understood: %s. "%type(item))
@@ -1304,7 +1866,7 @@ class CompoundOE():
       :param attenuation_coefficient:mu (real); ignored if prerefl file points to file.      :param radius: lens radius (for pherical, or radius at the tip for paraboloid)
       :param interthickness: lens thickness (distance between the two interfaces at the center of the lenses)
       :param use_ccc 0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
-      :return:
+      :return: self
       """
       oe1 = OE()
       oe2 = OE()
@@ -1368,18 +1930,36 @@ class CompoundOE():
           oe1.FHIT_C = 0
           oe2.FHIT_C = 0
       else:
-          oe1.FHIT_C = 1
-          oe2.FHIT_C = 1
-          oe1.FSHAPE = 2 #ellipse
-          oe2.FSHAPE = 2
-          oe1.RWIDX1 = 0.0
-          oe2.RWIDX1 = 0.0
-          oe1.RWIDX2 = diameter*0.5
-          oe2.RWIDX2 = diameter*0.5
-          oe1.RLEN1 = 0.0
-          oe2.RLEN1 = 0.0
-          oe1.RLEN2 = diameter*0.5
-          oe2.RLEN2 = diameter*0.5
+          #if diameter is scalar, set a round aperture
+          if isinstance(diameter,(int,float)):
+              oe1.FHIT_C = 1
+              oe2.FHIT_C = 1
+              oe1.FSHAPE = 2 #ellipse
+              oe2.FSHAPE = 2
+              oe1.RWIDX1 = 0.0
+              oe2.RWIDX1 = 0.0
+              oe1.RWIDX2 = diameter*0.5
+              oe2.RWIDX2 = diameter*0.5
+              oe1.RLEN1  = 0.0
+              oe2.RLEN1  = 0.0
+              oe1.RLEN2  = diameter*0.5
+              oe2.RLEN2  = diameter*0.5
+          #if diameter is a list or tuple, set a rectanglular aperture
+          else:
+              oe1.FHIT_C = 1
+              oe2.FHIT_C = 1
+              oe1.FSHAPE = 1 #rectangle
+              oe2.FSHAPE = 1
+              oe1.RWIDX1 = 0.5*diameter[0]
+              oe2.RWIDX1 = 0.5*diameter[0]
+              oe1.RWIDX2 = 0.5*diameter[0]
+              oe2.RWIDX2 = 0.5*diameter[0]
+              oe1.RLEN1  = 0.5*diameter[1]
+              oe2.RLEN1  = 0.5*diameter[1]
+              oe1.RLEN2  = 0.5*diameter[1]
+              oe2.RLEN2  = 0.5*diameter[1]
+
+
 
       #radii
       if surface_shape == 1: #spherical
@@ -1465,7 +2045,7 @@ class CompoundOE():
         :param thickness: lens thickness (piling thickness)
         :param interthickness:lens thickness (distance between the two interfaces at the center of the lenses)
         :param use_ccc:0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
-        :return:
+        :return: self
         """
 
         p_or_q = 0.5*(thickness - interthickness)
@@ -1533,7 +2113,7 @@ class CompoundOE():
         :param thickness (list): lens thickness (piling thickness)
         :param interthickness (list):lens thickness (distance between the two interfaces at the center of the lenses)
         :param use_ccc (scalar):0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
-        :return:
+        :return: self
         """
 
         # replicate inputs when they are scalar
@@ -1557,18 +2137,6 @@ class CompoundOE():
 
 
         for i in range(len(nlenses)):
-            # print("Appending file **%s**"%(prerefl_file[i]))
-            # print("Calling append_crl with p0:%f, q0:%f, nlenses=%f, slots_empty=%f, \
-            #               radius=%f, thickness=%f, interthickness=%f, \
-            #               surface_shape=%f,convex_to_the_beam=%f,\
-            #               diameter=%f, cylinder_angle=%f,\
-            #               prerefl_file=%s, \
-            #               use_ccc=0"%(p0[i], q0[i],nlenses[i],slots_empty[i], \
-            #               radius[i], thickness[i], interthickness[i], \
-            #               surface_shape[i],convex_to_the_beam[i],\
-            #               diameter[i], cylinder_angle[i],\
-            #               prerefl_file[i]))
-
             self.append_crl(p0[i], q0[i], nlenses=nlenses[i], slots_empty=slots_empty[i], \
                           radius=radius[i], thickness=thickness[i], interthickness=interthickness[i], \
                           surface_shape=surface_shape[i],convex_to_the_beam=convex_to_the_beam[i],\
@@ -1608,7 +2176,7 @@ class CompoundOE():
                                 by prerefl. If multilayer, the file must come from pre_mlayer.
       :param surface_error_files: Set to file names containing the surface error mesh.
                                 Default: surface_error_files=["",""] which means that no surface error is considered.
-      :return:
+      :return: self
       """
       oe1 = OE()
       oe2 = OE()
@@ -1756,9 +2324,6 @@ class CompoundOE():
       """
       Appends a double crystal monochromator (with plane crystals)
 
-
-
-
       :param p0: distance from previous source plane (continuation plane) to center of first mirror
       :param q0: distance from center of second mirror to image plane (continuation plane)
       :param set_photon_energy: photon energy in eV to set the monochromator
@@ -1766,7 +2331,7 @@ class CompoundOE():
       :param dimensions1: the dimensions [width,length] for the first mirror. Default: [0,0] meaning infinite dimensions.
       :param dimensions2: the dimensions [width,length] for the second  mirror. Default: [0,0] meaning infinite dimensions.
       :param reflectivity_files: the reflectivity files as created by bragg
-      :return:
+      :return: self
       """
       oe1 = OE()
       oe2 = OE()
@@ -1863,6 +2428,10 @@ class Source(ShadowLib.Source):
         ShadowLib.Source.__init__(self)
 
     def to_dictionary(self):
+        """
+        returns a python dictionary of the Shadow.Source instance
+        :return: a dictionary
+        """
         mem = inspect.getmembers(self)
         mydict = {}
         for i,var in enumerate(mem):
@@ -1870,8 +2439,26 @@ class Source(ShadowLib.Source):
                 mydict[var[0]]= var[1]
         return(mydict)
 
+    def duplicate(self):
+        """
+        makes a copy of the source
+        :return: new instance of Shadow.Source()
+        """
+        src_new = Source()
+        mem = inspect.getmembers(self)
+        for i,var in enumerate(mem):
+          if var[0].isupper():
+            setattr(src_new,var[0],var[1])
+        return(src_new)
+
     #Gaussian source
     def set_divergence_gauss(self, sigmaxp, sigmazp):
+        """
+        sets Gaussian source in divergence space
+        :param sigmaxp: SIGDIX for SHADOW
+        :param sigmazp: SIGDIZ for SHADOW
+        :return: self
+        """
         self.FDISTR = 3
         self.HDIV1 = 1.0
         self.HDIV2 = 1.0
@@ -1882,23 +2469,48 @@ class Source(ShadowLib.Source):
         return self
 
     def set_spatial_gauss(self,sigmax, sigmaz):
+        """
+        sets Gaussian source in real space
+        :param sigmax: SIGMAX for SHADOW.
+        :param sigmaz: SIGMAZ for SHADOW.
+        :return: self
+        """
         self.FSOUR = 3
         self.SIGMAX = sigmax
         self.SIGMAZ = sigmaz
         return self
 
     def set_gauss(self,sigmax,sigmaz,sigmaxp,sigmazp):
+        """
+        Sets a Gaussian source in both real and divergence spaces
+        :param sigmax: SIGMAX for SHADOW.
+        :param sigmaz: SIGMAZ for SHADOW.
+        :param sigmaxp: SIGDIX for SHADOW.
+        :param sigmazp: SIGDIZ for SHADOW.
+        :return: self
+        """
         self.set_divergence_gauss(sigmaxp,sigmazp)
         self.set_spatial_gauss(sigmax,sigmaz)
         return self
 
     def set_energy_monochromatic(self,emin):
+        """
+        Sets a single energy line for the source (monochromatic)
+        :param emin: the energy in eV
+        :return: self
+        """
         self.F_COLOR =  1
         self.F_PHOT =  0 #eV
         self.PH1 = emin
         return self
 
     def set_energy_box(self,emin,emax):
+        """
+        Sets a box energy distribution for the source (monochromatic)
+        :param emin: minimum energy in eV
+        :param emax: maximum energy in eV
+        :return: self
+        """
         self.F_COLOR =  3
         self.F_PHOT =  0 #eV
         self.PH1 = emin
@@ -1906,6 +2518,10 @@ class Source(ShadowLib.Source):
         return self
 
     def set_pencil(self):
+        """
+        Sets a pencil beam (zero size, zero divergence)
+        :return:
+        """
         self.FSOUR = 0
         self.FDISTR = 1
         self.HDIV1 = 0.0
@@ -1915,6 +2531,16 @@ class Source(ShadowLib.Source):
         return self
 
     def apply_gaussian_undulator(self, undulator_length_in_m=1.0,user_unit_to_m=1e2, verbose=1, und_e0=None):
+        """
+        Convolves the already defined Gaussian source (for the electrons) with the photon emission
+        for an undulator.
+
+        :param undulator_length_in_m:
+        :param user_unit_to_m:
+        :param verbose: set to 0 for silent output
+        :param und_e0: the setting photon energy in eV, if undefined (None) reads from SHADOW PH1 variable
+        :return: self
+        """
 
         #user_unit_to_m = 1e-2
         codata_c = numpy.array(299792458.0)
@@ -1975,7 +2601,7 @@ class Source(ShadowLib.Source):
     def sourcinfo(self,title=None):
         '''
         mimics SHADOW sourcinfo postprocessor. Returns a text array.
-        :return:
+        :return: a text string
         '''
 
         txt = ''
@@ -2184,7 +2810,7 @@ if __name__ == '__main__':
     #
     # test
     #
-    do_test = 8 # 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
+    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
                 # 6=ID30B  # 7=ID23-2
 
     if ((do_test == 1) or (do_test == 2)):
@@ -2601,34 +3227,35 @@ if __name__ == '__main__':
         beam.write("begin.dat")
         src.write("end.00")
 
-        dcm = CompoundOE(name='KB')
+        dcm = CompoundOE(name='DCM')
 
         dcm.append_monochromator_double_crystal(4275,180,separation=10, photon_energy_ev=14000.0, \
                      dimensions1=[6,20],dimensions2=[0,0],reflectivity_file="Si5_55.111" )
-
 
 
         #trace
         dcm.dump_systemfile()
         beam.traceCompoundOE(dcm,write_start_files=1,write_end_files=1,write_star_files=1)
 
-        # print("\n\n")
-        # dcm.info()
-        # dcm.add_drift_space_upstream(200)
-        # dcm.add_drift_space_downstream(300)
-        #
-        # dcm.append(dcm)
-        #
 
-        dcm.info()
-        # oe4 = OE()
-        # oe4.set_empty(ALPHA=0)
-        # dcm.append(oe4)
-        # oe5 = (OE())
-        # oe5.set_empty(ALPHA=90)
-        # dcm.append(oe5)
-        print("total: %d, good: %d, lost: %d"%(beam.nrays(nolost=0),beam.nrays(nolost=1), beam.nrays(nolost=2) ))
-        beam = None
-        beam = Beam()
-        print("total: %d, good: %d, lost: %d"%(beam.nrays(nolost=0),beam.nrays(nolost=1), beam.nrays(nolost=2) ))
-        print("\n\n")
+        if 0: # test duplicate elements
+            src1 = src.duplicate()
+            src1.NPOINT=15000
+            print("\n\n>>> orig NPOINT=%d, copy NPOINT=%d"%(src.NPOINT,src1.NPOINT))
+
+            print("\n\n")
+            oen = OE()
+            oen.T_IMAGE = 1.00
+            oen_bis = oen.duplicate()
+            oen_bis.T_IMAGE = 2.0
+            print("\n\n>>> orig T_IMAGE=%f, copy T_IMAGE=%f"%(oen.T_IMAGE,oen_bis.T_IMAGE))
+
+        if 0: # test plotxy
+            tkt = beam.plotxy(1,3,nbins_h=3,nbins_v=3)
+            print(tkt)
+            print("H left",tkt["bin_h_left"])
+            print("H righ",tkt["bin_h_right"])
+            print("H cent",tkt["bin_h_center"])
+            print("H edges",tkt["bin_h_edges"])
+            print("H shape: ",tkt["histogram"].shape)
+
