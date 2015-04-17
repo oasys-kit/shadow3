@@ -60,6 +60,6 @@ echo "      CLEANING        "
 echo "**********************"
 
 shopt -s extglob
-/bin/rm !(README.txt|primer.sh|*.inp)
+/bin/rm !(README.txt|primer.sh|*.inp|*.ws|*.py)
 
 

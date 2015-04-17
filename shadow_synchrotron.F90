@@ -2772,7 +2772,12 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
         sigmaXp = epsi_Xold/sigmaX    ! true only at waist, use epsi_xOld as it has been redefined :(
         rSigmaX = sqrt( (epsi_wX**2) * (sigmaXp**2) + sigmaX**2 ) 
         rSigmaXp = sigmaXp
-        rhoX = epsi_wx * sigmaXp**2 / (rSigmaX * rSigmaXp) 
+        if (abs(rSigmaX*rSigmaXp) .lt. 1e-15) then  !no emittance
+            rhoX = 0.0
+        else
+            rhoX = epsi_wx * sigmaXp**2 / (rSigmaX * rSigmaXp) 
+        endif
+        
         CALL BINORMAL (rSigmaX, rSigmaXp, rhoX, XXX, E_BEAM(1), istar1)
     endif
 
@@ -2784,7 +2789,11 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
         sigmaZp = epsi_Zold/sigmaZ
         rSigmaZ = sqrt( (epsi_wZ**2) * (sigmaZp**2) + sigmaZ**2 ) 
         rSigmaZp = sigmaZp
-        rhoZ = epsi_wZ * SigmaZp**2 /(rSigmaZ*rSigmaZp)
+        if (abs(rSigmaZ*rSigmaZp) .lt. 1e-15) then  !no emittance
+            rhoZ = 0.0
+        else
+            rhoZ = epsi_wZ * SigmaZp**2 /(rSigmaZ*rSigmaZp)
+        end if
         CALL BINORMAL (rSigmaZ, rSigmaZp, rhoZ, ZZZ, E_BEAM(3), istar1)
     endif
 

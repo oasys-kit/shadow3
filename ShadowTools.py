@@ -429,7 +429,7 @@ def histo1_old(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,
   return ticket
 
 
-def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,viewer='okular',**kwargs):
+def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,title="",viewer='okular',**kwargs):
   """
   A plotxy implemented for gnuplot.
   It uses Shadow.beam.plotxy() for calculations.
@@ -446,7 +446,8 @@ def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,viewer='okular',**kwarg
   :param kwargs: keywords to be passed to Shadow.beam.plotxy()
   :return: the dictionary produced by Shadow.beam.plotxy with some keys added
   """
-  title = "plotxy"
+  if title == "":
+      title = "plotxy"
 
   if isinstance(beam,dict):
     tkt = beam
@@ -634,7 +635,7 @@ def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,viewer='okular',**kwarg
   return tkt
 
 
-def plotxy(beam,col_h,col_v, nofwhm=1, **kwargs):
+def plotxy(beam,col_h,col_v, nofwhm=1, title="", **kwargs):
   """
 
   plotxy implementation using matplotlib.
@@ -647,7 +648,8 @@ def plotxy(beam,col_h,col_v, nofwhm=1, **kwargs):
   :param kwargs: keywrods passed to Shadow.Beam.plotxy
   :return: the dictionary returned by Shadow.beam.plotxy() with some added keys.
   """
-  title = "plotxy"
+  if title == "":
+      title = "plotxy"
 
   if isinstance(beam,dict):
     tkt = beam
