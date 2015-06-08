@@ -3,6 +3,7 @@ import Shadow
 import Shadow.ShadowLibExtensions as sd
 import sys
 import inspect
+import os
 
 try:
     import matplotlib.pylab as plt
