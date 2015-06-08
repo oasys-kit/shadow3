@@ -589,6 +589,8 @@ class Beam(ShadowLib.Beam):
 
     It uses histogram2d for calculations
 
+    Note that this Shadow.Beam.histo2 was previously called Shadow.Beam.plotxy
+
     :param col_h: the horizontal column
     :param col_v: the vertical column
     :param nbins: number of bins
@@ -679,50 +681,6 @@ class Beam(ShadowLib.Beam):
       ticket = self.histo2(*args,**kwargs)
       return(ticket)
 
-#
-# TODO:  REMOVE THIS CLASS - START
-#
-class GeometricSource(ShadowLib.Source):
-  def __init__(self):
-    ShadowLib.Source.__init__(self)
-
-  def setNumberRaysInit(self,nRays=5000,seed=6775431):
-    self.N = nRays
-    if(seed%2==0): seed += 1
-    self.ISTAR1 = seed
-    self.NCOL = 18 # shadow3 it will be rewritten anyway
-
-  def setSpaceDistribution(self,transverse='gauss',longitude='no',param=numpy.zeros(3)):
-    distTran = {'point':0 ,'rectangle':1,'ellipse':2,'gauss':3}
-    distLong = {'no':1 ,'flat':2,'gauss':3}#,'synchrotron':4} synchrotron implemented in a different class
-    try:
-      self.FSOUR = distType[transverse]
-      self.FSOURCE_DEPTH = distType[longitude]
-
-      if self.FSOUR in [1,2]:
-        self.WXSOU = param[0]
-        self.WZSOU = param[1]
-      if self.FSOUR==3:
-        self.SIGMAX = param[0]
-        self.SIGMAZ = param[1]
-
-      if self.FSOURCE_DEPTH==2:
-        self.WYSOU = param[2]
-      if self.FSOURCE_DEPTH==3:
-        self.SIGMAY = param[2]
-
-    except KeyError:
-      print ('setSpaceDistribution: wrong distribution name')
-
-class geometricSource(GeometricSource):
-  def __init__(self):
-    print(' DEPRECATION WARNING: Use GeometricSource ')
-    GeometricSource.__init__(self)
-#
-# TODO:  REMOVE THIS CLASS - END
-#
-
-
 class OE(ShadowLib.OE):
   def __init__(self):
     ShadowLib.OE.__init__(self)
@@ -768,12 +726,10 @@ class OE(ShadowLib.OE):
 
     return self
 
-    #SCR_NUMBER automastically set
-
   def set_empty(self,T_INCIDENCE=0,T_REFLECTION=180.0,T_SOURCE=0.0,T_IMAGE=0.0,ALPHA=0.0):
     """
-    Defines an empty optical element (useful as an arm, eg. to rotate reference frames)
-    By default, there is no change
+    Defines an empty optical element (useful as an arm, e.g. to rotate reference frames)
+    By default, there is no change in the optical axis direction.
 
     :param T_INCIDENCE: incidence angle (default=0)
     :param T_REFLECTION: reflection angle (default=180)
@@ -790,315 +746,315 @@ class OE(ShadowLib.OE):
     self.ALPHA = ALPHA
     return self
 
+  # #
+  # # TODO: REMOVE START HERE
+  # #
+  # def setOutput(self,fwrite=0):
+  #   self.FWRITE = fwrite
+  #   return self
   #
-  # TODO: REMOVE START HERE
+  # def setFrameOfReference(self,source_distance=10.0,image_distance=20.0,source_angle=10.0,image_angle=10.0,alpha=0.0):
+  #   self.T_SOURCE     = source_distance
+  #   self.T_IMAGE      = image_distance
+  #   self.T_INCIDENCE  = source_angle
+  #   self.T_REFLECTION = image_angle
+  #   self.ALPHA        = alpha
+  #   return self
   #
-  def setOutput(self,fwrite=0):
-    self.FWRITE = fwrite
-    return self
-
-  def setFrameOfReference(self,source_distance=10.0,image_distance=20.0,source_angle=10.0,image_angle=10.0,alpha=0.0):
-    self.T_SOURCE     = source_distance
-    self.T_IMAGE      = image_distance
-    self.T_INCIDENCE  = source_angle
-    self.T_REFLECTION = image_angle
-    self.ALPHA        = alpha
-    return self
-
-  def setSeed(self,istar=12345701):
-    self.ISTAR1       = istar
-    return self
-
-  def setConvex(self):
-    self.F_CONVEX = 1
-    return self
-
-  def setConcave(self):
-    self.F_CONVEX = 0
-    return self
-
-  def setCylindric(self,cyl_ang=0.0):
-    self.FCYL = 1
-    self.CIL_ANG = cyl_ang
-    return self
-
-  def unsetCylinder(self):
-    self.FCYL = 0
-    return self
-
-  def setAutoFocus(self,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.F_EXT = 0
-    self.F_DEFAULT = f_default
-    if f_default==0:
-      self.SSOUR = ssour
-      self.SIMAG = simag
-      self.THETA = theta
-    return self
-
-  def unsetReflectivity(self):
-    self.F_REFLEC = 0
-    return self
-
-  def setReflectivityFull(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
-    self.F_REFLEC = 1
-    self.F_REFL = f_refl
-    self.FILE_REFL = file_refl
-    self.ALFA = rparams[0]
-    self.GAMMA = rparams[1]
-    self.F_THICK = f_thick
-    return self
-
-  def setReflectivityScalar(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
-    self.F_REFLEC = 2
-    self.F_REFL = f_refl
-    self.FILE_REFL = file_refl
-    self.F_THICK = f_thick
-    return self
-
-  def setMultilayer(self,f_reflec=1,file_refl='GAAS.SHA',f_thick=0):
-    self.F_REFLEC = f_reflec
-    self.F_REFL = 2
-    self.FILE_REFL = file_refl
-    self.F_THICK = f_thick
-    return self
-
-  def setSpheric(self,rmirr=20.0):
-    self.FMIRR = 1
-    self.F_EXT = 1
-    self.RMIRR = rmirr
-    return self
-
-  def setSphericAuto(self,fparams=None):#):f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 1
-    if fparams == None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-  def setEllipsoid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
-    self.FMIRR = 2
-    self.F_EXT = 1
-    self.ELL_THE = ell_the
-    self.AXMAJ = axmaj
-    self.AXMIN = axmin
-    return self
-
-  def setEllipsoidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 2
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-  def setToroid(self,f_torus=0,r_maj=0.0,r_min=0.0):
-    self.FMIRR = 3
-    self.F_EXT = 1
-    self.F_TORUS = f_torus
-    self.R_MAJ = r_maj
-    self.R_MIN = r_min
-    return self
-
-  def setToroidAuto(self,f_torus=0,r_maj=0.0,r_min=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 3
-    self.F_TORUS = f_torus
-    self.R_MAJ = r_maj
-    self.R_MIN = r_min
-    self.setAutoFocus(f_default,ssour,simag,theta)
-    return self
-
-  def setParaboloid(self,f_side=1,param=0.0):
-    self.FMIRR = 4
-    self.F_EXT = 1
-    self.F_SIDE = f_side
-    self.PARAM = param
-    return self
-
-  def setParaboloidAuto(self,f_side=1,fparams=None):#f_side=1,param=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0,f_side=0):
-    self.FMIRR = 4
-    self.F_SIDE = f_side
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparam[0],simag=fparam[1],theta=fparams[2])
-    return self
-
-  def setPlane(self):
-    self.FMIRR = 5
-    self.F_EXT = 1
-    return self
-
-  def setCodlingSlit(self,cod_len=0.0,cod_wid=0.0): # HERE ASK MANOLO, always 1 or 0
-    self.FMIRR = 6
-    self.F_EXT = 1
-    self.COD_LEN = 0.0
-    self.COD_WID = 0.0
-    return self
-
-  def setHyperboloid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
-    self.FMIRR = 7
-    self.F_EXT = 1
-    self.ELL_THE = ell_the
-    self.AXMAJ = axmaj
-    self.AXMIN = axmin
-    return self
-
-  def setHyperboloidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
-    self.FMIRR = 2
-    if fparams==None:
-      self.setAutoFocus(1)
-    else:
-      self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
-    return self
-
-  def setCone(self,cone_a=0.0):
-    self.FMIRR = 8
-    self.F_EXT = 1
-    self.CONE_A = cone_a
-    return self
-
-  def setPoly(self,file_mir=''):
-    self.FMIRR = 9
-    self.F_EXT = 1
-    self.FILE_MIR = file_mir
-    return self
-
-  def setCCC(self,ccc=numpy.array([1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64)):
-    self.FMIRR = 10
-    self.F_EXT = 1
-    self.CCC[:] = ccc[:]
-    return self
-
-  def setRipple(self,f_g_s=0,xyAmpWavPha=numpy.array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64),file_rip=''):
-    self.F_RIPPLE = 1
-    self.F_G_S = f_g_s
-    self.X_RIP_AMP = xyAmpWavPha[0]
-    self.X_RIP_WAV = xyAmpWavPha[1]
-    self.X_PHASE   = xyAmpWavPha[2]
-    self.Y_RIP_AMP = xyAmpWavPha[3]
-    self.Y_RIP_WAV = xyAmpWavPha[4]
-    self.Y_PHASE   = xyAmpWavPha[5]
-    self.FILE_RIP  = file_rip
-    return self
-
-  def setDimensions(self,fshape=1,params=numpy.zeros(4,dtype=numpy.float64)):
-    self.FHIT_C = 1
-    self.FSHAPE = fshape
-    self.RLEN1  = params[0]
-    self.RLEN2  = params[1]
-    self.RWIDX1 = params[2]
-    self.RWIDX2 = params[3]
-    #TODO set self.FHIT_C = 0 elsewhere
-    return self
-
-  def setReflector(self):
-    self.F_REFRACT = 0
-    return self
-
-  def setRefractor(self,r_ind_obj = 1.0,r_ind_ima = 1.0,r_attenuation_obj = 0.0,r_attenuation_ima = 0.0):
-    self.F_REFRACT = 1
-    self.R_IND_OBJ = r_ind_obj
-    self.R_IND_IMA = r_ind_ima
-    self.R_ATTENUATION_OBJ = r_attenuation_obj
-    self.R_ATTENUATION_IMA = r_attenuation_ima
-    return self
-
-  def unsetCrystal(self):
-    self.F_CRYSTAL = 0
-    return self
-
-  def setCrystal(self,file_refl=b'',a_bragg=0.0):
-    self.F_CRYSTAL = 1
-    self.FILE_REFL = file_refl
-    self.F_REFLECT = 0
-
-    if a_bragg!=0.0:
-      self.F_BRAGG_A = 1
-      self.A_BRAGG = a_bragg
-    return self
-
-  def setJohansson(self,r_johansson=None):
-    self.F_JOHANSSON = 1
-    #TODO set self.F_JOHANSSON = 0 elsewhere
-    if r_johansson!=None:
-      self.F_EXT = 1
-      self.R_JOHANSSON=r_johansson
-    else:
-      self.F_EXT = 0
-    return self
-
-  def setGratingRulingConstant(self,f_ruling=1,ruling=0.0):
-    self.F_GRATING = 1
-    self.F_RULING = f_ruling
-    self.RULING = ruling
-    return self
-
-  def setGratingHolographic(self,holo_params=numpy.zeros(7,dtype=numpy.float64),f_pw=2,f_pw_c=0,f_virtual=0):
-    self.F_GRATING = 1
-    self.F_RULING = 2
-    self.HOLO_R1 = holo_params[0]
-    self.HOLO_R2 = holo_params[1]
-    self.HOLO_DEL = holo_params[2]
-    self.HOLO_GAM = holo_params[3]
-    self.HOLO_W = holo_params[4]
-    self.HOLO_RT1 = holo_params[5]
-    self.HOLO_RT2 = holo_params[6]
-    self.F_PW = f_pw
-    self.F_PW_C = f_pw_c
-    self.F_VIRTUAL = f_virtual
-    return self
-
-  def setGratingFan(self,azim_fan=0.0,dist_fan=0.0,coma_fac=0.0):
-    self.F_GRATING = 1
-    self.F_RULING = 3
-    self.AZIM_FAN = azim_fan
-    self.DIST_FAN = dist_fan
-    self.COMA_FAC = coma_fac
-    return self
-
-  def setGratingReserved(self):
-    self.F_GRATING = 1
-    self.F_RULING = 4
-    return self
-
-  def setGratingPolynomial(self,poly_params=numpy.zeros(5,dtype=numpy.float64),f_rul_abs=0):
-    self.F_GRATING = 1
-    self.F_RULING = 5
-    self.F_RUL_ABS = f_rul_abs
-    self.RULING = poly_params[0]
-    self.RUL_A1 = poly_params[1]
-    self.RUL_A2 = poly_params[2]
-    self.RUL_A3 = poly_params[3]
-    self.RUL_A4 = poly_params[4]
-    return self
-
-  def setMosaic(self,mosaic_seed=4732093,spread_mos=0.0,thickness=0.0):
-    self.F_MOSAIC = 1
-    self.MOSAIC_SEED = mosaic_seed
-    self.SPREAD_MOS = spread_mos
-    self.THICKNESS = thickness
-    return self
-
-  def setAutoTuning(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0):
-    self.F_CENTRAL = 1
-    self.F_PHOT_CENT = f_phot_cent
-    self.PHOT_CENT = phot_cent
-    self.R_LAMBDA = r_lambda
-    return self
-
-  def setAutoMonochromator(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0,f_mono=0,f_hunt=1,hparam=numpy.zeros(3,dtype=numpy.float64)):
-    self.setAutoTuning(f_phot_cent=f_phot_cent,phot_cent=phot_cent,r_lambda=r_lambda)
-    self.F_MONO = f_mono
-    self.F_HUNT = f_hunt
-    self.HUNT_H = hparam[0]
-    self.HUNT_L = hparam[1]
-    self.BLAZE = hparam[2]
-    return self
-
+  # def setSeed(self,istar=12345701):
+  #   self.ISTAR1       = istar
+  #   return self
   #
-  # TODO: REMOVE END HERE
+  # def setConvex(self):
+  #   self.F_CONVEX = 1
+  #   return self
   #
+  # def setConcave(self):
+  #   self.F_CONVEX = 0
+  #   return self
+  #
+  # def setCylindric(self,cyl_ang=0.0):
+  #   self.FCYL = 1
+  #   self.CIL_ANG = cyl_ang
+  #   return self
+  #
+  # def unsetCylinder(self):
+  #   self.FCYL = 0
+  #   return self
+  #
+  # def setAutoFocus(self,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.F_EXT = 0
+  #   self.F_DEFAULT = f_default
+  #   if f_default==0:
+  #     self.SSOUR = ssour
+  #     self.SIMAG = simag
+  #     self.THETA = theta
+  #   return self
+  #
+  # def unsetReflectivity(self):
+  #   self.F_REFLEC = 0
+  #   return self
+  #
+  # def setReflectivityFull(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
+  #   self.F_REFLEC = 1
+  #   self.F_REFL = f_refl
+  #   self.FILE_REFL = file_refl
+  #   self.ALFA = rparams[0]
+  #   self.GAMMA = rparams[1]
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  # def setReflectivityScalar(self,f_refl=0,file_refl='GAAS.SHA',rparams=numpy.zeros(2,dtype=numpy.float64),f_thick=0):
+  #   self.F_REFLEC = 2
+  #   self.F_REFL = f_refl
+  #   self.FILE_REFL = file_refl
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  # def setMultilayer(self,f_reflec=1,file_refl='GAAS.SHA',f_thick=0):
+  #   self.F_REFLEC = f_reflec
+  #   self.F_REFL = 2
+  #   self.FILE_REFL = file_refl
+  #   self.F_THICK = f_thick
+  #   return self
+  #
+  # def setSpheric(self,rmirr=20.0):
+  #   self.FMIRR = 1
+  #   self.F_EXT = 1
+  #   self.RMIRR = rmirr
+  #   return self
+  #
+  # def setSphericAuto(self,fparams=None):#):f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 1
+  #   if fparams == None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  # def setEllipsoid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
+  #   self.FMIRR = 2
+  #   self.F_EXT = 1
+  #   self.ELL_THE = ell_the
+  #   self.AXMAJ = axmaj
+  #   self.AXMIN = axmin
+  #   return self
+  #
+  # def setEllipsoidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 2
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  # def setToroid(self,f_torus=0,r_maj=0.0,r_min=0.0):
+  #   self.FMIRR = 3
+  #   self.F_EXT = 1
+  #   self.F_TORUS = f_torus
+  #   self.R_MAJ = r_maj
+  #   self.R_MIN = r_min
+  #   return self
+  #
+  # def setToroidAuto(self,f_torus=0,r_maj=0.0,r_min=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 3
+  #   self.F_TORUS = f_torus
+  #   self.R_MAJ = r_maj
+  #   self.R_MIN = r_min
+  #   self.setAutoFocus(f_default,ssour,simag,theta)
+  #   return self
+  #
+  # def setParaboloid(self,f_side=1,param=0.0):
+  #   self.FMIRR = 4
+  #   self.F_EXT = 1
+  #   self.F_SIDE = f_side
+  #   self.PARAM = param
+  #   return self
+  #
+  # def setParaboloidAuto(self,f_side=1,fparams=None):#f_side=1,param=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0,f_side=0):
+  #   self.FMIRR = 4
+  #   self.F_SIDE = f_side
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparam[0],simag=fparam[1],theta=fparams[2])
+  #   return self
+  #
+  # def setPlane(self):
+  #   self.FMIRR = 5
+  #   self.F_EXT = 1
+  #   return self
+  #
+  # def setCodlingSlit(self,cod_len=0.0,cod_wid=0.0): # HERE ASK MANOLO, always 1 or 0
+  #   self.FMIRR = 6
+  #   self.F_EXT = 1
+  #   self.COD_LEN = 0.0
+  #   self.COD_WID = 0.0
+  #   return self
+  #
+  # def setHyperboloid(self,ell_the=0.0,axmaj=0.0,axmin=0.0):
+  #   self.FMIRR = 7
+  #   self.F_EXT = 1
+  #   self.ELL_THE = ell_the
+  #   self.AXMAJ = axmaj
+  #   self.AXMIN = axmin
+  #   return self
+  #
+  # def setHyperboloidAuto(self,fparams=None):#ell_the=0.0,axmaj=0.0,axmin=0.0,f_default=0,ssour=0.0,simag=0.0,theta=0.0):
+  #   self.FMIRR = 2
+  #   if fparams==None:
+  #     self.setAutoFocus(1)
+  #   else:
+  #     self.setAutoFocus(0,ssour=fparams[0],simag=fparams[1],theta=fparams[2])
+  #   return self
+  #
+  # def setCone(self,cone_a=0.0):
+  #   self.FMIRR = 8
+  #   self.F_EXT = 1
+  #   self.CONE_A = cone_a
+  #   return self
+  #
+  # def setPoly(self,file_mir=''):
+  #   self.FMIRR = 9
+  #   self.F_EXT = 1
+  #   self.FILE_MIR = file_mir
+  #   return self
+  #
+  # def setCCC(self,ccc=numpy.array([1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64)):
+  #   self.FMIRR = 10
+  #   self.F_EXT = 1
+  #   self.CCC[:] = ccc[:]
+  #   return self
+  #
+  # def setRipple(self,f_g_s=0,xyAmpWavPha=numpy.array([0.0,0.0,0.0,0.0,0.0,0.0],dtype=numpy.float64),file_rip=''):
+  #   self.F_RIPPLE = 1
+  #   self.F_G_S = f_g_s
+  #   self.X_RIP_AMP = xyAmpWavPha[0]
+  #   self.X_RIP_WAV = xyAmpWavPha[1]
+  #   self.X_PHASE   = xyAmpWavPha[2]
+  #   self.Y_RIP_AMP = xyAmpWavPha[3]
+  #   self.Y_RIP_WAV = xyAmpWavPha[4]
+  #   self.Y_PHASE   = xyAmpWavPha[5]
+  #   self.FILE_RIP  = file_rip
+  #   return self
+  #
+  # def setDimensions(self,fshape=1,params=numpy.zeros(4,dtype=numpy.float64)):
+  #   self.FHIT_C = 1
+  #   self.FSHAPE = fshape
+  #   self.RLEN1  = params[0]
+  #   self.RLEN2  = params[1]
+  #   self.RWIDX1 = params[2]
+  #   self.RWIDX2 = params[3]
+  #   #TODO set self.FHIT_C = 0 elsewhere
+  #   return self
+  #
+  # def setReflector(self):
+  #   self.F_REFRACT = 0
+  #   return self
+  #
+  # def setRefractor(self,r_ind_obj = 1.0,r_ind_ima = 1.0,r_attenuation_obj = 0.0,r_attenuation_ima = 0.0):
+  #   self.F_REFRACT = 1
+  #   self.R_IND_OBJ = r_ind_obj
+  #   self.R_IND_IMA = r_ind_ima
+  #   self.R_ATTENUATION_OBJ = r_attenuation_obj
+  #   self.R_ATTENUATION_IMA = r_attenuation_ima
+  #   return self
+  #
+  # def unsetCrystal(self):
+  #   self.F_CRYSTAL = 0
+  #   return self
+  #
+  # def setCrystal(self,file_refl=b'',a_bragg=0.0):
+  #   self.F_CRYSTAL = 1
+  #   self.FILE_REFL = file_refl
+  #   self.F_REFLECT = 0
+  #
+  #   if a_bragg!=0.0:
+  #     self.F_BRAGG_A = 1
+  #     self.A_BRAGG = a_bragg
+  #   return self
+  #
+  # def setJohansson(self,r_johansson=None):
+  #   self.F_JOHANSSON = 1
+  #   #TODO set self.F_JOHANSSON = 0 elsewhere
+  #   if r_johansson!=None:
+  #     self.F_EXT = 1
+  #     self.R_JOHANSSON=r_johansson
+  #   else:
+  #     self.F_EXT = 0
+  #   return self
+  #
+  # def setGratingRulingConstant(self,f_ruling=1,ruling=0.0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = f_ruling
+  #   self.RULING = ruling
+  #   return self
+  #
+  # def setGratingHolographic(self,holo_params=numpy.zeros(7,dtype=numpy.float64),f_pw=2,f_pw_c=0,f_virtual=0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 2
+  #   self.HOLO_R1 = holo_params[0]
+  #   self.HOLO_R2 = holo_params[1]
+  #   self.HOLO_DEL = holo_params[2]
+  #   self.HOLO_GAM = holo_params[3]
+  #   self.HOLO_W = holo_params[4]
+  #   self.HOLO_RT1 = holo_params[5]
+  #   self.HOLO_RT2 = holo_params[6]
+  #   self.F_PW = f_pw
+  #   self.F_PW_C = f_pw_c
+  #   self.F_VIRTUAL = f_virtual
+  #   return self
+  #
+  # def setGratingFan(self,azim_fan=0.0,dist_fan=0.0,coma_fac=0.0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 3
+  #   self.AZIM_FAN = azim_fan
+  #   self.DIST_FAN = dist_fan
+  #   self.COMA_FAC = coma_fac
+  #   return self
+  #
+  # def setGratingReserved(self):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 4
+  #   return self
+  #
+  # def setGratingPolynomial(self,poly_params=numpy.zeros(5,dtype=numpy.float64),f_rul_abs=0):
+  #   self.F_GRATING = 1
+  #   self.F_RULING = 5
+  #   self.F_RUL_ABS = f_rul_abs
+  #   self.RULING = poly_params[0]
+  #   self.RUL_A1 = poly_params[1]
+  #   self.RUL_A2 = poly_params[2]
+  #   self.RUL_A3 = poly_params[3]
+  #   self.RUL_A4 = poly_params[4]
+  #   return self
+  #
+  # def setMosaic(self,mosaic_seed=4732093,spread_mos=0.0,thickness=0.0):
+  #   self.F_MOSAIC = 1
+  #   self.MOSAIC_SEED = mosaic_seed
+  #   self.SPREAD_MOS = spread_mos
+  #   self.THICKNESS = thickness
+  #   return self
+  #
+  # def setAutoTuning(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0):
+  #   self.F_CENTRAL = 1
+  #   self.F_PHOT_CENT = f_phot_cent
+  #   self.PHOT_CENT = phot_cent
+  #   self.R_LAMBDA = r_lambda
+  #   return self
+  #
+  # def setAutoMonochromator(self,f_phot_cent=0,phot_cent=5000.0,r_lambda=100.0,f_mono=0,f_hunt=1,hparam=numpy.zeros(3,dtype=numpy.float64)):
+  #   self.setAutoTuning(f_phot_cent=f_phot_cent,phot_cent=phot_cent,r_lambda=r_lambda)
+  #   self.F_MONO = f_mono
+  #   self.F_HUNT = f_hunt
+  #   self.HUNT_H = hparam[0]
+  #   self.HUNT_L = hparam[1]
+  #   self.BLAZE = hparam[2]
+  #   return self
+  #
+  # #
+  # # TODO: REMOVE END HERE
+  # #
 
 
   def to_dictionary(self):
@@ -2786,7 +2742,7 @@ if __name__ == '__main__':
     #
     # test
     #
-    do_test = 8 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
+    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
                 # 6=ID30B  # 7=ID23-2
 
     if ((do_test == 1) or (do_test == 2)):

@@ -1595,7 +1595,7 @@ if __name__=="__main__":
       # tkt = plotxy("begin.dat",1,3,nbins=nbins, nolost=1, \
       #                xrange=[-0.015,0.015], yrange=[-0.002,0.002])
 
-  do_script = 1
+  do_script = 0
   if do_script:
     old_dir = os.getcwd()
     os.chdir("/scisoft/users/srio/Working/RADIASOFT/shadow")
