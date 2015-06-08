@@ -1,7 +1,9 @@
 import numpy
+import Shadow
 import Shadow.ShadowLibExtensions as sd
 import sys
-import os
+import inspect
+
 try:
     import matplotlib.pylab as plt
     from matplotlib import collections
@@ -10,10 +12,10 @@ except ImportError:
     print(sys.exc_info()[1]) 
     pass
 
+#TODO: remove ShadowToolsPrivate
 import Shadow.ShadowToolsPrivate as stp
 from Shadow.ShadowToolsPrivate import Histo1_Ticket as Histo1_Ticket
 from Shadow.ShadowToolsPrivate import plotxy_Ticket as plotxy_Ticket
-import os
 
 #A2EV = 50676.89919462
 codata_h = numpy.array(6.62606957e-34)
@@ -432,19 +434,19 @@ def histo1_old(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,
 def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,title="",viewer='okular',**kwargs):
   """
   A plotxy implemented for gnuplot.
-  It uses Shadow.beam.plotxy() for calculations.
+  It uses Shadow.beam.histo2() for calculations.
   It creates files for gnuplot (plotxy.gpl and plotxy_*.dat)
   It can run gnuplot (system call) and display ps or pdf outputs
 
-  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.plotxy
+  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.histo2
   :param col_h: the H column for the plot. Irrelevant if beam is a dictionary
   :param col_v: the V column for the plot. Irrelevant if beam is a dictionary
   :param execute: set to 1 to make a system call to execute gnuplot (default=1)
   :param ps: set to 1 to get postscript output (irrelevant if pdf=1
   :param pdf: set to 1 for pdf output (prioritaire over ps)
   :param viewer: set to the ps or pdf viewer (default='okular')
-  :param kwargs: keywords to be passed to Shadow.beam.plotxy()
-  :return: the dictionary produced by Shadow.beam.plotxy with some keys added
+  :param kwargs: keywords to be passed to Shadow.beam.histo2()
+  :return: the dictionary produced by Shadow.beam.histo2 with some keys added
   """
   if title == "":
       title = "plotxy"
@@ -459,7 +461,7 @@ def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,title="",viewer='okular
       beam1.load(beam)
       title += " - file: "+beam
       beam = beam1
-    tkt = beam.plotxy(col_h,col_v,**kwargs)
+    tkt = beam.histo2(col_h,col_v,**kwargs)
 
   f = open("plotxy_histtop.dat",'w')
   for i in range(tkt["nbins_h"]):
@@ -639,14 +641,14 @@ def plotxy(beam,col_h,col_v, nofwhm=1, title="", **kwargs):
   """
 
   plotxy implementation using matplotlib.
-  Calculations are done using Shadow.beam.plotxy()
+  Calculations are done using Shadow.beam.histo2()
 
-  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.plotxy
+  :param beam: it can be a SHADOW binary file, an instance of Shadow.Beam() or a dictionary from Shadow.Beam.histo2
   :param col_h: The column for the H coordinate in the plot (irrelevant of beam is a dictionary)
   :param col_v: The column for the H coordinate in the plot (irrelevant of beam is a dictionary)
   :param nofwhm: set to 0 to label the FWHM value in the plot (default do not label)
-  :param kwargs: keywrods passed to Shadow.Beam.plotxy
-  :return: the dictionary returned by Shadow.beam.plotxy() with some added keys.
+  :param kwargs: keywrods passed to Shadow.Beam.histo2
+  :return: the dictionary returned by Shadow.beam.histo2() with some added keys.
   """
   if title == "":
       title = "plotxy"
@@ -661,7 +663,7 @@ def plotxy(beam,col_h,col_v, nofwhm=1, title="", **kwargs):
       beam1.load(beam)
       title += " - file: "+beam
       beam = beam1
-    tkt = beam.plotxy(col_h,col_v,**kwargs)
+    tkt = beam.histo2(col_h,col_v,**kwargs)
 
 
   xtitle = "Column %d"%tkt["col_h"]
@@ -785,7 +787,7 @@ def plotxy(beam,col_h,col_v, nofwhm=1, title="", **kwargs):
   plt.show()
   return tkt
 
-#TODO: delete. Reimplemented using Shadow.Beam.plotxy()
+#TODO: delete. Reimplemented using Shadow.Beam.histo2()
 def plotxy_old(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange=None,nolost=0,title='PLOTXY',xtitle=None,ytitle=None,noplot=0,calfwhm=0,contour=0):
   '''
   Draw the scatter or contour or pixel-like plot of two columns of a Shadow.Beam instance or of a given shadow file, along with histograms for the intensity on the top and right side.
@@ -1373,9 +1375,170 @@ def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=
 
     return (xx,yy,zz)
 
+#
+#automatic creation of python scripts
+#
+
+def make_python_script_from_list(list_optical_elements,script_file=""):
+    """
+    program to build automatically a python script to run shadow3
+
+    the system is read from a list of instances of Shadow.Source and Shadow.OE
+
+      :argument list of optical_elements A python list with intances of Shadow.Source and Shadow.OE objects
+      :param script_file: a string with the name of the output file (default="", no output file)
+    :return: template with the script
+    """
+    template = """#
+# Python script to run shadow3. Created automatically with mk_script.py.
+#
+import Shadow
+
+# write (1) or not (0) SHADOW files start.xx end.xx star.xx
+iwrite = 0
+
+#
+# initialize shadow3 source (oe0) and beam
+#
+beam = Shadow.Beam()
+"""
+    n_elements = len(list_optical_elements)
+
+    for i,element in enumerate(list_optical_elements):
+        if isinstance(element,Shadow.Source):
+            template += "oe0 = Shadow.Source()\n"
+        elif isinstance(element,Shadow.OE):
+            template += "oe%d = Shadow.OE()\n"%(i)
+        else:
+            raise Exception("Error: Element not known")
+
+    template += "\n#\n#define variables (see source.nml and oe.nml for doc)\n#\n"
+
+    for ioe,oe1B in enumerate(list_optical_elements):
+        template += "\n"
+        if isinstance(oe1B,Shadow.Source):
+            oe1 = Shadow.Source()
+        elif isinstance(element,Shadow.OE):
+            oe1 = Shadow.OE()
+        else:
+            raise Exception("Error: Element not known")
+
+        memB = inspect.getmembers(oe1B)
+        mem = inspect.getmembers(oe1)
+        for i,var in enumerate(memB):
+            ivar = mem[i]
+            ivarB = memB[i]
+            if ivar[0].isupper():
+                if isinstance(ivar[1],numpy.ndarray):
+                    if (ivar[1] != ivarB[1]).all():
+                        # if isinstance(ivarB[1][0],numpy.bytes_):
+                        #     tmp1 = copy.deepcopy(ivarB[1])
+                        #     for j in range(10):
+                        #        tmp = re.sub('\s{2,}', ' ',str(ivarB[1][j]))
+                        #        tmp1[j] = tmp
+                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(tmp1)+"\n"
+                        # else:
+                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                        line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                        if ("SPECIFIED" in line):
+                            pass
+                        else:
+                            template += line
+                else:
+                    if ivar[1] != ivarB[1]:
+                        if isinstance(ivar[1],(str,bytes)):
+                            line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1]).strip()+"\n"
+                            #line = re.sub('\s{2,}', ' ',line)
+                            if "SPECIFIED" in line:
+                                pass
+                            else:
+                                template += line
+                        else:
+                            line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                            template += line
+
+
+
+    template += """\n\n
+#Run SHADOW to create the source
+
+if iwrite:
+    oe0.write("start_py.00")
+
+beam.genSource(oe0)
+
+if iwrite:
+    oe0.write("end_py.00")
+    beam.write("begin.dat")
+"""
+
+    template_oe = """\n
+#
+#run optical element {0}
+#
+print("    Running optical element: %d"%({0}))
+if iwrite:
+    oe1.write("start_py.{1}")
+beam.traceOE(oe{0},{0})
+if iwrite:
+    oe1.write("end_py.{1}")
+    beam.write("star.{1}")
+"""
+
+    for i in range(1,n_elements):
+        template += template_oe.format(i,"%02d"%(i))
+
+#
+# display results (using ShadowTools, matplotlib needed)
+#
+    template += """\n
+Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,title="Real space")
+Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,title="Phase space X")
+Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,title="Phase space Z")
+    """
+
+    if script_file != "":
+        open(script_file, "wt").write(template)
+        print("File written to disk: %s"%(script_file))
+
+    return template
+
+
+def make_python_script_from_current_run(script_file=""):
+    """
+    program to build automatically a python script to run shadow3
+
+    the system is read from start.00 Aand systemfile.dat, that must exist in the current directory
+
+    srio@esrf.eu
+
+      :param script_file: a string with the name of the output file (default="", no output file)
+    :return: template with the script
+    """
+
+
+    #build the list of optical elements from the start,xx files of the current shadow3 run
+    list_optical_elements = []
+
+    sourceB = Shadow.Source()
+    sourceB.load("start.00")
+    list_optical_elements.append(sourceB)
+
+    for file in open("systemfile.dat","r").readlines():
+        if file!="":
+            oe = Shadow.OE()
+            oe.load(file.rstrip())
+            list_optical_elements.append(oe)
+
+    print("Number of elements (source+oes): %d" %(len(list_optical_elements)))
+
+    template = make_python_script_from_list(list_optical_elements,script_file=script_file)
+
+    return template
+
 
 if __name__=="__main__":
-
+  import os
 
   #
   #test waviness
@@ -1430,3 +1593,11 @@ if __name__=="__main__":
 
       # tkt = plotxy("begin.dat",1,3,nbins=nbins, nolost=1, \
       #                xrange=[-0.015,0.015], yrange=[-0.002,0.002])
+
+  do_script = 1
+  if do_script:
+    old_dir = os.getcwd()
+    os.chdir("/scisoft/users/srio/Working/RADIASOFT/shadow")
+    make_python_script_from_current_run(script_file="tmp.py")
+    os.system("python3 tmp.py")
+    os.chdir(old_dir)
