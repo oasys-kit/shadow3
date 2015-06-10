@@ -446,17 +446,14 @@ class Beam(ShadowLib.Beam):
       ticket['write'] = write
       ticket['factor'] = factor
       ticket['ref'] = ref
-
-
+      
       if ref==0:
-        x = self.getshonecol(nolost=nolost)
+        x = self.getshonecol(col, nolost=nolost)
         w = numpy.ones(len(x))
       else:
         x, w = self.getshcol((col,ref),nolost=nolost)
 
-
       if factor != 1.0: x *= factor
-
 
       # if nolost==0:
       #   t = numpy.where(a!=-3299)
@@ -483,11 +480,10 @@ class Beam(ShadowLib.Beam):
       if xrange == None:
           xrange = [x.min(), x.max() ]
 
-
       h,bins = numpy.histogram(x,bins=nbins,range=xrange,weights=w)
       #evaluate the histogram with squares of the weight for error calculations
       h2,bins2 = numpy.histogram(x,bins=nbins,range=xrange,weights=(w*w))
-
+  
       #Evaluation of histogram error.
       # See Pag 17 in Salvat, Fernandez-Varea and Sempau
       # Penelope, A Code System for Monte Carlo Simulation of
@@ -523,6 +519,7 @@ class Beam(ShadowLib.Beam):
       # output
       ticket['error'] = 0
       ticket['histogram'] = h
+      ticket['bins'] = bins
       ticket['histogram_sigma'] = h_sigma
       bin_center = bins[:-1]+(bins[1]-bins[0])*0.5
       ticket['bin_center'] = bin_center
@@ -531,6 +528,8 @@ class Beam(ShadowLib.Beam):
       ticket['xrange'] = xrange
       ticket['intensity'] = w.sum()
       ticket['fwhm'] = None
+      ticket['nrays'] = self.nrays(nolost=0)
+      ticket['good_rays'] = self.nrays(nolost=1)
 
       #for practical purposes, writes the points the will define the histogram area
       tmp_b = []
@@ -548,7 +547,7 @@ class Beam(ShadowLib.Beam):
       if h[tt].size > 1:
           binSize = bins[1]-bins[0]
           ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0])
-          ticket['fwhm_coordinates_h'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
+          ticket['fwhm_coordinates'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
 
       return ticket
 
