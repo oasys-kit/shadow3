@@ -1051,7 +1051,7 @@ def waviness_write(dic1,file="waviness.inp"):
     :return: None
     """
     f = open(file,'w')
-    f.write("%s"%(dic1["file"]))
+    f.write("%s\n"%(dic1["file"]))
     f.write("%d %d \n"%(dic1["npointx"],dic1["npointy"]) )
     f.write("%f %f \n"%(dic1["width"],dic1["xlength"]) )
     f.write("%d %f \n"%(dic1["nharmonics"],dic1["slp"]) )
