@@ -1963,6 +1963,10 @@ class CompoundOE():
         :param p0:distance source-first lens interface
         :param q0:distance last lens interface to image plane
         :param nlenses: number of lenses
+        :param slot_empty: number of empty slots (default=0)
+        :param radius:lens radius (for pherical, or radius at the tip for paraboloid)
+        :param thickness: lens thickness (piling thickness)
+        :param interthickness:lens thickness (distance between the two interfaces at the center of the lenses)
         :param surface_shape:1=sphere 4=paraboloid, 5=plane (other surfaces not yet implamented)
         :param convex_to_the_beam:convexity of the first interface exposed to the beam 0=No, 1=Yes
                                  the second interface has opposite convexity
@@ -1972,9 +1976,6 @@ class CompoundOE():
                 then the keywords refraction_index and attenuation_coefficient are not used.
         :param refraction_index: n (real) #ignored if prerefl_file points to file.
         :param attenuation_coefficient:mu (real); ignored if prerefl file points to file.
-        :param radius:lens radius (for pherical, or radius at the tip for paraboloid)
-        :param thickness: lens thickness (piling thickness)
-        :param interthickness:lens thickness (distance between the two interfaces at the center of the lenses)
         :param use_ccc:0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
         :return: self
         """
@@ -2031,6 +2032,10 @@ class CompoundOE():
                 (usually [p,0,0,...]
         :param q0 (scalar):distance last lens in each CRLto continuation plane
         :param nlenses (list): number of lenses
+        :param slots_empty (list): number of empty slots
+        :param radius (list):lens radius (for pherical, or radius at the tip for paraboloid)
+        :param thickness (list): lens thickness (piling thickness)
+        :param interthickness (list):lens thickness (distance between the two interfaces at the center of the lenses)
         :param surface_shape (list):1=sphere 4=paraboloid, 5=plane (other surfaces not yet implamented)
         :param convex_to_the_beam (list):convexity of the first interface exposed to the beam 0=No, 1=Yes
                                  the second interface has opposite convexity
@@ -2040,9 +2045,6 @@ class CompoundOE():
                 then the keywords refraction_index and attenuation_coefficient are not used.
         :param refraction_index (list): n (real) #ignored if prerefl_file points to file.
         :param attenuation_coefficient (list):mu (real); ignored if prerefl file points to file.
-        :param radius (list):lens radius (for pherical, or radius at the tip for paraboloid)
-        :param thickness (list): lens thickness (piling thickness)
-        :param interthickness (list):lens thickness (distance between the two interfaces at the center of the lenses)
         :param use_ccc (scalar):0=set shadow using surface shape (FMIRR=1,4,5), 1=set shadow using CCC coeffs (FMIRR=10)
         :return: self
         """

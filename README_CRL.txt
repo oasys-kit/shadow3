@@ -1,10 +1,14 @@
+--------------------------------------------------------------------------------
+
+                      CRLs and TRANSFOCATORS in SHADOW
 
 --------------------------------------------------------------------------------
-     CRLs in SHADOW...   Beta version, still in development....
      
               version 1: 2012-01-27  srio@esrf.eu
               version 2: 2012-05-16  srio@esrf.eu
               version 3: 2013-04-11  srio@esrf.eu  transfocator added
+              version 4: 2015-07-10  srio@esrf.eu  added command lines and 
+                                                   python scripts
 --------------------------------------------------------------------------------
 
 Contents:
@@ -96,12 +100,26 @@ data:
 
 STEP 1: Run the preprocessor (precrl) to create the SHADOW input file crl.01
         You can answer the questions manually (after entering "shadow3 prerefl")
-        or use the following: 
 
+STEP 2: Run SHADOW (runcrl)
+
+        shadow3> runcrl
+        File with source (default: begin.dat): begin.dat
+        File with CRL definition (default: crl.01): crl.01
+        File final image (star.xx type, default: final.01): final.01
+        ... 
+
+These steps can be run doing the following commands:
+
+echo -e "FDISTR =  5\nSIGMAX = 63.8e-4\nSIGMAY = 0.001\nCONE_MAX = 1e-5\nCONE_MIN = 0.0\nFSOUR =  3\nF_COLOR = 1\nPH1 = 14000.0"> start.00
+sed -n '/^#START crl_snigirev1996.inp/,/^#END crl_snigirev1996.inp/p' README_CRL.txt > crl_snigirev1996.inp
 shadow3 < crl_snigirev1996.inp 
 
-where: 
----------------------  start crl_snigirev1996.inp --------------------------
+where crl_snigirev1996.inp contains: 
+#START crl_snigirev1996.inp
+source
+systemfile
+
 precrl
 0
 1
@@ -123,18 +141,15 @@ precrl
 0
 crl.01
 
+
+runcrl
+begin.dat
+crl.01
+final.01
+
 exit
 
----------------------  end crl_snigirev1996.inp --------------------------
-
-
-STEP 2: Run SHADOW (runcrl)
-
-shadow3> runcrl
-File with source (default: begin.dat): begin.dat
-File with CRL definition (default: crl.01): crl.01
-File final image (star.xx type, default: final.01): final.01
-... 
+#END crl_snigirev1996.inp
 
 
 Notes: 
@@ -152,9 +167,6 @@ Use the corresponding Lens interface shape:
  4 - Paraboloid
  5 - Plane
  7 - Hyperboloid
-
-
-
 
 3) Transfocators
 ----------------
@@ -225,24 +237,205 @@ transfocators. See ShadowLibExtensions.py file for code and examples. The
 Syntax is the following: 
 
 lens = Shadow.CompoundOE()
-lens.append_lens(1000.0,1000.0,surface_shape=1,convex_to_the_beam=1,\
-    diameter=None,cylinder_angle=None,radius=1000.0,interthickness=5.0,\
-    refraction_index=1.5,attenuation_coefficient=0.0, use_ccc=0)
+lens.append_lens(...)
+
+crl = Shadow.CompoundOE()
+crl.append_crl(...)
+
+tf = Shadow.CompoundOE()
+tf.append_transfocator(...)
+
+The following commads will create and run the Snigirev example using the 
+CRL and the TRANSFOCATOR mode: 
+
+
+sed -n '/^#START crl_snigirev1996.py/,/^#END crl_snigirev1996.py/p' README_CRL.txt > crl_snigirev1996.py
+python3 crl_snigirev1996.py
+
+
+sed -n '/^#START transfocator_snigirev1996.py/,/^#END transfocator_snigirev1996.py/p' README_CRL.txt > transfocator_snigirev1996.py
+python3 transfocator_snigirev1996.py
+
+where the python scripts are: 
+
+#START crl_snigirev1996.py
+
+#
+# This is the CRL in Snigirev et al. Nature (1996)
+# 
+#
+#
+# For more information, see the file README_CRL.txt and documentation inside
+# ShadoeLibExtensions.py in the shadow3 distribution.
+#
+# 
+
+#import os
+import Shadow
+
+
+iwrite = 0
+
+#os.system("/bin/rm -r begin.dat star.* start.* end.* mirr.*")
+
+#
+# Source: Gaussian in real space, Conical in divergence space, Monochromatoic at 24keV
+#
+src = Shadow.Source()
+src.set_energy_monochromatic(14000.0)
+src.set_spatial_gauss(63.8e-4,63.8e-4)
+src.FDISTR = 5
+src.CONE_MAX = 1e-5
+src.CONE_MIN = 0.0
+if iwrite: src.write("start.00")
+
+beam = Shadow.Beam()
+
+beam.genSource(src)
+if iwrite: 
+    beam.write("begin.dat")
+    src.write("end.00")
+
+#
+# CRL 
+#
+
+# This graph shows a CRL of TWO lenses 
+# 
+#                                                                           
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++                 
+#                    *************** +++++++++++++++++                 
+#                  *  **************  +++++++++++++++ *                
+#                **    ***********     +++++++++++++   **              
+#              **       *********       +++++++++++      **            
+#           ***          *******         ++++++++          ***         
+#         **              *****           ++++++              **       
+#       **                 ***             ++++                 **     
+#     **                   ***             ++++                   **   
+#   **                     ***             ++++                   **   
+#     **                  *****            +++++                **     
+#       ***              *******           +++++              **       
+#          ***          *********         +++++++          ***         
+# Source      **       ***********      ++++++++++       **    Image
+#               ***   **************   ++++++++++++    **              
+#                  * ****************++++++++++++++++**                
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++                 
+#                   *****************+++++++++++++++++           
+#                         <-->
+#                         interthickness
+#                   <-- thickness -->
+# <-------p0------------>                             <----- q0 --->
+# 
+
 
 crl = Shadow.CompoundOE(name = 'crl_snigirev1996')
-crl.append_crl(crl_fs_before, crl_fs_after, nlenses=crl_nlenses, \
-    surface_shape=crl_shape, convex_to_the_beam=0,diameter=crl_diameter,\
-    prerefl_file=crl_file, refraction_index=refraction_index, \
-    attenuation_coefficient=attenuation_coefficient, \
-    cylinder_angle=crl_cylinder, radius=crl_r, interthickness=crl_interthickness,\
-    use_ccc=1)
+p0 = 3000.0
+q0 = 189.87
+crl_shape =  1 #  1=Sphere, 2=Ellipsoid, 4=Paraboloid, 5=Plane, 7=Hyperboloid
 
-tf = Shadow.CompoundOE(name='TF ID30B')
+crl.append_crl(p0, q0, nlenses=30, slots_empty=0, radius=300e-4, thickness=600e-4, interthickness=25e-4,
+    surface_shape=crl_shape, convex_to_the_beam=0, diameter=600e-4, cylinder_angle=0.0,
+    prerefl_file=None, refraction_index=0.99999720, attenuation_coefficient=28.0, \
+    use_ccc=0)
 
-tf.append_transfocator(tf_p0.tolist(), tf_q0.tolist(), nlenses=nlenses, \
-    radius=tf_radii,empty_slots=0, surface_shape=4, convex_to_the_beam=0, \
-    diameter=None, refraction_index=refraction_index, \
-    attenuation_coefficient=attenuation_coefficient, \
-    cylinder_angle=0.0,interthickness=50e-4,thickness=0.3,use_ccc=0)
+beam.traceCompoundOE(crl,write_start_files=iwrite,write_end_files=iwrite,write_star_files=iwrite)
+
+if iwrite: beam.write("final.01")
+
+Shadow.ShadowTools.plotxy(beam,1,3,nolost=1,nbins=151,yrange=[-0.01,0.01])
+#END crl_snigirev1996.py
+
+#START transfocator_snigirev1996.py
+
+#
+# This is the CRL in Snigirev et al. Nature (1996) defined as TRANSFOCATOR
+# (the 30 lenses have been divided in two CRL blocks of 20+10) 
+# 
+#
+# For more information, see the file README_CRL.txt and documentation inside
+# ShadoeLibExtensions.py in the shadow3 distribution.
+# 
+
+#import os
+import Shadow
+
+
+iwrite = 0
+
+#os.system("/bin/rm -r begin.dat star.* start.* end.* mirr.*")
+
+#
+# Source: Gaussian in real space, Conical in divergence space, Monochromatoic at 24keV
+#
+src = Shadow.Source()
+src.set_energy_monochromatic(14000.0)
+src.set_spatial_gauss(63.8e-4,63.8e-4)
+src.FDISTR = 5
+src.CONE_MAX = 1e-5
+src.CONE_MIN = 0.0
+if iwrite: src.write("start.00")
+
+beam = Shadow.Beam()
+
+beam.genSource(src)
+if iwrite: 
+    beam.write("begin.dat")
+    src.write("end.00")
+
+#
+# TRANSFOCATOR
+#
+
+#  Geometry of a single CRL within a transfocator
+#
+#              |<----------i-th CRL ------------>|
+#              |      .                  .       |                         
+#              |      .*********+++++++++.       |          
+#              |      . *******  +++++++ .       |            
+#              |      .  *****    +++++  .       |            
+#              |      .   ***      +++   .       |            
+#              |      .   ***      +++   .       |            
+#              |      .   ***      +++   .       |            
+#              |      .  *****    +++++  .       |            
+#              |      . *******  +++++++ .       |           
+#              |      .*********+++++++++.       |            
+#              |      .   <->            .       |
+#              |      . interthickness           |
+#              |      .<-------><------->.       |
+#              |      .          thickness       |
+#              |<---->.                  .<----->|
+#              |   p0 .                  . q0    |
+#
+#
+
+
+
+
+tf = Shadow.CompoundOE(name = 'transfocator_snigirev1996')
+p0 = [0.0,0.0] # alternatively set to [3000.0,0.0] and do not use tf.add_drift_space_upstream(3000.0)
+q0 = [0.0,0.0] # alternatively set to [0.0,189.87] and do not use tf.add_drift_space_downstream(189.87)
+surface_shape =  [1,1] #  1=Sphere, 2=Ellipsoid, 4=Paraboloid, 5=Plane, 7=Hyperboloid
+
+tf.append_transfocator(p0, q0, nlenses=[20,10], slots_empty=[0,0], radius=[300e-4,300e-4], thickness=[600e-4,600e-4], 
+    interthickness=[25e-4,25e-4],
+    surface_shape=surface_shape, convex_to_the_beam=0, diameter=[600e-4,600e-4], cylinder_angle=[0.0,0.0], 
+    prerefl_file=None, refraction_index=[0.99999720,0.99999720], attenuation_coefficient=[28.0,28.0], 
+    use_ccc=0)
+
+tf.add_drift_space_upstream(3000.0)
+tf.add_drift_space_downstream(189.87)
+
+beam.traceCompoundOE(tf,write_start_files=iwrite,write_end_files=iwrite,write_star_files=iwrite)
+
+if iwrite: beam.write("final.01")
+
+Shadow.ShadowTools.plotxy(beam,1,3,nolost=1,nbins=151,yrange=[-0.01,0.01])
+#END transfocator_snigirev1996.py
+
 
 ------------------------------------------------------------------------
