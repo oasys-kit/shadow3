@@ -260,17 +260,17 @@ def histo1(beam, col, notitle=0, nofwhm=0,  bar=0,  **kwargs):
 
     if tk2["fwhm"] != None:
         hh = 0.5*numpy.max(tk2["histogram"])
-        lines = [ [ (tk2["fwhm_coordinates_h"][0],hh), \
-                    (tk2["fwhm_coordinates_h"][1],hh) ]]
+        lines = [ [ (tk2["fwhm_coordinates"][0],hh), \
+                    (tk2["fwhm_coordinates"][1],hh) ]]
         print(lines)
         lc = collections.LineCollection(lines,color='red',linewidths=2)
         ax.add_collection(lc)
         if nofwhm != 1:
-            if tk2["fwhm_coordinates_h"][0] < 0:
+            if tk2["fwhm_coordinates"][0] < 0:
                 shift1 = 0.9
             else:
                 shift1 = 1.0
-            ax.annotate('FWHM=%f'%tk2["fwhm"], xy=(shift1*tk2["fwhm_coordinates_h"][0],1.01*tk2["fwhm_coordinates_v"][0]))
+            ax.annotate('FWHM=%f'%tk2["fwhm"], xy=(shift1*tk2["fwhm_coordinates"][0],1.01*tk2["fwhm_coordinates"][0]))
 
     plt.show()
     return tk2
