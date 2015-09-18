@@ -647,6 +647,8 @@ END SUBROUTINE EPath
 !C
 !C	CREATION DATE	10/91 M. Sanchez del Rio, C. Vettier
 !C                      5/2014 srio@esrf.eu adapted to Shadow3
+!C                      20150918 srio@esrf.eu changed sign of magnetic field
+!C                               to get the right curvature for ELECTRONS!
 !C
 !C--
 SUBROUTINE epath_b(i_device)
@@ -755,7 +757,7 @@ SUBROUTINE epath_b(i_device)
             end do
             do i=1,3001
                 read (21,*,end=34) n,tmp
-                if (n .gt. 0) bh(n) = tmp
+                if (n .gt. 0) bh(n) = tmp 
             end do
 34          continue
             close (21)
@@ -789,7 +791,8 @@ SUBROUTINE epath_b(i_device)
          yint = 0.0d0
          betax(1) = 0.0d0
          do i=2,npoints
-           yint = yint + bz(i)
+           ! for electron yint = yint + bz(i)
+           yint = yint - bz(i)
            betax (i) = yint*ystep
          end do 
         else if (i_file.eq.1) then
@@ -802,7 +805,8 @@ phase0=0.0
                 do n=1,nharm
                         phase=twopi*(yy(i)/per)
                         bz(i)=bz(i)+bh(n)*dcos(phase*n)
-                        betax(i)=betax(i)+bh(n)*(dsin(phase*n)-dsin(phase0*n))/n
+                        ! for e-  betax(i)=betax(i)+bh(n)*(dsin(phase*n)-dsin(phase0*n))/n
+                        betax(i)=betax(i)-bh(n)*(dsin(phase*n)-dsin(phase0*n))/n
                 enddo
                 betax(i)=betax(i)*per/twopi
          end do 
@@ -814,7 +818,8 @@ phase0=0.0
         do i=1,npoints
          betax (i) = - (0.3/oldener) * betax(i) 
          betay (i) = sqrt(beta0**2 - betax(i)**2)
-         curv(i) = -emc*bz(i)/beta0
+         !for e-  curv(i) = -emc*bz(i)/beta0
+         curv(i) = emc*bz(i)/beta0
         end do        
 !c
 !c        calculates positions as the integral of speeds
