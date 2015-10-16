@@ -19,8 +19,8 @@ Contents:
 
 SHADOW is an open source ray tracing code for modeling optical systems. 
 
-Targeted to synchrotron radiation beamlines, it has unique features for designing X-ray 
-optical systems. 
+Targeted to synchrotron radiation beamlines, it has unique features for 
+designing X-ray optical systems. 
 
 For more info, please read this paper (open access):
 
@@ -34,22 +34,47 @@ http://dx.doi.org/10.1107/S0909049511026306
 
 SHADOW3 sources are downloaded using git: 
 
+  since 2015-10-16 the master shadow3 git repository is at github.com:
+
+  git clone https://github.com/srio/shadow3
+
+  however, the original repository at the EPN-campus is maintained, and
+  will be kept updated, from time to time: 
+
   git clone git://git.epn-campus.eu/repositories/shadow3
 
 Other SHADOW web resources: 
 
-  http://forge.epn-campus.eu/projects/shadow3   (source repository)
-  http://forge.epn-campus.eu/attachments/996/Shadow3Primer.pdf  (primer)
-  ftp://ftp.esrf.fr/pub/scisoft/shadow3/  (binary distribution) 
-  ftp://ftp.esrf.fr/pub/scisoft/shadow/  (SHADOW2 distributions - obsoleted - )
-  ftp://ftp.esrf.fr/pub/scisoft/xop2.3/  (XOP and SHADOWVUI user interface)
-  http://dx.doi.org/10.1107/S0909049511026306 (Official reference)
+  shadow3 source repository: 
+    http://github.com/srio/shadow3   
+
+  shadow3 binary distributions (not updated):
+    shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
+    shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
+
+  Documentation:
+    Shadow Primer (for using shadow3 in command mode)
+      http://forge.epn-campus.eu/attachments/996/Shadow3Primer.pdf  
+
+  SHADOW user interfaces:
+    ShadowOui: 
+      Pretty fancy and new interface under python/oasys:
+      https://www.elettra.trieste.it/lightsources/labs-and-services/hard-x-ray-techniques-laboratory/oasys.html
+      http://ftp.esrf.eu/pub/scisoft/Oasys/ 
+
+    ShadowVui:
+      The traditional IDL-based interface working under XOP 2.4 and 2.3
+      xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
+      xop2.3: ftp://ftp.esrf.fr/pub/scisoft/xop2.3/  
+
+  Official reference:
+    http://dx.doi.org/10.1107/S0909049511026306 
 
 
 3 Source files
 --------------
 
-After using "git clone git://git.epn-campus.eu/repositories/shadow3"
+After using "git clone https://github.com/shadow3"
 a single shadow3 directory is created. It contains all sources and resources tu build shadow3. The basic files are
 
 Tools:
@@ -124,7 +149,8 @@ Directories:
 
   The use of Makefile is documented in its header. Basically:
   make           : builds shadow3 the main program
-  make all       : builds shadow3, libraries, examples and API
+  make python    : builds shadow3 python API
+  make all       : builds shadow3, libraries, examples and APIs
 
 
 5 Other info
