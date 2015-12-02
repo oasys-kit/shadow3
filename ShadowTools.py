@@ -1041,6 +1041,242 @@ def plotxy_old(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange
   return ticket  
 
 #
+#focnew
+#
+def focnew(beam,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Implements SHADOW's focnew utility
+
+    :param beam:
+    :param nolost:
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: a text array with results
+    """
+
+    AX,AZ,AT = focnew_coeffs(beam,mode=mode,center=center)
+
+    txt1 = focnew_text(AX,AZ,AT)
+
+    txt = ""
+
+    # ZBAR = AZ[3]
+    # VZBAR = AZ[5]
+    # if numpy.abs(AZ[0]-AZ[5]) > 1e-30:
+    #     TPARZ = (AZ[4] - AZ[1]) / (AZ[0] - AZ[5])
+    # else:
+    #     TPARZ = 0.0
+    #
+    # XBAR = AX[3]
+    # VXBAR = AX[5]
+    # if numpy.abs(AX[0]-AX[5]) > 1e-30:
+    #     TPARX = (AX[4] - AX[1]) / (AX[0] - AX[5])
+    # else:
+    #     TPARX = 0.0
+    #
+    # if numpy.abs(AT[0]-AX[5]) > 1e-30:
+    #     TPART = (AT[4] - AT[1]) / (AT[0] - AT[5])
+    # else:
+    #     TPART = 0.0
+    # TBAR = ZBAR + XBAR
+    # VTBAR = VZBAR + VXBAR
+    #
+    # SIGX = numpy.sqrt(numpy.abs( AX[0] * TPARX**2 + 2.0 * AX[1] * TPARX + AX[2] - ( AX[3] + 2.0 * AX[4] * TPARX + AX[5] * TPARX**2)))
+    # SIGZ = numpy.sqrt(numpy.abs( AZ[0] * TPARZ**2 + 2.0 * AZ[1] * TPARZ + AZ[2] - ( AZ[3] + 2.0 * AZ[4] * TPARZ + AZ[5] * TPARZ**2)))
+    # SIGT = numpy.sqrt(numpy.abs( AT[0] * TPART**2 + 2.0 * AT[1] * TPART + AT[2] - ( AT[3] + 2.0 * AT[4] * TPART + AT[5] * TPART**2)))
+    #
+    # SIGX0 = numpy.sqrt(numpy.abs(AX[2] - AX[3]))
+    # SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
+    # SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
+
+    NMODE = ['Origin','Baricenter','External']
+
+    txt += '-----------------------------------------------------------------------------\n'
+    txt += 'Center at : %s\n'%(NMODE[mode])
+    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
+    txt += '-----------------------------------------------------------------------------\n'
+
+    txt += txt1
+
+    # txt += '.............   S A G I T T A L   ............\n'
+    # txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
+    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(XBAR)),numpy.sqrt(numpy.abs(VXBAR)))
+    # txt += 'Sagittal focus at       :  %g\n'%(TPARX)
+    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGX)
+    # txt += 'Waist size at origin                :  %g\n'%(SIGX0)
+    #
+    # txt += '.............  T A N G E N T I A L  .............\n'
+    # txt += 'Z coefficients :   %g %g %g\n'%(AZ[0],AZ[1],AZ[2])
+    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(ZBAR)),numpy.sqrt(numpy.abs(VZBAR)))
+    # txt += 'Tangential focus at       :  %g\n'%(TPARZ)
+    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGZ)
+    # txt += 'Waist size at origin                :  %g\n'%(SIGZ0)
+    #
+    # txt += '.............  L E A S T  C O N F U S I O N  ...............\n'
+    # txt += 'Z coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
+    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(TBAR)),numpy.sqrt(numpy.abs(VTBAR)))
+    # txt += 'Circle of least confusion :  %g\n'%(TPART)
+    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
+    # txt += 'Waist size at origin                :  %g\n'%(SIGT0)
+
+    return txt
+
+def focnew_coeffs(beam,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Internal use of focnew:
+        calculate the 6 CHI-Square coefficients for that data array referred to the origin
+        e.g., for x we have d = Vy/Vx the 6 coeffs are: <d**2>, <x d>, <x**2>, <x>**2, <x><d>, <d>**2
+    :param beam:
+    :param nolost:
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: AX,AZ,AT  6 coeffs arrays for X, Z and AVERAGE directions, respectively
+    """
+
+    if isinstance(beam,str):
+        beam1 = Shadow.Beam()
+        beam1.load(beam)
+    else:
+        beam1 = beam
+
+    ray = numpy.array(beam1.getshcol([1,2,3,4,5,6],nolost=nolost))
+
+    if mode == 2:
+        ray[:,0] -= center[0]
+        ray[:,2] -= center[1]
+
+    # for col=3
+    AZ	=	numpy.zeros(6)
+    DVECTOR = ray[5,:]/ray[4,:] ### RAY(KOL+3,I)/RAY(5,I)
+    AZ[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AZ[1] = (ray[2,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AZ[2] = (ray[2,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AZ[3] = (ray[2,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AZ[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AZ[0] =  AZ[0] / ray.shape[1]  # A1	=   A1/K
+    AZ[1] =  AZ[1] / ray.shape[1]  # A2	=   A2/K
+    AZ[2] =  AZ[2] / ray.shape[1]  # A3	=   A3/K
+    AZ[3] =  AZ[3] / ray.shape[1]  # A4	=   A4/K
+    AZ[5] =  AZ[5] / ray.shape[1]  # A6	=   A6/K
+
+    AZ[4] = AZ[5] * AZ[3]   #  A5 = A6*A4
+    AZ[3] = AZ[3]**2        #  A4 = A4**2
+    AZ[5] = AZ[5]**2        #  A6 = A6**2
+
+
+    # for col=1
+    AX	=	numpy.zeros(6)
+    DVECTOR = ray[3,:]/ray[4,:]            # RAY(KOL+3,I)/RAY(5,I)
+    AX[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AX[1] = (ray[0,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AX[2] = (ray[0,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AX[3] = (ray[0,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AX[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AX[0] =  AX[0] / ray.shape[1]  # A1	=   A1/K
+    AX[1] =  AX[1] / ray.shape[1]  # A2	=   A2/K
+    AX[2] =  AX[2] / ray.shape[1]  # A3	=   A3/K
+    AX[3] =  AX[3] / ray.shape[1]  # A4	=   A4/K
+    AX[5] =  AX[5] / ray.shape[1]  # A6	=   A6/K
+
+    AX[4] = AX[5] * AX[3]   #  A5 = A6*A4
+    AX[3] = AX[3]**2        #  A4 = A4**2
+    AX[5] = AX[5]**2        #  A6 = A6**2
+
+    # for T
+    AT =   numpy.zeros(6)
+    AT[0] = AX[0] + AZ[0]
+    AT[1] = AX[1] + AZ[1]
+    AT[2] = AX[2] + AZ[2]
+    AT[3] = AX[3] + AZ[3]
+    AT[4] = AX[4] + AZ[4]
+    AT[5] = AX[5] + AZ[5]
+
+    if mode != 1:
+        AZ[3] = 0.0
+        AZ[4] = 0.0
+        AZ[5] = 0.0
+
+        AX[3] = 0.0
+        AX[4] = 0.0
+        AX[5] = 0.0
+
+        AT[3] = 0.0
+        AT[4] = 0.0
+        AT[5] = 0.0
+
+    return AX,AZ,AT
+
+
+def focnew_text(AX,AZ,AT):
+    txt = ""
+
+    ZBAR = AZ[3]
+    VZBAR = AZ[5]
+    if numpy.abs(AZ[0]-AZ[5]) > 1e-30:
+        TPARZ = (AZ[4] - AZ[1]) / (AZ[0] - AZ[5])
+    else:
+        TPARZ = 0.0
+
+    XBAR = AX[3]
+    VXBAR = AX[5]
+    if numpy.abs(AX[0]-AX[5]) > 1e-30:
+        TPARX = (AX[4] - AX[1]) / (AX[0] - AX[5])
+    else:
+        TPARX = 0.0
+
+    if numpy.abs(AT[0]-AX[5]) > 1e-30:
+        TPART = (AT[4] - AT[1]) / (AT[0] - AT[5])
+    else:
+        TPART = 0.0
+    TBAR = ZBAR + XBAR
+    VTBAR = VZBAR + VXBAR
+
+    SIGX = numpy.sqrt(numpy.abs( AX[0] * TPARX**2 + 2.0 * AX[1] * TPARX + AX[2] - ( AX[3] + 2.0 * AX[4] * TPARX + AX[5] * TPARX**2)))
+    SIGZ = numpy.sqrt(numpy.abs( AZ[0] * TPARZ**2 + 2.0 * AZ[1] * TPARZ + AZ[2] - ( AZ[3] + 2.0 * AZ[4] * TPARZ + AZ[5] * TPARZ**2)))
+    SIGT = numpy.sqrt(numpy.abs( AT[0] * TPART**2 + 2.0 * AT[1] * TPART + AT[2] - ( AT[3] + 2.0 * AT[4] * TPART + AT[5] * TPART**2)))
+
+    SIGX0 = numpy.sqrt(numpy.abs(AX[2] - AX[3]))
+    SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
+    SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
+
+#    NMODE = ['Origin','Baricenter','External']
+#    txt += '-----------------------------------------------------------------------------\n'
+#    txt += 'Center at : %s\n'%(NMODE[mode])
+#    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
+#    txt += '-----------------------------------------------------------------------------\n'
+
+    txt += '.............   S A G I T T A L   ............\n'
+    txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(XBAR)),numpy.sqrt(numpy.abs(VXBAR)))
+    txt += 'Sagittal focus at       :  %g\n'%(TPARX)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGX)
+    txt += 'Waist size at origin                :  %g\n'%(SIGX0)
+
+    txt += '.............  T A N G E N T I A L  .............\n'
+    txt += 'Z coefficients :   %g %g %g\n'%(AZ[0],AZ[1],AZ[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(ZBAR)),numpy.sqrt(numpy.abs(VZBAR)))
+    txt += 'Tangential focus at       :  %g\n'%(TPARZ)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGZ)
+    txt += 'Waist size at origin                :  %g\n'%(SIGZ0)
+
+    txt += '.............  L E A S T  C O N F U S I O N  ...............\n'
+    txt += 'Z coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(TBAR)),numpy.sqrt(numpy.abs(VTBAR)))
+    txt += 'Circle of least confusion :  %g\n'%(TPART)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
+    txt += 'Waist size at origin                :  %g\n'%(SIGT0)
+
+    return txt
+
+
+def focnew_scan(A,x):
+    x1 = numpy.array(x)
+    y = numpy.sqrt(numpy.abs( A[0] * x1**2 + 2.0 * A[1] * x1 + A[2] - (A[3] + 2.0 * A[4] * x1 + A[5] * x1**2)))
+    return y
+
+#
 # waviness
 #
 def waviness_write(dic1,file="waviness.inp"):
@@ -1099,14 +1335,14 @@ def waviness_read(file="waviness.inp"):
                  "c":array1[:,0].copy(), "y":array1[:,1].copy(), "g":array1[:,2].copy() }
 
 
-def slopes(z,x,y):
+def slopes(z,x,y,silent=1, return_only_rms=0):
     """
     ;+
     ; NAME:
     ;	slopes
     ; PURPOSE:
-    ;       This function calculates the slope errors of a surface along the mirror 
-    ;       length y and mirror width x. 
+    ;       This function calculates the slope errors of a surface along the mirror
+    ;       length y and mirror width x.
     ; CATEGORY:
     ;	SHADOW tools
     ; CALLING SEQUENCE:
@@ -1117,9 +1353,9 @@ def slopes(z,x,y):
     ;	z: the surface array of dimensions (Nx,Ny)
     ; OUTPUTS:
     ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
-    ;            along y in out[0,:,:] and along Y in out[1,:,:]
-    ;	slopesrms: a 4-dim array with 
-    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec, 
+    ;            along X in out[0,:,:] and along Y in out[1,:,:]
+    ;	slopesrms: a 4-dim array with
+    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec,
     ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
     ;
     ; MODIFICATION HISTORY:
@@ -1136,7 +1372,7 @@ def slopes(z,x,y):
 
     slope = numpy.zeros((2,nx,ny))
 
-    #; 
+    #;
     #; slopes in x direction
     #;
     for i in range(nx-1):
@@ -1146,7 +1382,7 @@ def slopes(z,x,y):
 
     #;
     #; slopes in y direction
-    #; 
+    #;
     for i in range(ny-1):
         step = y[i+1] - y[i]
         slope[1,:,i] = numpy.arctan( (z[:,i+1] - z[:,i] ) / step )
@@ -1156,16 +1392,91 @@ def slopes(z,x,y):
     slopermsY = slope[1,:,:].std()
     slopermsXsec = slopermsX*180.0/numpy.pi*3600.0
     slopermsYsec = slopermsY*180.0/numpy.pi*3600.0
-    slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+    # srio changed to dimensionless:
+    # slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+    slopesrms = numpy.array([slopermsX,slopermsY])
 
-    print('\n **** slopes: ****')
-    print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
-    print('                               : %f urad'%(slopermsX*1e6))
-    print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
-    print('                               : %f urad'%(slopermsY*1e6))
-    print(' *****************')
+    if not(silent):
+        print('\n **** slopes: ****')
+        print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
+        print('                               : %f urad'%(slopermsX*1e6))
+        print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
+        print('                               : %f urad'%(slopermsY*1e6))
+        print(' *****************')
 
-    return (slope,slopesrms)
+    if return_only_rms:
+        return slopesrms
+    else:
+        return (slope,slopesrms)
+
+
+# def slopes(z,x,y):
+#     """
+#     ;+
+#     ; NAME:
+#     ;	slopes
+#     ; PURPOSE:
+#     ;       This function calculates the slope errors of a surface along the mirror
+#     ;       length y and mirror width x.
+#     ; CATEGORY:
+#     ;	SHADOW tools
+#     ; CALLING SEQUENCE:
+#     ;	(slope,slopesrms) = slopes(z,x,y)
+#     ; INPUTS:
+#     ;	x: the width array of dimensions (Nx)
+#     ;	y: the length array of dimensions (Ny)
+#     ;	z: the surface array of dimensions (Nx,Ny)
+#     ; OUTPUTS:
+#     ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
+#     ;            along y in out[0,:,:] and along Y in out[1,:,:]
+#     ;	slopesrms: a 4-dim array with
+#     ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec,
+#     ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
+#     ;
+#     ; MODIFICATION HISTORY:
+#     ;       MSR 1994 written
+#     ;       08-04-15 srio@esrf.eu makes calculations in double precision.
+#     ;       2014-09-11 documented
+#     ;       2012-02-10 srio@esrf.eu python version
+#     ;-
+#     ;
+#     """
+#
+#     nx = z.shape[0]
+#     ny = z.shape[1]
+#
+#     slope = numpy.zeros((2,nx,ny))
+#
+#     #;
+#     #; slopes in x direction
+#     #;
+#     for i in range(nx-1):
+#         step = x[i+1] - x[i]
+#         slope[0,i,:] = numpy.arctan( (z[i+1,:] - z[i,:] ) / step )
+#     slope[0,nx-1,:] = slope[0,nx-2,:]
+#
+#     #;
+#     #; slopes in y direction
+#     #;
+#     for i in range(ny-1):
+#         step = y[i+1] - y[i]
+#         slope[1,:,i] = numpy.arctan( (z[:,i+1] - z[:,i] ) / step )
+#     slope[1,:,ny-1] = slope[1,:,ny-2]
+#
+#     slopermsX = slope[0,:,:].std()
+#     slopermsY = slope[1,:,:].std()
+#     slopermsXsec = slopermsX*180.0/numpy.pi*3600.0
+#     slopermsYsec = slopermsY*180.0/numpy.pi*3600.0
+#     slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+#
+#     print('\n **** slopes: ****')
+#     print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
+#     print('                               : %f urad'%(slopermsX*1e6))
+#     print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
+#     print('                               : %f urad'%(slopermsY*1e6))
+#     print(' *****************')
+#
+#     return (slope,slopesrms)
 
 
 def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
@@ -1537,8 +1848,7 @@ def make_python_script_from_current_run(script_file=""):
 
     return template
 
-
-if __name__=="__main__":
+def main():
   import os
 
   #
@@ -1551,27 +1861,27 @@ if __name__=="__main__":
           f = open(myfile)
           f.close()
           tmp = waviness_read(file=myfile)
-    
+
           (x,y,z) = waviness_calc(\
                         file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
                         width=tmp["width"],xlength=tmp["xlength"],\
                         nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
                         c=tmp["c"],y=tmp["y"], g=tmp["g"])
-          
+
           waviness_write(tmp,file="tmp.inp")
       except:
           (x,y,z) = waviness_calc()
-    
+
       write_shadow_surface(z.T,x,y,outFile='waviness.dat')
       slopes(z,x,y)
- 
+
   #
   #test new plots
   #
   do_histo1 = 0
   if do_histo1:
       #t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
-      t = histo1("begin.dat",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
+      t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
 
   do_plotxy = 0
   if do_plotxy:
@@ -1602,3 +1912,31 @@ if __name__=="__main__":
     make_python_script_from_current_run(script_file="tmp.py")
     os.system("python3 tmp.py")
     os.chdir(old_dir)
+
+  #
+  #test focnew
+  #
+  do_focnew = 1
+  if do_focnew:
+      #txt = focnew("star.02")
+      ax,az,at = focnew_coeffs("star.02")
+      txt = focnew_text(ax,az,at)
+
+      print(txt)
+      x = numpy.linspace(-10.,10.,101)
+
+      f2 = plt.figure(1)
+      plt.plot(x,focnew_scan(ax,x))
+      plt.plot(x,focnew_scan(az,x))
+      plt.plot(x,focnew_scan(at,x))
+      plt.title("FOCNEW")
+      plt.xlabel("Y [cm]")
+      plt.ylabel("Z [cm]")
+      plt.show()
+
+
+
+if __name__=="__main__":
+    main()
+
+

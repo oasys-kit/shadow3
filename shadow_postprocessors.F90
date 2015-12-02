@@ -3792,7 +3792,7 @@ SUBROUTINE FocNew
      	WRITE (6,1030)	TPARZ
 	WRITE (6,1015)	SIGZ
      	WRITE (6,1060)	SIGZ0
-     	WRITE (6,*) '.............  LEAST CONFUSION  ...............'
+     	WRITE (6,*) '.............  L E A S T  C O N F U S I O N  ...............'
      	WRITE (6,1040) AT1,AT2,AT3
      	WRITE (6,1012) SQRT(ABS(TBAR)),SQRT(ABS(VTBAR))
      	WRITE (6,1050) TPART
@@ -3823,7 +3823,7 @@ SUBROUTINE FocNew
      	WRITE (23,1030)	TPARZ
 	WRITE (23,1015) SIGZ
      	WRITE (23,1060)	SIGZ0
-     	WRITE (23,*) '..............   LEAST CONFUSION  .............'
+     	WRITE (23,*) '..............   L E A S T  C O N F U S I O N  .............'
      	WRITE (23,1040) AT1,AT2,AT3
      	WRITE (23,1012) SQRT(ABS(TBAR)),SQRT(ABS(VTBAR))
      	WRITE (23,1050) TPART

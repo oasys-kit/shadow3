@@ -1658,10 +1658,9 @@ class CompoundOE():
              qq = oe.SIMAG
 
            if oe.F_EXT == 1:
-              line = "%10d %10s %10s %10s %10s \n"%( i+1,oeshape,'?','?','?')
+              line = '%10d %10s %10s %10s %10s \n'%( i+1,oeshape,'?','?','?')
            else:
-              line = "%10d %10s %10.2f %10.2f %10.2f \n)'"%(i+1,oeshape,pp,qq,pp/qq)
-
+              line = '%10d %10s %10.2f %10.2f %10.2f \n'%(i+1,oeshape,pp,qq,pp/qq)
            txt2 += line
 
         # 3) total deflection
@@ -1678,7 +1677,7 @@ class CompoundOE():
     txt += '\n'
     txt += '   ** FOCUSING ELEMENTS **           \n'
     # focusing elements
-    line = "%10s %10s %10s %10s %10s \n"%('OE','SHAPE','p_foc','q_foc','1/M')
+    line = '%10s %10s %10s %10s %10s \n'%('OE','SHAPE','p_foc','q_foc','1/M')
     txt += line
     txt += txt2
 
@@ -3022,7 +3021,8 @@ def main():
     #
     # test
     #
-    do_test = 7 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
+    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+                # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
                 # 6=ID30B  # 7=ID23-2
 
     if ((do_test == 1) or (do_test == 2)):
