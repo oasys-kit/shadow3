@@ -680,7 +680,7 @@ class Beam(ShadowLib.Beam):
       ticket = self.histo2(*args,**kwargs)
       return(ticket)
 
-  def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,yrange=None,nbins=0):
+  def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,yrange=None,nbins=11):
     """
 
     :param nolost:
@@ -720,6 +720,8 @@ class Beam(ShadowLib.Beam):
     out = numpy.zeros((2,y.size,s[0]))
 
 
+
+
     for i,yi in enumerate(y):
         tof = (-rays[:,1].flatten() + yi)/rays[:,4].flatten()
         x = rays[:,0].flatten() +  tof*rays[:,3].flatten()
@@ -734,6 +736,35 @@ class Beam(ShadowLib.Beam):
         z_wmean[i] = (z*weights).sum() / weights_sum
         x_wsd[i] = numpy.sqrt( ((x*weights-x_wmean[i])**2).sum() / weights_sum)
         z_wsd[i] = numpy.sqrt( ((z*weights-z_wmean[i])**2).sum() / weights_sum)
+
+    # now the histograms
+    print("xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
+    xrange = [out[0,:,:].min(),out[0,:,:].max()]
+    zrange = [out[1,:,:].min(),out[1,:,:].max()]
+    print("xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
+
+    if nbins > 0:
+        h_fwhm_x = numpy.zeros(nbins)
+        h_fwhm_z = numpy.zeros(nbins)
+
+        # for i,yi in enumerate(y):
+        #     h,bins = numpy.histogram(x,bins=nbins,range=xrange,weights=weights)
+        #     bin_center = bins[:-1]+(bins[1]-bins[0])*0.5
+        #     #CALCULATE fwhm
+        #     tt = numpy.where(h>=max(h)*0.5)
+        #     print(">>>> tt: ",tt)
+        #     print(">>>> tt[0][-1],tt[]0],[0]: ",tt[0][-1],tt[0][0],(tt[0][-1]-tt[0][0]))
+        #     print(">>>>>h: ",h)
+        #     if h[tt].size > 1:
+        #       binSize = bins[1]-bins[0]
+        #       h_fwhm_x[i] = binSize * (tt[0][-1]-tt[0][0])
+
+
+
+              #ticket['fwhm_coordinates'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
+
+    print("xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
+
 
 
     x = (out[0,:,:]).flatten().copy()
@@ -3097,7 +3128,7 @@ def main():
     #
     # test
     #
-    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+    do_test = 7 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
                 # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
                 # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
