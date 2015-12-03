@@ -680,6 +680,82 @@ class Beam(ShadowLib.Beam):
       ticket = self.histo2(*args,**kwargs)
       return(ticket)
 
+  def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,yrange=None,nbins=0):
+    """
+
+    :param nolost:
+    :param iters:
+    :param range:
+    :param xrange:
+    :param yrange:
+    :param nbins:
+    :return:
+    """
+    ticket = {'error':1}
+
+    # copy the inputs
+    ticket['iters'] = iters
+    ticket['range'] = range
+    ticket['nbins'] = nbins
+
+
+    rays = self.getshcol((1,2,3,4,5,6),nolost=nolost)
+    rays = numpy.array(rays).T
+    weights = self.getshcol(23,nolost=nolost)
+    weights = numpy.array(weights)
+    weights_sum = weights.sum()
+    s = rays.shape
+
+    #define output variables
+    y = numpy.linspace(range[0],range[1],iters)
+    x_mean = y.copy()
+    z_mean = y.copy()
+    x_sd = y.copy()
+    z_sd = y.copy()
+    x_wmean = y.copy()
+    z_wmean = y.copy()
+    x_wsd = y.copy()
+    z_wsd = y.copy()
+
+    out = numpy.zeros((2,y.size,s[0]))
+
+
+    for i,yi in enumerate(y):
+        tof = (-rays[:,1].flatten() + yi)/rays[:,4].flatten()
+        x = rays[:,0].flatten() +  tof*rays[:,3].flatten()
+        z = rays[:,2].flatten() +  tof*rays[:,5].flatten()
+        out[0,i,:] = x
+        out[1,i,:] = z
+        x_mean[i] = (x).mean()
+        z_mean[i] = (z).mean()
+        x_sd[i] = x.std()
+        z_sd[i] = z.std()
+        x_wmean[i] = (x*weights).sum() / weights_sum
+        z_wmean[i] = (z*weights).sum() / weights_sum
+        x_wsd[i] = numpy.sqrt( ((x*weights-x_wmean[i])**2).sum() / weights_sum)
+        z_wsd[i] = numpy.sqrt( ((z*weights-z_wmean[i])**2).sum() / weights_sum)
+
+
+    x = (out[0,:,:]).flatten().copy()
+    z = (out[1,:,:]).flatten().copy()
+    ticket['y'] = y
+    ticket['x'] = x
+    ticket['z'] = z
+
+    ticket['x_mean'] = x_mean
+    ticket['z_mean'] = z_mean
+    ticket['x_wmean'] = x_wmean
+    ticket['z_wmean'] = z_wmean
+
+    ticket['x_sd'] = x_sd
+    ticket['z_sd'] = z_sd
+    ticket['x_wsd'] = x_wsd
+    ticket['z_wsd'] = z_wsd
+
+    return(ticket)
+
+
+
 class OE(ShadowLib.OE):
   def __init__(self):
     ShadowLib.OE.__init__(self)
@@ -3023,7 +3099,7 @@ def main():
     #
     do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
                 # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
-                # 6=ID30B  # 7=ID23-2
+                # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
     if ((do_test == 1) or (do_test == 2)):
         src = Source()
@@ -3418,13 +3494,30 @@ def main():
                      dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
                      ) # surface_error_files=["waviness.dat","waviness.dat"])
 
-        #trace
+        # trace
         kb.dump_systemfile()
         beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
 
         #postprocessors
         print(kb.info())
         print(kb.sysinfo())
+
+        # ray_prop
+        tkt = beam.ray_prop()
+        import matplotlib.pylab as plt
+        f2 = plt.figure(1)
+        plt.plot(tkt["y"],tkt["x_sd"],label="x (tangential)")
+        plt.plot(tkt["y"],tkt["z_sd"],label="z (sagittal)")
+        plt.plot(tkt["y"],tkt["x_wsd"],label="x weighted (tangential)")
+        plt.plot(tkt["y"],tkt["z_wsd"],label="z weighted (sagittal)")
+        plt.legend()
+        plt.title("ray_prop")
+        plt.xlabel("Y [cm]")
+        plt.ylabel("SD [cm]")
+        plt.show()
+
+
+
 
     if do_test == 8:
         print("setting double crystal monochromator")
@@ -3475,6 +3568,35 @@ def main():
             print("H cent",tkt["bin_h_center"])
             print("H edges",tkt["bin_h_edges"])
             print("H shape: ",tkt["histogram"].shape)
+
+
+
+    # if do_test == 9:
+    #     print("testing ray_prop")
+    #     #
+    #     #test ray_prop
+    #     #
+    #
+    #     beam = Beam()
+    #     beam.load("star.02")
+    #
+    #
+    #     #tkt = beam.histo2(1,3)
+    #     tkt = beam.ray_prop()
+    #
+    #     print(tkt)
+    #
+    #     import matplotlib.pylab as plt
+    #     f2 = plt.figure(1)
+    #     plt.plot(tkt["y"],tkt["x_sd"],label="x (tangential)")
+    #     plt.plot(tkt["y"],tkt["z_sd"],label="z (sagittal)")
+    #     plt.plot(tkt["y"],tkt["x_wsd"],label="x weighted (tangential)")
+    #     plt.plot(tkt["y"],tkt["z_wsd"],label="z weighted (sagittal)")
+    #     plt.legend()
+    #     plt.title("ray_prop")
+    #     plt.xlabel("Y [cm]")
+    #     plt.ylabel("SD [cm]")
+    #     plt.show()
 
 if __name__ == '__main__':
 

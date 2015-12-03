@@ -1916,7 +1916,7 @@ def main():
   #
   #test focnew
   #
-  do_focnew = 1
+  do_focnew = 0
   if do_focnew:
       #txt = focnew("star.02")
       ax,az,at = focnew_coeffs("star.02")
@@ -1926,9 +1926,10 @@ def main():
       x = numpy.linspace(-10.,10.,101)
 
       f2 = plt.figure(1)
-      plt.plot(x,focnew_scan(ax,x))
-      plt.plot(x,focnew_scan(az,x))
-      plt.plot(x,focnew_scan(at,x))
+      plt.plot(x,focnew_scan(ax,x),label="x (tangential)")
+      plt.plot(x,focnew_scan(az,x),label="z (sagittal)")
+      plt.plot(x,focnew_scan(at,x),label="combined x,z")
+      plt.legend()
       plt.title("FOCNEW")
       plt.xlabel("Y [cm]")
       plt.ylabel("Z [cm]")
