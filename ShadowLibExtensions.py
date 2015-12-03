@@ -680,7 +680,7 @@ class Beam(ShadowLib.Beam):
       ticket = self.histo2(*args,**kwargs)
       return(ticket)
 
-  def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,yrange=None,nbins=11):
+  def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnbins=0,znbins=0):
     """
 
     :param nolost:
@@ -696,7 +696,8 @@ class Beam(ShadowLib.Beam):
     # copy the inputs
     ticket['iters'] = iters
     ticket['range'] = range
-    ticket['nbins'] = nbins
+    ticket['xnbins'] = xnbins
+    ticket['znbins'] = znbins
 
 
     rays = self.getshcol((1,2,3,4,5,6),nolost=nolost)
@@ -738,26 +739,71 @@ class Beam(ShadowLib.Beam):
         z_wsd[i] = numpy.sqrt( ((z*weights-z_wmean[i])**2).sum() / weights_sum)
 
     # now the histograms
-    print("xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
-    xrange = [out[0,:,:].min(),out[0,:,:].max()]
-    zrange = [out[1,:,:].min(),out[1,:,:].max()]
-    print("xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
 
-    if nbins > 0:
-        h_fwhm_x = numpy.zeros(nbins)
-        h_fwhm_z = numpy.zeros(nbins)
+    if xrange is None:
+        xrange = [out[0,:,:].min(),out[0,:,:].max()]
 
-        # for i,yi in enumerate(y):
-        #     h,bins = numpy.histogram(x,bins=nbins,range=xrange,weights=weights)
-        #     bin_center = bins[:-1]+(bins[1]-bins[0])*0.5
-        #     #CALCULATE fwhm
-        #     tt = numpy.where(h>=max(h)*0.5)
-        #     print(">>>> tt: ",tt)
-        #     print(">>>> tt[0][-1],tt[]0],[0]: ",tt[0][-1],tt[0][0],(tt[0][-1]-tt[0][0]))
-        #     print(">>>>>h: ",h)
-        #     if h[tt].size > 1:
-        #       binSize = bins[1]-bins[0]
-        #       h_fwhm_x[i] = binSize * (tt[0][-1]-tt[0][0])
+    if zrange is None:
+        zrange = [out[1,:,:].min(),out[1,:,:].max()]
+
+    print("  xmin %f, xmax:%f, zmin:%f, zmax:%f"%(out[0,:,:].min(),out[0,:,:].max(),out[1,:,:].min(),out[1,:,:].max()))
+    print("**xmin %f, xmax:%f, zmin:%f, zmax:%f"%(xrange[0],xrange[1],zrange[0],zrange[1]))
+
+    # first histograms fo X
+    if xnbins > 0:
+        x_fwhm  = numpy.zeros(iters)
+        x_wfwhm = numpy.zeros(iters)
+        x_h     = numpy.zeros((iters,xnbins))
+        x_wh    = numpy.zeros((iters,xnbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange)
+            x_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange,weights=weights)
+            x_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        x_bins = bins
+    else:
+        x_fwhm  = None
+        x_wfwhm = None
+        x_bins  = None
+        x_h     = None
+        x_wh    = None
+
+    # then histograms fo Z
+    if znbins > 0:
+        z_fwhm  = numpy.zeros(iters)
+        z_wfwhm = numpy.zeros(iters)
+        z_h     = numpy.zeros((iters,znbins))
+        z_wh    = numpy.zeros((iters,znbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange)
+            z_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange,weights=weights)
+            z_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        z_bins = bins
+    else:
+        z_fwhm  = None
+        z_wfwhm = None
+        z_bins  = None
+        z_h     = None
+        z_wh    = None
 
 
 
@@ -782,6 +828,24 @@ class Beam(ShadowLib.Beam):
     ticket['z_sd'] = z_sd
     ticket['x_wsd'] = x_wsd
     ticket['z_wsd'] = z_wsd
+
+
+    #ticket['z_fwhm'] = z_fwhm
+
+    #ticket['z_wfwhm'] = z_wfwhm
+
+    #histo
+    ticket['x_fwhm']  = x_fwhm
+    ticket['x_wfwhm'] = x_wfwhm
+    ticket['x_bins']  = x_bins
+    ticket['x_h']     = x_h
+    ticket['x_wh']    = x_wh
+
+    ticket['z_fwhm']  = z_fwhm
+    ticket['z_wfwhm'] = z_wfwhm
+    ticket['z_bins']  = z_bins
+    ticket['z_h']     = z_h
+    ticket['z_wh']    = z_wh
 
     return(ticket)
 
@@ -3128,7 +3192,7 @@ def main():
     #
     # test
     #
-    do_test = 7 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
                 # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
                 # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
@@ -3534,19 +3598,35 @@ def main():
         print(kb.sysinfo())
 
         # ray_prop
-        tkt = beam.ray_prop()
+        tkt = beam.ray_prop(znbins=71,xnbins=71)
         import matplotlib.pylab as plt
-        f2 = plt.figure(1)
-        plt.plot(tkt["y"],tkt["x_sd"],label="x (tangential)")
-        plt.plot(tkt["y"],tkt["z_sd"],label="z (sagittal)")
-        plt.plot(tkt["y"],tkt["x_wsd"],label="x weighted (tangential)")
-        plt.plot(tkt["y"],tkt["z_wsd"],label="z weighted (sagittal)")
+        f1 = plt.figure(1)
+        plt.plot(tkt["y"],2.35*tkt["x_sd"],label="x (tangential)")
+        plt.plot(tkt["y"],2.35*tkt["x_wsd"],label="x weighted (tangential)")
+        plt.plot(tkt["y"],2.35*tkt["z_sd"],label="z (sagittal)")
+        plt.plot(tkt["y"],2.35*tkt["z_wsd"],label="z weighted (sagittal)")
         plt.legend()
         plt.title("ray_prop")
         plt.xlabel("Y [cm]")
-        plt.ylabel("SD [cm]")
-        plt.show()
+        plt.ylabel("2.35*SD [cm]")
 
+
+        f2 = plt.figure(2)
+        if tkt["x_fwhm"] is None:
+            pass
+        else:
+            plt.plot(tkt["y"],tkt["x_fwhm"],label="x (histo)")
+            plt.plot(tkt["y"],tkt["x_wfwhm"],label="x (weighted histo)")
+        if tkt["z_fwhm"] is None:
+            pass
+        else:
+            plt.plot(tkt["y"],tkt["z_fwhm"],label="z (histo)")
+            plt.plot(tkt["y"],tkt["z_wfwhm"],label="z (weighted histo)")
+        plt.legend()
+        plt.title("ray_prop")
+        plt.xlabel("Y [cm]")
+        plt.ylabel("FWHM [cm]")
+        plt.show()
 
 
 
@@ -3599,35 +3679,6 @@ def main():
             print("H cent",tkt["bin_h_center"])
             print("H edges",tkt["bin_h_edges"])
             print("H shape: ",tkt["histogram"].shape)
-
-
-
-    # if do_test == 9:
-    #     print("testing ray_prop")
-    #     #
-    #     #test ray_prop
-    #     #
-    #
-    #     beam = Beam()
-    #     beam.load("star.02")
-    #
-    #
-    #     #tkt = beam.histo2(1,3)
-    #     tkt = beam.ray_prop()
-    #
-    #     print(tkt)
-    #
-    #     import matplotlib.pylab as plt
-    #     f2 = plt.figure(1)
-    #     plt.plot(tkt["y"],tkt["x_sd"],label="x (tangential)")
-    #     plt.plot(tkt["y"],tkt["z_sd"],label="z (sagittal)")
-    #     plt.plot(tkt["y"],tkt["x_wsd"],label="x weighted (tangential)")
-    #     plt.plot(tkt["y"],tkt["z_wsd"],label="z weighted (sagittal)")
-    #     plt.legend()
-    #     plt.title("ray_prop")
-    #     plt.xlabel("Y [cm]")
-    #     plt.ylabel("SD [cm]")
-    #     plt.show()
 
 if __name__ == '__main__':
 
