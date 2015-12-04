@@ -676,9 +676,97 @@ class Beam(ShadowLib.Beam):
     return ticket
 
   def plotxy(self,*args, **kwargs):
-      print("Deprecated use of Shadow.plotxy(): Use Shadow.histo2()")
-      ticket = self.histo2(*args,**kwargs)
-      return(ticket)
+    print("Deprecated use of Shadow.plotxy(): Use Shadow.histo2()")
+    ticket = self.histo2(*args,**kwargs)
+    return(ticket)
+
+
+  def focnew_coeffs(self,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Internal use of focnew:
+        calculate the 6 CHI-Square coefficients for that data array referred to the origin
+        e.g., for x we have d = Vy/Vx the 6 coeffs are: <d**2>, <x d>, <x**2>, <x>**2, <x><d>, <d>**2
+    :param nolost:
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: AX,AZ,AT  6 coeffs arrays for X, Z and AVERAGE directions, respectively
+    """
+
+    # if isinstance(beam,str):
+    #     beam1 = Shadow.Beam()
+    #     beam1.load(beam)
+    # else:
+    #     beam1 = beam
+
+    #ray = numpy.array(beam1.getshcol([1,2,3,4,5,6],nolost=nolost))
+    ray = numpy.array(self.getshcol([1,2,3,4,5,6],nolost=nolost))
+
+    if mode == 2:
+        ray[:,0] -= center[0]
+        ray[:,2] -= center[1]
+
+    # for col=3
+    AZ	=	numpy.zeros(6)
+    DVECTOR = ray[5,:]/ray[4,:] ### RAY(KOL+3,I)/RAY(5,I)
+    AZ[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AZ[1] = (ray[2,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AZ[2] = (ray[2,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AZ[3] = (ray[2,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AZ[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AZ[0] =  AZ[0] / ray.shape[1]  # A1	=   A1/K
+    AZ[1] =  AZ[1] / ray.shape[1]  # A2	=   A2/K
+    AZ[2] =  AZ[2] / ray.shape[1]  # A3	=   A3/K
+    AZ[3] =  AZ[3] / ray.shape[1]  # A4	=   A4/K
+    AZ[5] =  AZ[5] / ray.shape[1]  # A6	=   A6/K
+
+    AZ[4] = AZ[5] * AZ[3]   #  A5 = A6*A4
+    AZ[3] = AZ[3]**2        #  A4 = A4**2
+    AZ[5] = AZ[5]**2        #  A6 = A6**2
+
+
+    # for col=1
+    AX	=	numpy.zeros(6)
+    DVECTOR = ray[3,:]/ray[4,:]            # RAY(KOL+3,I)/RAY(5,I)
+    AX[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AX[1] = (ray[0,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AX[2] = (ray[0,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AX[3] = (ray[0,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AX[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AX[0] =  AX[0] / ray.shape[1]  # A1	=   A1/K
+    AX[1] =  AX[1] / ray.shape[1]  # A2	=   A2/K
+    AX[2] =  AX[2] / ray.shape[1]  # A3	=   A3/K
+    AX[3] =  AX[3] / ray.shape[1]  # A4	=   A4/K
+    AX[5] =  AX[5] / ray.shape[1]  # A6	=   A6/K
+
+    AX[4] = AX[5] * AX[3]   #  A5 = A6*A4
+    AX[3] = AX[3]**2        #  A4 = A4**2
+    AX[5] = AX[5]**2        #  A6 = A6**2
+
+    # for T
+    AT =   numpy.zeros(6)
+    AT[0] = AX[0] + AZ[0]
+    AT[1] = AX[1] + AZ[1]
+    AT[2] = AX[2] + AZ[2]
+    AT[3] = AX[3] + AZ[3]
+    AT[4] = AX[4] + AZ[4]
+    AT[5] = AX[5] + AZ[5]
+
+    if mode != 1:
+        AZ[3] = 0.0
+        AZ[4] = 0.0
+        AZ[5] = 0.0
+
+        AX[3] = 0.0
+        AX[4] = 0.0
+        AX[5] = 0.0
+
+        AT[3] = 0.0
+        AT[4] = 0.0
+        AT[5] = 0.0
+
+    return AX,AZ,AT
 
   def ray_prop(self,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnbins=0,znbins=0):
     """
@@ -3192,7 +3280,7 @@ def main():
     #
     # test
     #
-    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+    do_test = 7 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
                 # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
                 # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
