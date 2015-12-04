@@ -255,7 +255,9 @@ module shadow_pre_sync_urgent
             write(*,*) "    NE_1,NE_S",NE_1,NE_S
             write(*,*) "    NT_1,NT_S",NT_1,NT_S
             write(*,*) "    NP_1,NP_S",NP_1,NP_S
-            STOP
+            print *,'Error: CDF_Z_CALC'
+            return
+            ! STOP
         END IF
         DO 15 M=1,NE_S
 	   READ (10) ENER(M)
@@ -570,7 +572,9 @@ module shadow_pre_sync_urgent
 30      CALL BRIGH3(ALPHA,COSphi1,SINphi1,kx1,ky1,I,S0,S1,S2,S3)
         RETURN
 40      WRITE(6,9000)
-        STOP
+        print *,'Error: BRIGHT'
+        return
+        !STOP
 9000    FORMAT(//' *** INVALID INPUT PARAMETERS IN SUBROUTINE BRIGHT ***')
         END subroutine
 !C
@@ -967,9 +971,11 @@ module shadow_pre_sync_urgent
 30      CONTINUE
         RETURN
 999     WRITE(6,9999)
-        STOP
+        print *,'Error: JSET'
+        return
+        ! STOP
 9999    FORMAT(//' *** OVERFLOW OF BESSEL FUNCTION ARRAY ***')
-        END subroutine
+        END subroutine JSET
 
 !
 ! added auxiliary routine by srio

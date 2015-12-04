@@ -552,8 +552,8 @@ Contains
        ! iOut = GfTypePrint(gStartOE)
        
     case default 
-       print *,"SHADOW-RWNAME: Undefined label: "//trim(what)
-       stop
+       print *,"Error: SHADOW-RWNAME: Undefined label: "//trim(what)
+       ! stop
     end select
     
     RETURN
@@ -642,7 +642,9 @@ Contains
          OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
          IF (IERR.NE.0) THEN
             WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
-            STOP 'Fatal error. Aborted'
+            print *,'Error: SOURCE_BOUND: Aborted'
+            return
+            !STOP 'Fatal error. Aborted'
          END IF
          READ (30,*,ERR=101)    NX, XMIN, XS
          READ (30,*,ERR=101)    NX1, X1MIN, X1S
@@ -670,7 +672,9 @@ Contains
          OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
          IF (IERR.NE.0) THEN
             WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
-            STOP 'Fatal error. Aborted'
+            print *, 'Error: SOURCE_BOUND: Aborted'
+            return 
+            ! STOP 'Fatal error. Aborted'
          END IF
 !!print *,'Reding file....'
          READ (30,*,ERR=101)    distSlit,h_min,h_max,v_min,v_max
@@ -686,7 +690,8 @@ Contains
        CLOSE (30)
        RETURN
 101    WRITE(6,*)'Error reading from file '//trim(FILE_BOUND)
-       STOP
+       return 
+       ! STOP
     ELSE IF (IFLAG.EQ.1) THEN
        !C 
        !C  Normal entry
@@ -843,8 +848,9 @@ Contains
        OPEN (25,FILE=FILE_REFL,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-          print *,"MIRROR: File not found: "//trim(file_refl)
-          stop 'File not found. Aborted.'
+          print *,"Error: MIRROR: File not found: "//trim(file_refl)
+          return 
+          ! stop 'File not found. Aborted.'
         end if
        READ (25,*) I_LATT,RN,D_SPACING
        READ (25,*) ATNUM_A,ATNUM_B,TEMPER
@@ -4499,8 +4505,9 @@ IF (K_WHAT.EQ.0) THEN
         OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
                       FORM='UNFORMATTED', IOSTAT=iErr)
         IF (ierr /= 0 ) then
-             PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
-             STOP ' Fatal error: aborted'
+             PRINT *,"Error: CRYSTAL: File not found: "//TRIM(file_refl)
+             RETURN 
+             ! STOP ' Fatal error: aborted'
         END IF
 
         READ (23,ERR=222) QMIN,QMAX,QSTEP,DEPTH0
@@ -4520,8 +4527,9 @@ IF (K_WHAT.EQ.0) THEN
                       FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         IF (ierr /= 0 ) then
-             PRINT *,"CRYSTAL: Error: File not found: "//TRIM(file_refl)
-             STOP ' Fatal error: aborted'
+             PRINT *,"Error: CRYSTAL: File not found: "//TRIM(file_refl)
+             return 
+             ! STOP ' Fatal error: aborted'
         END IF
         READ (23,*) QMIN,QMAX,QSTEP,DEPTH0
         READ (23,*) NREFL
@@ -4555,15 +4563,17 @@ IF (K_WHAT.EQ.0) THEN
         open(unit=iunit,FILE=FILE_REFL,status='OLD',IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-            print *,"MIRROR: File not found: "//trim(file_refl)
-            stop 'File not found. Aborted.'
+            print *,"Error: MIRROR: File not found: "//trim(file_refl)
+            return 
+            ! stop 'File not found. Aborted.'
         end if
         READ(iunit,*) NIN
         IF (NIN > dimMLenergy) THEN 
             print *,'REFLEC: Error: In file: '//trim(file_refl)
             print *,'               Maximum number of energy points is',dimMLenergy
             print *,'               Using number of energy points',NIN
-            stop 'Error reaing file. Aborted.'
+            print *,'Error: MIRROR: Error reading file. Aborted.'
+            return
         END IF 
         READ(iunit,*) (ENER(I), I = 1, NIN)
         DO 13 I=1,NIN
@@ -4604,7 +4614,8 @@ IF (K_WHAT.EQ.0) THEN
           ! srio added test
           if (iErr /= 0 ) then
             print *,"REFLEC: File not found: "//trim(adjustl(file_grade))
-            stop 'File not found. Aborted.'
+            print *,'Error: REFLEC: File not found. Aborted.'
+            ! stop 'File not found. Aborted.'
           end if
 
           READ  (45) NTX, NTY

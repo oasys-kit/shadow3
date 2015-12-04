@@ -74,7 +74,8 @@ Program	Trace
         !
         CALL Reset
    	CALL Switch_Inp (mode,icount,iTerminate,iSysFileOpened)
-        IF (iTerminate == 1) STOP 
+        !IF (iTerminate == 1) STOP 
+        IF (iTerminate == 1) return
 
         !
         ! it is necessary to allocate main arrays (ray, phase, ap) here, 
@@ -88,8 +89,9 @@ Program	Trace
         CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
 
          IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
-            PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
-            STOP
+            PRINT *,'Error: TRACE: beamGetDim: Error in file: '//TRIM(file_source)
+            return
+            ! STOP
          ELSE
  
             !
@@ -101,19 +103,25 @@ Program	Trace
             IF (.NOT. ALLOCATED(ray)) then
                ALLOCATE(ray(ncol1,np),STAT=ierr)
                IF (ierr /= 0) THEN
-                  PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  !PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  PRINT *,"Error: TRACE: Error allocating ray" 
+                  return
                END IF
             END IF
             IF (.NOT. ALLOCATED(ap)) THEN
                ALLOCATE(ap(3,np),STAT=ierr)
                IF (ierr /= 0) THEN
-                  PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  ! PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  PRINT *,"Error: TRACE: Error allocating ray" 
+                  return
                END IF
             END IF
             IF (.NOT. ALLOCATED(phase)) THEN
                ALLOCATE(phase(3,np),STAT=ierr)
                IF (ierr /= 0) THEN
-                  print *,"TRACE: Error allocating ray" ; STOP 4
+                  !print *,"TRACE: Error allocating ray" ; STOP 4
+                  print *,"Error: TRACE: Error allocating ray" 
+                  return
                END IF
             END IF
 

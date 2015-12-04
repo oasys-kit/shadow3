@@ -1377,7 +1377,8 @@ SUBROUTINE CUBSPL(G, Y, N, IER)
       !  ('CUBSPL','At least 4 data points are needed for splines.',itmp)
       IF (N.LT.4) THEN
         print *,'CUBSPL: At least 4 data points are needed for splines.',itmp
-        STOP 'Aborted'
+        print *,'Error: CUBSPL: Aborted'
+        ! STOP 'Aborted'
       END IF
       DO J = 1, N-1
         IF (G(1,J).GT.G(1,J+1)) THEN
@@ -1656,8 +1657,9 @@ END FUNCTION RAND_PENELOPE
        Y = SIGMA * RINFM
   9000  CONTINUE
     !    CALL UERTST(IER,6HMERFI )
-       print *,"Error from math routine merfi. Called with: ",P
-       stop
+       print *,"Error: MERFI: Error from math routine merfi. Called with: ",P
+       return 
+       ! stop
   9005  RETURN
         END SUBROUTINE MERFI
 ! C   IMSL ROUTINE NAME   - MERRC=ERFC
@@ -1757,8 +1759,8 @@ END FUNCTION RAND_PENELOPE
      GO TO 9005
  9000  CONTINUE
     !      CALL UERTST(IER,6HMDNRIS)
-     print *,"Error from math routine mdnris. Called with: ",P
-     stop
+     print *,"Error: MDNRIS: Error from math routine mdnris. Called with: ",P
+     ! stop
  9005  RETURN
     END SUBROUTINE MDNRIS
 
@@ -3216,8 +3218,8 @@ SUBROUTINE IBCCCU (F,X,NX,Y,NY,C,IC,WK,IER)
       IF (IER .EQ. 0) GO TO 9005                                        
  9000 CONTINUE                                                          
       !CALL UERTST(IER,6HIBCCCU)                                         
-      PRINT *,'IBCCCU Error'
-      STOP 'Aborted'
+      PRINT *,'Error: IBCCCU: Error in math routine ibcccu.'
+      !STOP 'Aborted'
  9005 RETURN                                                            
 END SUBROUTINE IBCCCU                                                              
 !C   IMSL ROUTINE NAME   - IBCDCU                                        

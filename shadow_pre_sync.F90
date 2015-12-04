@@ -3637,7 +3637,9 @@ subroutine wiggler_spectrum
         DO 99 I = 1, N_DIM+1
           READ (20,*,END=101) X(I),Y(I),Z(I),BETAX(I),BETAY(I),BETAZ(I),CURV(I)
  99        CONTINUE
-        STOP         'Too many points from input file.'
+        !STOP         'Too many points from input file.'
+        print *,'Too many points from input file.'
+        return
 101        NP        = I - 1
         CLOSE        (20)
         WRITE(6,*) 'Read ',NP,' points from input file.'

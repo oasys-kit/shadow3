@@ -101,20 +101,26 @@ SUBROUTINE PRESURFACE
         WRITE(6,*)'Cannot access ',INFILE
         IWHAT = IYES ('Retry ? ')
         IF (IWHAT.EQ.1) GOTO 1
-        STOP
+        print *,'Error: PRESURFACE'
+        return
+        !STOP
     END IF
     READ (20,*) NX, NY
 
     IF (NX.LT.4.OR.NY.LT.4) THEN
         WRITE(6,*)'Not enough points to define arrays. Must be at',&
                   ' least 4 points in each direction.'
-        STOP 'Please retry with larger arrays.'
+        print *, 'Error: PRESURFACE: Please retry with larger arrays.'
+        return
+        ! STOP 'Please retry with larger arrays.'
     END IF
 
     IF (NX.GT.501) THEN
         WRITE(6,*)'Arrays X too large: '
         WRITE(6,*)'Maximum allowed is 501 points in X, unlimited in Y.'
-        STOP 'Please retry with smaller arrays.'
+        print *, 'Error: PRESURFACE: Please retry with smaller arrays.'
+        return
+        !STOP 'Please retry with smaller arrays.'
     END IF
 
     nw = 2*501*ny+2*max(501,ny)
@@ -144,8 +150,9 @@ SUBROUTINE PRESURFACE
          
     IF (IER.EQ.132) THEN
         WRITE(6,*)'The X and/or Y array are/is not ordered properly.' 
-        WRITE(6,*)'Please check data in ',INFILE
-        STOP
+        WRITE(6,*)'Error: PRESURFACE: Please check data in ',INFILE
+        return
+        ! STOP
     END IF
     WRITE(6,*)'Spline succesfully completed.'
     OUTFILE = RSTRING ('Please enter file-name for storage: ')
@@ -658,8 +665,9 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
         fUnit=11
 	open (unit=fUnit, file=INDEXF, status = 'OLD', iostat=iErr )
         IF (iErr /= 0) THEN 
-          print *,'File not found: '//trim(INDEXF), iErr
-          STOP 
+          print *,'Error: READLIB: File not found: '//trim(INDEXF), iErr
+          return
+          ! STOP 
         ENDIF
 
 5	format (A2, I15)
@@ -671,8 +679,9 @@ SUBROUTINE ReadLib (ELE,NZ,ATWT,C1,C2,ENG,F1,F2)
            ACCESS='DIRECT',RECL=3376, STATUS = 'OLD', ACTION='READ')
 
         IF (iErr /= 0) THEN 
-          print *,"File not found: "//trim(F12LIB)
-          STOP 
+          print *,"Error: READLIB: File not found: "//trim(F12LIB)
+          return
+          !STOP 
         ENDIF
 
 
@@ -811,7 +820,9 @@ SUBROUTINE PREREFL
         ELSE IF (I_TYPE.EQ.1) THEN
           CALL    OPT_COM    (RF1,RF2,ENERGY,DENSITY)
         ELSE 
-          STOP    'Error !  Invalid response.'
+          print *,'Error: PREREFL: Invalid response.'
+          return
+          !STOP    'Error !  Invalid response.'
         END IF
         WRITE(6,*) 'Enter starting photon energy,end and step'
         READ(*,*) ESTART,EFINAL,ESTEP
@@ -828,13 +839,17 @@ SUBROUTINE PREREFL
         IF (.NOT. ALLOCATED(af1)) THEN
           ALLOCATE(af1(npoint),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"PREREFL: Error allocating array" ; STOP 4
+            ! print *,"PREREFL: Error allocating array" ; STOP 4
+            print *,"Error: PREREFL: Error allocating array" 
+            return 
           END IF
         END IF
         IF (.NOT. ALLOCATED(af2)) THEN
           ALLOCATE(af2(npoint),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"PREREFL: Error allocating array" ; STOP 4
+            !print *,"PREREFL: Error allocating array" ; STOP 4
+            print *,"Error: PREREFL: Error allocating array" 
+            return
           END IF
         END IF
 
@@ -1284,7 +1299,9 @@ SUBROUTINE Grade_Mlayer(outfile)
         IF (NX.LT.4.OR.NY.LT.4) THEN
           WRITE(6,*) 'Not enough points to define arrays. Must be at', &
                  ' least 4 points in each direction.'
-          STOP 'Please retry with larger arrays.'
+          !STOP 'Please retry with larger arrays.'
+          print *, 'Error: GRADE_MLAYER: Please retry with larger arrays.'
+          return
         END IF
         WRITE(6,*) 'Setting up ',NX,' by ',NY,' array.'
 !C

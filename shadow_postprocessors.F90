@@ -790,8 +790,9 @@ BREAK	='    ----------------'
 	  MIRFIL = RSTRING ('SysInfo: File containing ERFs ? ')
      	  OPEN (20, FILE=MIRFIL, STATUS='OLD', IOSTAT=iERR)
 	  IF (iErr /= 0) THEN
-            print *,'SysInfo: Error reading file: '//trim(mirFil)
-            STOP  'Aborted'
+            print *,'Error: SYSINFO: Error reading file: '//trim(mirFil)
+            return
+            ! STOP  'Aborted'
 	  END IF
 	  I=1
 30     	  CONTINUE
@@ -947,8 +948,9 @@ SUBROUTINE Translate
         ! get information on number of columns and rays from the header 
         CALL    beamGetDim (FILEIN,nCol1,NPOINT1,IFLAG,IERR)
         IF ((IFLAG.ne.0).OR.(IERR.ne.0)) THEN
-           print *,'TRANSLATE: Error accessing file: '//trim(FILEIN)
-           STOP 'Aborted'
+           print *,'Error: TRANSLATE: Error accessing file: '//trim(FILEIN)
+           return
+           ! STOP 'Aborted'
         ELSE
             !
             ! allocate arrays
@@ -1080,8 +1082,9 @@ SUBROUTINE Histo1
 	! 
         CALL    beamGetDim (fileIn,ncol1,npoint1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'HISTO1: beamGetDim: Error in file: '//trim(fileIn)
-            stop
+            print *,'Error: HISTO1: beamGetDim: Error in file: '//trim(fileIn)
+            return
+            !stop
         END IF
 
         IF (allocated(ray)) deallocate(ray)
@@ -1560,8 +1563,9 @@ if (trim(file_in) == "") file_in="begin.dat"
 	! 
         CALL    beamGetDim (file_In,ncol1,npoint1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'PLOTXY: beamGetDim: Error in file: '//trim(file_in)
-            stop
+            print *,'Error: PLOTXY: beamGetDim: Error in file: '//trim(file_in)
+            return
+            !stop
         END IF
 
   	ALLOCATE( RAY(18,NPOINT1) )
@@ -2743,8 +2747,9 @@ SUBROUTINE FFresnel
 	! 
         CALL    beamGetDim (inFile1,ncol,np1,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'FFresnel: beamGetDim: Error in file: '//trim(inFile1)
-            stop
+            print *,'Error: FFresnel: beamGetDim: Error in file: '//trim(inFile1)
+            return
+            ! stop
         END IF
 
   	ALLOCATE( RAY(18,NP1) )
@@ -3125,8 +3130,9 @@ SUBROUTINE ReColor
 	! 
         CALL    beamGetDim (inFile,ncol,npoint,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'ReColor: beamGetDim: Error in file: '//trim(inFile)
-            stop
+            print *,'Error: ReColor: beamGetDim: Error in file: '//trim(inFile)
+            return
+            ! stop
         END IF
 
   	ALLOCATE( RAY(18,NPOINT) )
@@ -3190,7 +3196,8 @@ SUBROUTINE ReColor
         IFORM = 0
 
 	CALL beamWrite(ray,ierr,ncol,npoint,outFile)
-	IF (IERR.NE.0)	STOP	'Error in writting output file.'
+	!IF (IERR.NE.0)	STOP	'Error in writting output file.'
+	IF (IERR.NE.0) print *,'Error in writting output file.'
 
 
         IF (allocated(ray)) deallocate(ray)
@@ -3246,8 +3253,9 @@ SUBROUTINE Intens
 	! 
         CALL    beamGetDim (file1,ncol1,np,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'Intens: beamGetDim: Error in file: '//trim(file1)
-            stop
+            print *,'Erro: Intens: beamGetDim: Error in file: '//trim(file1)
+            return
+            !stop
         END IF
 
   	ALLOCATE( RAY1(18,NP) )
@@ -3318,8 +3326,9 @@ SUBROUTINE Intens
 	  ! 
           CALL    beamGetDim (file2,ncol2,np,iflag,ierr)
           IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-              print *,'Intens: beamGetDim: Error in file: '//trim(file2)
-              stop
+              print *,'Error: Intens: beamGetDim: Error in file: '//trim(file2)
+              return
+              !stop
           END IF
   	  ALLOCATE( RAY2(18,NP) )
   	  ray2=0.0d0
@@ -3613,8 +3622,9 @@ SUBROUTINE FocNew
 	! 
         CALL    beamGetDim (iFile,ncol,nn,iflag,ierr)
         IF ((iflag.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'FocNew: beamGetDim: Error in file: '//trim(iFile)
-            stop
+            print *,'Error: FocNew: beamGetDim: Error in file: '//trim(iFile)
+            return
+            ! stop
         END IF
 
   	ALLOCATE( RAY(18,nn) )
@@ -3623,7 +3633,8 @@ SUBROUTINE FocNew
 	CALL beamLoad(ray,ierr,ncol,nn,iFile)
 
      	!CALL	RBEAM (IFILE,RAY,PHASE,AP,NCOL,NN,IFLAG,IERR)
-     	IF (IERR.NE.0) STOP	'Error reading ray file.'
+     	! IF (IERR.NE.0) STOP	'Error reading ray file.'
+     	IF (IERR.NE.0) print *,'Error reading ray file.'
 
      	KK	=  0
      	DO 99 I=1,NN
@@ -4075,8 +4086,9 @@ IF (NPOINT.GT.500) NPOINT = 500
       ! 
         CALL    beamGetDim (filesour,ncol,np,ifl,ierr)
         IF ((ifl.ne.0).OR.(ierr.ne.0)) THEN
-            print *,'Sysplot: beamGetDim: Error in file: '//trim(filesour)
-            stop
+            print *,'Error: Sysplot: beamGetDim: Error in file: '//trim(filesour)
+            return
+            ! stop
         END IF
 
         ALLOCATE( data1(18,NP) )
@@ -4117,8 +4129,9 @@ IF (NPOINT.GT.500) NPOINT = 500
         data1=0.0d0
         CALL beamLoad(data1,ierr,ncol,np,files(j))
         IF (IERR.NE.0) THEN 
-            print *,'Sysplot: beamLoad: Error in reading intermediate ray file.'
-            stop
+            print *,'Error: Sysplot: beamLoad: Error in reading intermediate ray file.'
+            return
+            ! stop
         END IF
 
         DO I=1,NPOINT
@@ -4357,8 +4370,9 @@ subroutine shrot(ray,np,theta,axis)
           i1 = tstart(j)-2
           i2 = tstart(j)-1
         case default
-          print *,'SHROT: invalid rotation axis: ',axis
-          stop
+          print *,'Error: SHROT: invalid rotation axis: ',axis
+          return
+          ! stop
         end select 
 
         x = ray(i1,:)
