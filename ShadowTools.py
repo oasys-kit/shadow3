@@ -1047,180 +1047,75 @@ def focnew(beam,nolost=1,mode=0,center=[0.0,0.0]):
     """
     Implements SHADOW's focnew utility
 
-    :param beam:
-    :param nolost:
+    For scanning the RMS around the focal position, use focnew_scan with focnew results
+
+    :param beam: a file name or an instance of Shadow.Beam
+    :param nolost: 0=all rays, 1=good only, 2=lost only
     :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
     :param center: [x0,y0] the center coordinates, if mode=2
-    :return: a text array with results
+    :return: a python dictionary (ticket) with:
+            ticket['nolost']         # input flag
+            ticket['mode']           # input flag
+            ticket['center_at']      #  text of mode: 'Origin','Baricenter' or 'External'
+            ticket['AX']             # \
+            ticket['AZ']             #  focnew coefficients (to be used by focnew_scan)
+            ticket['AT']             # /
+            ticket['x_waist']        # position of waist X (sagittal)
+            ticket['z_waist']        # position of waist Z (tangential)
+            ticket['t_waist']        # position of waist T (averaged)
+            ticket['text'] = txt     # a text with focnew info
+
     """
-
-    AX,AZ,AT = focnew_coeffs(beam,mode=mode,center=center)
-
-    txt1 = focnew_text(AX,AZ,AT)
-
-    txt = ""
-
-    # ZBAR = AZ[3]
-    # VZBAR = AZ[5]
-    # if numpy.abs(AZ[0]-AZ[5]) > 1e-30:
-    #     TPARZ = (AZ[4] - AZ[1]) / (AZ[0] - AZ[5])
-    # else:
-    #     TPARZ = 0.0
-    #
-    # XBAR = AX[3]
-    # VXBAR = AX[5]
-    # if numpy.abs(AX[0]-AX[5]) > 1e-30:
-    #     TPARX = (AX[4] - AX[1]) / (AX[0] - AX[5])
-    # else:
-    #     TPARX = 0.0
-    #
-    # if numpy.abs(AT[0]-AX[5]) > 1e-30:
-    #     TPART = (AT[4] - AT[1]) / (AT[0] - AT[5])
-    # else:
-    #     TPART = 0.0
-    # TBAR = ZBAR + XBAR
-    # VTBAR = VZBAR + VXBAR
-    #
-    # SIGX = numpy.sqrt(numpy.abs( AX[0] * TPARX**2 + 2.0 * AX[1] * TPARX + AX[2] - ( AX[3] + 2.0 * AX[4] * TPARX + AX[5] * TPARX**2)))
-    # SIGZ = numpy.sqrt(numpy.abs( AZ[0] * TPARZ**2 + 2.0 * AZ[1] * TPARZ + AZ[2] - ( AZ[3] + 2.0 * AZ[4] * TPARZ + AZ[5] * TPARZ**2)))
-    # SIGT = numpy.sqrt(numpy.abs( AT[0] * TPART**2 + 2.0 * AT[1] * TPART + AT[2] - ( AT[3] + 2.0 * AT[4] * TPART + AT[5] * TPART**2)))
-    #
-    # SIGX0 = numpy.sqrt(numpy.abs(AX[2] - AX[3]))
-    # SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
-    # SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
-
     NMODE = ['Origin','Baricenter','External']
 
-    txt += '-----------------------------------------------------------------------------\n'
-    txt += 'Center at : %s\n'%(NMODE[mode])
-    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
-    txt += '-----------------------------------------------------------------------------\n'
-
-    txt += txt1
-
-    # txt += '.............   S A G I T T A L   ............\n'
-    # txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
-    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(XBAR)),numpy.sqrt(numpy.abs(VXBAR)))
-    # txt += 'Sagittal focus at       :  %g\n'%(TPARX)
-    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGX)
-    # txt += 'Waist size at origin                :  %g\n'%(SIGX0)
-    #
-    # txt += '.............  T A N G E N T I A L  .............\n'
-    # txt += 'Z coefficients :   %g %g %g\n'%(AZ[0],AZ[1],AZ[2])
-    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(ZBAR)),numpy.sqrt(numpy.abs(VZBAR)))
-    # txt += 'Tangential focus at       :  %g\n'%(TPARZ)
-    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGZ)
-    # txt += 'Waist size at origin                :  %g\n'%(SIGZ0)
-    #
-    # txt += '.............  L E A S T  C O N F U S I O N  ...............\n'
-    # txt += 'Z coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
-    # txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(TBAR)),numpy.sqrt(numpy.abs(VTBAR)))
-    # txt += 'Circle of least confusion :  %g\n'%(TPART)
-    # txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
-    # txt += 'Waist size at origin                :  %g\n'%(SIGT0)
-
-    return txt
-
-# def focnew_coeffs(beam,nolost=1,mode=0,center=[0.0,0.0]):
-#     """
-#     Internal use of focnew:
-#         calculate the 6 CHI-Square coefficients for that data array referred to the origin
-#         e.g., for x we have d = Vy/Vx the 6 coeffs are: <d**2>, <x d>, <x**2>, <x>**2, <x><d>, <d>**2
-#     :param beam:
-#     :param nolost:
-#     :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
-#     :param center: [x0,y0] the center coordinates, if mode=2
-#     :return: AX,AZ,AT  6 coeffs arrays for X, Z and AVERAGE directions, respectively
-#     """
-#
-#     if isinstance(beam,str):
-#         beam1 = Shadow.Beam()
-#         beam1.load(beam)
-#     else:
-#         beam1 = beam
-#
-#     ray = numpy.array(beam1.getshcol([1,2,3,4,5,6],nolost=nolost))
-#
-#     if mode == 2:
-#         ray[:,0] -= center[0]
-#         ray[:,2] -= center[1]
-#
-#     # for col=3
-#     AZ	=	numpy.zeros(6)
-#     DVECTOR = ray[5,:]/ray[4,:] ### RAY(KOL+3,I)/RAY(5,I)
-#     AZ[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
-#     AZ[1] = (ray[2,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
-#     AZ[2] = (ray[2,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
-#     AZ[3] = (ray[2,:]).sum()               # A4 = A4 + RAY(KOL,I)
-#     AZ[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
-#
-#     AZ[0] =  AZ[0] / ray.shape[1]  # A1	=   A1/K
-#     AZ[1] =  AZ[1] / ray.shape[1]  # A2	=   A2/K
-#     AZ[2] =  AZ[2] / ray.shape[1]  # A3	=   A3/K
-#     AZ[3] =  AZ[3] / ray.shape[1]  # A4	=   A4/K
-#     AZ[5] =  AZ[5] / ray.shape[1]  # A6	=   A6/K
-#
-#     AZ[4] = AZ[5] * AZ[3]   #  A5 = A6*A4
-#     AZ[3] = AZ[3]**2        #  A4 = A4**2
-#     AZ[5] = AZ[5]**2        #  A6 = A6**2
-#
-#
-#     # for col=1
-#     AX	=	numpy.zeros(6)
-#     DVECTOR = ray[3,:]/ray[4,:]            # RAY(KOL+3,I)/RAY(5,I)
-#     AX[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
-#     AX[1] = (ray[0,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
-#     AX[2] = (ray[0,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
-#     AX[3] = (ray[0,:]).sum()               # A4 = A4 + RAY(KOL,I)
-#     AX[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
-#
-#     AX[0] =  AX[0] / ray.shape[1]  # A1	=   A1/K
-#     AX[1] =  AX[1] / ray.shape[1]  # A2	=   A2/K
-#     AX[2] =  AX[2] / ray.shape[1]  # A3	=   A3/K
-#     AX[3] =  AX[3] / ray.shape[1]  # A4	=   A4/K
-#     AX[5] =  AX[5] / ray.shape[1]  # A6	=   A6/K
-#
-#     AX[4] = AX[5] * AX[3]   #  A5 = A6*A4
-#     AX[3] = AX[3]**2        #  A4 = A4**2
-#     AX[5] = AX[5]**2        #  A6 = A6**2
-#
-#     # for T
-#     AT =   numpy.zeros(6)
-#     AT[0] = AX[0] + AZ[0]
-#     AT[1] = AX[1] + AZ[1]
-#     AT[2] = AX[2] + AZ[2]
-#     AT[3] = AX[3] + AZ[3]
-#     AT[4] = AX[4] + AZ[4]
-#     AT[5] = AX[5] + AZ[5]
-#
-#     if mode != 1:
-#         AZ[3] = 0.0
-#         AZ[4] = 0.0
-#         AZ[5] = 0.0
-#
-#         AX[3] = 0.0
-#         AX[4] = 0.0
-#         AX[5] = 0.0
-#
-#         AT[3] = 0.0
-#         AT[4] = 0.0
-#         AT[5] = 0.0
-#
-#     return AX,AZ,AT
+    if isinstance(beam,str):
+        beam1 = Shadow.Beam()
+        beam1.load(beam)
+    else:
+        beam1 = beam
 
 
-def focnew_text(AX,AZ,AT):
-    txt = ""
+    # get focnew coefficients
+    ray = numpy.array(beam1.getshcol([1,2,3,4,5,6],nolost=nolost))
+    #ray = numpy.array(self.getshcol([1,2,3,4,5,6],nolost=nolost))
+    if mode == 2:
+        ray[:,0] -= center[0]
+        ray[:,2] -= center[1]
 
+    AX,AZ,AT = _focnew_coeffs(ray,nolost=nolost,mode=mode,center=center)
+
+
+    # store versors
     ZBAR = AZ[3]
     VZBAR = AZ[5]
+    #
+    XBAR = AX[3]
+    VXBAR = AX[5]
+    #
+    TBAR = ZBAR + XBAR
+    VTBAR = VZBAR + VXBAR
+
+    #reset coeffs
+    if mode != 1:
+        AZ[3] = 0.0
+        AZ[4] = 0.0
+        AZ[5] = 0.0
+
+        AX[3] = 0.0
+        AX[4] = 0.0
+        AX[5] = 0.0
+
+        AT[3] = 0.0
+        AT[4] = 0.0
+        AT[5] = 0.0
+
+    #get Y coordinate of the three waists
+
     if numpy.abs(AZ[0]-AZ[5]) > 1e-30:
         TPARZ = (AZ[4] - AZ[1]) / (AZ[0] - AZ[5])
     else:
         TPARZ = 0.0
 
-    XBAR = AX[3]
-    VXBAR = AX[5]
     if numpy.abs(AX[0]-AX[5]) > 1e-30:
         TPARX = (AX[4] - AX[1]) / (AX[0] - AX[5])
     else:
@@ -1230,8 +1125,14 @@ def focnew_text(AX,AZ,AT):
         TPART = (AT[4] - AT[1]) / (AT[0] - AT[5])
     else:
         TPART = 0.0
-    TBAR = ZBAR + XBAR
-    VTBAR = VZBAR + VXBAR
+
+    #prepare text output
+
+    txt = ""
+    txt += '-----------------------------------------------------------------------------\n'
+    txt += 'Center at : %s\n'%(NMODE[mode])
+    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
+    txt += '-----------------------------------------------------------------------------\n'
 
     SIGX = numpy.sqrt(numpy.abs( AX[0] * TPARX**2 + 2.0 * AX[1] * TPARX + AX[2] - ( AX[3] + 2.0 * AX[4] * TPARX + AX[5] * TPARX**2)))
     SIGZ = numpy.sqrt(numpy.abs( AZ[0] * TPARZ**2 + 2.0 * AZ[1] * TPARZ + AZ[2] - ( AZ[3] + 2.0 * AZ[4] * TPARZ + AZ[5] * TPARZ**2)))
@@ -1240,12 +1141,6 @@ def focnew_text(AX,AZ,AT):
     SIGX0 = numpy.sqrt(numpy.abs(AX[2] - AX[3]))
     SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
     SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
-
-#    NMODE = ['Origin','Baricenter','External']
-#    txt += '-----------------------------------------------------------------------------\n'
-#    txt += 'Center at : %s\n'%(NMODE[mode])
-#    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
-#    txt += '-----------------------------------------------------------------------------\n'
 
     txt += '.............   S A G I T T A L   ............\n'
     txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
@@ -1268,13 +1163,283 @@ def focnew_text(AX,AZ,AT):
     txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
     txt += 'Waist size at origin                :  %g\n'%(SIGT0)
 
-    return txt
+    #store all outputs
+    ticket = {}
+    # copy the inputs
+    ticket['nolost'] = nolost
+    ticket['mode'] = mode
+    ticket['center_at'] = NMODE[mode]
+    # coefficients
+    ticket['AX'] = AX
+    ticket['AZ'] = AZ
+    ticket['AT'] = AT
+    # position of waists
+    ticket['x_waist'] = TPARX
+    ticket['z_waist'] = TPARZ
+    ticket['t_waist'] = TPART
+    # text output
+    ticket['text'] = txt
+
+    return ticket
+
 
 
 def focnew_scan(A,x):
+    """
+    Scans the RMS of the beam size using the focnew coefficients
+    Example:
+    tkt = focnew("star.02")
+
+    import matplotlib.pylab as plt
+    f2 = plt.figure(2)
+    y = numpy.linespace(-10.,10.,101)
+    plt.plot(y,2.35*focnew_scan(tkt["AX"],y),label="x (tangential)")
+    plt.plot(y,2.35*focnew_scan(tkt["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt["AT"],y),label="combined x,z")
+    plt.legend()
+    plt.title("FOCNEW SCAN")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("2.35*<Z> [cm]")
+    plt.show()
+
+    :param A: array of 6 coefficients
+    :param x: the abscissas array
+    :return: the array with RMS values
+    """
     x1 = numpy.array(x)
     y = numpy.sqrt(numpy.abs( A[0] * x1**2 + 2.0 * A[1] * x1 + A[2] - (A[3] + 2.0 * A[4] * x1 + A[5] * x1**2)))
     return y
+
+
+
+def _focnew_coeffs(ray,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Internal use of focnew:
+        calculate the 6 CHI-Square coefficients for that data array referred to the origin
+        e.g., for x we have d = Vy/Vx the 6 coeffs are: <d**2>, <x d>, <x**2>, <x>**2, <x><d>, <d>**2
+
+        This is a translatiopn of FINDOUT in shadow_kernel.F90
+        Note that mode=0 and mode=1 give the same output
+    :param ray: numpy array with ray coordinates and directions
+    :param nolost:
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: AX,AZ,AT  6 coeffs arrays for X, Z and AVERAGE directions, respectively
+    """
+
+    # for col=3
+    AZ	=	numpy.zeros(6)
+    DVECTOR = ray[5,:]/ray[4,:] ### RAY(KOL+3,I)/RAY(5,I)
+    AZ[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AZ[1] = (ray[2,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AZ[2] = (ray[2,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AZ[3] = (ray[2,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AZ[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AZ[0] =  AZ[0] / ray.shape[1]  # A1	=   A1/K
+    AZ[1] =  AZ[1] / ray.shape[1]  # A2	=   A2/K
+    AZ[2] =  AZ[2] / ray.shape[1]  # A3	=   A3/K
+    AZ[3] =  AZ[3] / ray.shape[1]  # A4	=   A4/K
+    AZ[5] =  AZ[5] / ray.shape[1]  # A6	=   A6/K
+
+    AZ[4] = AZ[5] * AZ[3]   #  A5 = A6*A4
+    AZ[3] = AZ[3]**2        #  A4 = A4**2
+    AZ[5] = AZ[5]**2        #  A6 = A6**2
+
+
+    # for col=1
+    AX	=	numpy.zeros(6)
+    DVECTOR = ray[3,:]/ray[4,:]            # RAY(KOL+3,I)/RAY(5,I)
+    AX[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AX[1] = (ray[0,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AX[2] = (ray[0,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AX[3] = (ray[0,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AX[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AX[0] =  AX[0] / ray.shape[1]  # A1	=   A1/K
+    AX[1] =  AX[1] / ray.shape[1]  # A2	=   A2/K
+    AX[2] =  AX[2] / ray.shape[1]  # A3	=   A3/K
+    AX[3] =  AX[3] / ray.shape[1]  # A4	=   A4/K
+    AX[5] =  AX[5] / ray.shape[1]  # A6	=   A6/K
+
+    AX[4] = AX[5] * AX[3]   #  A5 = A6*A4
+    AX[3] = AX[3]**2        #  A4 = A4**2
+    AX[5] = AX[5]**2        #  A6 = A6**2
+
+    # for T
+    AT =   numpy.zeros(6)
+    AT[0] = AX[0] + AZ[0]
+    AT[1] = AX[1] + AZ[1]
+    AT[2] = AX[2] + AZ[2]
+    AT[3] = AX[3] + AZ[3]
+    AT[4] = AX[4] + AZ[4]
+    AT[5] = AX[5] + AZ[5]
+
+    return AX,AZ,AT
+
+
+
+def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnbins=0,znbins=0):
+    """
+
+    :param nolost:
+    :param iters:
+    :param range:
+    :param xrange:
+    :param yrange:
+    :param nbins:
+    :return:
+    """
+    ticket = {}
+
+    # copy the inputs
+    ticket['iters'] = iters
+    ticket['range'] = range
+    ticket['xnbins'] = xnbins
+    ticket['znbins'] = znbins
+
+
+    if isinstance(beam,str):
+        beam1 = Shadow.Beam()
+        beam1.load(beam)
+    else:
+        beam1 = beam
+
+
+
+    rays = beam1.getshcol((1,2,3,4,5,6),nolost=nolost)
+    rays = numpy.array(rays).T
+    weights = beam1.getshcol(23,nolost=nolost)
+    weights = numpy.array(weights)
+    weights_sum = weights.sum()
+    s = rays.shape
+
+    #define output variables
+    y = numpy.linspace(range[0],range[1],iters)
+    x_mean = y.copy()
+    z_mean = y.copy()
+    x_sd = y.copy()
+    z_sd = y.copy()
+    x_wmean = y.copy()
+    z_wmean = y.copy()
+    x_wsd = y.copy()
+    z_wsd = y.copy()
+
+    out = numpy.zeros((2,y.size,s[0]))
+
+    for i,yi in enumerate(y):
+        tof = (-rays[:,1].flatten() + yi)/rays[:,4].flatten()
+        x = rays[:,0].flatten() +  tof*rays[:,3].flatten()
+        z = rays[:,2].flatten() +  tof*rays[:,5].flatten()
+        out[0,i,:] = x
+        out[1,i,:] = z
+        x_mean[i] = (x).mean()
+        z_mean[i] = (z).mean()
+        x_sd[i] = x.std()
+        z_sd[i] = z.std()
+        x_wmean[i] = (x*weights).sum() / weights_sum
+        z_wmean[i] = (z*weights).sum() / weights_sum
+        x_wsd[i] = numpy.sqrt( ((x*weights-x_wmean[i])**2).sum() / weights_sum)
+        z_wsd[i] = numpy.sqrt( ((z*weights-z_wmean[i])**2).sum() / weights_sum)
+
+    # now the histograms
+
+    if xrange is None:
+        xrange = [out[0,:,:].min(),out[0,:,:].max()]
+
+    if zrange is None:
+        zrange = [out[1,:,:].min(),out[1,:,:].max()]
+
+    # first histograms fo X
+    if xnbins > 0:
+        x_fwhm  = numpy.zeros(iters)
+        x_wfwhm = numpy.zeros(iters)
+        x_h     = numpy.zeros((iters,xnbins))
+        x_wh    = numpy.zeros((iters,xnbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange)
+            x_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange,weights=weights)
+            x_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        x_bins = bins
+    else:
+        x_fwhm  = None
+        x_wfwhm = None
+        x_bins  = None
+        x_h     = None
+        x_wh    = None
+
+    # then histograms fo Z
+    if znbins > 0:
+        z_fwhm  = numpy.zeros(iters)
+        z_wfwhm = numpy.zeros(iters)
+        z_h     = numpy.zeros((iters,znbins))
+        z_wh    = numpy.zeros((iters,znbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange)
+            z_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange,weights=weights)
+            z_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        z_bins = bins
+    else:
+        z_fwhm  = None
+        z_wfwhm = None
+        z_bins  = None
+        z_h     = None
+        z_wh    = None
+
+
+    x = (out[0,:,:]).flatten().copy()
+    z = (out[1,:,:]).flatten().copy()
+    ticket['y'] = y
+    ticket['x'] = x
+    ticket['z'] = z
+
+    ticket['x_mean'] = x_mean
+    ticket['z_mean'] = z_mean
+    ticket['x_wmean'] = x_wmean
+    ticket['z_wmean'] = z_wmean
+
+    ticket['x_sd'] = x_sd
+    ticket['z_sd'] = z_sd
+    ticket['x_wsd'] = x_wsd
+    ticket['z_wsd'] = z_wsd
+
+
+    #histo
+    ticket['x_fwhm']  = x_fwhm
+    ticket['x_wfwhm'] = x_wfwhm
+    ticket['x_bins']  = x_bins
+    ticket['x_h']     = x_h
+    ticket['x_wh']    = x_wh
+
+    ticket['z_fwhm']  = z_fwhm
+    ticket['z_wfwhm'] = z_wfwhm
+    ticket['z_bins']  = z_bins
+    ticket['z_h']     = z_h
+    ticket['z_wh']    = z_wh
+
+    return(ticket)
+
+
 
 #
 # waviness
@@ -1922,22 +2087,18 @@ def main():
     ymin = -1.0
     ymax = 1.0
     ypoints = 101
-    y = numpy.linspace(-1.,1.,31)
-
 
     #first with ray_prop
-    a = Shadow.Beam()
-    a.load("star.02")
-    tkt = a.ray_prop(nolost=1,range=[ymin,ymax],iters=ypoints)
+    tkt = ray_prop("star.02",nolost=1,range=[ymin,ymax],iters=ypoints,xnbins=61,znbins=61)
     #print(tkt)
 
-
     #then focnew_scan
-    ax,az,at = a.focnew_coeffs(nolost=1)
-    txt = focnew_text(ax,az,at)
+    tkt2 = focnew("star.02",nolost=1,mode=1)
+    print(tkt2["text"])
 
-    #now plot everything
+    # now plot everything
 
+    # ray_prop results
     f1 = plt.figure(1)
     plt.plot(tkt["y"],2.35*tkt["x_sd"],label="x (tangential)")
     plt.plot(tkt["y"],2.35*tkt["x_wsd"],label="x weighted (tangential)")
@@ -1948,20 +2109,36 @@ def main():
     plt.xlabel("Y [cm]")
     plt.ylabel("2.35*SD [cm]")
 
-
-
-    #txt = focnew("star.02")
+    # data from ray_prop histograms
 
     f2 = plt.figure(2)
-    plt.plot(y,2.35*focnew_scan(ax,y),label="x (tangential)")
-    plt.plot(y,2.35*focnew_scan(az,y),label="z (sagittal)")
-    plt.plot(y,2.35*focnew_scan(at,y),label="combined x,z")
+    if tkt["x_fwhm"] is None:
+        pass
+    else:
+        plt.plot(tkt["y"],tkt["x_fwhm"],label="x (histo)")
+        plt.plot(tkt["y"],tkt["x_wfwhm"],label="x (weighted histo)")
+    if tkt["z_fwhm"] is None:
+        pass
+    else:
+        plt.plot(tkt["y"],tkt["z_fwhm"],label="z (histo)")
+        plt.plot(tkt["y"],tkt["z_wfwhm"],label="z (weighted histo)")
     plt.legend()
-    plt.title("FOCNEW")
+    plt.title("ray_prop (from histograms)")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("FWHM [cm]")
+
+    # now the focnew scans
+    f3 = plt.figure(3)
+    y = numpy.linspace(ymin,ymax,ypoints)
+    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="x (tangential)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined x,z")
+    plt.legend()
+    plt.title("focnew")
     plt.xlabel("Y [cm]")
     plt.ylabel("2.35*<Z> [cm]")
-    plt.show()
 
+    plt.show()
 
 
 if __name__=="__main__":
