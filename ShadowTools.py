@@ -604,7 +604,16 @@ def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,title="",viewer='okular
 
   tkt["title"] = title
   tkt["lost_rays"] = tkt["nrays"] - tkt["good_rays"]
-  tkt["label_id"] = os.getenv("USER")+"@"+os.getenv("HOST")
+  tkt["label_id"] = ""
+  if os.getenv("USER") is None:
+      pass
+  else:
+      tkt["label_id"] += os.getenv("USER")
+  if os.getenv("HOST") is None:
+      pass
+  else:
+      tkt["label_id"] += "@"+os.getenv("HOST")
+
   if tkt["ref"] == 0:
       tkt["label_weight"] = "WEIGHT: RAYS"
   else:
@@ -1279,33 +1288,59 @@ def _focnew_coeffs(ray,nolost=1,mode=0,center=[0.0,0.0]):
 
 
 
-def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnbins=0,znbins=0):
+def ray_prop(beam,nolost=1,ypoints=21,ymin=-1.0,ymax=1.0,xrange=None,zrange=None,xbins=0,zbins=0):
     """
 
-    :param nolost:
-    :param iters:
-    :param range:
-    :param xrange:
-    :param yrange:
-    :param nbins:
-    :return:
+    :param beam:   a file name or an instance of Shadow.Beam
+    :param nolost: 0=all rays, 1=good only, 2=lost only
+    :param ypoints: number of points (planes) where to propagate the beam
+    :param ymin: minumum coordinate y (along the beam)
+    :param ymax: maximum coordinate y (along the beam)
+    :param xrange: [xmin,xmax] limits in X (for the histograms, i.e. xbins > 0)
+    :param zrange: [zmin,zmax] limits in Z (for the histograms, i.e. zbins > 0)
+    :param xbins: number of bins for histograms in X direction. If xbins=0 (default) do not make X histograms
+    :param zbins: number of bins for histograms in Z direction. If zbins=0 (default) do not make Z histograms
+    :return: a python dictionary (ticket) with:
+
+    ticket['ypoints']   # input
+    ticket['ymin']      # input
+    ticket['ymax']      # input
+    ticket['xbins']     # input
+    ticket['zbins']     # input
+
+    ticket['y']         # array (ypoints)  with y values
+    ticket['x']         # array (ypoints,NRAYS) with x values
+    ticket['z']         # array (ypoints,NRAYS) with z values
+
+    ticket['x_mean']    # array(ypoints) with X mean
+    ticket['z_mean']    # array(ypoints) with Z mean
+    ticket['x_wmean']   # array(ypoints) with X weighted (with intensity) mean
+    ticket['z_wmean']   # array(ypoints) with Z weighted (with intensity) mean
+
+    ticket['x_sd']      # array(ypoints) with X standard deviations
+    ticket['z_sd']      # array(ypoints) with Z standard deviations
+    ticket['x_wsd']     # array(ypoints) with X standard deviations (rays weighted with intensty)
+    ticket['z_wsd']     # array(ypoints) with Z standard deviations (rays weighted with intensty)
+
+    ticket['x_fwhm']    # if xbins>0 array(ypoints) with FWHM  for X
+    ticket['x_wfwhm']   # if xbins>0 array(ypoints) with FWHM (rays weighted with intensity) for X
+    ticket['x_bins']    # if xbins>0 array(ypoinys,xbins) with X histograms abscissas (at bin center)
+    ticket['x_h']       # if xbins>0 array(ypoinys,xbins) with X histogram counts
+    ticket['x_wh']      # if xbins>0 array(ypoinys,xbins) with X histogram counts (weighted with intensity)
+
+    ticket['z_fwhm']    # if zbins>0 array(ypoints) with FWHM  for Z
+    ticket['z_wfwhm']   # if zbins>0 array(ypoints) with FWHM (rays weighted with intensity) for Z
+    ticket['z_bins']    # if zbins>0 array(ypoinys,zbins) with Z histograms abscissas (at bin center)
+    ticket['z_h']       # if zbins>0 array(ypoinys,zbins) with Z histogram counts
+    ticket['z_wh']      # if zbins>0 array(ypoinys,zbins) with Z histogram counts (weighted with intensity)
+
     """
-    ticket = {}
-
-    # copy the inputs
-    ticket['iters'] = iters
-    ticket['range'] = range
-    ticket['xnbins'] = xnbins
-    ticket['znbins'] = znbins
-
 
     if isinstance(beam,str):
         beam1 = Shadow.Beam()
         beam1.load(beam)
     else:
         beam1 = beam
-
-
 
     rays = beam1.getshcol((1,2,3,4,5,6),nolost=nolost)
     rays = numpy.array(rays).T
@@ -1315,7 +1350,7 @@ def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnb
     s = rays.shape
 
     #define output variables
-    y = numpy.linspace(range[0],range[1],iters)
+    y = numpy.linspace(ymin,ymax,ypoints)
     x_mean = y.copy()
     z_mean = y.copy()
     x_sd = y.copy()
@@ -1325,46 +1360,49 @@ def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnb
     x_wsd = y.copy()
     z_wsd = y.copy()
 
-    out = numpy.zeros((2,y.size,s[0]))
+    x = numpy.zeros((y.size,s[0]))
+    z = numpy.zeros((y.size,s[0]))
 
     for i,yi in enumerate(y):
         tof = (-rays[:,1].flatten() + yi)/rays[:,4].flatten()
-        x = rays[:,0].flatten() +  tof*rays[:,3].flatten()
-        z = rays[:,2].flatten() +  tof*rays[:,5].flatten()
-        out[0,i,:] = x
-        out[1,i,:] = z
-        x_mean[i] = (x).mean()
-        z_mean[i] = (z).mean()
-        x_sd[i] = x.std()
-        z_sd[i] = z.std()
-        x_wmean[i] = (x*weights).sum() / weights_sum
-        z_wmean[i] = (z*weights).sum() / weights_sum
-        x_wsd[i] = numpy.sqrt( ((x*weights-x_wmean[i])**2).sum() / weights_sum)
-        z_wsd[i] = numpy.sqrt( ((z*weights-z_wmean[i])**2).sum() / weights_sum)
+        xi = rays[:,0].flatten() +  tof*rays[:,3].flatten()
+        zi = rays[:,2].flatten() +  tof*rays[:,5].flatten()
+        # out[0,i,:] = xi
+        # out[1,i,:] = zi
+        x[i,:] = xi
+        z[i,:] = zi
+        x_mean[i] = (xi).mean()
+        z_mean[i] = (zi).mean()
+        x_sd[i] = xi.std()
+        z_sd[i] = zi.std()
+        x_wmean[i] = (xi*weights).sum() / weights_sum
+        z_wmean[i] = (zi*weights).sum() / weights_sum
+        x_wsd[i] = numpy.sqrt( ((xi*weights-x_wmean[i])**2).sum() / weights_sum)
+        z_wsd[i] = numpy.sqrt( ((zi*weights-z_wmean[i])**2).sum() / weights_sum)
 
     # now the histograms
 
     if xrange is None:
-        xrange = [out[0,:,:].min(),out[0,:,:].max()]
+        xrange = [x.min(),x.max()]
 
     if zrange is None:
-        zrange = [out[1,:,:].min(),out[1,:,:].max()]
+        zrange = [z.min(),z.max()]
 
     # first histograms fo X
-    if xnbins > 0:
-        x_fwhm  = numpy.zeros(iters)
-        x_wfwhm = numpy.zeros(iters)
-        x_h     = numpy.zeros((iters,xnbins))
-        x_wh    = numpy.zeros((iters,xnbins))
+    if xbins > 0:
+        x_fwhm  = numpy.zeros(ypoints)
+        x_wfwhm = numpy.zeros(ypoints)
+        x_h     = numpy.zeros((ypoints,xbins))
+        x_wh    = numpy.zeros((ypoints,xbins))
         for i,yi in enumerate(y):
-            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange)
+            h,bins = numpy.histogram(x[i,:],bins=xbins,range=xrange)
             x_h[i,:] = h
 
             tt = numpy.where(h>=max(h)*0.5)
             if h[tt].size > 1:
               x_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
 
-            h,bins = numpy.histogram(out[0,i,:],bins=xnbins,range=xrange,weights=weights)
+            h,bins = numpy.histogram(x[i,:],bins=xbins,range=xrange,weights=weights)
             x_wh[i,:] = h
 
             tt = numpy.where(h>=max(h)*0.5)
@@ -1379,20 +1417,20 @@ def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnb
         x_wh    = None
 
     # then histograms fo Z
-    if znbins > 0:
-        z_fwhm  = numpy.zeros(iters)
-        z_wfwhm = numpy.zeros(iters)
-        z_h     = numpy.zeros((iters,znbins))
-        z_wh    = numpy.zeros((iters,znbins))
+    if zbins > 0:
+        z_fwhm  = numpy.zeros(ypoints)
+        z_wfwhm = numpy.zeros(ypoints)
+        z_h     = numpy.zeros((ypoints,zbins))
+        z_wh    = numpy.zeros((ypoints,zbins))
         for i,yi in enumerate(y):
-            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange)
+            h,bins = numpy.histogram(z[i,:],bins=zbins,range=zrange)
             z_h[i,:] = h
 
             tt = numpy.where(h>=max(h)*0.5)
             if h[tt].size > 1:
               z_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
 
-            h,bins = numpy.histogram(out[1,i,:],bins=znbins,range=zrange,weights=weights)
+            h,bins = numpy.histogram(z[i,:],bins=zbins,range=zrange,weights=weights)
             z_wh[i,:] = h
 
             tt = numpy.where(h>=max(h)*0.5)
@@ -1407,8 +1445,16 @@ def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnb
         z_wh    = None
 
 
-    x = (out[0,:,:]).flatten().copy()
-    z = (out[1,:,:]).flatten().copy()
+    ticket = {}
+
+    # copy the inputs
+    ticket['ypoints'] = ypoints
+    ticket['ymin'] = ymin
+    ticket['ymax'] = ymax
+    ticket['xbins'] = xbins
+    ticket['zbins'] = zbins
+
+    #scatter points
     ticket['y'] = y
     ticket['x'] = x
     ticket['z'] = z
@@ -1422,7 +1468,6 @@ def ray_prop(beam,nolost=1,iters=21,range=[-1.0,1.0],xrange=None,zrange=None,xnb
     ticket['z_sd'] = z_sd
     ticket['x_wsd'] = x_wsd
     ticket['z_wsd'] = z_wsd
-
 
     #histo
     ticket['x_fwhm']  = x_fwhm
@@ -1575,75 +1620,6 @@ def slopes(z,x,y,silent=1, return_only_rms=0):
         return (slope,slopesrms)
 
 
-# def slopes(z,x,y):
-#     """
-#     ;+
-#     ; NAME:
-#     ;	slopes
-#     ; PURPOSE:
-#     ;       This function calculates the slope errors of a surface along the mirror
-#     ;       length y and mirror width x.
-#     ; CATEGORY:
-#     ;	SHADOW tools
-#     ; CALLING SEQUENCE:
-#     ;	(slope,slopesrms) = slopes(z,x,y)
-#     ; INPUTS:
-#     ;	x: the width array of dimensions (Nx)
-#     ;	y: the length array of dimensions (Ny)
-#     ;	z: the surface array of dimensions (Nx,Ny)
-#     ; OUTPUTS:
-#     ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
-#     ;            along y in out[0,:,:] and along Y in out[1,:,:]
-#     ;	slopesrms: a 4-dim array with
-#     ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec,
-#     ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
-#     ;
-#     ; MODIFICATION HISTORY:
-#     ;       MSR 1994 written
-#     ;       08-04-15 srio@esrf.eu makes calculations in double precision.
-#     ;       2014-09-11 documented
-#     ;       2012-02-10 srio@esrf.eu python version
-#     ;-
-#     ;
-#     """
-#
-#     nx = z.shape[0]
-#     ny = z.shape[1]
-#
-#     slope = numpy.zeros((2,nx,ny))
-#
-#     #;
-#     #; slopes in x direction
-#     #;
-#     for i in range(nx-1):
-#         step = x[i+1] - x[i]
-#         slope[0,i,:] = numpy.arctan( (z[i+1,:] - z[i,:] ) / step )
-#     slope[0,nx-1,:] = slope[0,nx-2,:]
-#
-#     #;
-#     #; slopes in y direction
-#     #;
-#     for i in range(ny-1):
-#         step = y[i+1] - y[i]
-#         slope[1,:,i] = numpy.arctan( (z[:,i+1] - z[:,i] ) / step )
-#     slope[1,:,ny-1] = slope[1,:,ny-2]
-#
-#     slopermsX = slope[0,:,:].std()
-#     slopermsY = slope[1,:,:].std()
-#     slopermsXsec = slopermsX*180.0/numpy.pi*3600.0
-#     slopermsYsec = slopermsY*180.0/numpy.pi*3600.0
-#     slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
-#
-#     print('\n **** slopes: ****')
-#     print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
-#     print('                               : %f urad'%(slopermsX*1e6))
-#     print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
-#     print('                               : %f urad'%(slopermsY*1e6))
-#     print(' *****************')
-#
-#     return (slope,slopesrms)
-
-
 def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
     """
       write_shadowSurface: writes a mesh in the SHADOW/presurface format
@@ -1690,7 +1666,6 @@ def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
 def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=113.1,\
                   nharmonics=3,slp=0.9, iseed=2387427,\
                   c=[1.0,1.0,1.0,1.0],y=[0.0,0.0,0.0,0.0],g=[0.0,0.0,0.0,0.0]):
-
     """
     ;+
     ; NAME: 	WAVINESS_CALC
@@ -1862,12 +1837,12 @@ def make_python_script_from_list(list_optical_elements,script_file=""):
 
     the system is read from a list of instances of Shadow.Source and Shadow.OE
 
-      :argument list of optical_elements A python list with intances of Shadow.Source and Shadow.OE objects
-      :param script_file: a string with the name of the output file (default="", no output file)
+    :argument list of optical_elements A python list with intances of Shadow.Source and Shadow.OE objects
+    :param script_file: a string with the name of the output file (default="", no output file)
     :return: template with the script
     """
     template = """#
-# Python script to run shadow3. Created automatically with mk_script.py.
+# Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
 import Shadow
 
@@ -1908,14 +1883,6 @@ beam = Shadow.Beam()
             if ivar[0].isupper():
                 if isinstance(ivar[1],numpy.ndarray):
                     if (ivar[1] != ivarB[1]).all():
-                        # if isinstance(ivarB[1][0],numpy.bytes_):
-                        #     tmp1 = copy.deepcopy(ivarB[1])
-                        #     for j in range(10):
-                        #        tmp = re.sub('\s{2,}', ' ',str(ivarB[1][j]))
-                        #        tmp1[j] = tmp
-                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(tmp1)+"\n"
-                        # else:
-                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
                         line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
                         if ("SPECIFIED" in line):
                             pass
@@ -1940,12 +1907,12 @@ beam = Shadow.Beam()
 #Run SHADOW to create the source
 
 if iwrite:
-    oe0.write("start_py.00")
+    oe0.write("start.00")
 
 beam.genSource(oe0)
 
 if iwrite:
-    oe0.write("end_py.00")
+    oe0.write("end.00")
     beam.write("begin.dat")
 """
 
@@ -1955,10 +1922,10 @@ if iwrite:
 #
 print("    Running optical element: %d"%({0}))
 if iwrite:
-    oe1.write("start_py.{1}")
+    oe1.write("start.{1}")
 beam.traceOE(oe{0},{0})
 if iwrite:
-    oe1.write("end_py.{1}")
+    oe1.write("end.{1}")
     beam.write("star.{1}")
 """
 
@@ -1989,7 +1956,7 @@ def make_python_script_from_current_run(script_file=""):
 
     srio@esrf.eu
 
-      :param script_file: a string with the name of the output file (default="", no output file)
+    :param script_file: a string with the name of the output file (default="", no output file)
     :return: template with the script
     """
 
@@ -2013,90 +1980,110 @@ def make_python_script_from_current_run(script_file=""):
 
     return template
 
-def main():
-  import os
+#
+# Tests
+#
 
-  #
-  #test waviness
-  #
-  do_waviness = 0
-  if do_waviness:
-      myfile = "waviness.inp"
-      try:
-          f = open(myfile)
-          f.close()
-          tmp = waviness_read(file=myfile)
+def test_waviness():
+    myfile = "waviness.inp"
+    try:
+      f = open(myfile)
+      f.close()
+      tmp = waviness_read(file=myfile)
 
-          (x,y,z) = waviness_calc(\
-                        file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
-                        width=tmp["width"],xlength=tmp["xlength"],\
-                        nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
-                        c=tmp["c"],y=tmp["y"], g=tmp["g"])
+      (x,y,z) = waviness_calc(\
+                    file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
+                    width=tmp["width"],xlength=tmp["xlength"],\
+                    nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
+                    c=tmp["c"],y=tmp["y"], g=tmp["g"])
 
-          waviness_write(tmp,file="tmp.inp")
-      except:
-          (x,y,z) = waviness_calc()
+      waviness_write(tmp,file="tmp.inp")
+    except:
+      (x,y,z) = waviness_calc()
 
-      write_shadow_surface(z.T,x,y,outFile='waviness.dat')
-      slopes(z,x,y)
+    write_shadow_surface(z.T,x,y,outFile='waviness.dat')
+    slopes(z,x,y)
 
-  #
-  #test new plots
-  #
-  do_histo1 = 0
-  if do_histo1:
-      #t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
-      t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
+def test_make_kb():
+    print("setting KB for ID23-2")
 
-  do_plotxy = 0
-  if do_plotxy:
-      nbins = 110
+    # create source
+    src = Shadow.Source()
+    src.set_energy_monochromatic(14200.0)
+    SIGMAX = 0.00374784
+    SIGMAZ = 0.000425671
+    SIGDIX = 0.000107037
+    SIGDIZ = 5.55325e-06
+    src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+    src.write("start.00")
 
-      # t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
+    beam = Shadow.Beam()
+    beam.genSource(src)
+    beam.write("begin.dat")
+    src.write("end.00")
 
-      # import Shadow
-      # tmp = Shadow.Beam()
-      # tmp.load("begin.dat")
-      # tkt2 = tmp.plotxy(1,3,nbins=nbins, nolost=0, ref=1, \
-      #                      xrange=[-0.015,0.015], yrange=[-0.002,0.002])
-      # plotxy_gnuplot(tkt2,0,0,execute=1)
-      # plotxy(tkt2,0,0)
+    kb = Shadow.CompoundOE(name='KB')
+    kb.append_kb(4275,180,separation=4315-4275,grazing_angles_mrad=[3.9,17.8],shape=[2,2], \
+                 dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
+                 ) # surface_error_files=["waviness.dat","waviness.dat"])
 
-
-      tkt = plotxy_gnuplot("begin.dat",1,3,nbins=nbins, nolost=1, ref=0, \
-                     xrange=[-0.015,0.015], yrange=[-0.002,0.002],execute=0,pdf=1)
+    # trace
+    kb.dump_systemfile()
+    beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
+    beam.write("star.02")
 
 
-      # tkt = plotxy("begin.dat",1,3,nbins=nbins, nolost=1, \
-      #                xrange=[-0.015,0.015], yrange=[-0.002,0.002])
+def test_histo1():
+    test_make_kb()
+    t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
 
-  do_script = 0
-  if do_script:
-    old_dir = os.getcwd()
-    os.chdir("/scisoft/users/srio/Working/RADIASOFT/shadow")
+def test_plotxy_gnuplot():
+    test_make_kb()
+    tkt = plotxy_gnuplot("begin.dat",1,3,nbins=110, nolost=1, ref=0, \
+                 xrange=[-0.015,0.015], yrange=[-0.002,0.002],execute=0,pdf=1)
+
+    # # TODO: it seems that it does not work: gnuplot version??
+    # import os
+    # os.system("pwd")
+    # os.system("gnuplot plotxy.gpl")
+
+def test_make_script():
+    test_make_kb()
+    # TODO: does not work??
     make_python_script_from_current_run(script_file="tmp.py")
     os.system("python3 tmp.py")
-    os.chdir(old_dir)
 
-  #
-  #test focnew
-  #
-  do_focnew = 1
-  if do_focnew:
+def test_focnew():
+    test_make_kb()
 
     ymin = -1.0
     ymax = 1.0
     ypoints = 101
 
-    #first with ray_prop
-    tkt = ray_prop("star.02",nolost=1,range=[ymin,ymax],iters=ypoints,xnbins=61,znbins=61)
-    #print(tkt)
-
     #then focnew_scan
     tkt2 = focnew("star.02",nolost=1,mode=1)
     print(tkt2["text"])
 
-    # now plot everything
+    # now the focnew scans
+    f3 = plt.figure(3)
+    y = numpy.linspace(ymin,ymax,ypoints)
+    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="x (tangential)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined x,z")
+    plt.legend()
+    plt.title("focnew")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("2.35*<Z> [cm]")
+
+    plt.show()
+
+def test_ray_prop():
+
+    ymin = -1.0
+    ymax = 1.0
+    ypoints = 101
+
+    tkt = ray_prop("star.02",nolost=1,ymin=ymin,ymax=ymax,ypoints=ypoints,xbins=61,zbins=61)
 
     # ray_prop results
     f1 = plt.figure(1)
@@ -2127,21 +2114,14 @@ def main():
     plt.xlabel("Y [cm]")
     plt.ylabel("FWHM [cm]")
 
-    # now the focnew scans
-    f3 = plt.figure(3)
-    y = numpy.linspace(ymin,ymax,ypoints)
-    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="x (tangential)")
-    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="z (sagittal)")
-    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined x,z")
-    plt.legend()
-    plt.title("focnew")
-    plt.xlabel("Y [cm]")
-    plt.ylabel("2.35*<Z> [cm]")
-
     plt.show()
 
-
 if __name__=="__main__":
-    main()
-
-
+    do_tests = 0
+    if do_tests:
+        test_waviness()
+        test_histo1()
+        test_plotxy_gnuplot()
+        test_make_script()
+        test_focnew()
+        test_ray_prop()
