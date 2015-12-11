@@ -9492,7 +9492,7 @@ IF (IVERB.EQ.1) THEN
     print *,'everything in the program is referred to it. Once established, you still have '
     print *,'complete freedom of "moving" around the mirrors. In the case of a grating,  '
     print *,'you will have several choices. The program may override your specifications   '
-    print *,'for the central axis and locate the source and image at the ‘‘best’’ position.'
+    print *,'for the central axis and locate the source and image at the best position.'
     print *,'You will be prompted later for this option. It is recommended to use CM as    '
     print *,'units. This is not critical for most cases, but it is in the case of          '
     print *,'diffraction elements.                                                         '

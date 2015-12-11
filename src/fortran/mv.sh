@@ -1,0 +1,17 @@
+mv gfile.F90 gfile.f90
+mv shadow3.F90 shadow3.f90
+mv shadow_beamio.F90 shadow_beamio.f90
+mv shadow_bind_f.F90 shadow_bind_f.f90
+mv shadow_crl.F90 shadow_crl.f90
+mv shadow_globaldefinitions.F90 shadow_globaldefinitions.f90
+mv shadow_kernel.F90 shadow_kernel.f90
+mv shadow_math.F90 shadow_math.f90
+mv shadow_postprocessors.F90 shadow_postprocessors.f90
+mv shadow_preprocessors.F90 shadow_preprocessors.f90
+mv shadow_pre_sync.F90 shadow_pre_sync.f90
+mv shadow_pre_sync_urgent.F90 shadow_pre_sync_urgent.f90
+mv shadow_roughness.F90 shadow_roughness.f90
+mv shadow_synchrotron.F90 shadow_synchrotron.f90
+mv shadow_variables.F90 shadow_variables.f90
+mv shadow_version.F90 shadow_version.f90
+mv stringio.F90 stringio.f90

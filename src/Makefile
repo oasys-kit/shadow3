@@ -71,7 +71,7 @@ STATIC = -static
 # customize compiler and flags
 #
 FC = gfortran
-FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
+FFLAGS = -I ./def/ -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 LINKFLAGS = $(32BITS) $(STATIC)
 
 # NOTE:
@@ -100,11 +100,8 @@ CXX = g++
 #CXX = x86_64-w64-mingw32-g++
 #CXX = i686-w64-mingw32-g++
 
-#PY = python
-PY = python3
-
 #-fopenmp -g
-CFLAGS = -fPIC $(32BITS)
+CFLAGS = -I ./def/ -fPIC $(32BITS)
 #-fopenmp -g
 
 LIBFLAGS = -shared -lm 
@@ -142,39 +139,163 @@ MPIFC = mpif90
 #                            shadow_kernel.F90  
 #
 
-FMODULES = \
-	shadow_version.F90 \
-	shadow_globaldefinitions.F90 \
-	stringio.F90 \
-	gfile.F90 \
-	shadow_beamio.F90 \
-	shadow_math.F90 \
-	shadow_variables.F90 \
-	shadow_roughness.F90 \
-	shadow_kernel.F90 \
-	shadow_synchrotron.F90 \
-	shadow_pre_sync.F90 \
-	shadow_pre_sync_urgent.F90 \
-	shadow_preprocessors.F90 \
-	shadow_postprocessors.F90 \
-	shadow_bind_f.F90 \
-	shadow_crl.F90
+OBJFMODULES = \
+	shadow_version.o \
+	shadow_globaldefinitions.o \
+	stringio.o \
+	gfile.o \
+	shadow_beamio.o \
+	shadow_math.o \
+	shadow_variables.o \
+	shadow_roughness.o \
+	shadow_kernel.o \
+	shadow_synchrotron.o \
+	shadow_pre_sync.o \
+	shadow_pre_sync_urgent.o \
+	shadow_preprocessors.o \
+	shadow_postprocessors.o \
+	shadow_bind_f.o \
+	shadow_crl.o
 
-
-OBJFMODULES = ${FMODULES:.F90=.o}
 FMODULESPRE = ${FMODULES:.F90=.f90}
-OBJTESTS    = ${FTESTS:.F90=.o}
 
 
 #
 # targets
 #
+all: shadow3 
 
-
-shadow3: $(OBJFMODULES) shadow3.o  
+#
+# shadow3 target ----------------
+#
+shadow3: $(OBJFMODULES) shadow3.o
 	$(FC) $(LINKFLAGS) -o shadow3$(EXE) shadow3.o $(OBJFMODULES) 
 
-#create .f90 files (see rule) and clean (remove lines starting with #) them using sed
+shadow3.o: fortran/shadow3.f90
+	$(FC) $(FFLAGS) -c fortran/shadow3.f90 
+
+#
+#objects ingredients
+#
+
+shadow_version.o: shadow_version.h fortran/shadow_version.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_version.f90 
+
+# shadow_version.sh creates shadow_version.h including compilation info 
+# for current system
+shadow_version.h:
+	./shadow_version.sh $(FC)
+
+shadow_globaldefinitions.o: fortran/shadow_globaldefinitions.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_globaldefinitions.f90 
+
+stringio.o: fortran/stringio.f90
+	$(FC) $(FFLAGS) -c fortran/stringio.f90 
+
+gfile.o: fortran/gfile.f90
+	$(FC) $(FFLAGS) -c fortran/gfile.f90 
+
+shadow_beamio.o: fortran/shadow_beamio.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_beamio.f90 
+
+shadow_math.o: fortran/shadow_math.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_math.f90 
+
+shadow_variables.o: fortran/shadow_variables.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_variables.f90 
+
+shadow_roughness.o: fortran/shadow_roughness.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_roughness.f90 
+
+shadow_kernel.o: fortran/shadow_kernel.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_kernel.f90 
+
+shadow_synchrotron.o: fortran/shadow_synchrotron.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_synchrotron.f90 
+
+shadow_pre_sync.o: fortran/shadow_pre_sync.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_pre_sync.f90 
+
+shadow_pre_sync_urgent.o: fortran/shadow_pre_sync_urgent.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_pre_sync_urgent.f90 
+
+shadow_preprocessors.o: fortran/shadow_preprocessors.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_preprocessors.f90 
+
+shadow_postprocessors.o: fortran/shadow_postprocessors.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_postprocessors.f90 
+
+shadow_bind_f.o: fortran/shadow_bind_f.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_bind_f.f90 
+
+shadow_crl.o: fortran/shadow_crl.f90
+	$(FC) $(FFLAGS) -c fortran/shadow_crl.f90 
+
+#
+# lib target ----------------
+#
+lib: $(OBJFMODULES) shadow_bind_c.o 
+	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
+	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
+
+shadow_bind_c.o: c/shadow_bind_c.c
+	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
+
+shadow_bind_cpp.o: c/shadow_bind_cpp.cpp
+	$(CXX) $(CFLAGS) -c c/shadow_bind_cpp.cpp
+
+libstatic: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
+	ar cr libshadow3.a $(OBJFMODULES) 
+	ar cr libshadow3c.a shadow_bind_c.o $(OBJFMODULES)
+	ar cr libshadow3c++.a shadow_bind_c.o shadow_bind_cpp.o $(OBJFMODULES)
+
+#
+# examples_fortran target -----------------
+#
+examples_fortran: libstatic examples/example01_f95.F90  examples/example_standalone_mirror.F90  examples/trace3.F90 examples/trace.F90 examples/example02_f95.F90 examples/gen_source.F90 examples/trace3mpi.F90
+	$(FC) $(FFLAGS) -c examples/gen_source.F90
+	$(FC) $(LINKFLAGS) -o gen_source gen_source.o -L. -lshadow3
+
+	$(FC) $(FFLAGS) -c examples/trace.F90
+	$(FC) $(LINKFLAGS) -o trace trace.o -L. -lshadow3
+
+	$(FC) $(FFLAGS) -c examples/trace3.F90
+	$(FC) $(LINKFLAGS) -o trace3 trace3.o -L. -lshadow3
+
+	$(FC) $(FFLAGS) -c examples/example01_f95.F90
+	$(FC) $(LINKFLAGS) -o example01_f95 example01_f95.o -L. -lshadow3
+
+	$(FC) $(FFLAGS) -c examples/example02_f95.F90
+	$(FC) $(LINKFLAGS) -o example02_f95 example02_f95.o -L. -lshadow3
+
+	$(FC) $(FFLAGS) -c examples/example_standalone_mirror.F90
+	$(FC) $(LINKFLAGS) -o example_standalone_mirror example_standalone_mirror.o -L. -lshadow3
+
+#
+#TODO: not yet working
+#
+examples_c: libstatic examples/trace3_c.c examples/example01_c.c examples/example_shadow_format.c
+	$(CC) $(CFLAGS) -I ./c/ -c examples/trace3_c.c
+	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3c -lshadow3
+
+	$(CC) $(CFLAGS) -c -I ./c/ examples/example01_c.c
+	$(CC) $(CFLAGS) -o example01_c example01_c.o
+
+	$(CC) $(CFLAGS) -c -I ./c/ examples/example_shadow_format.c
+	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.o
+
+examples_cpp: libstatic examples/trace3_cpp.cpp examples/example01_cpp.cpp
+	$(CXX) -I. $(CFLAGS) -I ./c/ -c examples/trace3_cpp.cpp
+	$(CXX) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
+	$(CXX) -I. $(CFLAGS) -I ./c/ c example01_cpp.cpp -o example01_cpp.o
+	$(CXX) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
+
+
+ifeq ($(MPI),1)
+	$(MPIFC) $(FFLAGS) -c examples/trace3mpi.F90
+	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow3 -lmpi_F90
+endif
+
 preprocess: $(FMODULESPRE) shadow3.f90
 	for myfile in $(FMODULESPRE); do \
 		echo "Removing lines starting with # in: " $$myfile ; \
@@ -183,82 +304,19 @@ preprocess: $(FMODULESPRE) shadow3.f90
 	echo "Removing lines starting with # in: shadow3.f90"
 	sed -i '/^#/d' shadow3.f90 
 
-examples: examplesFortran  examplesMore
-
-#examples in Fortran, linked statically
-examplesFortran: libstatic gen_source.o trace.o trace3.o example01_f95.o example02_f95.o example_standalone_mirror.o
-	$(FC) $(LINKFLAGS) -o gen_source gen_source.o -L. -lshadow3
-	$(FC) $(LINKFLAGS) -o trace trace.o -L. -lshadow3
-	$(FC) $(LINKFLAGS) -o trace3 trace3.o -L. -lshadow3
-	$(FC) $(LINKFLAGS) -o example01_f95 example01_f95.o -L. -lshadow3
-	$(FC) $(LINKFLAGS) -o example02_f95 example02_f95.o -L. -lshadow3
-	$(FC) $(LINKFLAGS) -o example_standalone_mirror example_standalone_mirror.o -L. -lshadow3
-
-#examples in C and C++, linked dynamically
-#TODO: link statically
-examplesMore: lib  libcpp
-	$(CC) $(CFLAGS) -c trace3_c.c
-	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3c -lshadow3
-
-	$(CC) $(CFLAGS) -c example_shadow_format.c
-	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.o
-
-	$(CC) -I. $(CFLAGS) -c example01_c.c 
-	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadow3c -lshadow3
-
-	$(CXX) -I. $(CFLAGS) -c trace3_cpp.cpp
-	$(CXX) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
-	$(CXX) -I. $(CFLAGS) -c example01_cpp.cpp -o example01_cpp.o
-	$(CXX) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
-
-ifeq ($(MPI),1)
-	$(MPIFC) $(FFLAGS) -c trace3mpi.F90
-	$(MPIFC) $(FFLAGS) -o trace3mpi trace3mpi.o -L. -lshadow3 -lmpi_F90
-endif
-
-lib: $(OBJFMODULES) shadow_bind_c.o 
-	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
-	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
-
-
-libcpp: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
-	$(CXX) $(LIBFLAGS) $(CFLAGS) -o libshadow3c++$(SO) shadow_bind_c.o shadow_bind_cpp.cpp -L. -lshadow3 -lshadow3c #$(OBJFMODULES)
-
-libstatic: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
-	ar cr libshadow3.a $(OBJFMODULES)
-	#ar cr libshadow3c.a shadow_bind_c.o $(OBJFMODULES)
-	#ar cr libshadow3c++.a shadow_bind_c.o shadow_bind_cpp.o $(OBJFMODULES)
-
 idl: lib shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl_export.h shadow_bind_idl.dlm
 	$(CC) $(CFLAGS) -c shadow_bind_idl_loader.c
 	$(CC) $(CFLAGS) -c shadow_bind_idl.c
 	$(CC) $(LIBFLAGS) -o shadow_bind_idl$(SO) -L. -lshadow3c shadow_bind_idl_loader.o shadow_bind_idl.o
 
 
-python: lib setup.py 
-	$(PY) setup.py build
 
-all: shadow3 examples python idl
+#===============================================================================
+#===============================================================================
 
-# 
-# dependencies and rules
-#
+python: 
+	echo "Not supported: please use directly python3 setup.py "
 
-shadow_version.F90: shadow_version.h 
-
-shadow_version.h:
-# shadow_version.sh creates shadow_version.h including compilation info for current system
-	./shadow_version.sh $(FC)
-
-%.f90: %.F90
-	$(CPP) $(COMPILEOPT) $< -o $@
-
-%.o: %.F90
-	$(FC) $(FFLAGS) -c $<
-
-#
-# cleaning 
-#
 clean:  
 	/bin/rm -f *.o *.mod *$(SO) *.a *.dylib
 	/bin/rm -f version.txt
@@ -279,13 +337,12 @@ purge: clean
 	/bin/rm -f SRANG SRDISTR SRSPEC epath.nml 
 	/bin/rm -f F12LIB.INDEX F12LIB.FULL 
 	/bin/rm -f testio.00 crl.01 final.01
+
 # customize depending on where you want to install
 install:
 	install libshado*$(SO) /usr/lib/
-	$(PY) setup.py install
 	install shadow3 /usr/bin/
-#	/bin/cp shadow3 /opt/scisoft/xop2.3/extensions/shadowvui/shadow3/shadow3
-#	/bin/cp shadow3 /scisoft/xop2.3/extensions/shadowvui/shadow-2.3.2m-linux/bin/shadow3
+	$(PY) setup.py install
 
 	
 

@@ -27,9 +27,9 @@ try:
 except ImportError:
     print(sys.exc_info()[1]) 
     pass
-try:
-    import Shadow.ShadowSrw as ShadowSrw
-except:
-    print(sys.exc_info()[1]) 
-    pass
+#try:
+#    import Shadow.ShadowSrw as ShadowSrw
+#except:
+#    print(sys.exc_info()[1]) 
+#    pass
 

@@ -22,6 +22,6 @@ echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 sed -e 's/^/print *,"/' < version.txt > tmp1.h
-sed -e 's/$/"/' < tmp1.h > shadow_version.h
+sed -e 's/$/"/' < tmp1.h > fortran/shadow_version.h
  
 /bin/rm version.txt tmp1.h

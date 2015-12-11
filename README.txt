@@ -45,9 +45,6 @@ SHADOW3 sources are downloaded using git:
 
 Other SHADOW web resources: 
 
-  shadow3 source repository: 
-    http://github.com/srio/shadow3   
-
   shadow3 binary distributions (not updated):
     shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
     shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
@@ -71,65 +68,13 @@ Other SHADOW web resources:
     http://dx.doi.org/10.1107/S0909049511026306 
 
 
-3 Source files
---------------
+3 Important files
+-----------------
 
-After using "git clone https://github.com/shadow3"
-a single shadow3 directory is created. It contains all sources and resources tu build shadow3. The basic files are
+in shadow3/src: fortran, c and other sources
+in Shadow: python sources
 
-Tools:
-  Makefile:  makefile 
-
-Source files: 
-	shadow_version.F90 
-	shadow_globaldefinitions.F90 
-	stringio.F90 
-	gfile.F90 
-	shadow_beamio.F90 
-	shadow_math.F90 
-	shadow_variables.F90 
-	shadow_kernel.F90 
-	shadow_synchrotron.F90 
-	shadow_pre_sync.F90 
-	shadow_preprocessors.F90 
-	shadow_postprocessors.F90 
-	shadow_bind_f.F90 
-	shadow_crl.F90
-
-        cdf_z.f
-        wranc.c
-
-Source file main shadow3 program:
-  shadow3.F90		      
-
-Source file optional main programs (examples):
-  gen_source.F90		      
-  trace3.F90
-  trace3mpi.F90
-  trace.F90
-  example01_f95.F90	      
-  example02_f95.F90	      
-
-Source file API (C/C++/PYTHON/IDL)
-  shadow_bind_idl.c	   
-  shadow_bind_idl_loader.c  
-  shadow_bind_c.c		 
-  shadow_bind_python.c
-  setup.py	       
-  ShadowTools.py
-  ShadowToolsPrivate.py  
-  setpythonpath.sh
-
-Source file examples API (C/C++/PYTHON/IDL)
-  trace3_c.c
-  trace3_py.py
-  example01_c.c		 
-  example_shadow_format.c  
-  example_tolerances.py  
-  shadow_bind_idl_test.pro
-
-README files:
-  README.txt (this file)
+in docs: README files:
   README_API.txt 
   README_CRL.txt 
   README_MPI.txt 
@@ -137,21 +82,24 @@ README files:
   source.nml   (description of the source variables, as in start.00)
   oe.nml       (description of the optical element variables, as in start.01)
 
-Data files: 
+in data: data files: 
   PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
-
-Directories:
-  PRIMER_INPUT_FILES  (script to run all the examples discussed in the Primer)
 
 4 Building SHADOW
 ----------------
+  binary:
+  cd src
   Check (edit) the Makefile if you need to redefine compilers etc.
-
   The use of Makefile is documented in its header. Basically:
   make           : builds shadow3 the main program
-  make python    : builds shadow3 python API
-  make all       : builds shadow3, libraries, examples and APIs
+  make all       : builds shadow3, libraries, etc
+  make install   : installation (see Makefile)
 
+  python API:
+  in shadow3 directory, use the standard python setup:
+  python3 setup.py build
+  sudo python3 setup.py install
+ 
 
 5 Other info
 ------------
