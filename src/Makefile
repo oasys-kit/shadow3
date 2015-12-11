@@ -10,10 +10,8 @@
 #       make examples   : compiles examples and tools using libraries:
 #                         examplesFortran: fortran examples statically linked
 #                         examplesMore: C and C++ examples dymamically linked
-#       make python     : creates python bind (uses shared libraries)
 #       make idl        : creates idl bind
 #       make preprocess : creates *.f90 files (to be exported to other platforms)
-#       make all        : make shadow3 examples python idl
 #
 #       make clean      : cleans files created when running make
 #       make purge      : clean + removes files created by shadow3
@@ -23,6 +21,7 @@
 # srio@esrf.eu    05-02-2010  first version
 # srio@esrf.eu    17-12-2010  version using preprocessor
 # srio@esrf.eu    03-01-2013  minimize the use of scripts
+# srio@esrf.eu    11-12-2015  changed file tree
 #
 # HINTS:
 #
@@ -315,7 +314,7 @@ idl: lib shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl
 #===============================================================================
 
 python: 
-	echo "Not supported: please use directly python3 setup.py "
+	echo "Not supported: please use directly python setup.py "
 
 clean:  
 	/bin/rm -f *.o *.mod *$(SO) *.a *.dylib
@@ -340,9 +339,8 @@ purge: clean
 
 # customize depending on where you want to install
 install:
-	install libshado*$(SO) /usr/lib/
 	install shadow3 /usr/bin/
-	$(PY) setup.py install
+	#install libshado*$(SO) /usr/lib/
 
 	
 
