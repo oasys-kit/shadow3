@@ -97,6 +97,14 @@ class BuildClib(build_clib, object):
 
 
 #pksetup.setup(
+
+if sys.platform == 'darwin':
+    compile_options = "_COMPILE4MAX"
+elif sys.platform == 'linux':
+    compile_options = "_COMPILE4NIX"
+else:
+    compile_options = "_COMPILE4WIN"
+
 setup(
     name='shadow3',
     packages=['Shadow'],
@@ -133,7 +141,7 @@ setup(
                 'src/fortran/shadow_bind_f.f90',
                 'src/fortran/shadow_crl.f90',
             ],
-            'macros': [('_COMPILE4NIX', 1)],
+            'macros': [(compile_options, 1)],
             'include_dirs': ['src/def', 'src/fortran', 'src/c'],
             # Can't use extra_compiler_args, because applied to all
             # compilers, and some flags are only used. See BuildClib
