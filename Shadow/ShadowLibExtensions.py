@@ -676,9 +676,9 @@ class Beam(ShadowLib.Beam):
     return ticket
 
   def plotxy(self,*args, **kwargs):
-      print("Deprecated use of Shadow.plotxy(): Use Shadow.histo2()")
-      ticket = self.histo2(*args,**kwargs)
-      return(ticket)
+    print("Deprecated use of Shadow.plotxy(): Use Shadow.histo2()")
+    ticket = self.histo2(*args,**kwargs)
+    return(ticket)
 
 class OE(ShadowLib.OE):
   def __init__(self):
@@ -1658,10 +1658,9 @@ class CompoundOE():
              qq = oe.SIMAG
 
            if oe.F_EXT == 1:
-              line = "%10d %10s %10s %10s %10s \n"%( i+1,oeshape,'?','?','?')
+              line = '%10d %10s %10s %10s %10s \n'%( i+1,oeshape,'?','?','?')
            else:
-              line = "%10d %10s %10.2f %10.2f %10.2f \n)'"%(i+1,oeshape,pp,qq,pp/qq)
-
+              line = '%10d %10s %10.2f %10.2f %10.2f \n'%(i+1,oeshape,pp,qq,pp/qq)
            txt2 += line
 
         # 3) total deflection
@@ -1678,7 +1677,7 @@ class CompoundOE():
     txt += '\n'
     txt += '   ** FOCUSING ELEMENTS **           \n'
     # focusing elements
-    line = "%10s %10s %10s %10s %10s \n"%('OE','SHAPE','p_foc','q_foc','1/M')
+    line = '%10s %10s %10s %10s %10s \n'%('OE','SHAPE','p_foc','q_foc','1/M')
     txt += line
     txt += txt2
 
@@ -1707,6 +1706,282 @@ class CompoundOE():
         print("File written to disk (compoundOE summary): ",file)
 
     return(txt)
+
+
+  def sysinfo(self,title="",comment=""):
+
+    txt = "\n"
+
+    TOPLIN = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
+    TSLIT = {}
+    TSCR = {}
+    TYPE1 = {}
+    TSLIT["1"] = 'SLIT       '
+    TSLIT["2"] = 'STOP       '
+    TSLIT["3"] = 'RECTANGULAR'
+    TSLIT["4"] = 'ELLIPTICAL '
+    TSLIT["5"] = 'EXTERNAL   '
+
+    TSCR["1"] = 'AFTER Mirror'
+    TSCR["2"] = 'BEFORE  Mirror'
+
+    TYPE1["1"]  = 'SPHERICAL   '
+    TYPE1["2"]  = 'ELLIPTICAL  '
+    TYPE1["3"]  = 'TOROIDAL    '
+    TYPE1["4"]  = 'PARABOLICAL '
+    TYPE1["5"]  = 'PLANE       '
+    TYPE1["6"]  = 'CODLING SLIT'
+    TYPE1["7"]  = 'HYPERBOLICAL'
+    TYPE1["8"]  = 'CONICAL     '
+    TYPE1["9"]  = '            '
+    TYPE1["10"] = '            '
+    TYPE1["11"] = '            '
+    TYPE1["12"] = '            '
+    BREAK	='    ----------------\n'
+
+    txt += TOPLIN
+    txt += '**************  S Y S T E M      D E S C R I P T I O N  **************\n'
+    txt += TOPLIN
+    txt += title + "\n"
+    txt += comment + "\n"
+    txt += TOPLIN
+
+
+    for i,oe in enumerate(self.list):
+        J = i + 1
+        txt += ' \n'
+        txt += 'Optical Element # %d      System Number: \n'%(J)
+
+        if oe.F_CRYSTAL == 1:
+            TEXT = "BRAGG"
+        elif oe.F_GRATING == 1:
+            TEXT = "GRATING"
+        else:
+            TEXT = "MIRROR"
+
+        TEXT += "    " + TYPE1[str(oe.FMIRR)]
+
+        if oe.FHIT_C == 1:
+            TEXT += "    DIM CHECK"
+        else:
+            TEXT += "    UNLIMITED"
+
+        if oe.F_EXT == 1:
+            TEXT += "    EXTERNAL"
+        else:
+            TEXT += "    COMPUTED"
+
+        if oe.F_REFLEC == 0:
+            TEXT += "    REFLEC. OFF"
+        else:
+            TEXT += "    REFLEC. ON"
+
+        TODEG = 180.0/numpy.pi
+        txt +=  '\n'
+        txt +=  TEXT+"\n"
+        txt +=  '\n'
+        txt +=  '  Orientation        %f deg\n'%(oe.ALPHA*TODEG)
+        txt +=  '  Source Plane       %f\n'   %(oe.T_SOURCE)
+        txt +=  '  Incidence Ang.     %f deg\n'%(oe.T_INCIDENCE*TODEG)
+        txt +=  '  Reflection Ang.    %f deg\n'%(oe.T_REFLECTION*TODEG)
+        txt +=  '  Image Plane        %f\n'   %(oe.T_IMAGE)
+        txt += 	BREAK
+
+        #TODO: check about screens!!!
+        #         IF (p2%F_SCREEN.EQ.1) THEN
+        #     WRITE(6,*) p2%N_SCREEN,p2%I_SCREEN,p2%SL_DIS
+        #           WRITE (30,*)	'  SCREENS: ',p2%N_SCREEN,' defined.'
+        #          DO 17 I=1,p2%N_SCREEN
+        #            IJ = p2%I_SCREEN(I) + 1
+        #            WRITE (30,*)	TSCR(IJ),' at ',p2%SL_DIS(I)
+        #           IF (p2%I_SLIT(I).NE.0) THEN
+        #             IND1 =  p2%I_STOP(I) + 1
+        #             IND2  =  p2%K_SLIT(I) + 3
+        #             WRITE (30,*)	'  Type :',TSLIT(IND1),'  ',TSLIT(IND2)
+        #           END IF
+        # 17      CONTINUE
+        #           WRITE (30,*)	BREAK
+        #         END IF
+        # 13     	CONTINUE
+
+    txt += "                          OPTICAL SYSTEM CONFIGURATION\n"
+    txt += "                           Laboratory Reference Frame.\n"
+
+    #txt += "OPT. Elem #       X =                 Y =                 Z =\n\n"
+    # optaxis_file = "optax.02"
+    #
+    # f = open(optaxis_file,'r')
+    # for i,oe in enumerate(self.list):
+    #     n = f.readline()
+    #     source = f.readline()
+    #     if i == 0:
+    #         txt += "       0        "+source
+    #     mirror = f.readline()
+    #     image = f.readline()
+    #     txt += "       %d        "%(i+1) + mirror
+    #     txt += "          %d'    "%(i+1) + image + "\n"
+    #     for j in range(5):
+    #         tmp = f.readline()
+    # f.close()
+
+    txt += "OPT. Elem #       X =                 Y =                 Z =\n\n"
+
+    #
+    # this "nasty" part is because we may not have the optax.xx files available so we recalculate
+    # everything. This is a translation of the OPTAXIS routine in shadow_kernel.F90
+    #
+    CENTRAL = numpy.zeros( (25) )
+    U_VEC =   numpy.zeros( (4) )
+    V_VEC =   numpy.zeros( (4) )
+    W_VEC =   numpy.zeros( (4) )
+    V_REF =   numpy.zeros( (4) )
+    V_PERP =  numpy.zeros( (4) )
+    for i,oe in enumerate(self.list):
+        COSAL = numpy.cos(oe.ALPHA)
+        SINAL = numpy.sin(oe.ALPHA)
+        PIHALF = numpy.pi/2
+        PI = numpy.pi
+        DEFLECTION	=   oe.T_INCIDENCE + oe.T_REFLECTION
+        if i == 0:
+            U_VEC [1]	=   COSAL
+            U_VEC [2]	=   0.0
+            U_VEC [3]   =   SINAL
+            V_VEC [1]   = - numpy.sin(PIHALF - oe.T_INCIDENCE)*SINAL
+            V_VEC [2]   =   numpy.cos(PIHALF - oe.T_INCIDENCE)
+            V_VEC [3]   =   numpy.sin(PIHALF - oe.T_INCIDENCE)*COSAL
+            W_VEC [1]   = - numpy.sin(PI - oe.T_INCIDENCE)*SINAL
+            W_VEC [2]   =   numpy.cos(PI - oe.T_INCIDENCE)
+            W_VEC [3]   =   numpy.sin(PI - oe.T_INCIDENCE)*COSAL
+            V_REF [1]   = - numpy.sin(PI - DEFLECTION)*SINAL
+            V_REF [2]   =   numpy.cos(PI - DEFLECTION)
+            V_REF [3]   =   numpy.sin(PI - DEFLECTION)*COSAL
+            V_PERP [1]  = - numpy.sin(3*PIHALF - DEFLECTION)*SINAL
+            V_PERP [2]  =   numpy.cos(3*PIHALF - DEFLECTION)
+            V_PERP [3]  =   numpy.sin(3*PIHALF - DEFLECTION)*COSAL
+
+            CENTRAL[1]  =   .0
+            CENTRAL[2]  =   .0
+            CENTRAL[3]  =   .0
+            CENTRAL[4]  =   .0
+            CENTRAL[5]  =   oe.T_SOURCE
+            CENTRAL[6]  =   .0
+            CENTRAL[7] 	=   oe.T_IMAGE*V_REF[1]
+            CENTRAL[8] 	=   oe.T_IMAGE*V_REF[2] + oe.T_SOURCE
+            CENTRAL[9] 	=   oe.T_IMAGE*V_REF[3]
+            CENTRAL[10]	=   U_VEC[1]
+            CENTRAL[11]	=   U_VEC[2]
+            CENTRAL[12]	=   U_VEC[3]
+            CENTRAL[13]	=   V_VEC[1]
+            CENTRAL[14]	=   V_VEC[2]
+            CENTRAL[15]	=   V_VEC[3]
+            CENTRAL[16]	=   W_VEC[1]
+            CENTRAL[17]	=   W_VEC[2]
+            CENTRAL[18]	=   W_VEC[3]
+            CENTRAL[19]	=   V_REF[1]
+            CENTRAL[20]	=   V_REF[2]
+            CENTRAL[21]	=   V_REF[3]
+            CENTRAL[22] =   V_PERP[1]
+            CENTRAL[23] =   V_PERP[2]
+            CENTRAL[24] =   V_PERP[3]
+            txt += "       0    %18.11f     %18.11f     %18.11f \n"%(CENTRAL[1],CENTRAL[2],CENTRAL[3])
+        else:
+            #    ! ** Computes now the OLD mirror reference frame in the lab. coordinates
+            #    ! ** system. The rotation angle ALPHA of the current mirror is defined in
+            #    ! ** this reference frame, as ALPHA measure the angle between the two
+            #    ! ** incidence planes (not necessarily the same).
+            CENTRAL_OLD = CENTRAL.copy()
+            U_OLD = numpy.array(  [0.0,CENTRAL[10],CENTRAL[11],CENTRAL[12]])
+            R_OLD = numpy.array(  [0.0,CENTRAL[19],CENTRAL[20],CENTRAL[21]])
+            RP_OLD = numpy.array( [0.0,CENTRAL[22],CENTRAL[23],CENTRAL[24]])
+
+
+            #    ! ** This vector is the NORMAL of the new mirror in the OMRF (U,R_OLD,RP_OLD) **
+            V_TEMP = numpy.zeros(4)
+            V_TEMP [1]	= - numpy.sin(PI - oe.T_INCIDENCE)*SINAL
+            V_TEMP [2]	=   numpy.cos(PI - oe.T_INCIDENCE)
+            V_TEMP [3]	=   numpy.sin(PI - oe.T_INCIDENCE)*COSAL
+
+            #    ! ** Rotate it finally to (x,y,z) SRF **
+            W_VEC [1]	=    V_TEMP[1]*U_OLD[1] + V_TEMP[2]*R_OLD[1] + V_TEMP[3]*RP_OLD[1]
+            W_VEC [2]	=    V_TEMP[1]*U_OLD[2] + V_TEMP[2]*R_OLD[2] + V_TEMP[3]*RP_OLD[2]
+            W_VEC [3]	=    V_TEMP[1]*U_OLD[3] + V_TEMP[2]*R_OLD[3] + V_TEMP[3]*RP_OLD[3]
+
+            #    ! ** This vector is the reflected beam from the new mirror in the OMRF **
+            V_TEMP[1] = -  numpy.sin(PI - DEFLECTION)*SINAL
+            V_TEMP[2] =    numpy.cos(PI - DEFLECTION)
+            V_TEMP[3] =    numpy.sin(PI - DEFLECTION)*COSAL
+
+            #    ! ** Express it now in the (x,y,z) SRF
+            V_REF[1] = V_TEMP[1] * U_OLD[1] + V_TEMP[2] * R_OLD[1] + V_TEMP[3]*RP_OLD[1]
+            V_REF[2] = V_TEMP[1] * U_OLD[2] + V_TEMP[2] * R_OLD[2] + V_TEMP[3]*RP_OLD[2]
+            V_REF[3] = V_TEMP[1] * U_OLD[3] + V_TEMP[2] * R_OLD[3] + V_TEMP[3]*RP_OLD[3]
+
+            #    ! ** This is now the perp. vector in the OMRF **
+            V_TEMP[1] = - numpy.sin(3*PIHALF - DEFLECTION)*SINAL
+            V_TEMP[2] =   numpy.cos(3*PIHALF - DEFLECTION)
+            V_TEMP[3] =   numpy.sin(3*PIHALF - DEFLECTION)*COSAL
+
+            #    ! ** Rotate it to the SRF\
+            V_PERP[1] = V_TEMP[1]*U_OLD[1] + V_TEMP[2]*R_OLD[1] + V_TEMP[3]*RP_OLD[1]
+            V_PERP[2] = V_TEMP[1]*U_OLD[2] + V_TEMP[2]*R_OLD[2] + V_TEMP[3]*RP_OLD[2]
+            V_PERP[3] = V_TEMP[1]*U_OLD[3] + V_TEMP[2]*R_OLD[3] + V_TEMP[3]*RP_OLD[3]
+
+            #    ! ** This is the tangent vector in the OMRF **
+            V_TEMP[1] = - numpy.sin(PIHALF - oe.T_INCIDENCE)*SINAL
+            V_TEMP[2] =   numpy.cos(PIHALF - oe.T_INCIDENCE)
+            V_TEMP[3] =   numpy.sin(PIHALF - oe.T_INCIDENCE)*COSAL
+
+            #    ! ** Rotate it to the SRF.
+            V_VEC[1] = V_TEMP[1] * U_OLD[1] + V_TEMP[2] * R_OLD[1] + V_TEMP[3] * RP_OLD[1]
+            V_VEC[2] = V_TEMP[1] * U_OLD[2] + V_TEMP[2] * R_OLD[2] + V_TEMP[3] * RP_OLD[2]
+            V_VEC[3] = V_TEMP[1] * U_OLD[3] + V_TEMP[2] * R_OLD[3] + V_TEMP[3] * RP_OLD[3]
+
+            #    ! ** Last, we generate U_VEC in the OMRF **
+            V_TEMP[1] =   COSAL
+            V_TEMP[2] =   .0
+            V_TEMP[3] =   SINAL
+
+            #    ! ** rotate to SRF
+            U_VEC[1] = V_TEMP[1] * U_OLD[1] + V_TEMP[2] * R_OLD[1] + V_TEMP[3] * RP_OLD[1]
+            U_VEC[2] = V_TEMP[1] * U_OLD[2] + V_TEMP[2] * R_OLD[2] + V_TEMP[3] * RP_OLD[2]
+            U_VEC[3] = V_TEMP[1] * U_OLD[3] + V_TEMP[2] * R_OLD[3] + V_TEMP[3] * RP_OLD[3]
+
+            #    ! ** All done. Write to the array and leave.
+            CENTRAL[1]  =   CENTRAL_OLD[7]
+            CENTRAL[2]  =   CENTRAL_OLD[8]
+            CENTRAL[3]  =   CENTRAL_OLD[9]
+            CENTRAL[4]  =   oe.T_SOURCE * R_OLD[1] + CENTRAL[1]
+            CENTRAL[5]  =   oe.T_SOURCE * R_OLD[2] + CENTRAL[2]
+            CENTRAL[6]  =   oe.T_SOURCE * R_OLD[3] + CENTRAL[3]
+            CENTRAL[7]  =   oe.T_IMAGE *  V_REF[1] + CENTRAL[4]
+            CENTRAL[8]  =   oe.T_IMAGE *  V_REF[2] + CENTRAL[5]
+            CENTRAL[9]  =   oe.T_IMAGE *  V_REF[3] + CENTRAL[6]
+            CENTRAL[10] =   U_VEC[1]
+            CENTRAL[11] =   U_VEC[2]
+            CENTRAL[12] =   U_VEC[3]
+            CENTRAL[13] =   V_VEC[1]
+            CENTRAL[14] =   V_VEC[2]
+            CENTRAL[15] =   V_VEC[3]
+            CENTRAL[16] =   W_VEC[1]
+            CENTRAL[17] =   W_VEC[2]
+            CENTRAL[18] =   W_VEC[3]
+            CENTRAL[19] =   V_REF[1]
+            CENTRAL[20] =   V_REF[2]
+            CENTRAL[21] =   V_REF[3]
+            CENTRAL[22] =   V_PERP[1]
+            CENTRAL[23] =   V_PERP[2]
+            CENTRAL[24] =   V_PERP[3]
+
+        txt += "       %d    %18.11f     %18.11f     %18.11f \n"%(i+1,CENTRAL[4],CENTRAL[5],CENTRAL[6])
+        txt += "          %d'   %18.11f     %18.11f     %18.11f \n"%(i+1,CENTRAL[7],CENTRAL[8],CENTRAL[9])
+
+    txt += TOPLIN
+    txt += '********                 E N D                  ***************\n'
+    txt += TOPLIN
+
+    return(txt)
+
+
 
   def mirinfo(self):
       """
@@ -2336,10 +2611,10 @@ class CompoundOE():
 
       return self
 
-  def dump_start_files(self,offset=0):
+  def dump_start_files(self,root='start',offset=0):
     for i,oe in enumerate(self.list):
-      oe.write('start.%02d'%(i+1+offset))
-      print('File written to disk: start.%02d\n'%(i+1+offset))
+      oe.write('%s.%02d'%(root,i+1+offset))
+      print('File written to disk: %s.%02d\n'%(root,i+1+offset))
 
   def dump_systemfile(self,offset=0):
     f = open('systemfile.dat','w')
@@ -2729,9 +3004,9 @@ class Source(ShadowLib.Source):
             txt += '    created/accepted ratio: %d \n'%(float(self.NTOTALPOINT)/float(self.NPOINT))
 
             if self.F_BOUND_SOUR == 1:
-                txt += '    file with phase-space volume: '+self.FILE_BOUND.strip().decode()
+                txt += '    file with phase-space volume: '+self.FILE_BOUND.strip().decode()+'\n'
             else:
-                txt += '    file with slit/acceptance: '+self.FILE_BOUND.strip().decode()
+                txt += '    file with slit/acceptance: '+self.FILE_BOUND.strip().decode()+'\n'
 
 
         txt += TOPLIN
@@ -2739,12 +3014,16 @@ class Source(ShadowLib.Source):
         txt += TOPLIN
         return (txt)
 
-if __name__ == '__main__':
+def main():
+
+
+
     #
     # test
     #
-    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ; 4 lens, like in lens_single_plot.ws
-                # 6=ID30B  # 7=ID23-2
+    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+                # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
+                # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
     if ((do_test == 1) or (do_test == 2)):
         src = Source()
@@ -2792,7 +3071,7 @@ if __name__ == '__main__':
         #print(beam.getshonecol(11,nolost=1))
         print('Intensity after oe 1 all, good and lost rays: %f, %f, %f , '%\
               (beam.intensity(nolost=0),beam.intensity(nolost=1),beam.intensity(nolost=2) ))
-        
+
         #print( oe1.to_dictionary() )
         print(oe1.mirinfo(title='mirinfo in python'))
 
@@ -2809,6 +3088,8 @@ if __name__ == '__main__':
                 print(i,bins_c[i],bins[i], hi)
         else:
             print('Error in histogram calculations')
+
+
 
     if do_test == 3:
         # example ESRF ID30B, data in m,rad
@@ -3135,12 +3416,15 @@ if __name__ == '__main__':
         kb = CompoundOE(name='KB')
         kb.append_kb(4275,180,separation=4315-4275,grazing_angles_mrad=[3.9,17.8],shape=[2,2], \
                      dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
-                     surface_error_files=["waviness.dat","waviness.dat"])
-        kb.info()
+                     ) # surface_error_files=["waviness.dat","waviness.dat"])
 
-        #trace
+        # trace
         kb.dump_systemfile()
         beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
+
+        #postprocessors
+        print(kb.info())
+        print(kb.sysinfo())
 
     if do_test == 8:
         print("setting double crystal monochromator")
@@ -3191,4 +3475,9 @@ if __name__ == '__main__':
             print("H cent",tkt["bin_h_center"])
             print("H edges",tkt["bin_h_edges"])
             print("H shape: ",tkt["histogram"].shape)
+
+if __name__ == '__main__':
+
+    main()
+
 

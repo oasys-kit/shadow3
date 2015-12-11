@@ -604,7 +604,16 @@ def plotxy_gnuplot(beam,col_h,col_v,execute=1,ps=0,pdf=0,title="",viewer='okular
 
   tkt["title"] = title
   tkt["lost_rays"] = tkt["nrays"] - tkt["good_rays"]
-  tkt["label_id"] = os.getenv("USER")+"@"+os.getenv("HOST")
+  tkt["label_id"] = ""
+  if os.getenv("USER") is None:
+      pass
+  else:
+      tkt["label_id"] += os.getenv("USER")
+  if os.getenv("HOST") is None:
+      pass
+  else:
+      tkt["label_id"] += "@"+os.getenv("HOST")
+
   if tkt["ref"] == 0:
       tkt["label_weight"] = "WEIGHT: RAYS"
   else:
@@ -1041,6 +1050,443 @@ def plotxy_old(beam,cols1,cols2,nbins=25,nbins_h=None,level=5,xrange=None,yrange
   return ticket  
 
 #
+#focnew
+#
+def focnew(beam,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Implements SHADOW's focnew utility
+
+    For scanning the RMS around the focal position, use focnew_scan with focnew results
+
+    :param beam: a file name or an instance of Shadow.Beam
+    :param nolost: 0=all rays, 1=good only, 2=lost only
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: a python dictionary (ticket) with:
+            ticket['nolost']         # input flag
+            ticket['mode']           # input flag
+            ticket['center_at']      #  text of mode: 'Origin','Baricenter' or 'External'
+            ticket['AX']             # \
+            ticket['AZ']             #  focnew coefficients (to be used by focnew_scan)
+            ticket['AT']             # /
+            ticket['x_waist']        # position of waist X (sagittal)
+            ticket['z_waist']        # position of waist Z (tangential)
+            ticket['t_waist']        # position of waist T (averaged)
+            ticket['text'] = txt     # a text with focnew info
+
+    """
+    NMODE = ['Origin','Baricenter','External']
+
+    if isinstance(beam,str):
+        beam1 = Shadow.Beam()
+        beam1.load(beam)
+    else:
+        beam1 = beam
+
+
+    # get focnew coefficients
+    ray = numpy.array(beam1.getshcol([1,2,3,4,5,6],nolost=nolost))
+    #ray = numpy.array(self.getshcol([1,2,3,4,5,6],nolost=nolost))
+    if mode == 2:
+        ray[:,0] -= center[0]
+        ray[:,2] -= center[1]
+
+    AX,AZ,AT = _focnew_coeffs(ray,nolost=nolost,mode=mode,center=center)
+
+
+    # store versors
+    ZBAR = AZ[3]
+    VZBAR = AZ[5]
+    #
+    XBAR = AX[3]
+    VXBAR = AX[5]
+    #
+    TBAR = ZBAR + XBAR
+    VTBAR = VZBAR + VXBAR
+
+    #reset coeffs
+    if mode != 1:
+        AZ[3] = 0.0
+        AZ[4] = 0.0
+        AZ[5] = 0.0
+
+        AX[3] = 0.0
+        AX[4] = 0.0
+        AX[5] = 0.0
+
+        AT[3] = 0.0
+        AT[4] = 0.0
+        AT[5] = 0.0
+
+    #get Y coordinate of the three waists
+
+    if numpy.abs(AZ[0]-AZ[5]) > 1e-30:
+        TPARZ = (AZ[4] - AZ[1]) / (AZ[0] - AZ[5])
+    else:
+        TPARZ = 0.0
+
+    if numpy.abs(AX[0]-AX[5]) > 1e-30:
+        TPARX = (AX[4] - AX[1]) / (AX[0] - AX[5])
+    else:
+        TPARX = 0.0
+
+    if numpy.abs(AT[0]-AX[5]) > 1e-30:
+        TPART = (AT[4] - AT[1]) / (AT[0] - AT[5])
+    else:
+        TPART = 0.0
+
+    #prepare text output
+
+    txt = ""
+    txt += '-----------------------------------------------------------------------------\n'
+    txt += 'Center at : %s\n'%(NMODE[mode])
+    txt += 'X = %f    Z = %f\n'%(center[0],center[1])
+    txt += '-----------------------------------------------------------------------------\n'
+
+    SIGX = numpy.sqrt(numpy.abs( AX[0] * TPARX**2 + 2.0 * AX[1] * TPARX + AX[2] - ( AX[3] + 2.0 * AX[4] * TPARX + AX[5] * TPARX**2)))
+    SIGZ = numpy.sqrt(numpy.abs( AZ[0] * TPARZ**2 + 2.0 * AZ[1] * TPARZ + AZ[2] - ( AZ[3] + 2.0 * AZ[4] * TPARZ + AZ[5] * TPARZ**2)))
+    SIGT = numpy.sqrt(numpy.abs( AT[0] * TPART**2 + 2.0 * AT[1] * TPART + AT[2] - ( AT[3] + 2.0 * AT[4] * TPART + AT[5] * TPART**2)))
+
+    SIGX0 = numpy.sqrt(numpy.abs(AX[2] - AX[3]))
+    SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
+    SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
+
+    txt += '.............   S A G I T T A L   ............\n'
+    txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(XBAR)),numpy.sqrt(numpy.abs(VXBAR)))
+    txt += 'Sagittal focus at       :  %g\n'%(TPARX)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGX)
+    txt += 'Waist size at origin                :  %g\n'%(SIGX0)
+
+    txt += '.............  T A N G E N T I A L  .............\n'
+    txt += 'Z coefficients :   %g %g %g\n'%(AZ[0],AZ[1],AZ[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(ZBAR)),numpy.sqrt(numpy.abs(VZBAR)))
+    txt += 'Tangential focus at       :  %g\n'%(TPARZ)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGZ)
+    txt += 'Waist size at origin                :  %g\n'%(SIGZ0)
+
+    txt += '.............  L E A S T  C O N F U S I O N  ...............\n'
+    txt += 'Z coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
+    txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(TBAR)),numpy.sqrt(numpy.abs(VTBAR)))
+    txt += 'Circle of least confusion :  %g\n'%(TPART)
+    txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
+    txt += 'Waist size at origin                :  %g\n'%(SIGT0)
+
+    #store all outputs
+    ticket = {}
+    # copy the inputs
+    ticket['nolost'] = nolost
+    ticket['mode'] = mode
+    ticket['center_at'] = NMODE[mode]
+    # coefficients
+    ticket['AX'] = AX
+    ticket['AZ'] = AZ
+    ticket['AT'] = AT
+    # position of waists
+    ticket['x_waist'] = TPARX
+    ticket['z_waist'] = TPARZ
+    ticket['t_waist'] = TPART
+    # text output
+    ticket['text'] = txt
+
+    return ticket
+
+
+
+def focnew_scan(A,x):
+    """
+    Scans the RMS of the beam size using the focnew coefficients
+    Example:
+    tkt = focnew("star.02")
+
+    import matplotlib.pylab as plt
+    f2 = plt.figure(2)
+    y = numpy.linespace(-10.,10.,101)
+    plt.plot(y,2.35*focnew_scan(tkt["AX"],y),label="x (tangential)")
+    plt.plot(y,2.35*focnew_scan(tkt["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt["AT"],y),label="combined x,z")
+    plt.legend()
+    plt.title("FOCNEW SCAN")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("2.35*<Z> [cm]")
+    plt.show()
+
+    :param A: array of 6 coefficients
+    :param x: the abscissas array
+    :return: the array with RMS values
+    """
+    x1 = numpy.array(x)
+    y = numpy.sqrt(numpy.abs( A[0] * x1**2 + 2.0 * A[1] * x1 + A[2] - (A[3] + 2.0 * A[4] * x1 + A[5] * x1**2)))
+    return y
+
+
+
+def _focnew_coeffs(ray,nolost=1,mode=0,center=[0.0,0.0]):
+    """
+    Internal use of focnew:
+        calculate the 6 CHI-Square coefficients for that data array referred to the origin
+        e.g., for x we have d = Vy/Vx the 6 coeffs are: <d**2>, <x d>, <x**2>, <x>**2, <x><d>, <d>**2
+
+        This is a translatiopn of FINDOUT in shadow_kernel.F90
+        Note that mode=0 and mode=1 give the same output
+    :param ray: numpy array with ray coordinates and directions
+    :param nolost:
+    :param mode: 0=center at origin, 1-Center at baricenter, 2=External center (please define)
+    :param center: [x0,y0] the center coordinates, if mode=2
+    :return: AX,AZ,AT  6 coeffs arrays for X, Z and AVERAGE directions, respectively
+    """
+
+    # for col=3
+    AZ	=	numpy.zeros(6)
+    DVECTOR = ray[5,:]/ray[4,:] ### RAY(KOL+3,I)/RAY(5,I)
+    AZ[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AZ[1] = (ray[2,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AZ[2] = (ray[2,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AZ[3] = (ray[2,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AZ[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AZ[0] =  AZ[0] / ray.shape[1]  # A1	=   A1/K
+    AZ[1] =  AZ[1] / ray.shape[1]  # A2	=   A2/K
+    AZ[2] =  AZ[2] / ray.shape[1]  # A3	=   A3/K
+    AZ[3] =  AZ[3] / ray.shape[1]  # A4	=   A4/K
+    AZ[5] =  AZ[5] / ray.shape[1]  # A6	=   A6/K
+
+    AZ[4] = AZ[5] * AZ[3]   #  A5 = A6*A4
+    AZ[3] = AZ[3]**2        #  A4 = A4**2
+    AZ[5] = AZ[5]**2        #  A6 = A6**2
+
+
+    # for col=1
+    AX	=	numpy.zeros(6)
+    DVECTOR = ray[3,:]/ray[4,:]            # RAY(KOL+3,I)/RAY(5,I)
+    AX[0] = (DVECTOR**2).sum()             # A1 = A1 + DVECTOR**2
+    AX[1] = (ray[0,:]*DVECTOR).sum()       # A2 = A2 + RAY(KOL,I)*DVECTOR
+    AX[2] = (ray[0,:]**2).sum()            # A3 = A3 + RAY(KOL,I)**2
+    AX[3] = (ray[0,:]).sum()               # A4 = A4 + RAY(KOL,I)
+    AX[5] = DVECTOR.sum()                  # A6 = A6 + DVECTOR
+
+    AX[0] =  AX[0] / ray.shape[1]  # A1	=   A1/K
+    AX[1] =  AX[1] / ray.shape[1]  # A2	=   A2/K
+    AX[2] =  AX[2] / ray.shape[1]  # A3	=   A3/K
+    AX[3] =  AX[3] / ray.shape[1]  # A4	=   A4/K
+    AX[5] =  AX[5] / ray.shape[1]  # A6	=   A6/K
+
+    AX[4] = AX[5] * AX[3]   #  A5 = A6*A4
+    AX[3] = AX[3]**2        #  A4 = A4**2
+    AX[5] = AX[5]**2        #  A6 = A6**2
+
+    # for T
+    AT =   numpy.zeros(6)
+    AT[0] = AX[0] + AZ[0]
+    AT[1] = AX[1] + AZ[1]
+    AT[2] = AX[2] + AZ[2]
+    AT[3] = AX[3] + AZ[3]
+    AT[4] = AX[4] + AZ[4]
+    AT[5] = AX[5] + AZ[5]
+
+    return AX,AZ,AT
+
+
+
+def ray_prop(beam,nolost=1,ypoints=21,ymin=-1.0,ymax=1.0,xrange=None,zrange=None,xbins=0,zbins=0):
+    """
+
+    :param beam:   a file name or an instance of Shadow.Beam
+    :param nolost: 0=all rays, 1=good only, 2=lost only
+    :param ypoints: number of points (planes) where to propagate the beam
+    :param ymin: minumum coordinate y (along the beam)
+    :param ymax: maximum coordinate y (along the beam)
+    :param xrange: [xmin,xmax] limits in X (for the histograms, i.e. xbins > 0)
+    :param zrange: [zmin,zmax] limits in Z (for the histograms, i.e. zbins > 0)
+    :param xbins: number of bins for histograms in X direction. If xbins=0 (default) do not make X histograms
+    :param zbins: number of bins for histograms in Z direction. If zbins=0 (default) do not make Z histograms
+    :return: a python dictionary (ticket) with:
+
+    ticket['ypoints']   # input
+    ticket['ymin']      # input
+    ticket['ymax']      # input
+    ticket['xbins']     # input
+    ticket['zbins']     # input
+
+    ticket['y']         # array (ypoints)  with y values
+    ticket['x']         # array (ypoints,NRAYS) with x values
+    ticket['z']         # array (ypoints,NRAYS) with z values
+
+    ticket['x_mean']    # array(ypoints) with X mean
+    ticket['z_mean']    # array(ypoints) with Z mean
+    ticket['x_wmean']   # array(ypoints) with X weighted (with intensity) mean
+    ticket['z_wmean']   # array(ypoints) with Z weighted (with intensity) mean
+
+    ticket['x_sd']      # array(ypoints) with X standard deviations
+    ticket['z_sd']      # array(ypoints) with Z standard deviations
+    ticket['x_wsd']     # array(ypoints) with X standard deviations (rays weighted with intensty)
+    ticket['z_wsd']     # array(ypoints) with Z standard deviations (rays weighted with intensty)
+
+    ticket['x_fwhm']    # if xbins>0 array(ypoints) with FWHM  for X
+    ticket['x_wfwhm']   # if xbins>0 array(ypoints) with FWHM (rays weighted with intensity) for X
+    ticket['x_bins']    # if xbins>0 array(ypoinys,xbins) with X histograms abscissas (at bin center)
+    ticket['x_h']       # if xbins>0 array(ypoinys,xbins) with X histogram counts
+    ticket['x_wh']      # if xbins>0 array(ypoinys,xbins) with X histogram counts (weighted with intensity)
+
+    ticket['z_fwhm']    # if zbins>0 array(ypoints) with FWHM  for Z
+    ticket['z_wfwhm']   # if zbins>0 array(ypoints) with FWHM (rays weighted with intensity) for Z
+    ticket['z_bins']    # if zbins>0 array(ypoinys,zbins) with Z histograms abscissas (at bin center)
+    ticket['z_h']       # if zbins>0 array(ypoinys,zbins) with Z histogram counts
+    ticket['z_wh']      # if zbins>0 array(ypoinys,zbins) with Z histogram counts (weighted with intensity)
+
+    """
+
+    if isinstance(beam,str):
+        beam1 = Shadow.Beam()
+        beam1.load(beam)
+    else:
+        beam1 = beam
+
+    rays = beam1.getshcol((1,2,3,4,5,6),nolost=nolost)
+    rays = numpy.array(rays).T
+    weights = beam1.getshcol(23,nolost=nolost)
+    weights = numpy.array(weights)
+    weights_sum = weights.sum()
+    s = rays.shape
+
+    #define output variables
+    y = numpy.linspace(ymin,ymax,ypoints)
+    x_mean = y.copy()
+    z_mean = y.copy()
+    x_sd = y.copy()
+    z_sd = y.copy()
+    x_wmean = y.copy()
+    z_wmean = y.copy()
+    x_wsd = y.copy()
+    z_wsd = y.copy()
+
+    x = numpy.zeros((y.size,s[0]))
+    z = numpy.zeros((y.size,s[0]))
+
+    for i,yi in enumerate(y):
+        tof = (-rays[:,1].flatten() + yi)/rays[:,4].flatten()
+        xi = rays[:,0].flatten() +  tof*rays[:,3].flatten()
+        zi = rays[:,2].flatten() +  tof*rays[:,5].flatten()
+        # out[0,i,:] = xi
+        # out[1,i,:] = zi
+        x[i,:] = xi
+        z[i,:] = zi
+        x_mean[i] = (xi).mean()
+        z_mean[i] = (zi).mean()
+        x_sd[i] = xi.std()
+        z_sd[i] = zi.std()
+        x_wmean[i] = (xi*weights).sum() / weights_sum
+        z_wmean[i] = (zi*weights).sum() / weights_sum
+        x_wsd[i] = numpy.sqrt( ((xi*weights-x_wmean[i])**2).sum() / weights_sum)
+        z_wsd[i] = numpy.sqrt( ((zi*weights-z_wmean[i])**2).sum() / weights_sum)
+
+    # now the histograms
+
+    if xrange is None:
+        xrange = [x.min(),x.max()]
+
+    if zrange is None:
+        zrange = [z.min(),z.max()]
+
+    # first histograms fo X
+    if xbins > 0:
+        x_fwhm  = numpy.zeros(ypoints)
+        x_wfwhm = numpy.zeros(ypoints)
+        x_h     = numpy.zeros((ypoints,xbins))
+        x_wh    = numpy.zeros((ypoints,xbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(x[i,:],bins=xbins,range=xrange)
+            x_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(x[i,:],bins=xbins,range=xrange,weights=weights)
+            x_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              x_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        x_bins = bins
+    else:
+        x_fwhm  = None
+        x_wfwhm = None
+        x_bins  = None
+        x_h     = None
+        x_wh    = None
+
+    # then histograms fo Z
+    if zbins > 0:
+        z_fwhm  = numpy.zeros(ypoints)
+        z_wfwhm = numpy.zeros(ypoints)
+        z_h     = numpy.zeros((ypoints,zbins))
+        z_wh    = numpy.zeros((ypoints,zbins))
+        for i,yi in enumerate(y):
+            h,bins = numpy.histogram(z[i,:],bins=zbins,range=zrange)
+            z_h[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_fwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+
+            h,bins = numpy.histogram(z[i,:],bins=zbins,range=zrange,weights=weights)
+            z_wh[i,:] = h
+
+            tt = numpy.where(h>=max(h)*0.5)
+            if h[tt].size > 1:
+              z_wfwhm[i] = (bins[1]-bins[0]) * (tt[0][-1]-tt[0][0])
+        z_bins = bins
+    else:
+        z_fwhm  = None
+        z_wfwhm = None
+        z_bins  = None
+        z_h     = None
+        z_wh    = None
+
+
+    ticket = {}
+
+    # copy the inputs
+    ticket['ypoints'] = ypoints
+    ticket['ymin'] = ymin
+    ticket['ymax'] = ymax
+    ticket['xbins'] = xbins
+    ticket['zbins'] = zbins
+
+    #scatter points
+    ticket['y'] = y
+    ticket['x'] = x
+    ticket['z'] = z
+
+    ticket['x_mean'] = x_mean
+    ticket['z_mean'] = z_mean
+    ticket['x_wmean'] = x_wmean
+    ticket['z_wmean'] = z_wmean
+
+    ticket['x_sd'] = x_sd
+    ticket['z_sd'] = z_sd
+    ticket['x_wsd'] = x_wsd
+    ticket['z_wsd'] = z_wsd
+
+    #histo
+    ticket['x_fwhm']  = x_fwhm
+    ticket['x_wfwhm'] = x_wfwhm
+    ticket['x_bins']  = x_bins
+    ticket['x_h']     = x_h
+    ticket['x_wh']    = x_wh
+
+    ticket['z_fwhm']  = z_fwhm
+    ticket['z_wfwhm'] = z_wfwhm
+    ticket['z_bins']  = z_bins
+    ticket['z_h']     = z_h
+    ticket['z_wh']    = z_wh
+
+    return(ticket)
+
+
+
+#
 # waviness
 #
 def waviness_write(dic1,file="waviness.inp"):
@@ -1099,14 +1545,14 @@ def waviness_read(file="waviness.inp"):
                  "c":array1[:,0].copy(), "y":array1[:,1].copy(), "g":array1[:,2].copy() }
 
 
-def slopes(z,x,y):
+def slopes(z,x,y,silent=1, return_only_rms=0):
     """
     ;+
     ; NAME:
     ;	slopes
     ; PURPOSE:
-    ;       This function calculates the slope errors of a surface along the mirror 
-    ;       length y and mirror width x. 
+    ;       This function calculates the slope errors of a surface along the mirror
+    ;       length y and mirror width x.
     ; CATEGORY:
     ;	SHADOW tools
     ; CALLING SEQUENCE:
@@ -1117,9 +1563,9 @@ def slopes(z,x,y):
     ;	z: the surface array of dimensions (Nx,Ny)
     ; OUTPUTS:
     ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
-    ;            along y in out[0,:,:] and along Y in out[1,:,:]
-    ;	slopesrms: a 4-dim array with 
-    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec, 
+    ;            along X in out[0,:,:] and along Y in out[1,:,:]
+    ;	slopesrms: a 4-dim array with
+    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec,
     ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
     ;
     ; MODIFICATION HISTORY:
@@ -1136,7 +1582,7 @@ def slopes(z,x,y):
 
     slope = numpy.zeros((2,nx,ny))
 
-    #; 
+    #;
     #; slopes in x direction
     #;
     for i in range(nx-1):
@@ -1146,7 +1592,7 @@ def slopes(z,x,y):
 
     #;
     #; slopes in y direction
-    #; 
+    #;
     for i in range(ny-1):
         step = y[i+1] - y[i]
         slope[1,:,i] = numpy.arctan( (z[:,i+1] - z[:,i] ) / step )
@@ -1156,16 +1602,22 @@ def slopes(z,x,y):
     slopermsY = slope[1,:,:].std()
     slopermsXsec = slopermsX*180.0/numpy.pi*3600.0
     slopermsYsec = slopermsY*180.0/numpy.pi*3600.0
-    slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+    # srio changed to dimensionless:
+    # slopesrms = numpy.array([slopermsXsec,slopermsYsec, slopermsX*1e6,slopermsY*1e6])
+    slopesrms = numpy.array([slopermsX,slopermsY])
 
-    print('\n **** slopes: ****')
-    print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
-    print('                               : %f urad'%(slopermsX*1e6))
-    print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
-    print('                               : %f urad'%(slopermsY*1e6))
-    print(' *****************')
+    if not(silent):
+        print('\n **** slopes: ****')
+        print(' Slope error rms in X direction: %f arcsec'%(slopermsXsec))
+        print('                               : %f urad'%(slopermsX*1e6))
+        print(' Slope error rms in Y direction: %f arcsec'%(slopermsYsec))
+        print('                               : %f urad'%(slopermsY*1e6))
+        print(' *****************')
 
-    return (slope,slopesrms)
+    if return_only_rms:
+        return slopesrms
+    else:
+        return (slope,slopesrms)
 
 
 def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
@@ -1214,7 +1666,6 @@ def write_shadow_surface(s,xx,yy,outFile='presurface.dat'):
 def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=113.1,\
                   nharmonics=3,slp=0.9, iseed=2387427,\
                   c=[1.0,1.0,1.0,1.0],y=[0.0,0.0,0.0,0.0],g=[0.0,0.0,0.0,0.0]):
-
     """
     ;+
     ; NAME: 	WAVINESS_CALC
@@ -1386,12 +1837,12 @@ def make_python_script_from_list(list_optical_elements,script_file=""):
 
     the system is read from a list of instances of Shadow.Source and Shadow.OE
 
-      :argument list of optical_elements A python list with intances of Shadow.Source and Shadow.OE objects
-      :param script_file: a string with the name of the output file (default="", no output file)
+    :argument list of optical_elements A python list with intances of Shadow.Source and Shadow.OE objects
+    :param script_file: a string with the name of the output file (default="", no output file)
     :return: template with the script
     """
     template = """#
-# Python script to run shadow3. Created automatically with mk_script.py.
+# Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
 import Shadow
 
@@ -1432,14 +1883,6 @@ beam = Shadow.Beam()
             if ivar[0].isupper():
                 if isinstance(ivar[1],numpy.ndarray):
                     if (ivar[1] != ivarB[1]).all():
-                        # if isinstance(ivarB[1][0],numpy.bytes_):
-                        #     tmp1 = copy.deepcopy(ivarB[1])
-                        #     for j in range(10):
-                        #        tmp = re.sub('\s{2,}', ' ',str(ivarB[1][j]))
-                        #        tmp1[j] = tmp
-                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(tmp1)+"\n"
-                        # else:
-                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
                         line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
                         if ("SPECIFIED" in line):
                             pass
@@ -1464,12 +1907,12 @@ beam = Shadow.Beam()
 #Run SHADOW to create the source
 
 if iwrite:
-    oe0.write("start_py.00")
+    oe0.write("start.00")
 
 beam.genSource(oe0)
 
 if iwrite:
-    oe0.write("end_py.00")
+    oe0.write("end.00")
     beam.write("begin.dat")
 """
 
@@ -1479,10 +1922,10 @@ if iwrite:
 #
 print("    Running optical element: %d"%({0}))
 if iwrite:
-    oe1.write("start_py.{1}")
+    oe1.write("start.{1}")
 beam.traceOE(oe{0},{0})
 if iwrite:
-    oe1.write("end_py.{1}")
+    oe1.write("end.{1}")
     beam.write("star.{1}")
 """
 
@@ -1513,7 +1956,7 @@ def make_python_script_from_current_run(script_file=""):
 
     srio@esrf.eu
 
-      :param script_file: a string with the name of the output file (default="", no output file)
+    :param script_file: a string with the name of the output file (default="", no output file)
     :return: template with the script
     """
 
@@ -1537,68 +1980,148 @@ def make_python_script_from_current_run(script_file=""):
 
     return template
 
+#
+# Tests
+#
 
-if __name__=="__main__":
-  import os
+def test_waviness():
+    myfile = "waviness.inp"
+    try:
+      f = open(myfile)
+      f.close()
+      tmp = waviness_read(file=myfile)
 
-  #
-  #test waviness
-  #
-  do_waviness = 0
-  if do_waviness:
-      myfile = "waviness.inp"
-      try:
-          f = open(myfile)
-          f.close()
-          tmp = waviness_read(file=myfile)
-    
-          (x,y,z) = waviness_calc(\
-                        file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
-                        width=tmp["width"],xlength=tmp["xlength"],\
-                        nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
-                        c=tmp["c"],y=tmp["y"], g=tmp["g"])
-          
-          waviness_write(tmp,file="tmp.inp")
-      except:
-          (x,y,z) = waviness_calc()
-    
-      write_shadow_surface(z.T,x,y,outFile='waviness.dat')
-      slopes(z,x,y)
- 
-  #
-  #test new plots
-  #
-  do_histo1 = 0
-  if do_histo1:
-      #t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
-      t = histo1("begin.dat",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
+      (x,y,z) = waviness_calc(\
+                    file=tmp["file"], npointx=tmp["npointx"], npointy=tmp["npointy"],\
+                    width=tmp["width"],xlength=tmp["xlength"],\
+                    nharmonics=tmp["nharmonics"],slp=tmp["slp"], iseed=tmp["iseed"],\
+                    c=tmp["c"],y=tmp["y"], g=tmp["g"])
 
-  do_plotxy = 0
-  if do_plotxy:
-      nbins = 110
+      waviness_write(tmp,file="tmp.inp")
+    except:
+      (x,y,z) = waviness_calc()
 
-      # t = histo1_old("begin.dat",3,nbins=103, xrange=[-0.0015,0.0015])
+    write_shadow_surface(z.T,x,y,outFile='waviness.dat')
+    slopes(z,x,y)
 
-      # import Shadow
-      # tmp = Shadow.Beam()
-      # tmp.load("begin.dat")
-      # tkt2 = tmp.plotxy(1,3,nbins=nbins, nolost=0, ref=1, \
-      #                      xrange=[-0.015,0.015], yrange=[-0.002,0.002])
-      # plotxy_gnuplot(tkt2,0,0,execute=1)
-      # plotxy(tkt2,0,0)
+def test_make_kb():
+    print("setting KB for ID23-2")
 
+    # create source
+    src = Shadow.Source()
+    src.set_energy_monochromatic(14200.0)
+    SIGMAX = 0.00374784
+    SIGMAZ = 0.000425671
+    SIGDIX = 0.000107037
+    SIGDIZ = 5.55325e-06
+    src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+    src.write("start.00")
 
-      tkt = plotxy_gnuplot("begin.dat",1,3,nbins=nbins, nolost=1, ref=0, \
-                     xrange=[-0.015,0.015], yrange=[-0.002,0.002],execute=0,pdf=1)
+    beam = Shadow.Beam()
+    beam.genSource(src)
+    beam.write("begin.dat")
+    src.write("end.00")
+
+    kb = Shadow.CompoundOE(name='KB')
+    kb.append_kb(4275,180,separation=4315-4275,grazing_angles_mrad=[3.9,17.8],shape=[2,2], \
+                 dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
+                 ) # surface_error_files=["waviness.dat","waviness.dat"])
+
+    # trace
+    kb.dump_systemfile()
+    beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
+    beam.write("star.02")
 
 
-      # tkt = plotxy("begin.dat",1,3,nbins=nbins, nolost=1, \
-      #                xrange=[-0.015,0.015], yrange=[-0.002,0.002])
+def test_histo1():
+    test_make_kb()
+    t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
 
-  do_script = 0
-  if do_script:
-    old_dir = os.getcwd()
-    os.chdir("/scisoft/users/srio/Working/RADIASOFT/shadow")
+def test_plotxy_gnuplot():
+    test_make_kb()
+    tkt = plotxy_gnuplot("begin.dat",1,3,nbins=110, nolost=1, ref=0, \
+                 xrange=[-0.015,0.015], yrange=[-0.002,0.002],execute=0,pdf=1)
+
+    # # TODO: it seems that it does not work: gnuplot version??
+    # import os
+    # os.system("pwd")
+    # os.system("gnuplot plotxy.gpl")
+
+def test_make_script():
+    test_make_kb()
+    # TODO: does not work??
     make_python_script_from_current_run(script_file="tmp.py")
     os.system("python3 tmp.py")
-    os.chdir(old_dir)
+
+def test_focnew():
+    test_make_kb()
+
+    ymin = -1.0
+    ymax = 1.0
+    ypoints = 101
+
+    #then focnew_scan
+    tkt2 = focnew("star.02",nolost=1,mode=1)
+    print(tkt2["text"])
+
+    # now the focnew scans
+    f3 = plt.figure(3)
+    y = numpy.linspace(ymin,ymax,ypoints)
+    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="x (tangential)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined x,z")
+    plt.legend()
+    plt.title("focnew")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("2.35*<Z> [cm]")
+
+    plt.show()
+
+def test_ray_prop():
+
+    ymin = -1.0
+    ymax = 1.0
+    ypoints = 101
+
+    tkt = ray_prop("star.02",nolost=1,ymin=ymin,ymax=ymax,ypoints=ypoints,xbins=61,zbins=61)
+
+    # ray_prop results
+    f1 = plt.figure(1)
+    plt.plot(tkt["y"],2.35*tkt["x_sd"],label="x (tangential)")
+    plt.plot(tkt["y"],2.35*tkt["x_wsd"],label="x weighted (tangential)")
+    plt.plot(tkt["y"],2.35*tkt["z_sd"],label="z (sagittal)")
+    plt.plot(tkt["y"],2.35*tkt["z_wsd"],label="z weighted (sagittal)")
+    plt.legend()
+    plt.title("ray_prop")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("2.35*SD [cm]")
+
+    # data from ray_prop histograms
+
+    f2 = plt.figure(2)
+    if tkt["x_fwhm"] is None:
+        pass
+    else:
+        plt.plot(tkt["y"],tkt["x_fwhm"],label="x (histo)")
+        plt.plot(tkt["y"],tkt["x_wfwhm"],label="x (weighted histo)")
+    if tkt["z_fwhm"] is None:
+        pass
+    else:
+        plt.plot(tkt["y"],tkt["z_fwhm"],label="z (histo)")
+        plt.plot(tkt["y"],tkt["z_wfwhm"],label="z (weighted histo)")
+    plt.legend()
+    plt.title("ray_prop (from histograms)")
+    plt.xlabel("Y [cm]")
+    plt.ylabel("FWHM [cm]")
+
+    plt.show()
+
+if __name__=="__main__":
+    do_tests = 0
+    if do_tests:
+        test_waviness()
+        test_histo1()
+        test_plotxy_gnuplot()
+        test_make_script()
+        test_focnew()
+        test_ray_prop()
