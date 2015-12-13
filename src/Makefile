@@ -28,13 +28,7 @@
 #
 #   customize next section (only) 
 #
-#
 #   Recommended compiler: gfortran
-#
-#   in ESRF/NICE: 
-#     source /scisoft/ESRF_sw/opteron2/set_environment.tcsh
-#     use  FC=gfortran
-#
 #
 
 
@@ -42,29 +36,43 @@
 ##                   THIS SECTION CAN BE CUSTOMIZED 
 ##-------------------------------------------------------------------------------
 
+SO=.so
+EXE=
+COMPILEOPT=
+STATIC =
+
+ifeq ($(OS),Windows_NT)
+    uname_S := Windows
+else
+    uname_S := $(shell uname -s)
+endif
+
+ifeq ($(uname_S), Windows)
+    SO=.dll
+    EXE=.exe
+    COMPILEOPT=-D_COMPILE4WIN
+    STATIC = -static
+endif
+
+ifeq ($(uname_S), Linux)
+    SO=.so
+    EXE=
+    COMPILEOPT=-D_COMPILE4NIX
+    STATIC = -static
+    #STATIC = -static -static-libgfortran -static-libgcc
+endif
+ifeq ($(uname_S), Darwin)
+    #needed for gfortran in macos 10.10
+    export MACOSX_DEPLOYMENT_TARGET=10.9
+    SO=.so
+    EXE=
+    COMPILEOPT=-D_COMPILE4MAX
+    STATIC = 
+endif
+
 #for 32 bits compilation, set this
 #(in Ubuntu needs: sudo apt-get install gfortran-multilib )
 #32BITS=-m32
-
-#setings for linux
-SO=.so
-EXE=
-COMPILEOPT=-D_COMPILE4NIX
-STATIC = -static
-#STATIC = -static -static-libgfortran -static-libgcc
-
-#settings for mac
-#SO=.so
-#EXE=
-#COMPILEOPT=-D_COMPILE4MAX
-#STATIC = 
-
-#settings for windows
-#SO=.dll
-#EXE=.exe
-#COMPILEOPT=-D_COMPILE4WIN
-#STATIC = -static
-
 
 #
 # customize compiler and flags
@@ -90,7 +98,6 @@ LINKFLAGS = $(32BITS) $(STATIC)
 #STATIC=-static -static-libgfortran -static-libgcc
 #FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 
-
 CC = gcc
 #CC = x86_64-w64-mingw32-gcc
 #CC = i686-w64-mingw32-gcc
@@ -113,9 +120,6 @@ CPP = cpp -traditional
 #do not change this. Meant to be command line argument
 MPI=
 MPIFC = mpif90
-#overwrite compilers
-#CC = gcc-mp-4.4
-#CXX = g++-mp-4.4
 
 ##-------------------------------------------------------------------------------
 ##                   END OF CUSTOMIZABLE SECTION
@@ -129,7 +133,7 @@ MPIFC = mpif90
 #
 # note that the order is important...
 #
-# note that all fortran sources have now .F90 extension, and all are passed
+# note that all fortran sources are passed
 #      by the preprocessor, even if only a few ones have preprocessor 
 #      instructions, namely: 
 #                            shadow_version.F90  
@@ -157,7 +161,6 @@ OBJFMODULES = \
 	shadow_crl.o
 
 FMODULESPRE = ${FMODULES:.F90=.f90}
-
 
 #
 # targets

@@ -2,7 +2,7 @@
 """Build and install Shadow3"""
 from __future__ import division, absolute_import, print_function
 
-import datetime
+#import datetime
 import glob
 import os
 import os.path
@@ -20,6 +20,7 @@ from distutils.core import setup
 import distutils.cmd
 
 #from pykern import pksetup
+#os.environ["CC"] = "gcc"
 
 class NullCommand(distutils.cmd.Command, object):
     """Use to eliminate a ``cmdclass``.
@@ -43,14 +44,17 @@ class BuildClib(build_clib, object):
 
     def build_libraries(self, *args, **kwargs):
         """Modify the f90 compiler flags and build shadow_version.h"""
+        #print(">>>>>>>>>>>>>>> in build_libraries")
         f90 = self._f_compiler.compiler_f90
         # Is this portable?
         for f in ('-Wall', '-fno-second-underscore'):
             if f in f90:
                 f90.remove(f)
         f90.extend(('-cpp', '-ffree-line-length-none', '-fomit-frame-pointer', '-I' + self.build_clib))
+        #print(">>>>>>>>>>>>>> f90: ",f90)
         #srio: not needed for python  
 	#self.__version_h()
+        #print(">>>>>>>>>>>>>>> in build_libraries")
         return super(BuildClib, self).build_libraries(*args, **kwargs)
 
 #     def __version_h(self):
@@ -115,7 +119,7 @@ setup(
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
     #pksetup={  TODO: this gives a warning
     setup={
-        'extra_directories': ['c', 'def', 'fortran'],
+        'extra_directories': ['src/c', 'src/def', 'src/fortran'],
     },
     libraries=[
         ('shadow3c', {
@@ -157,7 +161,7 @@ setup(
             name='Shadow.ShadowLib',
             sources=['src/c/shadow_bind_python.c'],
             include_dirs=['src/c', 'src/def', numpy.get_include()],
-            libraries=['shadow3c', 'gfortran'],
+            #libraries=['shadow3c', 'gfortran'],
         ),
     ],
 )
