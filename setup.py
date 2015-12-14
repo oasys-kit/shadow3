@@ -161,7 +161,7 @@ setup(
             name='Shadow.ShadowLib',
             sources=['src/c/shadow_bind_python.c'],
             include_dirs=['src/c', 'src/def', numpy.get_include()],
-            #libraries=['shadow3c', 'gfortran'],
+            libraries=['shadow3c', 'gfortran'],
         ),
     ],
 )

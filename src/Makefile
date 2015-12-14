@@ -58,7 +58,8 @@ ifeq ($(uname_S), Linux)
     SO=.so
     EXE=
     COMPILEOPT=-D_COMPILE4NIX
-    STATIC = -static
+    STATIC = 
+    #STATIC = -static
     #STATIC = -static -static-libgfortran -static-libgcc
 endif
 ifeq ($(uname_S), Darwin)
@@ -236,9 +237,10 @@ shadow_crl.o: fortran/shadow_crl.f90
 #
 # lib target ----------------
 #
-lib: $(OBJFMODULES) shadow_bind_c.o 
+lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
+	$(CXX) $(LIBFLAGS) $(CFLAGS) -o libshadow3c++$(SO) shadow_bind_cpp.o -L. -lshadow3 #$(OBJFMODULES)
 
 shadow_bind_c.o: c/shadow_bind_c.c
 	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
@@ -252,8 +254,10 @@ libstatic: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
 	ar cr libshadow3c++.a shadow_bind_c.o shadow_bind_cpp.o $(OBJFMODULES)
 
 #
-# examples_fortran target -----------------
+# examples target -----------------
 #
+examples: examples_fortran examples_c
+
 examples_fortran: libstatic examples/example01_f95.F90  examples/example_standalone_mirror.F90  examples/trace3.F90 examples/trace.F90 examples/example02_f95.F90 examples/gen_source.F90 examples/trace3mpi.F90
 	$(FC) $(FFLAGS) -c examples/gen_source.F90
 	$(FC) $(LINKFLAGS) -o gen_source gen_source.o -L. -lshadow3
@@ -273,25 +277,26 @@ examples_fortran: libstatic examples/example01_f95.F90  examples/example_standal
 	$(FC) $(FFLAGS) -c examples/example_standalone_mirror.F90
 	$(FC) $(LINKFLAGS) -o example_standalone_mirror example_standalone_mirror.o -L. -lshadow3
 
-#
-#TODO: not yet working
-#
-examples_c: libstatic examples/trace3_c.c examples/example01_c.c examples/example_shadow_format.c
+examples_c: lib examples/trace3_c.c examples/example01_c.c examples/example_shadow_format.c
 	$(CC) $(CFLAGS) -I ./c/ -c examples/trace3_c.c
 	$(CC) $(CFLAGS) -o trace3_c trace3_c.o -L. -lshadow3c -lshadow3
 
 	$(CC) $(CFLAGS) -c -I ./c/ examples/example01_c.c
-	$(CC) $(CFLAGS) -o example01_c example01_c.o
+	$(CC) $(CFLAGS) -o example01_c example01_c.o -L. -lshadow3c -lshadow3
 
 	$(CC) $(CFLAGS) -c -I ./c/ examples/example_shadow_format.c
-	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.o
+	$(CC) $(CFLAGS) -o example_shadow_format example_shadow_format.o -L. -lshadow3c -lshadow3
 
-examples_cpp: libstatic examples/trace3_cpp.cpp examples/example01_cpp.cpp
+examples_cpp: lib examples/trace3_cpp.cpp examples/example01_cpp.cpp
 	$(CXX) -I. $(CFLAGS) -I ./c/ -c examples/trace3_cpp.cpp
 	$(CXX) $(CFLAGS) -o trace3_cpp trace3_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
-	$(CXX) -I. $(CFLAGS) -I ./c/ c example01_cpp.cpp -o example01_cpp.o
-	$(CXX) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
 
+#	$(CXX) -I. $(CFLAGS) -I ./c/ c example01_cpp.cpp -o example01_cpp.o
+#	$(CXX) $(CFLAGS) -o example01_cpp example01_cpp.o -L. -lshadow3c++ -lshadow3c -lshadow3
+
+#
+#TODO: not yet working
+#
 
 ifeq ($(MPI),1)
 	$(MPIFC) $(FFLAGS) -c examples/trace3mpi.F90
