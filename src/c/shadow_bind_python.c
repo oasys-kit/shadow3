@@ -1,6 +1,5 @@
-
-#include <stdlib.h>
 #include "shadow_bind_python.h"
+#include <stdlib.h>
 #include <float.h>
 #include <math.h>
 #include <emmintrin.h>
