@@ -20,7 +20,6 @@ from distutils.core import setup
 import distutils.cmd
 
 #from pykern import pksetup
-#os.environ["CC"] = "gcc"
 
 class NullCommand(distutils.cmd.Command, object):
     """Use to eliminate a ``cmdclass``.
@@ -34,7 +33,7 @@ class NullCommand(distutils.cmd.Command, object):
 
     def finalize_options(*args, **kwargs):
         pass
-
+    
     def run(*args, **kwargs):
         pass
 
@@ -42,73 +41,40 @@ class NullCommand(distutils.cmd.Command, object):
 class BuildClib(build_clib, object):
     """Set up for shadow3c build"""
 
+    def finalize_options(self):
+            try:
+                build_clib.finalize_options(self)
+            except AttributeError:
+                pass
+            
+
     def build_libraries(self, *args, **kwargs):
         """Modify the f90 compiler flags and build shadow_version.h"""
-        #print(">>>>>>>>>>>>>>> in build_libraries")
         f90 = self._f_compiler.compiler_f90
         # Is this portable?
         for f in ('-Wall', '-fno-second-underscore'):
             if f in f90:
                 f90.remove(f)
         f90.extend(('-cpp', '-ffree-line-length-none', '-fomit-frame-pointer', '-I' + self.build_clib))
-        #print(">>>>>>>>>>>>>> f90: ",f90)
-        #srio: not needed for python  
+                #srio: not needed for python  
 	#self.__version_h()
-        #print(">>>>>>>>>>>>>>> in build_libraries")
         return super(BuildClib, self).build_libraries(*args, **kwargs)
 
-#     def __version_h(self):
-#         self.mkpath(self.build_clib)
-#         t = '''{hline}
-#     {header:^80}
-#     {hline}
-# 
-#     {prefix}Date:
-#     {date}
-# 
-#     {prefix}Compiler:
-#     {compiler}
-# 
-#     {prefix}Platform:
-#     {platform}
-# 
-#     {prefix}Build:
-#     {build}
-# 
-#     {hline}'''
-#         out = t.format(
-#             # We can't show c compiler, because there's no such string
-#             # in distutils. msvccompiler, for example, creates the string
-#             # in the spawn() call. This tells us enough
-#             compiler=self._f_compiler.compiler_f90,
-#             date=datetime.datetime.utcnow().ctime() + ' UTC',
-#             header='compilation settings',
-#             hline='+' * 80,
-#             platform=platform.platform(),
-#             prefix=' ' + ('+' * 5),
-#             build=self.distribution.version,
-#         ).rstrip()
-#         lines = []
-#         for line in out.split('\n'):
-#             if not line:
-#                 line = ' '
-#             line = 'print *,"{}"\n'.format(line)
-#             lines.append(line)
-#         out = os.path.join(self.build_clib, 'shadow_version.h')
-#         with open(out, 'w') as f:
-#             f.write(''.join(lines))
-#         return out
 
-
-#pksetup.setup(
 
 if sys.platform == 'darwin':
     compile_options = "_COMPILE4MAX"
+    import subprocess
+    library_dirs=subprocess.check_output(["locate", "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
+    
 elif sys.platform == 'linux':
     compile_options = "_COMPILE4NIX"
+    library_dirs=[]
 else:
     compile_options = "_COMPILE4WIN"
+    library_dirs=[]
 
+#pksetup.setup(
 setup(
     name='shadow3',
     packages=['Shadow'],
@@ -118,9 +84,9 @@ setup(
     author_email='srio@esrf.eu',
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
     #pksetup={  TODO: this gives a warning
-    setup={
-        'extra_directories': ['src/c', 'src/def', 'src/fortran'],
-    },
+ #   setup={
+ #       'extra_directories': ['src/c', 'src/def', 'src/fortran'],
+ #   },
     libraries=[
         ('shadow3c', {
             'some-random-param': 1,
@@ -161,6 +127,8 @@ setup(
             name='Shadow.ShadowLib',
             sources=['src/c/shadow_bind_python.c'],
             include_dirs=['src/c', 'src/def', numpy.get_include()],
+            extra_link_args=['-Wl,-no_compact_unwind'],
+            library_dirs=library_dirs,
             libraries=['shadow3c', 'gfortran'],
         ),
     ],
