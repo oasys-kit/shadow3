@@ -66,13 +66,16 @@ if sys.platform == 'darwin':
     compile_options = "_COMPILE4MAX"
     import subprocess
     library_dirs=subprocess.check_output(["locate", "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
+    extra_link_args = ['-Wl,-no_compact_unwind'],
     
 elif sys.platform == 'linux':
     compile_options = "_COMPILE4NIX"
     library_dirs=[]
+    extra_link_args = []
 else:
     compile_options = "_COMPILE4WIN"
     library_dirs=[]
+    extra_link_args = []
 
 #pksetup.setup(
 setup(
@@ -127,7 +130,7 @@ setup(
             name='Shadow.ShadowLib',
             sources=['src/c/shadow_bind_python.c'],
             include_dirs=['src/c', 'src/def', numpy.get_include()],
-            extra_link_args=['-Wl,-no_compact_unwind'],
+            extra_link_args=extra_link_args,
             library_dirs=library_dirs,
             libraries=['shadow3c', 'gfortran'],
         ),

@@ -101,11 +101,6 @@ in data: data files:
   python3 setup.py build
   sudo python3 setup.py install
 
-  ** WARNING ** Not yet working for mac, use instead: 
-  python3 setup_mac.py build
-  sudo python3 setup_mac.py install
-
- 
 
 5 Other info
 ------------
