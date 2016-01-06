@@ -65,7 +65,8 @@ class BuildClib(build_clib, object):
 if sys.platform == 'darwin':
     compile_options = "_COMPILE4MAX"
     import subprocess
-    library_dirs=subprocess.check_output(["locate", "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
+    #library_dirs=subprocess.check_output(["locate", "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
+    library_dirs=subprocess.check_output(["gfortran" , "--print-file-name" , "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
     extra_link_args = ['-Wl,-no_compact_unwind']
     
 elif sys.platform == 'linux':
