@@ -11748,7 +11748,6 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ! put global variables into pool 
     !
     !TODO: work without globals!!!!
-    CALL GlobalToPoolSource(pool00)
 
     ntotalpoint = N_REJ+NPOINT
     if (n_rej .gt. 0) then
@@ -11761,6 +11760,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
       WRITE(6,*)'----------------------------------------------------------------'
     endif 
 
+    CALL GlobalToPoolSource(pool00)
     WRITE(6,*)'Exit from SOURCE'
     RETURN
   END SUBROUTINE sourceGeom

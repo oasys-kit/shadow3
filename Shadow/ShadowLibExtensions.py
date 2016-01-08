@@ -3001,7 +3001,7 @@ class Source(ShadowLib.Source):
             txt += '    total number of rays been created: %d \n'%(self.NTOTALPOINT)
             txt += '    accepted rays (stored): %d \n'%self.NPOINT
             txt += '    rejected:               %d \n'%(self.NTOTALPOINT-self.NPOINT)
-            txt += '    created/accepted ratio: %d \n'%(float(self.NTOTALPOINT)/float(self.NPOINT))
+            txt += '    created/accepted ratio: %f \n'%(float(self.NTOTALPOINT)/float(self.NPOINT))
 
             if self.F_BOUND_SOUR == 1:
                 txt += '    file with phase-space volume: '+self.FILE_BOUND.strip().decode()+'\n'

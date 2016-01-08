@@ -3297,7 +3297,6 @@ ENDIF
 ! put global variables into pool 
 !
 !TODO: work without globals!!!!
-CALL GlobalToPoolSource(pool00)
 
 
 ntotalpoint = N_REJ+NPOINT
@@ -3310,6 +3309,8 @@ if (n_rej .gt. 0) then
       WRITE(6,*)real(N_REJ+NPOINT)/real(NPOINT), '      created/accepted ratio.'
       WRITE(6,*)'----------------------------------------------------------------'
 endif
+
+CALL GlobalToPoolSource(pool00)
 
 ! deallocate arrays (wiggler)
 if (allocated(seed_y)) deallocate( seed_y)

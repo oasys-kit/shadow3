@@ -299,7 +299,10 @@ SELECT CASE (inCommandLow)
      CALL histo3()
      inCommand=""
   CASE ("exit")
-     !STOP "GO ended."
+     go to 333 !EXIT
+  CASE ("quit")
+     go to 333 !EXIT
+  CASE ("exit()")
      go to 333 !EXIT
   CASE ("citation")
      print *,' 1)                                                          '
@@ -358,7 +361,7 @@ SELECT CASE (inCommandLow)
      print *,'                    : focnew intens recolor ffresnel ffresnel2d'
      print *,'                    : retrace minmax reflag histo3'
      print *,'                    : prerefl_test pre_mlayer_scan emittance_test '
-     print *,'  [OTHER]           : exit help ? version license citation'
+     print *,'  [OTHER]           : exit exit() quit help ? version license citation'
      print *,'  [OP SYSTEM ACCESS]: $<command>'
      print *,''
      print *,''
