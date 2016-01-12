@@ -1831,7 +1831,7 @@ def waviness_calc(file="waviness.dat",npointx=10,npointy=100,width=20.1,xlength=
 #automatic creation of python scripts
 #
 
-def make_python_script_from_list(list_optical_elements,script_file=""):
+def make_python_script_from_list(list_optical_elements1,script_file=""):
     """
     program to build automatically a python script to run shadow3
 
@@ -1841,6 +1841,41 @@ def make_python_script_from_list(list_optical_elements,script_file=""):
     :param script_file: a string with the name of the output file (default="", no output file)
     :return: template with the script
     """
+
+    #make sure that the list does not contain lists
+
+    haslist = sum([isinstance(i,list) for i in list_optical_elements1])
+
+    list_optical_elements = list_optical_elements1
+    if haslist:
+        while(haslist > 0):
+            newlist = []
+            for i in list_optical_elements:
+                if isinstance(i,list):
+                    newlist.extend(i)
+                else:
+                    newlist.append(i)
+            list_optical_elements = newlist
+            haslist = sum([isinstance(i,list) for i in list_optical_elements])
+
+
+    #make sure that the list does not containOE (developed)
+
+    hascomp = sum([isinstance(i,(Shadow.CompoundOE,Shadow.ShadowLibExtensions.CompoundOE)) for i in list_optical_elements])
+
+    if hascomp:
+        newlist = []
+        for i in list_optical_elements:
+            if isinstance(i,(Shadow.CompoundOE,Shadow.ShadowLibExtensions.CompoundOE)):
+                newlist.extend(i.list)
+            else:
+                newlist.append(i)
+        list_optical_elements = newlist
+
+
+
+
+
     template = """#
 # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
@@ -2033,6 +2068,7 @@ def test_make_kb():
     beam.write("star.02")
 
 
+
 def test_histo1():
     test_make_kb()
     t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
@@ -2052,6 +2088,29 @@ def test_make_script():
     # TODO: does not work??
     make_python_script_from_current_run(script_file="tmp.py")
     os.system("python3 tmp.py")
+
+def test_make_script_compoundOE():
+
+    # create source
+    src = Shadow.Source()
+    src.set_energy_monochromatic(14200.0)
+    SIGMAX = 0.00374784
+    SIGMAZ = 0.000425671
+    SIGDIX = 0.000107037
+    SIGDIZ = 5.55325e-06
+    src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+
+    beam = Shadow.Beam()
+    beam.genSource(src)
+
+    kb = Shadow.CompoundOE(name='KB')
+    kb.append_kb(4275,180,separation=4315-4275,grazing_angles_mrad=[3.9,17.8],shape=[2,2], \
+                 dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
+                 ) # surface_error_files=["waviness.dat","waviness.dat"])
+
+    # trace
+    #beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
+    make_python_script_from_list([[[[src]]],kb,[kb]],script_file="tmp.py")
 
 def test_focnew():
     test_make_kb()
@@ -2123,5 +2182,6 @@ if __name__=="__main__":
         test_histo1()
         test_plotxy_gnuplot()
         test_make_script()
+        test_make_script_compoundOE()
         test_focnew()
         test_ray_prop()

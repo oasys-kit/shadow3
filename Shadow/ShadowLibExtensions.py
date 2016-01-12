@@ -1983,14 +1983,16 @@ class CompoundOE():
 
 
 
-  def mirinfo(self):
+  def mirinfo(self,title=None):
       """
       Mimics the SHADOW mirinfo
       :return: a text array
       """
       txt = ""
       for i,oe in enumerate(self.list):
-          txt += oe.mirinfo(title="oe %d in compoundOE name: %s "%(i+1,self.name))
+          if title == None:
+              title = "oe %d in compoundOE name: %s "%(i+1,self.name)
+          txt += oe.mirinfo(title=title)
       return txt
 
   def get_oe_index(self,oe_index):
