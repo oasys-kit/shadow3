@@ -701,7 +701,7 @@ class OE(ShadowLib.OE):
                  rz_slit=numpy.zeros(10),
                  cx_slit=numpy.zeros(10),
                  cz_slit=numpy.zeros(10),
-                 file_src_ext=numpy.array(['', '', '', '', '', '', '', '', '', ''])
+                 file_scr_ext=numpy.array(['', '', '', '', '', '', '', '', '', ''])
                  ):
     self.F_SCREEN = 1
     if n_screen<=10 and n_screen>0: 
@@ -721,7 +721,7 @@ class OE(ShadowLib.OE):
     self.RZ_SLIT      = rz_slit
     self.CX_SLIT      = cx_slit
     self.CZ_SLIT      = cz_slit
-    self.FILE_SRC_EXT = file_src_ext
+    self.FILE_SCR_EXT = file_scr_ext
 
     return self
 
