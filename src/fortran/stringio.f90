@@ -794,15 +794,19 @@ END SUBROUTINE FNAME
 !C Author: Mumit Khan <khan@xraylith.wisc.edu>
 !C Copyright(c) 1996 Mumit Khan
 !c             completely rewritten by srio@esrf.eu   2010
-!c             file must exists, otherwise exits with error (stop)
+!c             file must exists, otherwise exits with error
 !C
 !   The file is searched in the following directory path (in order): 
-!      .                    !current directory
-!      $SHADOW3_HOME        ! env variable for user shadow3 installation
-!      $XOP_HOME/extensions/shadowvui/shadow3/  
+!      1) .                    !current directory
+!      2) the directory where shadow3 binary sits
+!      3) the folder "data" under the directory where shadow3 binary sits
+!      4) $SHADOW3_HOME        ! env variable for user shadow3 installation
+!      5) $SHADOW3_HOME/data   
+!      6) $XOP_HOME/extensions/shadowvui/shadow3/  
 !                           !standard shadow3 for xop/shadowvui
-!      $SHADOW_DATA_FILE    ! data folder for shadow2
-!      $SHADOW_ROOT/data    ! standard location for data folder for shadow2
+!      7) $XOP_HOME/extensions/shadowvui/shadow3/data
+!      8) $SHADOW_DATA_FILE    ! data folder for shadow2
+!      9) $SHADOW_ROOT/data    ! standard location for data folder for shadow2
 !C 
 !C ---
 !
@@ -826,14 +830,14 @@ subroutine datapath (file, path, iflag)
 
         implicit none
 
-	character(len=*),intent(in)       ::  file
-	integer(kind=ski),   intent(in out) ::  iFlag
-	character(len=1024),intent(out)    ::  path
-	character(len=1024)                ::  dataDir
-	! ATTENTION: this is the DEFAULT integer, thus
-	!            platform dependent!!!!
-	!integer(kind=ski)                   ::  nStr
-	integer                              ::  nStr
+        character(len=*),intent(in)       ::  file
+        integer(kind=ski),   intent(in out) ::  iFlag
+        character(len=1024),intent(out)    ::  path
+        character(len=1024)                ::  dataDir
+        ! ATTENTION: this is the DEFAULT integer, thus
+        !            platform dependent!!!!
+        !integer(kind=ski)                   ::  nStr
+        integer                              ::  nStr
 
         !srio danger todo : OS-dependent
         !character(len=1)                  :: path_sep='/'
@@ -841,17 +845,17 @@ subroutine datapath (file, path, iflag)
 
         iFlag=0  !OK
         !
-        ! if file exists in the current directry, use it
-	INQUIRE (file = file, exist = lExists)
-	IF (lExists) THEN
+        ! 1) if file exists in the current directry, use it
+        !
+        INQUIRE (file = file, exist = lExists)
+        IF (lExists) THEN
            path = file
            RETURN
         END IF
 
         !
-        ! if file exists in the directory where the "shadow3" binary is
-        ! sitting, use it.
-
+        ! 2) file in the directory where the "shadow3" binary is sitting
+        !
         call get_command_argument(0,dataDir)
         nStr = 7 ! number of characters in shadow3
         dataDir = dataDir(1:len(trim(dataDir))-nStr)
@@ -859,37 +863,64 @@ subroutine datapath (file, path, iflag)
         INQUIRE (file = path, exist = lExists)
         IF (lExists) RETURN
 
+        !
+        ! 3) if file exists in the directory "data" under where the "shadow3" 
+        ! binary is sitting
+        !
+        call get_command_argument(0,dataDir)
+        nStr = 7 ! number of characters in shadow3
+        dataDir = dataDir(1:len(trim(dataDir))-nStr)
+        path = TRIM(datadir)//OS_DS//'data'//OS_DS//TRIM(file)
+        INQUIRE (file = path, exist = lExists)
+        IF (lExists) RETURN
 
-        ! checks if file is in $SHADOW3_HOME
-	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW3_HOME', datadir, nStr)
+
+        ! 4) checks if file is in $SHADOW3_HOME
+        CALL GET_ENVIRONMENT_VARIABLE ('SHADOW3_HOME', datadir, nStr)
         IF (nStr .gt. 0) THEN
           path = TRIM(datadir)//OS_DS//TRIM(file)
-	  INQUIRE (file = path, exist = lExists)
-	  IF (lExists) RETURN
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
         END IF
         
-        ! checks if file is in $XOP_HOME/extensions/shadowvui/shadow3
-	CALL GET_ENVIRONMENT_VARIABLE ('XOP_HOME', datadir, nStr)
-        IF (nStr .gt. 0) THEN
-          path = TRIM(datadir)//OS_DS//'extensions'//OS_DS//'shadowvui'//OS_DS//'shadow3'//OS_DS//TRIM(file)
-	  INQUIRE (file = path, exist = lExists)
-	  IF (lExists) RETURN
-        END IF
-
-        ! checks if file is in $SHADOW_DATA_DIR
-	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_DATA_DIR', datadir, nStr)
-        IF (nStr .gt. 0) THEN
-          path = TRIM(datadir)//OS_DS//TRIM(file)
-	  INQUIRE (file = path, exist = lExists)
-	  IF (lExists) RETURN
-        END IF
-        
-        ! checks if file is in $SHADOW_ROOT/data
-	CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_ROOT', datadir, nStr)
+        ! 5) checks if file is in $SHADOW3_HOME/data
+        CALL GET_ENVIRONMENT_VARIABLE ('SHADOW3_HOME', datadir, nStr)
         IF (nStr .gt. 0) THEN
           path = TRIM(datadir)//OS_DS//'data'//OS_DS//TRIM(file)
-	  INQUIRE (file = path, exist = lExists)
-	  IF (lExists) RETURN
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
+        END IF
+        
+        ! 6) checks if file is in $XOP_HOME/extensions/shadowvui/shadow3
+        CALL GET_ENVIRONMENT_VARIABLE ('XOP_HOME', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//'extensions'//OS_DS//'shadowvui'//OS_DS//'shadow3'//OS_DS//TRIM(file)
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
+        END IF
+
+        ! 7) checks if file is in $XOP_HOME/extensions/shadowvui/shadow3/data
+        CALL GET_ENVIRONMENT_VARIABLE ('XOP_HOME', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//'extensions'//OS_DS//'shadowvui'//OS_DS//'shadow3'//OS_DS//'data'//OS_DS//TRIM(file)
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
+        END IF
+
+        ! 8) checks if file is in $SHADOW_DATA_DIR
+        CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_DATA_DIR', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//TRIM(file)
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
+        END IF
+        
+        ! 9) checks if file is in $SHADOW_ROOT/data
+        CALL GET_ENVIRONMENT_VARIABLE ('SHADOW_ROOT', datadir, nStr)
+        IF (nStr .gt. 0) THEN
+          path = TRIM(datadir)//OS_DS//'data'//OS_DS//TRIM(file)
+          INQUIRE (file = path, exist = lExists)
+          IF (lExists) RETURN
         END IF
 
         ! file not found

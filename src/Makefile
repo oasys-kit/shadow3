@@ -13,18 +13,14 @@
 #       make idl        : creates idl bind
 #       make preprocess : creates *.f90 files (to be exported to other platforms)
 #
+#       make softclean  : cleans files created when running make 
+#                         except shadow3 binary
 #       make clean      : cleans files created when running make
 #       make purge      : clean + removes files created by shadow3
 #
 #       make install    : to be adapted to user needs
 #
-# srio@esrf.eu    05-02-2010  first version
-# srio@esrf.eu    17-12-2010  version using preprocessor
-# srio@esrf.eu    03-01-2013  minimize the use of scripts
-# srio@esrf.eu    11-12-2015  changed file tree
-#
 # HINTS:
-#
 #
 #   customize next section (only) 
 #
@@ -172,7 +168,8 @@ all: shadow3
 # shadow3 target ----------------
 #
 shadow3: $(OBJFMODULES) shadow3.o
-	$(FC) $(LINKFLAGS) -o shadow3$(EXE) shadow3.o $(OBJFMODULES) 
+	$(FC) $(LINKFLAGS) -o ../shadow3$(EXE) shadow3.o $(OBJFMODULES) 
+	echo 'Note that binary is created in the root directory (./..) '
 
 shadow3.o: fortran/shadow3.f90
 	$(FC) $(FFLAGS) -c fortran/shadow3.f90 
@@ -324,11 +321,14 @@ idl: lib shadow_bind_idl.c shadow_bind_idl_loader.c shadow_bind_idl_loader.h idl
 python: 
 	echo "Not supported: please use directly python setup.py "
 
-clean:  
+clean: softclean
+	/bin/rm ../shadow3$(EXE) 
+
+softclean:  
 	/bin/rm -f *.o *.mod *$(SO) *.a *.dylib
 	/bin/rm -f version.txt
 	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp
-	/bin/rm -f shadow3$(EXE) example_shadow_format
+	/bin/rm -f example_shadow_format
 	/bin/rm -f example01_f95 example01_c example01_cpp example02_f95
 	/bin/rm -f example_standalone_mirror
 	/bin/rm -f shadow_version.h
@@ -347,7 +347,7 @@ purge: clean
 
 # customize depending on where you want to install
 install:
-	install shadow3 /usr/bin/
+	install ../shadow3 /usr/bin/
 	#install libshado*$(SO) /usr/lib/
 
 	

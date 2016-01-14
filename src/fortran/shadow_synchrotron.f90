@@ -270,11 +270,13 @@ SUBROUTINE ICSEVU  (X,Y,NX,C,IC,U,S,M,IER)
 !      IF (KER .GT. 0) CALL UERTST(KER,6HICSEVU)                         
       IF (JER .GT. 0) THEN
         print *,"Error from math_imsl icsevu. Called with JER: ",JER
-        stop 
+        !stop 
+        return
       ENDIF
       IF (KER .GT. 0) THEN
         print *,"Error from math_imsl icsevu. Called with KER: ",KER
-        stop 
+        !stop 
+        return
       ENDIF
  9005 RETURN                                                            
 End Subroutine icsevu
@@ -426,7 +428,8 @@ SUBROUTINE ICSCCU (X,Y,NX,C,IC,IER)
  9000 CONTINUE                                                          
 !      CALL UERTST(IER,6HICSCCU)                                         
       print *,"Error from math_imsl icsccu. Called with: ",IER
-      stop 
+      !stop 
+      return
  9005 RETURN                                                            
 End  Subroutine icsccu                                                              
     !
@@ -615,7 +618,8 @@ SUBROUTINE ZBRENT (F,EPS,NSIG,A,B,MAXFN,IER)
 !      CALL UERTST (IER,6HZBRENT)                                        
       print *,"Error from math_imsl zbrent. Called with IER: ",IER
       print *,"   EPS,NSIG,A,B,MAXFN,IER:", EPS,NSIG,A,B,MAXFN,IER
-      stop 
+      !stop 
+      return
  9005 RETURN                                                            
 End  Subroutine zbrent
     !

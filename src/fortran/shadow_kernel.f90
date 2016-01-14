@@ -6294,27 +6294,35 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
         IF (.NOT. ALLOCATED(xvec)) THEN
           ALLOCATE(xvec(n_points),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"SCREEN_EXTERNAL: Error allocating xvec" ; STOP 4
+            print *,"SCREEN_EXTERNAL: Error allocating xvec" 
+            !STOP 4
+            return
           END IF
         END IF
         IF (.NOT. ALLOCATED(zvec)) THEN
           ALLOCATE(zvec(n_points),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"SCREEN_EXTERNAL: Error allocating zvec" ; STOP 4
+            print *,"SCREEN_EXTERNAL: Error allocating zvec" 
+            !STOP 4
+            return
           END IF
         END IF
 
         IF (.NOT. ALLOCATED(ivec1)) THEN
           ALLOCATE(ivec1(n_polys),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"SCREEN_EXTERNAL: Error allocating ivec1" ; STOP 4
+            print *,"SCREEN_EXTERNAL: Error allocating ivec1" 
+            !STOP 4
+            return
           END IF
         END IF
 
         IF (.NOT. ALLOCATED(ivec2)) THEN
           ALLOCATE(ivec2(n_polys),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"SCREEN_EXTERNAL: Error allocating ivec2" ; STOP 4
+            print *,"SCREEN_EXTERNAL: Error allocating ivec2" 
+            !STOP 4
+            return
           END IF
         END IF
 
@@ -6330,11 +6338,13 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
         IF (IFLAG .EQ. -1) THEN
           CALL MSSG ('SCREEN_EXTERNAL', &
                'Error reading EXTERNAL file', i_one)
-          STOP 1
+          !STOP 1
+          return
         ELSE IF (IFLAG .EQ. -2) THEN
           CALL MSSG ('SCREEN_EXTERNAL', &
                'Error in External polygon description', i_one)
-          STOP 1
+          !STOP 1
+          return
         END IF
 
 ! C
@@ -6517,7 +6527,7 @@ SUBROUTINE  SCREEN_EXTERNAL_LOAD (FILENAME,  &
 
  300    CONTINUE
         IF (NPOINT .NE. NPOINT1) THEN
-          CALL MSSG ('SCREEN_EXTERNAL','Prblem reading file',i_one)
+          CALL MSSG ('SCREEN_EXTERNAL','Problem reading file',i_one)
         END IF
         RETURN
 End Subroutine screen_external_load
@@ -7099,7 +7109,8 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                IF (IER.EQ.132) THEN
                    WRITE(6,*)'SUR_SPLINE: Error: The X and/or Y array are/is not ordered properly.' 
                    WRITE(6,*)'            Please check data in '//trim(FILE_RIP)
-                   STOP
+                   !STOP
+                   return
                END IF
                !WRITE(6,*)'SUR_SPLINE: Spline succesfully completed.'
 
@@ -12339,7 +12350,8 @@ SUBROUTINE Shadow3Trace
 
             IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
               PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
-              STOP
+              !STOP
+              return
             ELSE
  
 !
@@ -12351,19 +12363,25 @@ SUBROUTINE Shadow3Trace
               IF (.NOT. ALLOCATED(ray)) then
                 ALLOCATE(ray(ncol1,np),STAT=ierr)
                 IF (ierr /= 0) THEN
-                  PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  PRINT *,"TRACE: Error allocating ray" 
+                  !STOP 4
+                  return
                 END IF
               END IF
               IF (.NOT. ALLOCATED(ap)) THEN
                 ALLOCATE(ap(3,np),STAT=ierr)
                 IF (ierr /= 0) THEN
-                  PRINT *,"TRACE: Error allocating ray" ; STOP 4
+                  PRINT *,"TRACE: Error allocating ray" 
+                  !STOP 4
+                  return
                 END IF
               END IF
               IF (.NOT. ALLOCATED(phase)) THEN
                 ALLOCATE(phase(3,np),STAT=ierr)
                 IF (ierr /= 0) THEN
-                  print *,"TRACE: Error allocating ray" ; STOP 4
+                  print *,"TRACE: Error allocating ray" 
+                  !STOP 4
+                  return
                 END IF
               END IF
 
@@ -12481,20 +12499,25 @@ case (0)  ! load files
         ! srio added test
         IF (ierr /= 0 ) then
              PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_obj)
-             STOP ' Fatal error: aborted'
+             !STOP ' Fatal error: aborted'
+             return
         END IF
         READ (23,*) QMIN_obj,QMAX_obj,QSTEP_obj,DEPTH0_obj
         READ (23,*) NREFL_obj
         IF (.NOT. ALLOCATED(zf1_obj)) THEN
           ALLOCATE(zf1_obj(nrefl_obj),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+            print *,"GET_REFRACTION_INDEX: Error allocating array" 
+            !STOP 4
+            return
           END IF
         END IF
         IF (.NOT. ALLOCATED(zf2_obj)) THEN
           ALLOCATE(zf2_obj(nrefl_obj),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+            print *,"GET_REFRACTION_INDEX: Error allocating array" 
+            !STOP 4
+            return
           END IF
         END IF
         READ (23,*) (zf1_obj(I),I=1,NREFL_obj)
@@ -12510,20 +12533,25 @@ case (0)  ! load files
         ! srio added test
         IF (ierr /= 0 ) then
              PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_ima)
-             STOP ' Fatal error: aborted'
+             !STOP ' Fatal error: aborted'
+             return
         END IF
         READ (23,*) QMIN_ima,QMAX_ima,QSTEP_ima,DEPTH0_ima
         READ (23,*) NREFL_ima
         IF (.NOT. ALLOCATED(zf1_ima)) THEN
           ALLOCATE(zf1_ima(nrefl_ima),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+            print *,"GET_REFRACTION_INDEX: Error allocating array" 
+            !STOP 4
+            return
           END IF
         END IF
         IF (.NOT. ALLOCATED(zf2_ima)) THEN
           ALLOCATE(zf2_ima(nrefl_ima),STAT=ierr)
           IF (ierr /= 0) THEN
-            print *,"GET_REFRACTION_INDEX: Error allocating array" ; STOP 4
+            print *,"GET_REFRACTION_INDEX: Error allocating array" 
+            !STOP 4
+            return
           END IF
         END IF
         READ (23,*) (zf1_ima(I),I=1,NREFL_ima)

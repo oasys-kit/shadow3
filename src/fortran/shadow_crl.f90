@@ -1063,7 +1063,8 @@ Subroutine pretransfocator
       read(25,'(a1)', iostat=ierr) ctmp
       if (iErr /= 0 ) then
                 print *,"Error reading the file: "//trim(crl_file)
-                stop
+                !stop
+                return
       end if
       itmp = itmp+1
     end do
