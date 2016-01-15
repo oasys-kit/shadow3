@@ -2534,8 +2534,8 @@ class CompoundOE():
       """
       Appends a double crystal monochromator (with plane crystals)
 
-      :param p0: distance from previous source plane (continuation plane) to center of first mirror
-      :param q0: distance from center of second mirror to image plane (continuation plane)
+      :param p0: distance from previous source plane (continuation plane) to center of doble crystal monochrtomator
+      :param q0: distance from center of double crystal monochromator to image plane (continuation plane)
       :param set_photon_energy: photon energy in eV to set the monochromator
       :param separation: separation between the crystals (Default=0). The continuation plane is set in the middle.
       :param dimensions1: the dimensions [width,length] for the first mirror. Default: [0,0] meaning infinite dimensions.
@@ -2560,10 +2560,10 @@ class CompoundOE():
       oe2.ALPHA = 180.0 # second HFM
       #
       # distances
-      oe1.T_SOURCE = p0
+      oe1.T_SOURCE = p0 - 0.5*separation
       oe1.T_IMAGE = 0.5*separation
       oe2.T_SOURCE = 0.5*separation
-      oe2.T_IMAGE = q0
+      oe2.T_IMAGE = q0 - 0.5*separation
       #
       # crystal shape 5 (plane)
       oe1.FMIRR = 5
