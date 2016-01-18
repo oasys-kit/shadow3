@@ -1425,7 +1425,20 @@ class OE(ShadowLib.OE):
             txt += 'Line density at grating pole        %f\n'%(self.RULING)
 
     if self.F_REFRAC == 1:
-        txt += 'Relative Index of Refraction            %f\n'%(self.ALFA)
+        if self.F_R_IND == 0:
+            txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
+            txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
+        elif self.F_R_IND == 1:
+            txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
+            txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
+        elif self.F_R_IND == 2:
+            txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
+            txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
+        elif self.F_R_IND == 3:
+            txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
+            txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
+
+        #txt += 'Relative Index of Refraction            %f\n'%(self.ALFA)
 
     if self.F_REFLEC == 0:
         txt += 'Reflectivity                            OFF\n'
@@ -1589,7 +1602,7 @@ class CompoundOE():
 
     txt = '  ********  SUMMARY OF DISTANCES ********\n'
     txt += '   ** DISTANCES FOR ALL O.E. [cm] **           \n'
-    txt += "%12s %12s %12s %12s %12s %12s \n"%('OE','TYPE','p[cm]','q[cm]','src-oe','src-screen')
+    txt += "%12s %12s %14s %14s %14s %14s \n"%('OE','TYPE','p[cm]','q[cm]','src-oe','src-screen')
 
 
     tot=0.0
@@ -1614,7 +1627,7 @@ class CompoundOE():
 
         tot = tot + oe.T_SOURCE + oe.T_IMAGE
         totoe = tot - oe.T_IMAGE
-        line="%12d %12s %12.2f %12.2f %12.2f %12.2f \n"%(i+1,oetype,oe.T_SOURCE,oe.T_IMAGE,totoe,tot)
+        line="%12d %12s %14.4f %14.4f %14.4f %14.4f \n"%(i+1,oetype,oe.T_SOURCE,oe.T_IMAGE,totoe,tot)
         txt1 += line
 
         # 2) focusing summary
@@ -1691,8 +1704,10 @@ class CompoundOE():
     txt += line
 
     txt += '\n'
+
     if oe.IDUMMY != 1:
-        txt += "**Warning: SHADOW did not run, therefore autosetting angles are not considered**"
+        txt += "**Warning: oe.IDUMMY = %d**\n"%(oe.IDUMMY)
+        txt += "**         SHADOW did not run, therefore autosetting angles are not considered**\n\n"
     line = 'Total deflection angle H = %12.6f rad = %9.3f deg\n'%(deflection_H*torad,deflection_H*torad*180/numpy.pi)
     txt += line
     line = 'Total deflection angle V = %12.6f rad = %9.3f deg \n'%(deflection_V*torad,deflection_V*torad*180/numpy.pi)
@@ -1991,8 +2006,12 @@ class CompoundOE():
       txt = ""
       for i,oe in enumerate(self.list):
           if title == None:
-              title = "oe %d in compoundOE name: %s "%(i+1,self.name)
-          txt += oe.mirinfo(title=title)
+              title1 = "oe %d in compoundOE"%(i+1)
+              if self.name != "":
+                  title1 += " name: %s "%(self.name)
+          else:
+              title1 = title
+          txt += oe.mirinfo(title=title1)+"\n"
       return txt
 
   def get_oe_index(self,oe_index):
@@ -3023,7 +3042,7 @@ def main():
     #
     # test
     #
-    do_test = 0 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
+    do_test = 5 # 0=None, 1=only source ; 2= source and trace ; 3=undulator_gaussian ;
                 # 4 lens, like in lens_single_plot.ws, # 5 CRL system like Example: crl_snigirev1996.ws
                 # 6=ID30B  # 7=ID23-2 (KB) # 8=Double crystal monochromator
 
@@ -3250,11 +3269,16 @@ def main():
                   write_start_files=0,write_end_files=0,write_star_files=0)
 
         #write only last result file
-        beam.write("star.60")
-        print("\nFile written to disk: star.60")
+        beam.write("star.600")
+        print("\nFile written to disk: star.600")
         print("\nNumber of interfaces: %d"%(crl.number_oe()))
-        #crl.dump_systemfile()        # lens.info()
-        #print(crl.mirinfo())
+
+        txt = crl.info()
+        print(txt)
+        print("\n\n\n\n\n\n\n\n\n\n\n")
+        txt = crl.mirinfo()
+        print(txt)
+
 
 
 

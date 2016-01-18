@@ -349,70 +349,68 @@ END SUBROUTINE SourcInfo
 !C---
 SUBROUTINE MirInfo
 
-	implicit none ! beautiful!
+        implicit none ! beautiful!
 
 
-	type (poolOE)      ::  p1
-	character(len=sklen) :: mirFil,file_Out,cd
-	character(len=80) :: comment,title
-	character(len=20),dimension(12) :: type1
-!     '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-	character(len=79),parameter :: topLin= &
-'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-	! for date_and_time
-	character(len=8)  :: date
-	character(len=10) :: time
-	character(len=5)  :: zone
-	character(len=2)  :: stmp
-	integer,dimension(8) :: values
+        type (poolOE)      ::  p1
+        character(len=sklen) :: mirFil,file_Out,cd
+        character(len=80) :: comment,title
+        character(len=20),dimension(12) :: type1
+        character(len=79),parameter :: topLin= &
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+        ! for date_and_time
+        character(len=8)  :: date
+        character(len=10) :: time
+        character(len=5)  :: zone
+        character(len=2)  :: stmp
+        integer,dimension(8) :: values
 
 ! todo: check that this is also defined in shadow_kernel...
-     	!mv to global_definitions real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
-	!mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
-	real(kind=skr)           ::ECCENT,AFOCI
-	integer(kind=ski)        :: J
+        !mv to global_definitions real(kind=skr),parameter ::TODEG= 57.295779513082320876798155D0 
+        !mv to global_definitions real(kind=skr),parameter ::TOANGS=  1.239852D+4		     
+        real(kind=skr)           ::ECCENT,AFOCI
+        integer(kind=ski)        :: J
 
-type1(1)	='SPHERICAL   ' 
-type1(2)	='ELLIPTICAL  ' 
-type1(3) ='TOROIDAL    ' 
-type1(4) ='PARABOLICAL ' 
-type1(5)	='PLANE       ' 
-type1(6) ='CODLING SLIT' 
-type1(7)	='HYPERBOLICAL' 
-type1(8)	='CONICAL     ' 
-type1(9)	='POLYNOMIAL  ' 
-type1(10)	='CONIC EXTNAL' 
-type1(11)	='            ' 
-type1(12)	='            ' 
+        type1(1)        ='SPHERICAL   ' 
+        type1(2)        ='ELLIPTICAL  ' 
+        type1(3) ='TOROIDAL    ' 
+        type1(4) ='PARABOLICAL ' 
+        type1(5)        ='PLANE       ' 
+        type1(6) ='CODLING SLIT' 
+        type1(7)        ='HYPERBOLICAL' 
+        type1(8)        ='CONICAL     ' 
+        type1(9)        ='POLYNOMIAL  ' 
+        type1(10)        ='CONIC EXTNAL' 
+        type1(11)        ='            ' 
+        type1(12)        ='            ' 
 
-    	WRITE(6,*)  &
-      	'-------------------- M I R I N F O ----------------------'
-     	WRITE(6,*) ' '
-     	WRITE(6,*)  &
-      'MirInfo: Mirror descriptor file. It must be an end.xx type.'
-     	WRITE(6,*) 'MirInfo: Please input filename: '
-     	READ (5,'(A)')	MirFil
-     	WRITE(6,*) 'MirInfo: Title ?'
-     	READ (5,'(A)') TITLE
-     	WRITE(6,*) 'MirInfo: Comment ?'
-     	READ (5,'(A)') COMMENT
-     	WRITE(6,*) 'MirInfo: Output file ?'
-     	READ (5,'(A)')	FILE_OUT
+        WRITE(6,*)  &
+        '-------------------- M I R I N F O ----------------------'
+        WRITE(6,*) ' '
+        WRITE(6,*)  &
+        'MirInfo: Mirror descriptor file. It must be an end.xx type.'
+        WRITE(6,*) 'MirInfo: Please input filename: '
+        READ (5,'(A)')   MirFil
+        WRITE(6,*) 'MirInfo: Title ?'
+        READ (5,'(A)') TITLE
+        WRITE(6,*) 'MirInfo: Comment ?'
+        READ (5,'(A)') COMMENT
+        WRITE(6,*) 'MirInfo: Output file ?'
+        READ (5,'(A)')   FILE_OUT
 !
 ! read file
 !
-	CALL PoolOELoad(p1,mirFil)
+        CALL PoolOELoad(p1,mirFil)
 
-     	OPEN (20,FILE=FILE_OUT,STATUS='UNKNOWN')
-	REWIND(20)
-     	WRITE (20,*) TOPLIN
-     	WRITE (20,*) '********************   MIRROR  DESCRIPTION   ',&
-      '********************'
-     	WRITE (20,*) TOPLIN
-     	WRITE (20,*) trim(TITLE)
-     	WRITE (20,*) trim(COMMENT)
-     	WRITE (20,*) TOPLIN
-     	WRITE (20,*) 'Input file specified: '//trim(MIRFIL)
+        OPEN (20,FILE=FILE_OUT,STATUS='UNKNOWN')
+        REWIND(20)
+        WRITE (20,*) TOPLIN
+        WRITE (20,*) '********************   MIRROR  DESCRIPTION   ********************'
+        WRITE (20,*) TOPLIN
+        WRITE (20,*) trim(TITLE)
+        WRITE (20,*) trim(COMMENT)
+        WRITE (20,*) TOPLIN
+        WRITE (20,*) 'Input file specified: '//trim(MIRFIL)
         CALL GETCWD(CD)
         WRITE (20,*) 'Full file specification: '//trim(CD)//OS_DS//trim(mirFil)
         call date_and_time(TIME=time,DATE=date,ZONE=zone)
@@ -420,265 +418,277 @@ type1(12)	='            '
             date(7:8)//' '//time(1:2)//'h '//time(3:4)//'min '//time(5:6)//' s'
 
 
-     	WRITE (20,*)	TOPLIN
-     	WRITE (20,2001) type1(p1%FMIRR)
-2001	FORMAT (/,1X,'Surface figure was defined as:',T40,A)
+        WRITE (20,*)   TOPLIN
+        WRITE (20,2001) type1(p1%FMIRR)
+2001    FORMAT (/,1X,'Surface figure was defined as:',T40,A)
 
-     	IF (p1%FCYL.EQ.0) THEN
-     	  WRITE (20,*) 'Cylindrical figure                      NO'
-     	ELSE
-     	  WRITE (20,*) 'Cylindrical figure                      YES'
-     	  WRITE (20,*) 'Cylinder axis angle from X-axis        ',p1%CIL_ANG*TODEG
-     	END IF
+        IF (p1%FCYL.EQ.0) THEN
+           WRITE (20,*) 'Cylindrical figure                      NO'
+        ELSE
+            WRITE (20,*) 'Cylindrical figure                      YES'
+            WRITE (20,*) 'Cylinder axis angle from X-axis        ',p1%CIL_ANG*TODEG
+        END IF
 
-	IF (p1%F_ROUGHNESS.EQ.1) THEN
-	 WRITE (20,*) 'Roughness on from '//trim(p1%FILE_ROUGH)
-	 WRITE (20,*) 'RMS in Y (angstroms)                   ',p1%ROUGH_Y
-	 WRITE (20,*) 'RMS in X (angstroms)                   ',p1%ROUGH_X
-	ENDIF
+        IF (p1%F_ROUGHNESS.EQ.1) THEN
+        WRITE (20,*) 'Roughness on from '//trim(p1%FILE_ROUGH)
+        WRITE (20,*) 'RMS in Y (angstroms)                   ',p1%ROUGH_Y
+        WRITE (20,*) 'RMS in X (angstroms)                   ',p1%ROUGH_X
+        ENDIF
 
-     	IF (p1%F_REFRAC.EQ.0) THEN
-     	  WRITE (20,*) 'Element type                            REFLECTOR'
-     	ELSE
-     	  WRITE (20,*) 'Element type                            REFRACTOR'
-     	END IF
+        IF (p1%F_REFRAC.EQ.0) THEN
+            WRITE (20,*) 'Element type                            REFLECTOR'
+        ELSE
+            WRITE (20,*) 'Element type                            REFRACTOR'
+        END IF
 
-
-     	IF (p1%F_GRATING.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
-	  IF (p1%F_FACET.EQ.1) THEN
-	    WRITE (20,*) 'Element type                       Faceted Mirror'
-	    WRITE (20,*) 'Facet size (X)                         ',p1%RFAC_LENX
-	    WRITE (20,*) 'Facet size (Y)                         ',p1%RFAC_LENY
-	    WRITE (20,*) 'Facet polynomial from                  ',p1%FILE_FAC
-	    IF (p1%F_POLSEL.EQ.3) THEN
-	    WRITE (20,*) 'Intercept used                         CLOSEST'
-	    ELSE IF (p1%F_POLSEL.EQ.2) THEN
-	    WRITE (20,*) 'Intercept used                         2nd CLOSEST'
-	    ELSE IF (p1%F_POLSEL.EQ.1) THEN
-	    WRITE (20,*) 'Intercept used                         2nd FARTHEST'
-	    ELSE IF (p1%F_POLSEL.EQ.4) THEN
-	    WRITE (20,*) 'Intercept used                         FARTHEST'
-	    ENDIF
-          ELSE IF (p1%F_KOMA.EQ.1) THEN
-	  WRITE (20,*) 'Element type                Multi-bounce Tube Array'
-	    IF (p1%F_KOMA_CA.EQ.1) THEN
-	  WRITE (20,*) 'Paramters from ',p1%FILE_KOMA_CA
-	  WRITE (20,*) 'Tube radii specified as (r(Z))**2'
-	    ELSE
-	  WRITE (20,*) 'Paramters from ',p1%FILE_KOMA
-	  WRITE (20,*) 'Tube radii specified as r(Z)'
-	    ENDIF
-	  ENDIF
-     	ELSE IF (p1%F_CRYSTAL.EQ.1) THEN
-     	WRITE (20,*) 'Element type                            CRYSTAL'
-     	WRITE (20,*) 'Lattice Spacing                        ',p1%D_SPACING
-     	WRITE (20,*) 'Bragg Reflection from '//trim(p1%FILE_REFL)
-     	IF (p1%F_MOSAIC.EQ.1) THEN
-     	WRITE (20,*) 'MOSAIC Crystal selected                '
-     	WRITE (20,*) 'Mosaic crystal spread (st. dev)  [DEG] ',p1%SPREAD_MOS*TODEG
-     	WRITE (20,*) 'Mosaic crystal thickness [cm]          ',p1%THICKNESS
-     	ELSE IF (p1%F_MOSAIC.NE.1) THEN
-     	   IF (p1%F_BRAGG_A.EQ.1) THEN
-     	   WRITE (20,*) 'Asymmetric Cut angle                   ',p1%A_BRAGG*TODEG
-     	   END IF
-	   IF (p1%F_JOHANSSON.EQ.1) THEN
-     	WRITE (20,*) 'JOHANSSON Geometry selected            '
-	   WRITE (20,*) 'Johansson radius                        ',p1%R_JOHANSSON
-	   END IF
-	END IF
+        IF (p1%F_GRATING.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
+            IF (p1%F_FACET.EQ.1) THEN
+                WRITE (20,*) 'Element type                       Faceted Mirror'
+                WRITE (20,*) 'Facet size (X)                         ',p1%RFAC_LENX
+                WRITE (20,*) 'Facet size (Y)                         ',p1%RFAC_LENY
+                WRITE (20,*) 'Facet polynomial from                  ',p1%FILE_FAC
+                IF (p1%F_POLSEL.EQ.3) THEN
+                    WRITE (20,*) 'Intercept used                         CLOSEST'
+                ELSE IF (p1%F_POLSEL.EQ.2) THEN
+                    WRITE (20,*) 'Intercept used                         2nd CLOSEST'
+                ELSE IF (p1%F_POLSEL.EQ.1) THEN
+                    WRITE (20,*) 'Intercept used                         2nd FARTHEST'
+                ELSE IF (p1%F_POLSEL.EQ.4) THEN
+                    WRITE (20,*) 'Intercept used                         FARTHEST'
+                ENDIF
+            ELSE IF (p1%F_KOMA.EQ.1) THEN
+                WRITE (20,*) 'Element type                Multi-bounce Tube Array'
+                IF (p1%F_KOMA_CA.EQ.1) THEN
+                    WRITE (20,*) 'Paramters from ',p1%FILE_KOMA_CA
+                    WRITE (20,*) 'Tube radii specified as (r(Z))**2'
+                ELSE
+                    WRITE (20,*) 'Paramters from ',p1%FILE_KOMA
+                    WRITE (20,*) 'Tube radii specified as r(Z)'
+                ENDIF
+            ENDIF
+        ELSE IF (p1%F_CRYSTAL.EQ.1) THEN
+            WRITE (20,*) 'Element type                            CRYSTAL'
+            WRITE (20,*) 'Lattice Spacing                        ',p1%D_SPACING
+            WRITE (20,*) 'Bragg Reflection from '//trim(p1%FILE_REFL)
+            IF (p1%F_MOSAIC.EQ.1) THEN
+                WRITE (20,*) 'MOSAIC Crystal selected                '
+                WRITE (20,*) 'Mosaic crystal spread (st. dev)  [DEG] ',p1%SPREAD_MOS*TODEG
+                WRITE (20,*) 'Mosaic crystal thickness [cm]          ',p1%THICKNESS
+            ELSE IF (p1%F_MOSAIC.NE.1) THEN
+                IF (p1%F_BRAGG_A.EQ.1) THEN
+                    WRITE (20,*) 'Asymmetric Cut angle                   ',p1%A_BRAGG*TODEG
+                END IF
+                IF (p1%F_JOHANSSON.EQ.1) THEN
+                    WRITE (20,*) 'JOHANSSON Geometry selected            '
+                    WRITE (20,*) 'Johansson radius                        ',p1%R_JOHANSSON
+                END IF
+            END IF
         ELSE IF (p1%F_GRATING.EQ.1) THEN
-     	 IF (p1%FZP.EQ.1) THEN
-     	   WRITE (20,*) 'Element type                 Fresnel Zone Plate'
-     	 END IF
-     	  WRITE (20,*) 'Element type                            GRATING'
-     	  WRITE (20,*) 'Order choosen ( inside are < 0 )       ',p1%ORDER
-     	 IF (p1%F_CENTRAL.EQ.1) THEN
-     	  WRITE (20,*) 'Automatic Tuning                        YES'
-     	  IF (p1%F_MONO.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
-     	WRITE (20,*) 'Mount                                   SEYA / TGM'
-     	  ELSE IF (p1%F_MONO.EQ.0.AND.p1%F_CRYSTAL.EQ.1) THEN
-     	WRITE (20,*) 'Mount                                   BRAGG'
-     	  ELSE IF (p1%F_MONO.EQ.1) THEN
-     	  WRITE (20,*) 'Mount                                   ERG'
-     	  ELSE IF (p1%F_MONO.EQ.2) THEN
-     	  WRITE (20,*) 'Mount                                   Const. INCIDENCE'
-     	  ELSE IF (p1%F_MONO.EQ.3) THEN
-     	  WRITE (20,*) 'Mount                                   Const. DIFFRACTION'
-     	  ELSE IF (p1%F_MONO.EQ.4) THEN
-     	  WRITE (20,*) 'Mount                                   Const. BLAZE'
-     	  END IF
-     	  IF (p1%F_PHOT_CENT.EQ.0) WRITE (20,*) 'Grating tuned at  [ eV ]              ',p1%PHOT_CENT
-     	  IF (p1%F_PHOT_CENT.EQ.1) WRITE (20,*) &
-      'Grating tuned at  [ Angstroms ]       ',p1%R_LAMBDA
-     	 ELSE
-     	  WRITE (20,*) 'Automatic Tuning                        NO'
-     	 END IF
-     	 IF (p1%F_RULING.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
-     	  WRITE (20,*) 'Constant ruling [ lines/cm ]           ',p1%RULING
-     	 ELSE IF (p1%F_RULING.EQ.1) THEN
-     	  WRITE (20,*) 'Uniform ruling. At pole [ lines/cm ]   ',p1%RULING
-     	 ELSE IF (p1%F_RULING.EQ.2) THEN
-     	   WRITE (20,*) 'Holographic grating. Recording Wavelength: ',p1%HOLO_W
-     	   WRITE (20,2002)
-2002	FORMAT (1X,'Input Slit Dist.',T20,'Exit Slit Dist.', &
-                T40,'Input Slit Angle',T60,'Exit Slit Angle')
-     	   WRITE (20,2003)  p1%HOLO_R1,p1%HOLO_R2,p1%HOLO_DEL,p1%HOLO_GAM
-2003	FORMAT (1X,G16.9,T20,G16.9,T40,G16.9,T60,G16.9)
-     	   WRITE (20,*) 'Input  Slit rotation angle ',p1%HOLO_RT1*TODEG
-     	   WRITE (20,*) 'Output Slit rotation angle ',p1%HOLO_RT2*TODEG
-     	  IF (p1%F_PW.EQ.0) WRITE (20,*) 'Spherical / Spherical'
-     	  IF (p1%F_PW.EQ.1) WRITE (20,*) 'Plane     / Spherical'
-     	  IF (p1%F_PW.EQ.2) WRITE (20,*) 'Spherical / Plane'
-     	  IF (p1%F_PW.EQ.3) WRITE (20,*) 'Plane     / Plane'
-     	  IF (p1%F_PW_C.EQ.0) WRITE (20,*)  'Spherical   / Spherical'
-     	  IF (p1%F_PW_C.EQ.1) WRITE (20,*)  'Cylindrical / Spherical'
-     	  IF (p1%F_PW_C.EQ.2) WRITE (20,*)  'Spherical   / Cylindrical'
-     	  IF (p1%F_PW_C.EQ.3) WRITE (20,*)  'Cylindrical / Cylindrical'
-     	  IF (p1%F_VIRTUAL.EQ.0) WRITE (20,*) 'Real      / Real'
-     	  IF (p1%F_VIRTUAL.EQ.1) WRITE (20,*) 'Real      / Virtual'
-     	  IF (p1%F_VIRTUAL.EQ.2) WRITE (20,*) 'Virtual   / Real'
-     	  IF (p1%F_VIRTUAL.EQ.3) WRITE (20,*) 'Virtual   / Virtual'
-     	 ELSE IF (p1%F_RULING.EQ.5) THEN
-     	  WRITE (20,*) 'Mechanically ruled grating. Polinomial Coefficients: '
-     	  WRITE (20,*) 'Zero order term Coefficient: ',p1%RULING
-     	  WRITE (20,*) 'First                        ',p1%RUL_A1
-     	  WRITE (20,*) 'Second                       ',p1%RUL_A2
-     	  WRITE (20,*) 'Third                        ',p1%RUL_A3
-     	  WRITE (20,*) 'Fourth                       ',p1%RUL_A4
-     	 ELSE IF (p1%F_RULING.EQ.3) THEN
-     	  WRITE (20,*) '"Oriental fan" type grating.'
-     	  WRITE (20,*) 'Fan pole angle from Y axis         ',p1%AZIM_FAN
-     	  WRITE (20,*) '        distance from grating pole ',p1%DIST_FAN
-     	  WRITE (20,*) 'Coma correction factor             ',p1%COMA_FAC
-     	  WRITE (20,*) 'Line density at grating pole       ',p1%RULING
-     	 END IF
-     	END IF
-     	IF (p1%F_REFRAC.EQ.1) THEN
-     	  WRITE (20,*) 'Relative Index of Refraction           ',p1%ALFA
-     	END IF
-     	IF (p1%F_REFLEC.EQ.0) THEN
-     	  WRITE (20,*) 'Reflectivity                            OFF'
-     	ELSE
-	 IF (p1%F_REFL.EQ.0) THEN
-     	  WRITE (20,*) 'Reflectivity      ON     coefficients from: ',p1%FILE_REFL
-	 ELSE IF (p1%F_REFL.EQ.1) THEN
-	  WRITE (20,*) 'Reflectivity      ON     coefficients from TT:'
-	 ELSE IF (p1%F_REFL.EQ.2) THEN
-	  WRITE (20,*) 'Multilayer        ON     coefficients and geometry from : '//trim(p1%FILE_REFL)
-	 END IF
-     	 IF (p1%F_REFLEC.EQ.1) WRITE (20,*) &
-      'Polarization dependence                 YES'
-     	 IF (p1%F_REFLEC.EQ.2) WRITE (20,*) &
-      'Polarization dependence                 NO'
-     	END IF
-     	IF (p1%FHIT_C.EQ.0) THEN
-     	  WRITE (20,*) 'Mirror dimensions                       UNLIMITED'
-     	ELSE
-     	 IF (p1%FSHAPE.EQ.1) THEN
-     	  WRITE (20,*) 'Mirror dimensions ( rectangular ):'
-     	WRITE (20,2005)
-2005	FORMAT (1X,T10,'X plus',T30,'X minus',T50,'Y plus',T70,'Y minus')
-     	WRITE (20,2004) p1%RWIDX1,p1%RWIDX2,p1%RLEN1,p1%RLEN2
-2004	FORMAT (1X,T10,G12.5,T30,G12.5,T50,G12.5,T70,G12.5)
-     	 ELSE IF (p1%FSHAPE.EQ.2) THEN
-     	  WRITE (20,*) 'Mirror dimensions ( elliptical ) :'
-        WRITE (20,2006)
-2006	FORMAT (1X,T10,'Major Axis',T30,'Minor axis')
-     	WRITE (20,2004) p1%RWIDX2,p1%RLEN2
-     	 ELSE IF (p1%FSHAPE.EQ.3) THEN
-     	  WRITE (20,*) 'Mirror dimensions ( elliptical + hole )'
-     	WRITE (20,*) 'A. Outside border:'
-        WRITE (20,2006)
-     	WRITE (20,2004) p1%RWIDX2,p1%RLEN2
-     	WRITE (20,*) 'B. Inner border :'
-     	WRITE (20,2006)
-     	WRITE (20,2004) p1%RWIDX1,p1%RLEN1
-     	 END IF
-     	END IF
-     	WRITE (20,*) TOPLIN
-     	 WRITE (20,*) 'Central Axis parameters :'
-     	 WRITE (20,*) 'Source Plane Distance                   ',p1%T_SOURCE
-     	 WRITE (20,*) 'Image  Plane                            ',p1%T_IMAGE
-     	 WRITE (20,*) 'Incidence Angle                         ',p1%T_INCIDENCE*TODEG
-     	 WRITE (20,*) 'Reflection/Diffraction Angle            ',p1%T_REFLECTION*TODEG
-     	WRITE (20,*) ' '
-     	IF (p1%F_EXT.EQ.1) THEN
-     	  WRITE (20,*) 'Mirror parameters                       EXTERNAL'
-     	ELSE
-     	  WRITE (20,*) 'Mirror parameters                       COMPUTED'
-     	IF (p1%F_DEFAULT.EQ.1) THEN
-     	  WRITE (20,*) 'Same configuration as Central Axis      YES'
-     	ELSE
-     	 WRITE (20,*) 'Same configuration as Central Axis      NO'
-     	END IF
-     	  WRITE (20,*) 'Objective focus at                      ',p1%SSOUR
-     	  WRITE (20,*) 'Image focus at                          ',p1%SIMAG
-     	  WRITE (20,*) 'Incidence angle                         ',p1%THETA*TODEG
-     	END IF
-     	WRITE (20,*) 'Parameters used follow:'
-     	IF (p1%FMIRR.EQ.1) THEN
-     	WRITE (20,2010) p1%RMIRR
-2010	FORMAT (1X,'Spherical Radius ',T40,G16.9)
-     	ELSE IF (p1%FMIRR.EQ.2) THEN
-     	WRITE (20,*)'   Semi-major axis  ', p1%AXMAJ
-     	WRITE (20,*)'   Semi-minor axis  ', p1%AXMIN
-     	WRITE (20,*)'   Semi-focal-length', SQRT(p1%AXMAJ**2-p1%AXMIN**2)
-	ECCENT = SQRT(p1%AXMAJ**2-p1%AXMIN**2)/p1%AXMAJ
-     	WRITE (20,*)'   Eccentricity     ', ECCENT
-!C     	WRITE (20,*)'   Semi-focal-length',AFOCI
-!C     	WRITE (20,*)'   Eccentricity     ', ECCENT
-     	ELSE IF (p1%FMIRR.EQ.3) THEN
-     	WRITE (20,*)'   Major Radius (optical)    ', p1%R_MAJ+p1%R_MIN
-     	WRITE (20,*)'   Minor Radius              ', p1%R_MIN
-     	ELSE IF (p1%FMIRR.EQ.4) THEN
-     	WRITE (20,*)'   Parabola Param. ', p1%PARAM
-     	ELSE IF (p1%FMIRR.EQ.5) THEN
-     	WRITE (20,*)'   Plane mirror '
-     	ELSE IF (p1%FMIRR.EQ.6) THEN
-     	WRITE (20,*)'   Codling Slit'
-     	ELSE IF (p1%FMIRR.EQ.7) THEN
-     	WRITE (20,*)'   Semi-major axis  ', p1%AXMAJ
-     	WRITE (20,*)'   Semi-minor axis  ', p1%AXMIN
-	AFOCI = SQRT(p1%AXMIN**2+p1%AXMAJ**2)
-	ECCENT = AFOCI/ABS(p1%AXMAJ)
-     	WRITE (20,*)'   Semi-focal-length',AFOCI
-     	WRITE (20,*)'   Eccentricity     ', ECCENT
-     	ELSE IF (p1%FMIRR.EQ.8) THEN
-     	WRITE (20,*)'   Cone half-angle  ',p1%CONE_A*TODEG
-	ELSE IF (p1%FMIRR.EQ.9) THEN
-	WRITE (20,*)'   Polynomial Coeff file   '//trim(p1%FILE_MIR)
-     	END IF
-     	IF (p1%FSTAT.EQ.0) THEN
-     	WRITE (20,*) 'Source of this O.E. moved               NO'
-     	ELSE
-     	WRITE (20,*) 'Source of this O.E. moved               YES'
-     	WRITE (20,*) 'In SOURCE reference frame: '
-     	WRITE (20,*) 'Source Movement X: ',p1%X_SOUR
-     	WRITE (20,*) '                Y: ',p1%Y_SOUR
-     	WRITE (20,*) '                Z: ',p1%Z_SOUR
-     	WRITE (20,*) 'Source rotat  X: ',p1%X_SOUR_ROT*TODEG
-     	WRITE (20,*) '              Y: ',p1%Y_SOUR_ROT*TODEG
-     	WRITE (20,*) '              Z: ',p1%Z_SOUR_ROT*TODEG
-     	WRITE (20,*) 'In MIRROR reference frame: '
-     	WRITE (20,*) 'Source distance    ',p1%RDSOUR
-     	WRITE (20,*) '       rotation    ',p1%ALPHA_S*TODEG
-     	WRITE (20,*) 'Incidence angle    ',p1%RTHETA*TODEG
-     	WRITE (20,*) 'Source offset X: ',p1%OFF_SOUX
-     	WRITE (20,*) '              Y: ',p1%OFF_SOUY
-     	WRITE (20,*) '              Z: ',p1%OFF_SOUZ
-     	END IF
-     	IF (p1%F_MOVE.EQ.0) THEN
-     	WRITE (20,*) 'Mirror at pole position ( no mov. )     YES'
-!C       123456789 123456789 123456789 123456789 123456789
-     	ELSE
-     	WRITE (20,*) 'Mirror moved from pole. Parameters :'
-     	WRITE (20,*) 'Displacement along X:   ',p1%OFFX
-     	WRITE (20,*) '                   Y:   ',p1%OFFY
-     	WRITE (20,*) '                   Z:   ',p1%OFFZ
-     	WRITE (20,*) 'Rotation around X:   ',p1%X_ROT*TODEG
-     	WRITE (20,*) '                Y:   ',p1%Y_ROT*TODEG
-     	WRITE (20,*) '                Z:   ',p1%Z_ROT*TODEG
-     	END IF
+            IF (p1%FZP.EQ.1) THEN
+                WRITE (20,*) 'Element type                 Fresnel Zone Plate'
+            END IF
+            WRITE (20,*) 'Element type                            GRATING'
+            WRITE (20,*) 'Order choosen ( inside are < 0 )       ',p1%ORDER
+            IF (p1%F_CENTRAL.EQ.1) THEN
+                WRITE (20,*) 'Automatic Tuning                        YES'
+                IF (p1%F_MONO.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
+                    WRITE (20,*) 'Mount                                   SEYA / TGM'
+                ELSE IF (p1%F_MONO.EQ.0.AND.p1%F_CRYSTAL.EQ.1) THEN
+                    WRITE (20,*) 'Mount                                   BRAGG'
+                ELSE IF (p1%F_MONO.EQ.1) THEN
+                WRITE (20,*) 'Mount                                   ERG'
+                ELSE IF (p1%F_MONO.EQ.2) THEN
+                    WRITE (20,*) 'Mount                                   Const. INCIDENCE'
+                ELSE IF (p1%F_MONO.EQ.3) THEN
+                    WRITE (20,*) 'Mount                                   Const. DIFFRACTION'
+                ELSE IF (p1%F_MONO.EQ.4) THEN
+                    WRITE (20,*) 'Mount                                   Const. BLAZE'
+                END IF
+                IF (p1%F_PHOT_CENT.EQ.0) WRITE (20,*) 'Grating tuned at  [ eV ]              ',p1%PHOT_CENT
+                IF (p1%F_PHOT_CENT.EQ.1) WRITE (20,*) &
+                    'Grating tuned at  [ Angstroms ]       ',p1%R_LAMBDA
+            ELSE
+                WRITE (20,*) 'Automatic Tuning                        NO'
+            END IF
+            IF (p1%F_RULING.EQ.0.AND.p1%F_CRYSTAL.EQ.0) THEN
+                WRITE (20,*) 'Constant ruling [ lines/cm ]           ',p1%RULING
+            ELSE IF (p1%F_RULING.EQ.1) THEN
+                WRITE (20,*) 'Uniform ruling. At pole [ lines/cm ]   ',p1%RULING
+            ELSE IF (p1%F_RULING.EQ.2) THEN
+                WRITE (20,*) 'Holographic grating. Recording Wavelength: ',p1%HOLO_W
+                WRITE (20,2002)
+2002            FORMAT (1X,'Input Slit Dist.',T20,'Exit Slit Dist.', &
+                        T40,'Input Slit Angle',T60,'Exit Slit Angle')
+                WRITE (20,2003)  p1%HOLO_R1,p1%HOLO_R2,p1%HOLO_DEL,p1%HOLO_GAM
+2003            FORMAT (1X,G16.9,T20,G16.9,T40,G16.9,T60,G16.9)
+                WRITE (20,*) 'Input  Slit rotation angle ',p1%HOLO_RT1*TODEG
+                WRITE (20,*) 'Output Slit rotation angle ',p1%HOLO_RT2*TODEG
+                IF (p1%F_PW.EQ.0) WRITE (20,*) 'Spherical / Spherical'
+                IF (p1%F_PW.EQ.1) WRITE (20,*) 'Plane     / Spherical'
+                IF (p1%F_PW.EQ.2) WRITE (20,*) 'Spherical / Plane'
+                IF (p1%F_PW.EQ.3) WRITE (20,*) 'Plane     / Plane'
+                IF (p1%F_PW_C.EQ.0) WRITE (20,*)  'Spherical   / Spherical'
+                IF (p1%F_PW_C.EQ.1) WRITE (20,*)  'Cylindrical / Spherical'
+                IF (p1%F_PW_C.EQ.2) WRITE (20,*)  'Spherical   / Cylindrical'
+                IF (p1%F_PW_C.EQ.3) WRITE (20,*)  'Cylindrical / Cylindrical'
+                IF (p1%F_VIRTUAL.EQ.0) WRITE (20,*) 'Real      / Real'
+                IF (p1%F_VIRTUAL.EQ.1) WRITE (20,*) 'Real      / Virtual'
+                IF (p1%F_VIRTUAL.EQ.2) WRITE (20,*) 'Virtual   / Real'
+                IF (p1%F_VIRTUAL.EQ.3) WRITE (20,*) 'Virtual   / Virtual'
+            ELSE IF (p1%F_RULING.EQ.5) THEN
+                WRITE (20,*) 'Mechanically ruled grating. Polinomial Coefficients: '
+                WRITE (20,*) 'Zero order term Coefficient: ',p1%RULING
+                WRITE (20,*) 'First                        ',p1%RUL_A1
+                WRITE (20,*) 'Second                       ',p1%RUL_A2
+                WRITE (20,*) 'Third                        ',p1%RUL_A3
+                WRITE (20,*) 'Fourth                       ',p1%RUL_A4
+            ELSE IF (p1%F_RULING.EQ.3) THEN
+                WRITE (20,*) '"Oriental fan" type grating.'
+                WRITE (20,*) 'Fan pole angle from Y axis         ',p1%AZIM_FAN
+                WRITE (20,*) '        distance from grating pole ',p1%DIST_FAN
+                WRITE (20,*) 'Coma correction factor             ',p1%COMA_FAC
+                WRITE (20,*) 'Line density at grating pole       ',p1%RULING
+            END IF
+        END IF
+
+        IF (p1%F_REFRAC.EQ.1) THEN
+            if (p1%F_R_IND .EQ. 0) then
+                write(20,*) "Index of refraction in object space: ",p1%R_IND_OBJ," Attenuation coeff: ",p1%R_ATTENUATION_OBJ
+                write(20,*) "Index of refraction in image space: ",p1%R_IND_IMA," Attenuation coeff: ",p1%R_ATTENUATION_IMA
+           else if (p1%F_R_IND .EQ. 1) then
+                write(20,*) "Index of refraction in object space from file "//trim(p1%FILE_R_IND_OBJ)
+                write(20,*) "Index of refraction in image space: ",p1%R_IND_IMA," Attenuation coeff: ",p1%R_ATTENUATION_IMA
+           else if (p1%F_R_IND .EQ. 2) then
+                write(20,*) "Index of refraction in object space: ",p1%R_IND_OBJ," Attenuation coeff: ",p1%R_ATTENUATION_OBJ
+                write(20,*) "Index of refraction in image space from file "//trim(p1%FILE_R_IND_IMA)
+           else if (p1%F_R_IND .EQ. 3) then
+               write(20,*) "Index of refraction in object space from file "//trim(p1%FILE_R_IND_OBJ)
+               write(20,*) "Index of refraction in image space from file "//trim(p1%FILE_R_IND_IMA)
+           end if
+        END IF
+
+        IF (p1%F_REFLEC.EQ.0) THEN
+            WRITE (20,*) 'Reflectivity                            OFF'
+        ELSE
+            IF (p1%F_REFL.EQ.0) THEN
+                WRITE (20,*) 'Reflectivity      ON     coefficients from: ',p1%FILE_REFL
+            ELSE IF (p1%F_REFL.EQ.1) THEN
+                WRITE (20,*) 'Reflectivity      ON     coefficients from TT:'
+            ELSE IF (p1%F_REFL.EQ.2) THEN
+                WRITE (20,*) 'Multilayer        ON     coefficients and geometry from : '//trim(p1%FILE_REFL)
+            END IF
+            IF (p1%F_REFLEC.EQ.1) WRITE (20,*) &
+            'Polarization dependence                 YES'
+            IF (p1%F_REFLEC.EQ.2) WRITE (20,*) &
+            'Polarization dependence                 NO'
+        END IF
+        IF (p1%FHIT_C.EQ.0) THEN
+            WRITE (20,*) 'Mirror dimensions                       UNLIMITED'
+        ELSE
+            IF (p1%FSHAPE.EQ.1) THEN
+                WRITE (20,*) 'Mirror dimensions ( rectangular ):'
+                WRITE (20,2005)
+2005            FORMAT (1X,T10,'X plus',T30,'X minus',T50,'Y plus',T70,'Y minus')
+                WRITE (20,2004) p1%RWIDX1,p1%RWIDX2,p1%RLEN1,p1%RLEN2
+2004            FORMAT (1X,T10,G12.5,T30,G12.5,T50,G12.5,T70,G12.5)
+            ELSE IF (p1%FSHAPE.EQ.2) THEN
+                WRITE (20,*) 'Mirror dimensions ( elliptical ) :'
+                WRITE (20,2006)
+2006            FORMAT (1X,T10,'Major Axis',T30,'Minor axis')
+                WRITE (20,2004) p1%RWIDX2,p1%RLEN2
+            ELSE IF (p1%FSHAPE.EQ.3) THEN
+                WRITE (20,*) 'Mirror dimensions ( elliptical + hole )'
+                WRITE (20,*) 'A. Outside border:'
+                WRITE (20,2006)
+                WRITE (20,2004) p1%RWIDX2,p1%RLEN2
+                WRITE (20,*) 'B. Inner border :'
+                WRITE (20,2006)
+                WRITE (20,2004) p1%RWIDX1,p1%RLEN1
+            END IF
+        END IF
+        WRITE (20,*) TOPLIN
+        WRITE (20,*) 'Central Axis parameters :'
+        WRITE (20,*) 'Source Plane Distance                   ',p1%T_SOURCE
+        WRITE (20,*) 'Image  Plane                            ',p1%T_IMAGE
+        WRITE (20,*) 'Incidence Angle                         ',p1%T_INCIDENCE*TODEG
+        WRITE (20,*) 'Reflection/Diffraction Angle            ',p1%T_REFLECTION*TODEG
+        WRITE (20,*) ' '
+        IF (p1%F_EXT.EQ.1) THEN
+            WRITE (20,*) 'Mirror parameters                       EXTERNAL'
+        ELSE
+            WRITE (20,*) 'Mirror parameters                       COMPUTED'
+            IF (p1%F_DEFAULT.EQ.1) THEN
+                WRITE (20,*) 'Same configuration as Central Axis      YES'
+            ELSE
+                WRITE (20,*) 'Same configuration as Central Axis      NO'
+            END IF
+            WRITE (20,*) 'Objective focus at                      ',p1%SSOUR
+            WRITE (20,*) 'Image focus at                          ',p1%SIMAG
+            WRITE (20,*) 'Incidence angle                         ',p1%THETA*TODEG
+        END IF
+        WRITE (20,*) 'Parameters used follow:'
+
+        IF (p1%FMIRR.EQ.1) THEN
+            WRITE (20,2010) p1%RMIRR
+2010        FORMAT (1X,'Spherical Radius ',T40,G16.9)
+        ELSE IF (p1%FMIRR.EQ.2) THEN
+            WRITE (20,*)'   Semi-major axis  ', p1%AXMAJ
+            WRITE (20,*)'   Semi-minor axis  ', p1%AXMIN
+            WRITE (20,*)'   Semi-focal-length', SQRT(p1%AXMAJ**2-p1%AXMIN**2)
+            ECCENT = SQRT(p1%AXMAJ**2-p1%AXMIN**2)/p1%AXMAJ
+            WRITE (20,*)'   Eccentricity     ', ECCENT
+        ELSE IF (p1%FMIRR.EQ.3) THEN
+            WRITE (20,*)'   Major Radius (optical)    ', p1%R_MAJ+p1%R_MIN
+            WRITE (20,*)'   Minor Radius              ', p1%R_MIN
+        ELSE IF (p1%FMIRR.EQ.4) THEN
+            WRITE (20,*)'   Parabola Param. ', p1%PARAM
+        ELSE IF (p1%FMIRR.EQ.5) THEN
+            WRITE (20,*)'   Plane mirror '
+        ELSE IF (p1%FMIRR.EQ.6) THEN
+            WRITE (20,*)'   Codling Slit'
+        ELSE IF (p1%FMIRR.EQ.7) THEN
+            WRITE (20,*)'   Semi-major axis  ', p1%AXMAJ
+            WRITE (20,*)'   Semi-minor axis  ', p1%AXMIN
+            AFOCI = SQRT(p1%AXMIN**2+p1%AXMAJ**2)
+            ECCENT = AFOCI/ABS(p1%AXMAJ)
+            WRITE (20,*)'   Semi-focal-length',AFOCI
+            WRITE (20,*)'   Eccentricity     ', ECCENT
+        ELSE IF (p1%FMIRR.EQ.8) THEN
+            WRITE (20,*)'   Cone half-angle  ',p1%CONE_A*TODEG
+        ELSE IF (p1%FMIRR.EQ.9) THEN
+            WRITE (20,*)'   Polynomial Coeff file   '//trim(p1%FILE_MIR)
+        END IF
+
+        IF (p1%FSTAT.EQ.0) THEN
+            WRITE (20,*) 'Source of this O.E. moved               NO'
+        ELSE
+            WRITE (20,*) 'Source of this O.E. moved               YES'
+            WRITE (20,*) 'In SOURCE reference frame: '
+            WRITE (20,*) 'Source Movement X: ',p1%X_SOUR
+            WRITE (20,*) '                Y: ',p1%Y_SOUR
+            WRITE (20,*) '                Z: ',p1%Z_SOUR
+            WRITE (20,*) 'Source rotat  X: ',p1%X_SOUR_ROT*TODEG
+            WRITE (20,*) '              Y: ',p1%Y_SOUR_ROT*TODEG
+            WRITE (20,*) '              Z: ',p1%Z_SOUR_ROT*TODEG
+            WRITE (20,*) 'In MIRROR reference frame: '
+            WRITE (20,*) 'Source distance    ',p1%RDSOUR
+            WRITE (20,*) '       rotation    ',p1%ALPHA_S*TODEG
+            WRITE (20,*) 'Incidence angle    ',p1%RTHETA*TODEG
+            WRITE (20,*) 'Source offset X: ',p1%OFF_SOUX
+            WRITE (20,*) '              Y: ',p1%OFF_SOUY
+            WRITE (20,*) '              Z: ',p1%OFF_SOUZ
+        END IF
+        IF (p1%F_MOVE.EQ.0) THEN
+            WRITE (20,*) 'Mirror at pole position ( no mov. )     YES'
+        ELSE
+            WRITE (20,*) 'Mirror moved from pole. Parameters :'
+            WRITE (20,*) 'Displacement along X:   ',p1%OFFX
+            WRITE (20,*) '                   Y:   ',p1%OFFY
+            WRITE (20,*) '                   Z:   ',p1%OFFZ
+            WRITE (20,*) 'Rotation around X:   ',p1%X_ROT*TODEG
+            WRITE (20,*) '                Y:   ',p1%Y_ROT*TODEG
+            WRITE (20,*) '                Z:   ',p1%Z_ROT*TODEG
+        END IF
 
 !
 ! write conic coefficients
@@ -687,26 +697,25 @@ type1(12)	='            '
            (p1%FMIRR.EQ.5).OR.(p1%FMIRR.EQ.7).OR.(p1%FMIRR.EQ.8).OR. &
            (p1%FMIRR.EQ.9).OR.(p1%FMIRR.EQ.10)) THEN
         
-     	WRITE (20,*) ' '
-     	WRITE (20,*) TOPLIN
-     	WRITE (20,*) 'OE surface in form of conic equation: '
+        WRITE (20,*) ' '
+        WRITE (20,*) TOPLIN
+        WRITE (20,*) 'OE surface in form of conic equation: '
         WRITE (20,*) '    c[1]*X^2 + c[2]*Y^2 + c[3]*Z^2 + '
         WRITE (20,*) '    c[4]*X*Y + c[5]*Y*Z + c[6]*X*Z  + '
         WRITE (20,*) '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  '
-     	WRITE (20,*) ' with '
+        WRITE (20,*) ' with '
         DO j=1,10  
            Write( stmp, '(i2)' ) j
            stmp = adjustl(stmp)
-     	   WRITE (20,*) ' c['//trim(stmp)//'] =',p1%ccc(j)
+        WRITE (20,*) ' c['//trim(stmp)//'] =',p1%ccc(j)
         END DO
        END IF
 
-     	WRITE (20,*) TOPLIN
-     	WRITE (20,*) '***************                 E N', &
-      ' D                  ***************'
-     	WRITE (20,*) TOPLIN
-     	CLOSE (20)
-	RETURN
+       WRITE (20,*) TOPLIN
+       WRITE (20,*) '***************                 E N D                  ***************'
+       WRITE (20,*) TOPLIN
+       CLOSE (20)
+       RETURN
 END SUBROUTINE MirInfo
 
 !
