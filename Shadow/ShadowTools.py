@@ -293,9 +293,10 @@ def histo1_old(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,
            0   All rays
            1   Only good rays
            2   Only lost rays
-     ref      : 
-           0   only count the rays
-           1   weight with intensity (look at 23 |E|^2 total intensity)
+     ref      :
+           0, None, "no", "NO" or "No":   only count the rays
+           23, "Yes", "YES" or "yes":     weight with intensity (look at col=23 |E|^2 total intensity)
+           other value: use that column as weight
      write    : 
            0   don't write any file
            1   write the histogram into the file 'HISTO1'.
@@ -369,6 +370,20 @@ def histo1_old(beam,col,xrange=None,yrange=None,nbins=50,nolost=0,ref=0,write=0,
     ytitlesave=ytitle
   else:
     ytitlesave=None
+
+
+  if ref == None: ref = 0
+  if ref == "No": ref = 0
+  if ref == "NO": ref = 0
+  if ref == "no": ref = 0
+
+  if ref == "Yes": ref = 23
+  if ref == "YES": ref = 23
+  if ref == "yes": ref = 23
+
+  if ref == 1:
+      print("Shadow.ShadowTools.histo1_old: Warning: weighting with column 1 (X) [not with intensity as may happen in old versions]")
+
   if ref==0: 
     x, a = getshcol(beam,(col+1,10))
     w = numpy.ones(len(x))
@@ -2071,7 +2086,7 @@ def test_make_kb():
 
 def test_histo1():
     test_make_kb()
-    t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref=1, xrange=[-0.0015,0.0015])
+    t = histo1("star.02",3,bar=1, nbins=103,nofwhm=1, ref="Yes", xrange=[-0.0015,0.0015])
 
 def test_plotxy_gnuplot():
     test_make_kb()
