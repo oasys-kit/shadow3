@@ -1972,10 +1972,10 @@ if iwrite:
 #
 print("    Running optical element: %d"%({0}))
 if iwrite:
-    oe1.write("start.{1}")
+    oe{0}.write("start.{1}")
 beam.traceOE(oe{0},{0})
 if iwrite:
-    oe1.write("end.{1}")
+    oe{0}.write("end.{1}")
     beam.write("star.{1}")
 """
 

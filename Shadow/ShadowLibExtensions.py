@@ -35,11 +35,7 @@ class Beam(ShadowLib.Beam):
       """
       traces a compound optical element
 
-      IMPORTANT: Note that shadow3 changes the values of the OE when tracing (i.e., oe1 changes after
-                 beam.traceOE(oe1) ). This does not happen with compoundOE: Each oe inside compoundOE is
-                 copied before tracing.
-
-                 Note also that when using write_*_files keyword, the files are written by python, not
+      Note that when using write_*_files keyword, the files are written by python, not
                   by SHADOW (so FWRITE is not changed), with the exception of write_mirr_files. In this case
                   the code changes in the oe copy FWRITE=1 (mirror files only). This affects the returned
                   list of oe's after tracing.
@@ -1802,13 +1798,28 @@ class CompoundOE():
             TEXT += "    REFLEC. ON"
 
         TODEG = 180.0/numpy.pi
+
+        if oe.IDUMMY == 0 and oe.F_CENTRAL == 1:
+            TEXT += "\n\n ** Error: Shadow.CompoundOE.sysinfo(): F_CENTRAL == %d => T_INCIDENCE and T_REFLECTION not calculated. **\n\n"%oe.F_CENTRAL
+
+        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
+            T_INCIDENCE  = oe.T_INCIDENCE / TODEG
+            T_REFLECTION = oe.T_REFLECTION / TODEG
+            ALPHA        = oe.ALPHA / TODEG
+        else:
+            T_INCIDENCE  = oe.T_INCIDENCE
+            T_REFLECTION = oe.T_REFLECTION
+            ALPHA        = oe.ALPHA
+
+        TODEG = 180.0/numpy.pi
+
         txt +=  '\n'
         txt +=  TEXT+"\n"
         txt +=  '\n'
-        txt +=  '  Orientation        %f deg\n'%(oe.ALPHA*TODEG)
+        txt +=  '  Orientation        %f deg\n'%(ALPHA*TODEG)
         txt +=  '  Source Plane       %f\n'   %(oe.T_SOURCE)
-        txt +=  '  Incidence Ang.     %f deg\n'%(oe.T_INCIDENCE*TODEG)
-        txt +=  '  Reflection Ang.    %f deg\n'%(oe.T_REFLECTION*TODEG)
+        txt +=  '  Incidence Ang.     %f deg\n'%(T_INCIDENCE*TODEG)
+        txt +=  '  Reflection Ang.    %f deg\n'%(T_REFLECTION*TODEG)
         txt +=  '  Image Plane        %f\n'   %(oe.T_IMAGE)
         txt += 	BREAK
 
@@ -1862,21 +1873,31 @@ class CompoundOE():
     V_REF =   numpy.zeros( (4) )
     V_PERP =  numpy.zeros( (4) )
     for i,oe in enumerate(self.list):
-        COSAL = numpy.cos(oe.ALPHA)
-        SINAL = numpy.sin(oe.ALPHA)
+
+        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
+            T_INCIDENCE  = oe.T_INCIDENCE / TODEG
+            T_REFLECTION = oe.T_REFLECTION / TODEG
+            ALPHA        = oe.ALPHA / TODEG
+        else:
+            T_INCIDENCE  = oe.T_INCIDENCE
+            T_REFLECTION = oe.T_REFLECTION
+            ALPHA        = oe.ALPHA
+
+        COSAL = numpy.cos(ALPHA)
+        SINAL = numpy.sin(ALPHA)
         PIHALF = numpy.pi/2
         PI = numpy.pi
-        DEFLECTION	=   oe.T_INCIDENCE + oe.T_REFLECTION
+        DEFLECTION	=   T_INCIDENCE + T_REFLECTION
         if i == 0:
             U_VEC [1]	=   COSAL
             U_VEC [2]	=   0.0
             U_VEC [3]   =   SINAL
-            V_VEC [1]   = - numpy.sin(PIHALF - oe.T_INCIDENCE)*SINAL
-            V_VEC [2]   =   numpy.cos(PIHALF - oe.T_INCIDENCE)
-            V_VEC [3]   =   numpy.sin(PIHALF - oe.T_INCIDENCE)*COSAL
-            W_VEC [1]   = - numpy.sin(PI - oe.T_INCIDENCE)*SINAL
-            W_VEC [2]   =   numpy.cos(PI - oe.T_INCIDENCE)
-            W_VEC [3]   =   numpy.sin(PI - oe.T_INCIDENCE)*COSAL
+            V_VEC [1]   = - numpy.sin(PIHALF - T_INCIDENCE)*SINAL
+            V_VEC [2]   =   numpy.cos(PIHALF - T_INCIDENCE)
+            V_VEC [3]   =   numpy.sin(PIHALF - T_INCIDENCE)*COSAL
+            W_VEC [1]   = - numpy.sin(PI - T_INCIDENCE)*SINAL
+            W_VEC [2]   =   numpy.cos(PI - T_INCIDENCE)
+            W_VEC [3]   =   numpy.sin(PI - T_INCIDENCE)*COSAL
             V_REF [1]   = - numpy.sin(PI - DEFLECTION)*SINAL
             V_REF [2]   =   numpy.cos(PI - DEFLECTION)
             V_REF [3]   =   numpy.sin(PI - DEFLECTION)*COSAL
@@ -1922,9 +1943,9 @@ class CompoundOE():
 
             #    ! ** This vector is the NORMAL of the new mirror in the OMRF (U,R_OLD,RP_OLD) **
             V_TEMP = numpy.zeros(4)
-            V_TEMP [1]	= - numpy.sin(PI - oe.T_INCIDENCE)*SINAL
-            V_TEMP [2]	=   numpy.cos(PI - oe.T_INCIDENCE)
-            V_TEMP [3]	=   numpy.sin(PI - oe.T_INCIDENCE)*COSAL
+            V_TEMP [1]	= - numpy.sin(PI - T_INCIDENCE)*SINAL
+            V_TEMP [2]	=   numpy.cos(PI - T_INCIDENCE)
+            V_TEMP [3]	=   numpy.sin(PI - T_INCIDENCE)*COSAL
 
             #    ! ** Rotate it finally to (x,y,z) SRF **
             W_VEC [1]	=    V_TEMP[1]*U_OLD[1] + V_TEMP[2]*R_OLD[1] + V_TEMP[3]*RP_OLD[1]
@@ -1952,9 +1973,9 @@ class CompoundOE():
             V_PERP[3] = V_TEMP[1]*U_OLD[3] + V_TEMP[2]*R_OLD[3] + V_TEMP[3]*RP_OLD[3]
 
             #    ! ** This is the tangent vector in the OMRF **
-            V_TEMP[1] = - numpy.sin(PIHALF - oe.T_INCIDENCE)*SINAL
-            V_TEMP[2] =   numpy.cos(PIHALF - oe.T_INCIDENCE)
-            V_TEMP[3] =   numpy.sin(PIHALF - oe.T_INCIDENCE)*COSAL
+            V_TEMP[1] = - numpy.sin(PIHALF - T_INCIDENCE)*SINAL
+            V_TEMP[2] =   numpy.cos(PIHALF - T_INCIDENCE)
+            V_TEMP[3] =   numpy.sin(PIHALF - T_INCIDENCE)*COSAL
 
             #    ! ** Rotate it to the SRF.
             V_VEC[1] = V_TEMP[1] * U_OLD[1] + V_TEMP[2] * R_OLD[1] + V_TEMP[3] * RP_OLD[1]
@@ -2003,6 +2024,9 @@ class CompoundOE():
     txt += TOPLIN
     txt += '********                 E N D                  ***************\n'
     txt += TOPLIN
+
+    if oe.IDUMMY == 0:
+        txt += "Warning: Shadow.CompoundOE.sysinfo(): It seems that infor is obtained from start.xx and not from end.xx info\n"
 
     return(txt)
 
@@ -2599,12 +2623,16 @@ class CompoundOE():
       oe2.FMIRR = 5
 
       oe1.F_CENTRAL = 1
-      oe2.F_CENTRAL = 2
+      oe2.F_CENTRAL = 1
       oe1.F_PHOT_CENT = 0 # eV
       oe2.F_PHOT_CENT = 0 # eV
       oe1.PHOT_CENT = photon_energy_ev
       oe2.PHOT_CENT = photon_energy_ev
 
+      oe1.T_INCIDENCE = 0.0    # not used (autosetting)
+      oe1.T_REFLECTION = 0.0   # not used (autosetting)
+      oe2.T_INCIDENCE = 0.0    # not used (autosetting)
+      oe2.T_REFLECTION = 0.0   # not used (autosetting)
 
 
       oe1.FILE_REFL = reflectivity_file.encode('utf-8')
@@ -2642,7 +2670,14 @@ class CompoundOE():
 
       return self
 
-  def dump_start_files(self,root='start',offset=0):
+  def dump_start_files(self,offset=0):
+    root='start'
+    for i,oe in enumerate(self.list):
+      oe.write('%s.%02d'%(root,i+1+offset))
+      print('File written to disk: %s.%02d\n'%(root,i+1+offset))
+
+  def dump_end_files(self,offset=0):
+    root='end'
     for i,oe in enumerate(self.list):
       oe.write('%s.%02d'%(root,i+1+offset))
       print('File written to disk: %s.%02d\n'%(root,i+1+offset))
@@ -3528,8 +3563,12 @@ def test_dcm():
 
     #trace
     dcm.dump_systemfile()
-    beam.traceCompoundOE(dcm,write_start_files=1,write_end_files=1,write_star_files=1)
+    dcm.dump_start_files()
 
+
+    beam.traceCompoundOE(dcm,write_start_files=1,write_end_files=1,write_star_files=1)
+    dcm.dump_end_files()
+    print(dcm.sysinfo())
 
     if 0: # test duplicate elements
         src1 = src.duplicate()
@@ -3543,7 +3582,7 @@ def test_dcm():
         oen_bis.T_IMAGE = 2.0
         print("\n\n>>> orig T_IMAGE=%f, copy T_IMAGE=%f"%(oen.T_IMAGE,oen_bis.T_IMAGE))
 
-    if 1: # test plotxy
+    if 0: # test plotxy
         tkt = beam.histo2(1,3,nbins_h=3,nbins_v=3)
         print(tkt)
         print("H left",tkt["bin_h_left"])
@@ -3554,6 +3593,7 @@ def test_dcm():
 
 if __name__ == '__main__':
     do_tests = 0
+    test_dcm()
     if do_tests:
         test_only_source()
         test_source_and_trace()
