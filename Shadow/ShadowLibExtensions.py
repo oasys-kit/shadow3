@@ -1734,14 +1734,10 @@ class CompoundOE():
     txt = "\n"
 
     TOPLIN = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
-    TSLIT = {}
     TSCR = {}
     TYPE1 = {}
-    TSLIT["1"] = 'SLIT       '
-    TSLIT["2"] = 'STOP       '
-    TSLIT["3"] = 'RECTANGULAR'
-    TSLIT["4"] = 'ELLIPTICAL '
-    TSLIT["5"] = 'EXTERNAL   '
+    TSLIT  = ('SLIT       ','STOP       ')
+    TSLITSHAPE = ('RECTANGULAR','ELLIPTICAL ','EXTERNAL   ')
 
     TSCR["1"] = 'AFTER Mirror'
     TSCR["2"] = 'BEFORE  Mirror'
@@ -1823,24 +1819,26 @@ class CompoundOE():
         txt +=  '  Image Plane        %f\n'   %(oe.T_IMAGE)
         txt += 	BREAK
 
-        #TODO: check about screens!!!
+        #TODO: add dimensions of slits
         #         IF (p2%F_SCREEN.EQ.1) THEN
-        #     WRITE(6,*) p2%N_SCREEN,p2%I_SCREEN,p2%SL_DIS
-        #           WRITE (30,*)	'  SCREENS: ',p2%N_SCREEN,' defined.'
-        #          DO 17 I=1,p2%N_SCREEN
-        #            IJ = p2%I_SCREEN(I) + 1
-        #            WRITE (30,*)	TSCR(IJ),' at ',p2%SL_DIS(I)
-        #           IF (p2%I_SLIT(I).NE.0) THEN
-        #             IND1 =  p2%I_STOP(I) + 1
-        #             IND2  =  p2%K_SLIT(I) + 3
-        #             WRITE (30,*)	'  Type :',TSLIT(IND1),'  ',TSLIT(IND2)
-        #           END IF
-        # 17      CONTINUE
-        #           WRITE (30,*)	BREAK
-        #         END IF
-        # 13     	CONTINUE
+        if oe.F_SCREEN == 1:
+            txt += '  SCREENS:     %d defined \n'%oe.N_SCREEN
+            for i in range(oe.N_SCREEN):
+                 txt += '    SCREEN %d : \n'%(i+1)
+                 if oe.I_SCREEN[i] == 0:
+                     txt += '      AFTER o.e.       at %f \n'%(oe.SL_DIS[i])
+                 else:
+                     txt += '      BEFORE o.e.      at %f \n'%oe.SL_DIS[i]
+                 if oe.I_SLIT[i] != 0:
+                     txt += "      Type:  %s        %s  \n"%(TSLIT[oe.I_STOP[i]],TSLITSHAPE[oe.K_SLIT[i]])
+                     txt += "      Dimensions: X: %f, Z: %f  \n"%(oe.RX_SLIT[i],oe.RZ_SLIT[i])
+                     txt += "      Center at:  X: %f, Z: %f  \n"%(oe.CX_SLIT[i],oe.CZ_SLIT[i])
+                 if oe.I_ABS[i] != 0:
+                     txt += "      Attenuator thickness:  %f  \n"%(oe.THICK[i])
+                     txt += "      File with optical constants: %s\n"%(oe.FILE_ABS[i].strip().decode())
 
-    txt += "                          OPTICAL SYSTEM CONFIGURATION\n"
+
+    txt += "\n\n                          OPTICAL SYSTEM CONFIGURATION\n"
     txt += "                           Laboratory Reference Frame.\n"
 
     #txt += "OPT. Elem #       X =                 Y =                 Z =\n\n"
@@ -3591,9 +3589,75 @@ def test_dcm():
         print("H edges",tkt["bin_h_edges"])
         print("H shape: ",tkt["histogram"].shape)
 
+def test_sysinfo_withscreen():
+
+    beam = Beam()
+    oe0  = Source()
+    oe1  = OE()
+    oe2  = OE()
+
+    #
+    #define variables (see source.nml and oe.nml for doc)
+    #
+
+    oe0.FSOURCE_DEPTH = 0
+    oe0.F_PHOT = 0
+    oe0.F_POLAR = 0
+    oe0.HDIV1 = 0.001
+    oe0.HDIV2 = 0.001
+    oe0.PH1 = 1000.0
+    oe0.VDIV1 = 0.002
+    oe0.VDIV2 = 0.002
+
+    oe1.DUMMY = 1.0
+    oe1.FMIRR = 3
+    oe1.T_INCIDENCE = 80.0
+    oe1.T_REFLECTION = 80.0
+    oe1.T_SOURCE = 20.0
+
+    oe2.DUMMY = 1.0
+    oe2.F_REFRAC = 2
+    oe2.F_SCREEN = 1
+    oe2.N_SCREEN = 3
+    oe2.I_SCREEN[0] = 1 # before
+    oe2.I_SCREEN[1] = 0 # after
+    oe2.I_SCREEN[2] = 0 # after
+    oe2.SL_DIS[0] = 0.0 # distance
+    oe2.SL_DIS[1] = 1.0 # distance
+    oe2.SL_DIS[2] = 2.0 # distance
+    oe2.I_SLIT[0] = 1 # aperture
+    oe2.I_SLIT[1] = 1 # aperture
+    oe2.I_SLIT[2] = 0 # aperture
+
+    oe2.I_STOP[0] = 1 # before
+    oe2.I_STOP[1] = 0 # after
+    oe2.I_STOP[2] = 0 # after
+
+    # oe2.I_ABS[2] = 1
+    # tmp = oe2.FILE_ABS.copy()
+    # tmp[2] = b'lllllllllll'
+    # oe2.FILE_ABS =  tmp
+
+    oe2.T_IMAGE = 0.0
+    oe2.T_INCIDENCE = 0.0
+    oe2.T_REFLECTION = 180.0
+    oe2.T_SOURCE = 0.0
+
+    beam.genSource(oe0)
+
+    coe = CompoundOE(name="test sysinfo")
+    coe.append(oe1)
+    coe.append(oe2)
+
+    beam.traceCompoundOE(coe)
+
+    txt = coe.sysinfo()
+    print(txt)
+
+
+
 if __name__ == '__main__':
     do_tests = 0
-    test_dcm()
     if do_tests:
         test_only_source()
         test_source_and_trace()
@@ -3603,5 +3667,6 @@ if __name__ == '__main__':
         test_id30b()
         test_id23_2()
         test_dcm()
+        test_sysinfo_withscreen()
 
 
