@@ -4,6 +4,9 @@
 #
 # It also define GeometricSource and Beamline
 #
+
+#TODO: add user units to all distance values
+
 import Shadow.ShadowLib as ShadowLib
 import numpy
 import inspect
@@ -1061,6 +1064,15 @@ class OE(ShadowLib.OE):
   # # TODO: REMOVE END HERE
   # #
 
+  def unit(self):
+      if self.DUMMY == 1.0:
+          return 'cm'
+      if self.DUMMY == 0.1:
+          return 'mm'
+      if self.DUMMY == 100.0:
+          return 'm'
+
+      return (str(self.DUMMY)+" * m")
 
   def to_dictionary(self):
     mem = inspect.getmembers(self)
@@ -1363,13 +1375,13 @@ class OE(ShadowLib.OE):
         if self.F_MOSAIC == 1:
             txt += 'MOSAIC Crystal selected                \n'
             txt += 'Mosaic crystal spread (st. dev)  [DEG]  %f\n'%(self.SPREAD_MOS*180.0/numpy.pi)
-            txt += 'Mosaic crystal thickness [cm]           %f\n'%(self.THICKNESS)
+            txt += 'Mosaic crystal thickness [%s]           %f\n'%(self.THICKNESS,self.unit())
         else:
             if self.F_BRAGG_A == 1:
                 txt += 'Asymmetric Cut angle  [DEG]             %f\n'%(self.A_BRAGG*180.0/numpy/pi)
             if self.F_JOHANSSON == 1:
                 txt += 'JOHANSSON Geometry selected            \n'
-                txt += 'Johansson radius                         %f\n'(self.R_JOHANSSON)
+                txt += 'Johansson radius                         %f %s\n'(self.R_JOHANSSON,self.unit())
 
 
     if self.F_GRATING == 1:
@@ -1582,12 +1594,13 @@ class OE(ShadowLib.OE):
 
 class CompoundOE():
 
-  def __init__(self,list=None, name=''):
+  def __init__(self,list=None, name='', user_units_to_cm=1.0):
     if list == None:
         self.list = []
     else:
         self.list = list
     self.name = name
+    self.user_units_to_cm = user_units_to_cm
     self = list #.__init__()
 
   def set_name(self,name):
@@ -1595,6 +1608,16 @@ class CompoundOE():
 
   def number_oe(self):
       return len(self.list)
+
+  def unit(self):
+      if self.user_units_to_cm == 1.0:
+          return 'cm'
+      if self.user_units_to_cm == 0.1:
+          return 'mm'
+      if self.user_units_to_cm == 100.0:
+          return 'm'
+
+      return (str(self.user_units_to_cm)+" * m")
 
   def info(self,file=''):
     """
@@ -1607,8 +1630,8 @@ class CompoundOE():
     #   print('oe %d, p=%f, q=%f'%(1+i,j.T_SOURCE,j.T_IMAGE))
 
     txt = '  ********  SUMMARY OF DISTANCES ********\n'
-    txt += '   ** DISTANCES FOR ALL O.E. [cm] **           \n'
-    txt += "%12s %12s %14s %14s %14s %14s \n"%('OE','TYPE','p[cm]','q[cm]','src-oe','src-screen')
+    txt += '   ** DISTANCES FOR ALL O.E. [%s] **           \n'%self.unit()
+    txt += "%12s %12s %14s %14s %14s %14s \n"%('OE','TYPE','p['+self.unit()+']','q['+self.unit()+']','src-oe','src-screen')
 
 
     tot=0.0
@@ -1763,7 +1786,7 @@ class CompoundOE():
     txt += comment + "\n"
     txt += TOPLIN
 
-
+    txt += 'Units (length) in use:  %s \n\n'%(self.unit())
     for i,oe in enumerate(self.list):
         J = i + 1
         txt += ' \n'
@@ -1813,10 +1836,10 @@ class CompoundOE():
         txt +=  TEXT+"\n"
         txt +=  '\n'
         txt +=  '  Orientation        %f deg\n'%(ALPHA*TODEG)
-        txt +=  '  Source Plane       %f\n'   %(oe.T_SOURCE)
+        txt +=  '  Source Plane       %f %s \n'   %(oe.T_SOURCE,oe.unit())
         txt +=  '  Incidence Ang.     %f deg\n'%(T_INCIDENCE*TODEG)
         txt +=  '  Reflection Ang.    %f deg\n'%(T_REFLECTION*TODEG)
-        txt +=  '  Image Plane        %f\n'   %(oe.T_IMAGE)
+        txt +=  '  Image Plane        %f %s\n'   %(oe.T_IMAGE,oe.unit())
         txt += 	BREAK
 
         #TODO: add dimensions of slits
@@ -2130,6 +2153,10 @@ class CompoundOE():
       oe1 = OE()
       oe2 = OE()
 
+      #units
+      oe1.DUMMY = self.user_units_to_cm
+      oe2.DUMMY = self.user_units_to_cm
+
       #set constant values for both interfaces
       oe1.T_INCIDENCE = 0.0
       oe1.T_REFLECTION = 180.0
@@ -2442,6 +2469,10 @@ class CompoundOE():
       oe1 = OE()
       oe2 = OE()
 
+      #units
+      oe1.DUMMY = self.user_units_to_cm
+      oe2.DUMMY = self.user_units_to_cm
+
       #incidence angles
       oe1.T_INCIDENCE = 90.0 - grazing_angles_mrad[0]*1e-3*180.0/numpy.pi
       oe1.T_REFLECTION = oe1.T_INCIDENCE
@@ -2596,6 +2627,10 @@ class CompoundOE():
       """
       oe1 = OE()
       oe2 = OE()
+
+      #units
+      oe1.DUMMY = self.user_units_to_cm
+      oe2.DUMMY = self.user_units_to_cm
 
       # #incidence angles
       # oe1.T_INCIDENCE = 90.0 - grazing_angles_mrad[0]*1e-3*180.0/numpy.pi
@@ -3414,7 +3449,7 @@ def test_id30b():
     #    attenuation coef [cm^-1]:         0.62609003632702676
     # ------------------------------------------------------------------------
     refraction_index = 0.99999826450509566
-    attenuation_coefficient = 0.626090036
+    attenuation_coefficient = 0.626090036 #TODO: check units
 
     # position of the TF measured from the center of the transfocator
     tf_p = 5960
@@ -3466,8 +3501,8 @@ def test_id30b():
     print("\nNumber of interfaces: %d"%(tf.number_oe()))
     print("\nTotal beamline length (from compound element) %f m"%(1e-2*tf.length()))
     print("\nTotal Transfocator length %f m"%(1e-2*tf_length))
-    print("\nTotal Transfocator length (from compound element): %f cm "%(tf.length()-tf_fs_after-tf_fs_before))
-    print("\ntf_fs_before: %f m, tf_fs_after: %f m"%(tf_fs_before*1e-2,tf_fs_after*1e-2))
+    print("\nTotal Transfocator length (from compound element): %f %s "%(tf.length()-tf_fs_after-tf_fs_before,tf.unit()))
+    print("\ntf_fs_before: %f m, tf_fs_after: %f m"%(tf_fs_before*1e-2*tf.user_units_to_cm,tf_fs_after*1e-2*tf.user_units_to_cm))
 
 
 def test_id23_2():
