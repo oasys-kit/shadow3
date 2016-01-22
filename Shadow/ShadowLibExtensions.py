@@ -743,7 +743,7 @@ class OE(ShadowLib.OE):
     :param ALPHA: mirror oriantation angle (default=0)
     :return:
     """
-    self.F_REFRAC = 2
+    self.F_REFRAC = 1
     self.T_INCIDENCE = T_INCIDENCE
     self.T_REFLECTION = T_REFLECTION
     self.T_SOURCE = T_SOURCE

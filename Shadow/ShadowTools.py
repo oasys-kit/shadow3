@@ -1874,7 +1874,7 @@ def make_python_script_from_list(list_optical_elements1,script_file=""):
             haslist = sum([isinstance(i,list) for i in list_optical_elements])
 
 
-    #make sure that the list does not containOE (developed)
+    #make sure that the list does not contain compoundOE (developed)
 
     hascomp = sum([isinstance(i,(Shadow.CompoundOE,Shadow.ShadowLibExtensions.CompoundOE)) for i in list_optical_elements])
 
@@ -1895,6 +1895,7 @@ def make_python_script_from_list(list_optical_elements1,script_file=""):
 # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
 import Shadow
+import numpy
 
 # write (1) or not (0) SHADOW files start.xx end.xx star.xx
 iwrite = 0
@@ -1914,7 +1915,9 @@ beam = Shadow.Beam()
         else:
             raise Exception("Error: Element not known")
 
-    template += "\n#\n#define variables (see source.nml and oe.nml for doc)\n#\n"
+    template += "\n#\n# Define variables. See meaning of variables in: \n" \
+                "#  https://raw.githubusercontent.com/srio/shadow3/master/docs/source.nml \n" \
+                "#  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml\n#\n"
 
     for ioe,oe1B in enumerate(list_optical_elements):
         template += "\n"
@@ -1932,12 +1935,20 @@ beam = Shadow.Beam()
             ivarB = memB[i]
             if ivar[0].isupper():
                 if isinstance(ivar[1],numpy.ndarray):
-                    if (ivar[1] != ivarB[1]).all():
-                        line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
-                        if ("SPECIFIED" in line):
-                            pass
-                        else:
-                            template += line
+                    # print("                  are ALL different ? ", (ivar[1] != ivarB[1]).all())
+                    # print("                  are the same ? ", (ivar[1] == ivarB[1]).all())
+                    # print("                  there is at least ONE diff ? ", not((ivar[1] == ivarB[1]).all()))
+
+                    if not( (ivar[1] == ivarB[1]).all()) :
+                        line = "oe"+str(ioe)+"."+ivar[0]+" = numpy.array("+str(ivarB[1].tolist())+ ")\n"
+                        template += line
+
+                    # if (ivar[1] != ivarB[1]).all():
+                    #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                    #     if ("SPECIFIED" in line):
+                    #         pass
+                    #     else:
+                    #         template += line
                 else:
                     if ivar[1] != ivarB[1]:
                         if isinstance(ivar[1],(str,bytes)):
@@ -1986,9 +1997,9 @@ if iwrite:
 # display results (using ShadowTools, matplotlib needed)
 #
     template += """\n
-Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,title="Real space")
-Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,title="Phase space X")
-Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,title="Phase space Z")
+Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
+# Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
+# Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
     """
 
     if script_file != "":
@@ -2190,13 +2201,79 @@ def test_ray_prop():
 
     plt.show()
 
+def test_make_script_withscreen():
+    beam = Shadow.Beam()
+    oe0  = Shadow.Source()
+    oe1  = Shadow.OE()
+    oe2  = Shadow.OE()
+
+    #
+    #define variables (see source.nml and oe.nml for doc)
+    #
+
+    oe0.FSOURCE_DEPTH = 0
+    oe0.F_PHOT = 0
+    oe0.F_POLAR = 0
+    oe0.HDIV1 = 0.001
+    oe0.HDIV2 = 0.001
+    oe0.PH1 = 1000.0
+    oe0.VDIV1 = 0.002
+    oe0.VDIV2 = 0.002
+
+    oe1.DUMMY = 1.0
+    oe1.FMIRR = 3
+    oe1.T_INCIDENCE = 80.0
+    oe1.T_REFLECTION = 80.0
+    oe1.T_SOURCE = 20.0
+
+    oe2.DUMMY = 1.0
+    oe2.F_REFRAC = 2
+    oe2.F_SCREEN = 1
+    oe2.N_SCREEN = 3
+    oe2.I_SCREEN[0] = 1 # before
+    oe2.I_SCREEN[1] = 0 # after
+    oe2.I_SCREEN[2] = 0 # after
+    oe2.SL_DIS[0] = 0.0 # distance
+    oe2.SL_DIS[1] = 1.0 # distance
+    oe2.SL_DIS[2] = 2.0 # distance
+    oe2.I_SLIT[0] = 1 # aperture
+    oe2.I_SLIT[1] = 1 # aperture
+    oe2.I_SLIT[2] = 0 # aperture
+
+    oe2.I_STOP[0] = 1 # before
+    oe2.I_STOP[1] = 0 # after
+    oe2.I_STOP[2] = 0 # after
+
+    oe2.THICK[2] = 0.0100
+    oe2.I_ABS[2] = 1
+
+    tmp = oe2.FILE_ABS.copy()
+    tmp[2] = b'lllllllllll'
+    oe2.FILE_ABS =  tmp
+
+    oe2.T_IMAGE = 0.0
+    oe2.T_INCIDENCE = 0.0
+    oe2.T_REFLECTION = 180.0
+    oe2.T_SOURCE = 0.0
+
+    beam.genSource(oe0)
+
+    txt = make_python_script_from_list([oe0,oe1,oe2],script_file="tmp.py")
+
+
+    #beam.traceCompoundOE(coe)
+
+
+
+
 if __name__=="__main__":
     do_tests = 0
     if do_tests:
         test_waviness()
         test_histo1()
         test_plotxy_gnuplot()
-        test_make_script()
-        test_make_script_compoundOE()
         test_focnew()
         test_ray_prop()
+        test_make_script()
+        test_make_script_compoundOE()
+        test_make_script_withscreen()
