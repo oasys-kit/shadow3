@@ -77,7 +77,7 @@
  f_mono	=             0 - f_grating,f_central=1 - monochromator type: TGM/
  			  Seya (0), ERG (1), Constant Incidence Angle (2),
 			  Constant diffraction angle (3), Hunter (4).
- f_refrac	=             0 - flag: reflector (0) or refractor (1).
+ f_refrac	=             0 - flag: reflector (0). refractor (1), empty element (2).
  f_default	=             0 - flag: focii coincident with continuation
  				  plane - yes (1), no (0).
  f_refl	=             0 - for f_reflec=1,2 - source of optical constants:
@@ -389,5 +389,5 @@
  n_rip	=             0 - read in from gaussian ripple file in OE
  			  generation.
  oe_number	=             0 - the rest of the variables are filled
- idummy	=             0           in during OE generation.
- dummy	=  0.0000000000000000E+00
+ idummy	=  0 = shadow has not run (variables as start.xx), 1 = shadow has run (variables as end.xx)
+ dummy	=  Conversion factor from user units (length) to cm ( 1.0 if cm, 0.1 if mm, 100.0 if m)

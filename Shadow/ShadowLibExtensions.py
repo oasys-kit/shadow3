@@ -746,7 +746,7 @@ class OE(ShadowLib.OE):
     :param ALPHA: mirror oriantation angle (default=0)
     :return:
     """
-    self.F_REFRAC = 1
+    self.F_REFRAC = 2
     self.T_INCIDENCE = T_INCIDENCE
     self.T_REFLECTION = T_REFLECTION
     self.T_SOURCE = T_SOURCE
@@ -1319,7 +1319,7 @@ class OE(ShadowLib.OE):
     T20 = '                    '
     T60 = T20 + T20 + T20
     txt += TOPLIN
-    txt += '********************   MIRROR  DESCRIPTION   ********************\n'
+    txt += '********************   OPTICAL ELEMENT  DESCRIPTION   ********************\n'
 
     if title == None:
         txt += '\n\n'
@@ -1327,170 +1327,175 @@ class OE(ShadowLib.OE):
         txt += title+'\n'
     txt += TOPLIN
 
-
-    txt += 'Surface figure was defined as: %s \n'%(type1[str(self.FMIRR)])
-    if self.FCYL == 0:
-        txt += 'Cylindrical figure                      NO\n'
+    if self.F_REFRAC == 2:
+        txt += 'Element type                            EMPTY\n'
     else:
-        txt += 'Cylindrical figure                      YES\n'
-        txt += 'Cylinder axis angle from X-axis         %f \n'%(self.CIL_ANG*180.0/numpy.pi)
 
-
-    if self.F_ROUGHNESS == 1:
-        txt += 'Roughness on from '+self.FILE_ROUGH.strip()
-        txt += 'RMS in Y (angstroms)                   %f \n'%(self.ROUGH_Y)
-        txt += 'RMS in X (angstroms)                   %f \n'%(self.ROUGH_X)
-    if self.F_REFRAC == 0:
-        txt += 'Element type                            REFLECTOR\n'
-    else:
-        txt += 'Element type                            REFRACTOR\n'
-
-    if ((self.F_GRATING == 0) and (self.F_CRYSTAL ==0)):
-        if self.F_FACET == 1:
-            txt += 'Element type                       Faceted Mirror\n'
-            txt += 'Facet size (X)                          %f\n'%(self.RFAC_LENX)
-            txt += 'Facet size (Y)                          %f\n'%(self.RFAC_LENY)
-            txt += 'Facet polynomial from                   %s\n'%(self.FILE_FAC.strip().decode())
-            if self.F_POLSEL == 3:
-                txt += 'Intercept used                         CLOSEST\n'
-            if self.F_POLSEL == 2:
-                txt += 'Intercept used                         2nd CLOSEST\n'
-            if self.F_POLSEL == 1:
-                txt += 'Intercept used                         2nd FARTHEST\n'
-            if self.F_POLSEL == 4:
-                txt += 'Intercept used                         FARTHEST\n'
-        if self.F_KOMA == 1:
-            txt += 'Element type                Multi-bounce Tube Array\n'
-            if self.F_KOMA_CA == 1:
-                txt += 'Paramters from  %s\n'%(self.FILE_KOMA_CA.strip().decode())
-                txt += 'Tube radii specified as (r(Z))**2\n'
-            else:
-                txt += 'Paramters from  %s\n'(self.FILE_KOMA.strip().decode())
-                txt += 'Tube radii specified as r(Z)\n'
-
-    if ((self.F_GRATING == 0) and (self.F_CRYSTAL == 1)):
-        txt += 'Element type                            CRYSTAL\n'
-        txt += 'Lattice Spacing                         %f\n'%(self.D_SPACING)
-        txt += 'Bragg Reflection from  %s\n'%(self.FILE_REFL.strip().decode())
-        if self.F_MOSAIC == 1:
-            txt += 'MOSAIC Crystal selected                \n'
-            txt += 'Mosaic crystal spread (st. dev)  [DEG]  %f\n'%(self.SPREAD_MOS*180.0/numpy.pi)
-            txt += 'Mosaic crystal thickness [%s]           %f\n'%(self.THICKNESS,self.unit())
+        txt += 'Surface figure was defined as: %s \n'%(type1[str(self.FMIRR)])
+        if self.FCYL == 0:
+            txt += 'Cylindrical figure                      NO\n'
         else:
-            if self.F_BRAGG_A == 1:
-                txt += 'Asymmetric Cut angle  [DEG]             %f\n'%(self.A_BRAGG*180.0/numpy/pi)
-            if self.F_JOHANSSON == 1:
-                txt += 'JOHANSSON Geometry selected            \n'
-                txt += 'Johansson radius                         %f %s\n'(self.R_JOHANSSON,self.unit())
+            txt += 'Cylindrical figure                      YES\n'
+            txt += 'Cylinder axis angle from X-axis         %f \n'%(self.CIL_ANG*180.0/numpy.pi)
 
 
-    if self.F_GRATING == 1:
-        if self.FZP == 1:
-            txt += 'Element type                 Fresnel Zone Plate\n'
-        txt += 'Element type                            GRATING\n'
-        txt += 'Order choosen ( inside are < 0 )        *d\n'%(self.ORDER)
-        if self.F_CENTRAL == 1:
-            txt += 'Automatic Tuning                        YES\n'
-            if ((self.F_MONO == 0) and (self.F_CRYSTAL == 0)):
-                txt += 'Mount                                   SEYA / TGM\n'
-            if ((self.F_MONO == 0) and (self.F_CRYSTAL == 1)):
-                txt += 'Mount                                   BRAGG\n'
-            if ((self.F_MONO == 1) and (self.F_CRYSTAL == 0)):
-                txt += 'Mount                                   ERG\n'
-            if ((self.F_MONO == 2) and (self.F_CRYSTAL == 0)):
-                txt += 'Mount                                   Const. INCIDENCE\n'
-            if ((self.F_MONO == 3) and (self.F_CRYSTAL == 0)):
-                txt += 'Mount                                   Const. DIFFRACTION\n'
-            if ((self.F_MONO == 4) and (self.F_CRYSTAL == 0)):
-                txt += 'Mount                                   Const. BLAZE\n'
+        if self.F_ROUGHNESS == 1:
+            txt += 'Roughness on from '+self.FILE_ROUGH.strip()
+            txt += 'RMS in Y (angstroms)                   %f \n'%(self.ROUGH_Y)
+            txt += 'RMS in X (angstroms)                   %f \n'%(self.ROUGH_X)
+        if self.F_REFRAC == 0:
+            txt += 'Element type                            REFLECTOR\n'
+        if self.F_REFRAC == 1:
+            txt += 'Element type                            REFRACTOR\n'
+        if self.F_REFRAC == 2:
+            txt += 'Element type                            EMPTY\n'
 
-        if (self.F_RULING == 0) and (self.F_CRYSTAL == 0):
-            txt += 'Constant ruling [ lines/cm ]            %f\n'%(self.RULING)
-        if (self.F_RULING == 1) and (self.F_CRYSTAL == 0):
-            txt += 'Uniform ruling. At pole [ lines/cm ]    %f\n'%(self.RULING)
+        if ((self.F_GRATING == 0) and (self.F_CRYSTAL ==0)):
+            if self.F_FACET == 1:
+                txt += 'Element type                       Faceted Mirror\n'
+                txt += 'Facet size (X)                          %f\n'%(self.RFAC_LENX)
+                txt += 'Facet size (Y)                          %f\n'%(self.RFAC_LENY)
+                txt += 'Facet polynomial from                   %s\n'%(self.FILE_FAC.strip().decode())
+                if self.F_POLSEL == 3:
+                    txt += 'Intercept used                         CLOSEST\n'
+                if self.F_POLSEL == 2:
+                    txt += 'Intercept used                         2nd CLOSEST\n'
+                if self.F_POLSEL == 1:
+                    txt += 'Intercept used                         2nd FARTHEST\n'
+                if self.F_POLSEL == 4:
+                    txt += 'Intercept used                         FARTHEST\n'
+            if self.F_KOMA == 1:
+                txt += 'Element type                Multi-bounce Tube Array\n'
+                if self.F_KOMA_CA == 1:
+                    txt += 'Paramters from  %s\n'%(self.FILE_KOMA_CA.strip().decode())
+                    txt += 'Tube radii specified as (r(Z))**2\n'
+                else:
+                    txt += 'Paramters from  %s\n'(self.FILE_KOMA.strip().decode())
+                    txt += 'Tube radii specified as r(Z)\n'
 
-        if (self.F_RULING == 2) and (self.F_CRYSTAL == 0):
-            txt += 'Holographic grating. Recording Wavelength:  %f\n'%(self.RULING)
-
-            txt += 'Input Slit Dist.'+T20+'Exit Slit Dist.'+T20+'Input Slit Angle',T60,'Exit Slit Angle\n'
-            txt += '%16.9g'%(self.HOLO_R1)+'%16.9g'%(self.HOLO_R2)+'%16.9g'%(self.HOLO_DEL)+'%16.9g'%(self.HOLO_GAM)+'\n'
-            txt += 'Input  Slit rotation angle  %f \n'%(self.HOLO_RT1*180.0/numpy.pi)
-            txt += 'Output Slit rotation angle  %f \n'%(self.HOLO_RT2*180.0/numpy.pi)
-            if (self.F_PW == 0):         txt += 'Spherical / Spherical\n'
-            if (self.F_PW == 1):         txt += 'Plane     / Spherical\n'
-            if (self.F_PW == 2):         txt += 'Spherical / Plane\n'
-            if (self.F_PW == 3):         txt += 'Plane     / Plane\n'
-            if (self.F_PW_C == 0):       txt += 'Spherical   / Spherical\n'
-            if (self.F_PW_C == 1):       txt += 'Cylindrical / Spherical\n'
-            if (self.F_PW_C == 2):       txt += 'Spherical   / Cylindrical\n'
-            if (self.F_PW_C == 3):       txt += 'Cylindrical / Cylindrical\n'
-            if (self.F_VIRTUAL == 0):    txt += 'Real      / Real\n'
-            if (self.F_VIRTUAL == 1):    txt += 'Real      / Virtual\n'
-            if (self.F_VIRTUAL == 2):    txt += 'Virtual   / Real\n'
-            if (self.F_VIRTUAL == 3):    txt + 'Virtual   / Virtual\n'
-        if (self.F_RULING == 5) and (self.F_CRYSTAL == 0):
-            txt += 'Mechanically ruled grating. Polinomial Coefficients: \n'
-            txt += 'Zero order term Coefficient:  %f\n'%(self.RULING)
-            txt += 'First                         %f\n'%(self.RUL_A1)
-            txt += 'Second                        %f\n'%(self.RUL_A2)
-            txt += 'Third                         %f\n'%(self.RUL_A3)
-            txt += 'Fourth                        %f\n'%(self.RUL_A4)
-        if (self.F_RULING == 3) and (self.F_CRYSTAL == 0):
-            txt += 'Oriental fan type grating.\n'
-            txt += 'Fan pole angle from Y axis          %f\n'%(self.AZIM_FAN)
-            txt += '        distance from grating pole  %f\n'%(self.DIST_FAN)
-            txt += 'Coma correction factor              %f\n'%(self.COMA_FAC)
-            txt += 'Line density at grating pole        %f\n'%(self.RULING)
-
-    if self.F_REFRAC == 1:
-        if self.F_R_IND == 0:
-            txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
-            txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
-        elif self.F_R_IND == 1:
-            txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
-            txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
-        elif self.F_R_IND == 2:
-            txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
-            txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
-        elif self.F_R_IND == 3:
-            txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
-            txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
-
-        #txt += 'Relative Index of Refraction            %f\n'%(self.ALFA)
-
-    if self.F_REFLEC == 0:
-        txt += 'Reflectivity                            OFF\n'
-    else:
-        if self.F_REFL == 0:
-            txt += 'Reflectivity      ON     coefficients from: %s'%(self.FILE_REFL.strip().decode())
-        if self.F_REFL == 1:
-            txt += 'Reflectivity      ON     coefficients from TT:'
-        if self.F_REFL == 2:
-            txt += 'Multilayer        ON     coefficients and geometry from :  %s'%(self.FILE_REFL.strip().decode())
+        if ((self.F_GRATING == 0) and (self.F_CRYSTAL == 1)):
+            txt += 'Element type                            CRYSTAL\n'
+            txt += 'Lattice Spacing                         %f\n'%(self.D_SPACING)
+            txt += 'Bragg Reflection from  %s\n'%(self.FILE_REFL.strip().decode())
+            if self.F_MOSAIC == 1:
+                txt += 'MOSAIC Crystal selected                \n'
+                txt += 'Mosaic crystal spread (st. dev)  [DEG]  %f\n'%(self.SPREAD_MOS*180.0/numpy.pi)
+                txt += 'Mosaic crystal thickness [%s]           %f\n'%(self.THICKNESS,self.unit())
+            else:
+                if self.F_BRAGG_A == 1:
+                    txt += 'Asymmetric Cut angle  [DEG]             %f\n'%(self.A_BRAGG*180.0/numpy/pi)
+                if self.F_JOHANSSON == 1:
+                    txt += 'JOHANSSON Geometry selected            \n'
+                    txt += 'Johansson radius                         %f %s\n'(self.R_JOHANSSON,self.unit())
 
 
-    if self.F_REFLEC == 1: txt += 'Polarization dependence                 YES\n'
-    if self.F_REFLEC == 2: txt += 'Polarization dependence                 NO\n'
+        if self.F_GRATING == 1:
+            if self.FZP == 1:
+                txt += 'Element type                 Fresnel Zone Plate\n'
+            txt += 'Element type                            GRATING\n'
+            txt += 'Order choosen ( inside are < 0 )        *d\n'%(self.ORDER)
+            if self.F_CENTRAL == 1:
+                txt += 'Automatic Tuning                        YES\n'
+                if ((self.F_MONO == 0) and (self.F_CRYSTAL == 0)):
+                    txt += 'Mount                                   SEYA / TGM\n'
+                if ((self.F_MONO == 0) and (self.F_CRYSTAL == 1)):
+                    txt += 'Mount                                   BRAGG\n'
+                if ((self.F_MONO == 1) and (self.F_CRYSTAL == 0)):
+                    txt += 'Mount                                   ERG\n'
+                if ((self.F_MONO == 2) and (self.F_CRYSTAL == 0)):
+                    txt += 'Mount                                   Const. INCIDENCE\n'
+                if ((self.F_MONO == 3) and (self.F_CRYSTAL == 0)):
+                    txt += 'Mount                                   Const. DIFFRACTION\n'
+                if ((self.F_MONO == 4) and (self.F_CRYSTAL == 0)):
+                    txt += 'Mount                                   Const. BLAZE\n'
 
-    if self.FHIT_C == 0:
-        txt += 'Mirror dimensions                       UNLIMITED\n'
-    else:
-        if self.FSHAPE == 0:
-            txt += 'Invalid o.e. dimensions ( FSHAPE=0 )\n'
-        if self.FSHAPE == 1:
-            txt += 'Mirror dimensions ( rectangular ):\n'
-            txt += '          X plus: %f, X minus: %f, Y plus: %f, Y minus: %f\n'%\
-                   (self.RWIDX1,self.RWIDX2,self.RLEN1,self.RLEN2)
-        if self.FSHAPE == 2:
-            txt += 'Mirror dimensions ( elliptical ) :\n'
-            txt += '          Major Axis: %f, Minor axis: %f \n'%\
-                    (self.RWIDX2,self.RLEN2)
-        if self.FSHAPE == 3:
-            txt += 'Mirror dimensions ( elliptical + hole )\n'
-            txt += 'A. Outside border: %f, %f\n'%\
-                    (self.RWIDX2,self.RLEN2)
-            txt += 'A. Inner border: %f, %f\n'%\
-                    (self.RWIDX1,self.RLEN1)
+            if (self.F_RULING == 0) and (self.F_CRYSTAL == 0):
+                txt += 'Constant ruling [ lines/cm ]            %f\n'%(self.RULING)
+            if (self.F_RULING == 1) and (self.F_CRYSTAL == 0):
+                txt += 'Uniform ruling. At pole [ lines/cm ]    %f\n'%(self.RULING)
+
+            if (self.F_RULING == 2) and (self.F_CRYSTAL == 0):
+                txt += 'Holographic grating. Recording Wavelength:  %f\n'%(self.RULING)
+
+                txt += 'Input Slit Dist.'+T20+'Exit Slit Dist.'+T20+'Input Slit Angle',T60,'Exit Slit Angle\n'
+                txt += '%16.9g'%(self.HOLO_R1)+'%16.9g'%(self.HOLO_R2)+'%16.9g'%(self.HOLO_DEL)+'%16.9g'%(self.HOLO_GAM)+'\n'
+                txt += 'Input  Slit rotation angle  %f \n'%(self.HOLO_RT1*180.0/numpy.pi)
+                txt += 'Output Slit rotation angle  %f \n'%(self.HOLO_RT2*180.0/numpy.pi)
+                if (self.F_PW == 0):         txt += 'Spherical / Spherical\n'
+                if (self.F_PW == 1):         txt += 'Plane     / Spherical\n'
+                if (self.F_PW == 2):         txt += 'Spherical / Plane\n'
+                if (self.F_PW == 3):         txt += 'Plane     / Plane\n'
+                if (self.F_PW_C == 0):       txt += 'Spherical   / Spherical\n'
+                if (self.F_PW_C == 1):       txt += 'Cylindrical / Spherical\n'
+                if (self.F_PW_C == 2):       txt += 'Spherical   / Cylindrical\n'
+                if (self.F_PW_C == 3):       txt += 'Cylindrical / Cylindrical\n'
+                if (self.F_VIRTUAL == 0):    txt += 'Real      / Real\n'
+                if (self.F_VIRTUAL == 1):    txt += 'Real      / Virtual\n'
+                if (self.F_VIRTUAL == 2):    txt += 'Virtual   / Real\n'
+                if (self.F_VIRTUAL == 3):    txt + 'Virtual   / Virtual\n'
+            if (self.F_RULING == 5) and (self.F_CRYSTAL == 0):
+                txt += 'Mechanically ruled grating. Polinomial Coefficients: \n'
+                txt += 'Zero order term Coefficient:  %f\n'%(self.RULING)
+                txt += 'First                         %f\n'%(self.RUL_A1)
+                txt += 'Second                        %f\n'%(self.RUL_A2)
+                txt += 'Third                         %f\n'%(self.RUL_A3)
+                txt += 'Fourth                        %f\n'%(self.RUL_A4)
+            if (self.F_RULING == 3) and (self.F_CRYSTAL == 0):
+                txt += 'Oriental fan type grating.\n'
+                txt += 'Fan pole angle from Y axis          %f\n'%(self.AZIM_FAN)
+                txt += '        distance from grating pole  %f\n'%(self.DIST_FAN)
+                txt += 'Coma correction factor              %f\n'%(self.COMA_FAC)
+                txt += 'Line density at grating pole        %f\n'%(self.RULING)
+
+        if self.F_REFRAC == 1:
+            if self.F_R_IND == 0:
+                txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
+                txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
+            elif self.F_R_IND == 1:
+                txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
+                txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
+            elif self.F_R_IND == 2:
+                txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
+                txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
+            elif self.F_R_IND == 3:
+                txt += "Index of refraction in object space from file %s\n"%(self.FILE_R_IND_OBJ.strip().decode())
+                txt += "Index of refraction in image space from file %s\n"%(self.FILE_R_IND_IMA.strip().decode())
+
+            #txt += 'Relative Index of Refraction            %f\n'%(self.ALFA)
+
+        if self.F_REFLEC == 0:
+            txt += 'Reflectivity                            OFF\n'
+        else:
+            if self.F_REFL == 0:
+                txt += 'Reflectivity      ON     coefficients from: %s'%(self.FILE_REFL.strip().decode())
+            if self.F_REFL == 1:
+                txt += 'Reflectivity      ON     coefficients from TT:'
+            if self.F_REFL == 2:
+                txt += 'Multilayer        ON     coefficients and geometry from :  %s'%(self.FILE_REFL.strip().decode())
+
+
+        if self.F_REFLEC == 1: txt += 'Polarization dependence                 YES\n'
+        if self.F_REFLEC == 2: txt += 'Polarization dependence                 NO\n'
+
+        if self.FHIT_C == 0:
+            txt += 'Mirror dimensions                       UNLIMITED\n'
+        else:
+            if self.FSHAPE == 0:
+                txt += 'Invalid o.e. dimensions ( FSHAPE=0 )\n'
+            if self.FSHAPE == 1:
+                txt += 'Mirror dimensions ( rectangular ):\n'
+                txt += '          X plus: %f, X minus: %f, Y plus: %f, Y minus: %f\n'%\
+                       (self.RWIDX1,self.RWIDX2,self.RLEN1,self.RLEN2)
+            if self.FSHAPE == 2:
+                txt += 'Mirror dimensions ( elliptical ) :\n'
+                txt += '          Major Axis: %f, Minor axis: %f \n'%\
+                        (self.RWIDX2,self.RLEN2)
+            if self.FSHAPE == 3:
+                txt += 'Mirror dimensions ( elliptical + hole )\n'
+                txt += 'A. Outside border: %f, %f\n'%\
+                        (self.RWIDX2,self.RLEN2)
+                txt += 'A. Inner border: %f, %f\n'%\
+                        (self.RWIDX1,self.RLEN1)
 
     txt += TOPLIN
     txt += 'Central Axis parameters :\n'
@@ -1499,90 +1504,91 @@ class OE(ShadowLib.OE):
     txt += 'Incidence Angle                          %f\n'%(self.T_INCIDENCE*180.0/numpy.pi)
     txt += 'Reflection/Diffraction Angle             %f\n'%(self.T_REFLECTION*180.0/numpy.pi)
 
-    if self.F_EXT == 1:
-        txt += 'Mirror parameters                       EXTERNAL\n'
-    else:
-        if self.FMIRR != 10:
-            txt += 'Mirror parameters                       COMPUTED\n'
-            if self.F_DEFAULT == 1:
-                txt += 'Same configuration as Central Axis      YES\n'
-            else:
-                txt += 'Same configuration as Central Axis      NO\n'
-            txt += 'Objective focus at                       %f\n'%(self.SSOUR)
-            txt += 'Image focus at                           %f\n'%(self.SIMAG)
-            txt += 'Incidence angle                          %f\n'%(self.THETA*180.0/numpy.pi)
+    if self.F_REFRAC != 2:
+        if self.F_EXT == 1:
+            txt += 'Mirror parameters                       EXTERNAL\n'
+        else:
+            if self.FMIRR != 10:
+                txt += 'Mirror parameters                       COMPUTED\n'
+                if self.F_DEFAULT == 1:
+                    txt += 'Same configuration as Central Axis      YES\n'
+                else:
+                    txt += 'Same configuration as Central Axis      NO\n'
+                txt += 'Objective focus at                       %f\n'%(self.SSOUR)
+                txt += 'Image focus at                           %f\n'%(self.SIMAG)
+                txt += 'Incidence angle                          %f\n'%(self.THETA*180.0/numpy.pi)
 
 
-    txt += 'Parameters used follow:\n'
-    if self.FMIRR == 1:
-        txt += 'Spherical Radius  %f\n'%(self.RMIRR)
-    if self.FMIRR == 2:
-        ECCENT = numpy.sqrt(self.AXMAJ**2-self.AXMIN**2)/self.AXMAJ
-        txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
-        txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
-        txt += '   Semi-focal-length %f\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2))
-        txt += '   Eccentricity      %f\n'%(ECCENT)
-    if self.FMIRR == 3:
-        txt  += '   Major Radius (optical)     %f\n'%(self.R_MAJ+self.R_MIN)
-        txt  += '   Minor Radius               %f\n'%(self.R_MIN)
-    if self.FMIRR == 4:
-        txt += '   Parabola Param.  %f\n'%(self.PARAM)
-    if self.FMIRR == 5:
-        txt += '   Plane mirror \n'
-    if self.FMIRR == 6:
-        txt += '   Codling Slit\n'
-    if self.FMIRR == 7:
-        AFOCI = numpy.sqrt(self.AXMIN**2+self.AXMAJ**2)
-        ECCENT = AFOCI/numpy.abs(self.AXMAJ)
-        txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
-        txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
-        txt += '   Semi-focal-length %f\n'%(AFOCI)
-        txt += '   Eccentricity      %f\n'%(ECCENT)
-    if self.FMIRR == 8:
-        txt += '   Cone half-angle   %f\n'%(self.CONE_A*180.0/numpy.pi)
-    if self.FMIRR == 9:
-        txt += '   Polynomial Coeff file    %s\n'%(self.FILE_MIR.strip().decode())
+        txt += 'Parameters used follow:\n'
+        if self.FMIRR == 1:
+            txt += 'Spherical Radius  %f\n'%(self.RMIRR)
+        if self.FMIRR == 2:
+            ECCENT = numpy.sqrt(self.AXMAJ**2-self.AXMIN**2)/self.AXMAJ
+            txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
+            txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
+            txt += '   Semi-focal-length %f\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2))
+            txt += '   Eccentricity      %f\n'%(ECCENT)
+        if self.FMIRR == 3:
+            txt  += '   Major Radius (optical)     %f\n'%(self.R_MAJ+self.R_MIN)
+            txt  += '   Minor Radius               %f\n'%(self.R_MIN)
+        if self.FMIRR == 4:
+            txt += '   Parabola Param.  %f\n'%(self.PARAM)
+        if self.FMIRR == 5:
+            txt += '   Plane mirror \n'
+        if self.FMIRR == 6:
+            txt += '   Codling Slit\n'
+        if self.FMIRR == 7:
+            AFOCI = numpy.sqrt(self.AXMIN**2+self.AXMAJ**2)
+            ECCENT = AFOCI/numpy.abs(self.AXMAJ)
+            txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
+            txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
+            txt += '   Semi-focal-length %f\n'%(AFOCI)
+            txt += '   Eccentricity      %f\n'%(ECCENT)
+        if self.FMIRR == 8:
+            txt += '   Cone half-angle   %f\n'%(self.CONE_A*180.0/numpy.pi)
+        if self.FMIRR == 9:
+            txt += '   Polynomial Coeff file    %s\n'%(self.FILE_MIR.strip().decode())
 
-    if self.FSTAT == 0:
-        txt += 'Source of this O.E. moved               NO\n'
-    else:
-        txt += 'Source of this O.E. moved               YES\n'
-        txt += 'In SOURCE reference frame: \n'
-        txt += 'Source Movement X:  %f\n'%(self.X_SOUR)
-        txt += '                Y:  %f\n'%(self.Y_SOUR)
-        txt += '                Z:  %f\n'%(self.Z_SOUR)
-        txt += 'Source rot at X:    %f\n'%(self.X_SOUR_ROT*180.0/numpy.pi)
-        txt += '              Y:    %f\n'%(self.Y_SOUR_ROT*180.0/numpy.pi)
-        txt += '              Z:    %f\n'%(self.Z_SOUR_ROT*180.0/numpy.pi)
-        txt += 'In MIRROR reference frame: \n'
-        txt += 'Source distance     %f\n'%(self.RDSOUR)
-        txt += '       rotation     %f\n'%(self.ALPHA_S*180.0/numpy.pi)
-        txt += 'Incidence angle     %f\n'%(self.RTHETA*180.0/numpy.pi)
-        txt += 'Source offset X:    %f\n'%(self.OFF_SOUX)
-        txt += '              Y:    %f\n'%(self.OFF_SOUY)
-        txt += '              Z:    %f\n'%(self.OFF_SOUZ)
+        if self.FSTAT == 0:
+            txt += 'Source of this O.E. moved               NO\n'
+        else:
+            txt += 'Source of this O.E. moved               YES\n'
+            txt += 'In SOURCE reference frame: \n'
+            txt += 'Source Movement X:  %f\n'%(self.X_SOUR)
+            txt += '                Y:  %f\n'%(self.Y_SOUR)
+            txt += '                Z:  %f\n'%(self.Z_SOUR)
+            txt += 'Source rot at X:    %f\n'%(self.X_SOUR_ROT*180.0/numpy.pi)
+            txt += '              Y:    %f\n'%(self.Y_SOUR_ROT*180.0/numpy.pi)
+            txt += '              Z:    %f\n'%(self.Z_SOUR_ROT*180.0/numpy.pi)
+            txt += 'In MIRROR reference frame: \n'
+            txt += 'Source distance     %f\n'%(self.RDSOUR)
+            txt += '       rotation     %f\n'%(self.ALPHA_S*180.0/numpy.pi)
+            txt += 'Incidence angle     %f\n'%(self.RTHETA*180.0/numpy.pi)
+            txt += 'Source offset X:    %f\n'%(self.OFF_SOUX)
+            txt += '              Y:    %f\n'%(self.OFF_SOUY)
+            txt += '              Z:    %f\n'%(self.OFF_SOUZ)
 
-    if self.F_MOVE == 0:
-        txt += 'Mirror at pole position ( no mov. )     YES\n'
-    else:
-        txt += 'Mirror moved from pole. Parameters :\n'
-        txt += 'Displacement along X:    %f\n'%(self.OFFX)
-        txt += '                   Y:    %f\n'%(self.OFFY)
-        txt += '                   Z:    %f\n'%(self.OFFZ)
-        txt += 'Rotation around X:    %f\n'%(self.X_ROT*180.0/numpy.pi)
-        txt += '                Y:    %f\n'%(self.Y_ROT*180.0/numpy.pi)
-        txt += '                Z:    %f\n'%(self.Z_ROT*180.0/numpy.pi)
-    if ( (self.FMIRR == 1) or (self.FMIRR == 2) or (self.FMIRR == 4) or\
-        (self.FMIRR == 5) or (self.FMIRR == 7) or (self.FMIRR == 8) or\
-        (self.FMIRR == 9) or (self.FMIRR == 10) ):
-        txt += '\n'+TOPLIN
-        txt += 'OE surface in form of conic equation: \n'
-        txt += '    c[1]*X^2 + c[2]*Y^2 + c[3]*Z^2 + \n'
-        txt += '    c[4]*X*Y + c[5]*Y*Z + c[6]*X*Z  + \n'
-        txt += '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  \n'
-        txt += ' with \n'
-        for i in range(10):
-            txt += '  c[%d]= %f\n'%(i,self.CCC[i])
+        if self.F_MOVE == 0:
+            txt += 'Mirror at pole position ( no mov. )     YES\n'
+        else:
+            txt += 'Mirror moved from pole. Parameters :\n'
+            txt += 'Displacement along X:    %f\n'%(self.OFFX)
+            txt += '                   Y:    %f\n'%(self.OFFY)
+            txt += '                   Z:    %f\n'%(self.OFFZ)
+            txt += 'Rotation around X:    %f\n'%(self.X_ROT*180.0/numpy.pi)
+            txt += '                Y:    %f\n'%(self.Y_ROT*180.0/numpy.pi)
+            txt += '                Z:    %f\n'%(self.Z_ROT*180.0/numpy.pi)
+        if ( (self.FMIRR == 1) or (self.FMIRR == 2) or (self.FMIRR == 4) or\
+            (self.FMIRR == 5) or (self.FMIRR == 7) or (self.FMIRR == 8) or\
+            (self.FMIRR == 9) or (self.FMIRR == 10) ):
+            txt += '\n'+TOPLIN
+            txt += 'OE surface in form of conic equation: \n'
+            txt += '    c[1]*X^2 + c[2]*Y^2 + c[3]*Z^2 + \n'
+            txt += '    c[4]*X*Y + c[5]*Y*Z + c[6]*X*Z  + \n'
+            txt += '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  \n'
+            txt += ' with \n'
+            for i in range(10):
+                txt += '  c[%d]= %f\n'%(i,self.CCC[i])
 
     txt += TOPLIN
     txt += '***************                 E N D                  ***************\n'
@@ -1634,7 +1640,7 @@ class CompoundOE():
     txt += "%12s %12s %14s %14s %14s %14s \n"%('OE','TYPE','p['+self.unit()+']','q['+self.unit()+']','src-oe','src-screen')
 
 
-    tot=0.0
+    tot = 0.0
     alphatot=0.0
     deflection_H = 0.0
     deflection_V = 0.0
@@ -1705,15 +1711,23 @@ class CompoundOE():
               line = '%10d %10s %10.2f %10.2f %10.2f \n'%(i+1,oeshape,pp,qq,pp/qq)
            txt2 += line
 
+
+        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
+            T_INCIDENCE  = oe.T_INCIDENCE  * numpi.pi / 180.0
+            T_REFLECTION = oe.T_REFLECTION * numpi.pi / 180.0
+            ALPHA        = oe.ALPHA        * numpi.pi / 180.0
+        else:
+            T_INCIDENCE  = oe.T_INCIDENCE
+            T_REFLECTION = oe.T_REFLECTION
+            ALPHA        = oe.ALPHA
+
+
         # 3) total deflection
 
-        alphatot = alphatot + oe.ALPHA
-        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg
-            torad =  numpy.pi/180.0
-        else:
-            torad = 1.0
-        deflection_H = deflection_H +  numpy.sin(alphatot*torad) *  ( (pihalf-oe.T_INCIDENCE*torad) + (pihalf-oe.T_REFLECTION*torad) )
-        deflection_V = deflection_V +  numpy.cos(alphatot*torad) *  ( (pihalf-oe.T_INCIDENCE*torad) + (pihalf-oe.T_REFLECTION*torad) )
+        alphatot = alphatot + ALPHA
+
+        deflection_H = deflection_H +  numpy.sin(alphatot) *  ( (pihalf-T_INCIDENCE) + (pihalf-T_REFLECTION) )
+        deflection_V = deflection_V +  numpy.cos(alphatot) *  ( (pihalf-T_INCIDENCE) + (pihalf-T_REFLECTION) )
 
     txt += txt1
     txt += '\n'
@@ -1725,11 +1739,11 @@ class CompoundOE():
 
 
     txt += '\n'
-    line = 'Sum of Alphas             %f \n'%(alphatot)
+    line = 'Sum of Alphas [deg]:         %f \n'%(alphatot*180/numpy.pi)
     txt += line
-    line = 'Sum of Alphas Mod 180 deg %f \n'%( numpy.mod(alphatot*torad*180/numpy.pi,180))
+    line = 'Sum of Alphas Mod 180 [deg]: %f \n'%( numpy.mod(alphatot*180/numpy.pi,180))
     txt += line
-    line = 'Sum of Alphas Mod 360 deg %f \n'%( numpy.mod(alphatot*torad*180/numpy.pi,360))
+    line = 'Sum of Alphas Mod 360 [deg]: %f \n'%( numpy.mod(alphatot*180/numpy.pi,360))
     txt += line
 
     txt += '\n'
@@ -1737,9 +1751,9 @@ class CompoundOE():
     if oe.IDUMMY != 1:
         txt += "**Warning: oe.IDUMMY = %d**\n"%(oe.IDUMMY)
         txt += "**         SHADOW did not run, therefore autosetting angles are not considered**\n\n"
-    line = 'Total deflection angle H = %12.6f rad = %9.3f deg\n'%(deflection_H*torad,deflection_H*torad*180/numpy.pi)
+    line = 'Total deflection angle H = %12.6f rad = %9.3f deg\n'%(deflection_H,deflection_H*180/numpy.pi)
     txt += line
-    line = 'Total deflection angle V = %12.6f rad = %9.3f deg \n'%(deflection_V*torad,deflection_V*torad*180/numpy.pi)
+    line = 'Total deflection angle V = %12.6f rad = %9.3f deg \n'%(deflection_V,deflection_V*180/numpy.pi)
     txt += line
 
     if file != '':
@@ -1792,29 +1806,36 @@ class CompoundOE():
         txt += ' \n'
         txt += 'Optical Element # %d      System Number: \n'%(J)
 
-        if oe.F_CRYSTAL == 1:
-            TEXT = "BRAGG"
-        elif oe.F_GRATING == 1:
-            TEXT = "GRATING"
+        if oe.F_REFRAC == 2:
+            TEXT = "EMPTY ELEMENT"
         else:
-            TEXT = "MIRROR"
+            if oe.F_REFRAC == 0:
+                TEXT = "REFLECTOR"
+            else:
+                TEXT = "REFRACTOR"
+            if oe.F_CRYSTAL == 1:
+                TEXT += "-CRYSTAL"
+            elif oe.F_GRATING == 1:
+                TEXT += "-GRATING"
+            else:
+                TEXT += "-MIRROR"
 
-        TEXT += "    " + TYPE1[str(oe.FMIRR)]
+            TEXT += "    " + TYPE1[str(oe.FMIRR)]
 
-        if oe.FHIT_C == 1:
-            TEXT += "    DIM CHECK"
-        else:
-            TEXT += "    UNLIMITED"
+            if oe.FHIT_C == 1:
+                TEXT += "    DIMENSIONS CHECKED"
+            else:
+                TEXT += "    UNLIMITED"
 
-        if oe.F_EXT == 1:
-            TEXT += "    EXTERNAL"
-        else:
-            TEXT += "    COMPUTED"
+            if oe.F_EXT == 1:
+                TEXT += "    CURVATURE: EXTERNAL"
+            else:
+                TEXT += "    CURVATURE: COMPUTED"
 
-        if oe.F_REFLEC == 0:
-            TEXT += "    REFLEC. OFF"
-        else:
-            TEXT += "    REFLEC. ON"
+            if oe.F_REFLEC == 0:
+                TEXT += "    REFLECTIVITY OFF"
+            else:
+                TEXT += "    REFLECTIVITY ON"
 
         TODEG = 180.0/numpy.pi
 

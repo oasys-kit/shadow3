@@ -2134,9 +2134,12 @@ def test_make_script_compoundOE():
                  dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
                  ) # surface_error_files=["waviness.dat","waviness.dat"])
 
-    # trace
-    #beam.traceCompoundOE(kb,write_start_files=1,write_end_files=1,write_star_files=1)
     make_python_script_from_list([[[[src]]],kb,[kb]],script_file="tmp.py")
+
+    # trace
+    beam.traceCompoundOE(kb,write_start_files=1,write_end_files=0,write_star_files=0)
+    txt = kb.info()
+    print(txt)
 
 def test_focnew():
     test_make_kb()
