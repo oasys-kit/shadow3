@@ -189,7 +189,8 @@
  					    crystal planes and surface.
  spread_mos	=  0.400000000000000 - f_mosaic=1: mosaic spread FWHM
  				       (degrees).
- thickness	=  0.100000000000000 - f_mosaic=1: crystal thickness cm.
+ thickness	=  0.100000000000000 - f_mosaic=1 or (f_crystal=1 AND f_refrac=1):
+                                   crystal thickness in user length units.
  r_johansson	=  0.000000000000000E+00 - f_ext=1: johansson radius.
  y_rot	=  0.0000000000000000E+00 - f_move=1: rotation about Y axis
  				    (degrees, +CW).

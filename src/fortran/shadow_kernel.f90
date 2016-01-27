@@ -1013,7 +1013,7 @@ Contains
           QS_MOSAIC=(RN*R_STRUCT)**2*R_LAM0**3 &
                /SIN(2*(ASIN(SIN_brg)))
           QP_MOSAIC = QS_MOSAIC*(COS(2.0D0*GRAZE))**2
-          A_MOSAIC  = THICKNESS*ABSORP/SIN_Q_ANG
+          A_MOSAIC  = THICKNESS*user_units_to_cm*ABSORP/SIN_Q_ANG
           EP        = abs(ASIN(SIN_brg) - THETA_B)
           OMEGA =(DEXP(-EP**2/2.0D0/SPREAD_MOS**2)) &
                /SQRT(TWOPI)/SPREAD_MOS
@@ -1042,9 +1042,10 @@ Contains
           R_P     = SQRT(RP_MOSAIC)
           ! *
           ! * Mean value of depht into the crystal. To be used in MIRROR
+          ! * must be passed in user units (Q{SP}_MOSAIC ls LENGTH**-1)
           ! *
-          DEPHT_MFP_S = 1.0D0 /OMEGA /QS_MOSAIC
-          DEPHT_MFP_P = 1.0D0 /OMEGA /QP_MOSAIC
+          DEPHT_MFP_S = 1.0D0 / OMEGA / QS_MOSAIC / user_units_to_cm
+          DEPHT_MFP_P = 1.0D0 / OMEGA / QP_MOSAIC / user_units_to_cm
           ! *
           ! *No phase change are introduced by now. (The formulae of reflectivity 
           ! *are already intensity, and no complex coefficient are considered).
@@ -1096,8 +1097,8 @@ Contains
              if (f_refrac.eq.0) gamma_h = - gamma_h
              cry_b = gamma_0/gamma_h
              
-             cry_t = 0.5D0*(-1.D0/abs(gamma_0) +1.D0/abs(gamma_h))*thickness 
-             cry_a = pi/r_lam0*(thickness/gamma_0)
+             cry_t = 0.5D0*(-1.D0/abs(gamma_0) +1.D0/abs(gamma_h))*thickness*user_units_to_cm
+             cry_a = pi/r_lam0*(thickness*user_units_to_cm/gamma_0)
              cry_alpha = -((r_lam0/d_spacing)**2+2D0*r_lam0* &
                   sin_brg/d_spacing)
              
@@ -1118,9 +1119,9 @@ Contains
              br_x2 = (-1.0d0*cry_z-ctemp)/psi_hbar
              br_delta1 = 0.5d0*(psi_0-cry_z+ctemp)
              br_delta2 = 0.5d0*(psi_0-cry_z-ctemp)
-             br_c1 = -1.d0*ci*thickness*twopi/(-1.0D0*abs(gamma_0))/r_lam0* &
+             br_c1 = -1.d0*ci*thickness*user_units_to_cm*twopi/(-1.0D0*abs(gamma_0))/r_lam0* &
                   br_delta1
-             br_c2 = -1.d0*ci*thickness*twopi/(-1.0D0*abs(gamma_0))/r_lam0* &
+             br_c2 = -1.d0*ci*thickness*user_units_to_cm*twopi/(-1.0D0*abs(gamma_0))/r_lam0* &
                   br_delta2
              ! C
              ! C a very big exponential produces numerical overflow. If so, the value
@@ -1156,9 +1157,9 @@ Contains
              br_x2 = (-1.0d0*cry_z-ctemp)/(psi_hbar*c_ppol)
              br_delta1 = 0.5d0*(psi_0-cry_z+ctemp)
              br_delta2 = 0.5d0*(psi_0-cry_z-ctemp)
-             br_c1 = -1.0d0*ci*thickness*twopi/(-1.0d0*abs(gamma_0))/r_lam0* &
+             br_c1 = -1.0d0*ci*thickness*user_units_to_cm*twopi/(-1.0d0*abs(gamma_0))/r_lam0* &
                   br_delta1
-             br_c2 = -1.0d0*ci*thickness*twopi/(-1.0d0*abs(gamma_0))/r_lam0* &
+             br_c2 = -1.0d0*ci*thickness*user_units_to_cm*twopi/(-1.0d0*abs(gamma_0))/r_lam0* &
                   br_delta2
              ! C
              ! C a very big exponential produces numerical overflow. If so the value
@@ -4563,7 +4564,7 @@ IF (K_WHAT.EQ.0) THEN
         open(unit=iunit,FILE=FILE_REFL,status='OLD',IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-            print *,"Error: MIRROR: File not found: "//trim(file_refl)
+            print *,"MIRROR: Error: File not found: "//trim(file_refl)
             return 
             ! stop 'File not found. Aborted.'
         end if
@@ -4572,7 +4573,7 @@ IF (K_WHAT.EQ.0) THEN
             print *,'REFLEC: Error: In file: '//trim(file_refl)
             print *,'               Maximum number of energy points is',dimMLenergy
             print *,'               Using number of energy points',NIN
-            print *,'Error: MIRROR: Error reading file. Aborted.'
+            print *,'MIRROR: Error reading file. Aborted.'
             return
         END IF 
         READ(iunit,*) (ENER(I), I = 1, NIN)
@@ -6630,6 +6631,14 @@ integer(kind=ski) :: ipsflag,ierr
 
 
 WRITE(6,*) 'Call to SETSOUR'
+
+! we (temporary) pass the user units to shadow in the OE variable DUMMY that is
+! copied here to user_units_to_cm (initialized in shadow_globaldefinitions.f90)
+
+user_units_to_cm = DUMMY
+if (user_units_to_cm .le. 0) then
+    print*,'SETSOUR: Error: user_units_to_cm <=0. Reset to 1.0 (using cm)'
+end if
 
 ! srio@esrf.eu 2012-06-06
 ! debug (noticed by N. Canestrari) : 
@@ -8707,22 +8716,23 @@ end if
 	    DEPTH_MFP = DEPTH_MFP_P
 	   END IF
            ! very small, very large or "normal"
-           IF (DEPTH_MFP.LT.1.0D-10) THEN   ! no penetration
+           IF (DEPTH_MFP.LT.(user_units_to_cm*1.0D-10)) THEN   ! no penetration
               DEPTH_INC = 0.0d0
-           ELSE IF (DEPTH_MFP.GT. 10.0*thickness/sin_val) THEN  ! uniform penetration
+           ELSE IF (DEPTH_MFP.GT. 10.0*thickness*user_units_to_cm/sin_val) THEN  ! uniform penetration
 	      depth_inc = WRAN (MOSAIC_SEED)
-              depth_inc = depth_inc*thickness/sin_val 
+              depth_inc = depth_inc*thickness*user_units_to_cm/sin_val 
            ELSE
              ARG = THICKNESS/DEPTH_MFP/SIN_VAL
              tmp = 0.0d0
              CALL MFP(tmp,MOSAIC_SEED,i_two)
              CALL MFP(ARG,MOSAIC_SEED,i_one)
              CALL MFP(DEPTH_INC,MOSAIC_SEED,ione)
+tmptmp1 = DEPTH_INC
              DEPTH_INC = DEPTH_INC*DEPTH_MFP
            ENDIF
 
-           if (depth_inc .gt. thickness/sin_val) then 
-             print *,'MIRROR: Warning: Overestimated penetration',depth_inc,thickness/sin_val
+           if (depth_inc .gt. thickness*user_units_to_cm/sin_val) then 
+             print *,'MIRROR: Warning: Overestimated penetration',depth_inc,thickness*user_units_to_cm/sin_val
            end if
 
            if (depth_inc .gt. 0.0d0) then 
@@ -9871,16 +9881,16 @@ IF (F_GRATING.EQ.0) THEN  !no-grating
         WRITE(6,*) 'File containing crystal parameters ?'
         READ    (5,111)    FILE_REFL
         F_MOSAIC = IYES ('Is it a mosaic crystal [ Y/N ] ? ')
-        if (f_mosaic.eq.1.or.f_refrac.eq.1) THICKNESS = RNUMBER ('What is the crystal thickness [cm] ? ')
+        if (f_mosaic.eq.1.or.f_refrac.eq.1) THICKNESS = RNUMBER ('What is the crystal thickness [user units] ? ')
         IF (F_MOSAIC.EQ.1) THEN ! mosaic=yes
             IF (IVERB.EQ.1) THEN 
                 WRITE(6,*) 'I assume that the mosaic crystal small blocks follow a gaussian'
                 WRITE(6,*) 'distribution of a given FWHM spread.This spread must be much'
                 WRITE(6,*) 'larger than the rock curve width. I suposse that the distance'
                 WRITE(6,*) 'between intercepts on the mosaic surface will be larger enough'
-                WRITE(6,*) 'than the small mosaic block size.I use a random seed to gene-'
+                WRITE(6,*) 'than the small mosaic block size. I use a random seed to gene-'
                 WRITE(6,*) 'rate the gaussian distribution of the blocks around the sur-'
-                WRITE(6,*) 'face normal.I also need the thickness of the whole crystal'
+                WRITE(6,*) 'face normal. I also need the thickness of the whole crystal'
                 WRITE(6,*) '(faces must be parallel) for the reflectivity calculation.'
                 WRITE(6,*) 'Mosaic crystal force us to use cm as unit.'
             END IF

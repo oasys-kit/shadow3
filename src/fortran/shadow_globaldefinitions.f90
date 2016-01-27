@@ -69,4 +69,9 @@ module shadow_globaldefinitions
     ! for debugging purposes, set this to 1 to get a verbose output
     integer(kind=ski), public :: shadow3_verbose = 0
 
+    ! length units: note that this will be overwritten by source and oe DUMMY variable
+    !  using m: user_units_to_cm=100, using cm: user_units_to_cm=1, usning mm: user_units_to_cm=0.1
+    !  default is cm
+    real(kind=skr), public :: user_units_to_cm = 1.0
+
 end module shadow_globaldefinitions
