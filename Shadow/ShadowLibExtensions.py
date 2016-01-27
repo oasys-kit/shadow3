@@ -1293,6 +1293,26 @@ class OE(ShadowLib.OE):
 
         return new_oe
 
+  def screeninfo(self):
+        txt = ""
+        if self.F_SCREEN == 1:
+            txt += '  SCREENS:     %d defined \n'%self.N_SCREEN
+            for i in range(self.N_SCREEN):
+                 txt += '    SCREEN %d : \n'%(i+1)
+                 if self.I_SCREEN[i] == 0:
+                     txt += '      AFTER o.e.       at %f \n'%(self.SL_DIS[i])
+                 else:
+                     txt += '      BEFORE o.e.      at %f \n'%self.SL_DIS[i]
+                 if self.I_SLIT[i] != 0:
+                     txt += "      Type:  %s        %s  \n"%(TSLIT[self.I_STOP[i]],TSLITSHAPE[self.K_SLIT[i]])
+                     txt += "      Dimensions: X: %f, Z: %f  \n"%(self.RX_SLIT[i],self.RZ_SLIT[i])
+                     txt += "      Center at:  X: %f, Z: %f  \n"%(self.CX_SLIT[i],self.CZ_SLIT[i])
+                 if self.I_ABS[i] != 0:
+                     txt += "      Attenuator thickness:  %f  \n"%(self.THICK[i])
+                     txt += "      File with optical constants: %s\n"%(self.FILE_ABS[i].strip().decode())
+
+        return txt
+
   def mirinfo(self, title=None):
     '''
     mimics SHADOW mirinfo postprocessor. Returns a text array.
@@ -1503,6 +1523,8 @@ class OE(ShadowLib.OE):
     txt += 'Image  Plane                             %f\n'%(self.T_IMAGE)
     txt += 'Incidence Angle                          %f\n'%(self.T_INCIDENCE*180.0/numpy.pi)
     txt += 'Reflection/Diffraction Angle             %f\n'%(self.T_REFLECTION*180.0/numpy.pi)
+
+    txt += self.screeninfo()
 
     if self.F_REFRAC != 2:
         if self.F_EXT == 1:
@@ -1863,24 +1885,7 @@ class CompoundOE():
         txt +=  '  Image Plane        %f %s\n'   %(oe.T_IMAGE,oe.unit())
         txt += 	BREAK
 
-        #TODO: add dimensions of slits
-        #         IF (p2%F_SCREEN.EQ.1) THEN
-        if oe.F_SCREEN == 1:
-            txt += '  SCREENS:     %d defined \n'%oe.N_SCREEN
-            for i in range(oe.N_SCREEN):
-                 txt += '    SCREEN %d : \n'%(i+1)
-                 if oe.I_SCREEN[i] == 0:
-                     txt += '      AFTER o.e.       at %f \n'%(oe.SL_DIS[i])
-                 else:
-                     txt += '      BEFORE o.e.      at %f \n'%oe.SL_DIS[i]
-                 if oe.I_SLIT[i] != 0:
-                     txt += "      Type:  %s        %s  \n"%(TSLIT[oe.I_STOP[i]],TSLITSHAPE[oe.K_SLIT[i]])
-                     txt += "      Dimensions: X: %f, Z: %f  \n"%(oe.RX_SLIT[i],oe.RZ_SLIT[i])
-                     txt += "      Center at:  X: %f, Z: %f  \n"%(oe.CX_SLIT[i],oe.CZ_SLIT[i])
-                 if oe.I_ABS[i] != 0:
-                     txt += "      Attenuator thickness:  %f  \n"%(oe.THICK[i])
-                     txt += "      File with optical constants: %s\n"%(oe.FILE_ABS[i].strip().decode())
-
+        txt += oe.screeninfo()
 
     txt += "\n\n                          OPTICAL SYSTEM CONFIGURATION\n"
     txt += "                           Laboratory Reference Frame.\n"

@@ -1109,7 +1109,7 @@ End Subroutine rotvector
 ! C distribution law. We initialize the subroutine (flag negative) 
 ! C calling it with ARG the minimum and the maximun of the interval
 ! C in which we want the result. 
-! C Iflag=-1 initializes the minimum and iflag=-2 the maximum
+! C Iflag=-2 initializes the minimum and iflag=-1 the maximum
 ! C After that, we call again the subroutine with a non negative 
 ! C flag to have the result.
 ! C

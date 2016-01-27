@@ -4412,8 +4412,6 @@ End Subroutine read_axis
 SUBROUTINE REFLEC (PIN,WNUM,SIN_REF,COS_POLE,R_P,R_S,PHASEP,PHASES,ABSOR,K_WHAT)
 
 implicit none
-!IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-!IMPLICIT INTEGER(kind=ski)        (F,I-N)
 
 real(kind=skr),dimension(3),intent(in)   :: pin
 real(kind=skr),             intent(in)   :: wnum,sin_ref,cos_pole
@@ -4444,14 +4442,6 @@ real(kind=skr)   :: qmin, qmax, qstep, ratio, phot_ener, ratio1, ratio2
 real(kind=skr)   :: rho, rs1, rs2, tfact, tfilm, wnum0, xin, xlam, yin, gamma1
 integer(kind=ski):: i,j,nrefl,ierr,ier,index1,iunit
 integer(kind=ski):: ngx, ngy, ntx, nty, nin, npair
-
-!dimension	tspl (2,101,2,101),tx(101),ty(101),pds(6)
-!dimension	gspl (2,101,2,101),gx(101),gy(101)
-!external	dbcevl
-
-! srio danger commented these commons, put in shadow_variables...
-!        common /aaa/ 	t_oe,gratio
-!        common /bbb/ 	delo,beto,dele,bete,dels,bets
 
 ! C
 ! C SAVE the variables that need to be saved across subsequent invocations
@@ -4506,7 +4496,7 @@ IF (K_WHAT.EQ.0) THEN
         OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
                       FORM='UNFORMATTED', IOSTAT=iErr)
         IF (ierr /= 0 ) then
-             PRINT *,"Error: CRYSTAL: File not found: "//TRIM(file_refl)
+             PRINT *,"Error: REFLEC: File not found: "//TRIM(file_refl)
              RETURN 
              ! STOP ' Fatal error: aborted'
         END IF
@@ -4520,6 +4510,7 @@ IF (K_WHAT.EQ.0) THEN
         IF (iErr.NE.0) GOTO 222
         CLOSE (23)
         TFILM = ABSOR
+print*,">>>>>>>>>>>>>>>>>>>>>> STORED TFILM 1 : ",TFILM
         RETURN
 ! this part is for new ascii format
 222     continue
@@ -4528,7 +4519,7 @@ IF (K_WHAT.EQ.0) THEN
                       FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         IF (ierr /= 0 ) then
-             PRINT *,"Error: CRYSTAL: File not found: "//TRIM(file_refl)
+             PRINT *,"Error: REFLEC: File not found: "//TRIM(file_refl)
              return 
              ! STOP ' Fatal error: aborted'
         END IF
@@ -4538,6 +4529,7 @@ IF (K_WHAT.EQ.0) THEN
         READ (23,*) (ZF2(I),I=1,NREFL)
         CLOSE (23)
         TFILM = ABSOR
+print*,">>>>>>>>>>>>>>>>>>>>>> STORED TFILM 1 : ",TFILM
         RETURN
     ELSE IF (F_REFL.EQ.2) THEN  !multilayer
         ! C
@@ -5978,251 +5970,237 @@ End Subroutine rot_sour
 !C ---
 SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
 
-	IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-	IMPLICIT INTEGER(kind=ski)        (F,I-N)
+        ! IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+        ! IMPLICIT INTEGER(kind=ski)        (F,I-N)
+        implicit none
 
         real(kind=skr),dimension(:,:),intent(in out):: ray,ap_in,ph_in
 
         character(len=sklen)        :: locfile,file_tmp
-     	!CHARACTER*12	LOCFILE
-	!CHARACTER*80	FILE_TMP
 
         real(kind=skr),dimension(12,NPOINT) :: out,ph_out,ap_out
-	!DIMENSION 	RAY(12,N_DIM),OUT(12,N_DIM),PH_IN(3,N_DIM), &
-     	!		PH_OUT(3,N_DIM),AP_IN(3,N_DIM),AP_OUT(3,N_DIM)
-	!DIMENSION 	V_OUT(3),P_IN(3),P_SCREEN(3),A_VEC(3),AP_VEC(3)
-     	!DIMENSION 	SCR_CEN(3),UX_SC(3),WY_SC(3),VZ_SC(3)
         real(kind=skr),dimension(3)::v_out,p_in,p_screen,a_vec,ap_vec
         real(kind=skr),dimension(3)::scr_cen,ux_sc,wy_sc,vz_sc
         ! added srio
         real(kind=skr),dimension(3):: ppout
-!C 
-!C  Save some local large arrays to avoid overflowing stack.
-!C 
-!       srio danger!!!
-!	SAVE		OUT, PH_OUT, AP_OUT
+        !C 
+        !C  Save some local large arrays to avoid overflowing stack.
+        !C 
+        !       srio danger!!!
+        !      SAVE            OUT, PH_OUT, AP_OUT
+        integer(kind=ski)  :: i_what, i_element, i, icheck, iflag, j, kk, ierr, ftemp, kounts
+        real(kind=skr)     :: tmp, a_1, a_2, a_3, above, ap_1, ap_2, ap_3, atten, axlar
+        real(kind=skr)     :: axsma, below, dist, pole, px, pz, test, u_1, u_2, v_1, v_2
+        real(kind=skr)     :: dum, ux_1, vv_1, vv_2, vv_3, xcntr, zcntr
+        real(kind=skr)     :: vz_1, wy_1
 
-     	WRITE(6,*)'Call to SCREEN'
+        WRITE(6,*)'Call to SCREEN'
 
-     	IF (I_ABS(I_WHAT).EQ.1) THEN
-     	  FTEMP	=  F_REFL
-     	  F_REFL = 0
-	  FILE_TMP = FILE_REFL
-     	  FILE_REFL = FILE_ABS(I_WHAT)
-     	  !srio CALL	REFLEC (DUM,DUM,DUM,DUM,DUM,DUM,DUM,DUM, &
-     	  CALL	REFLEC (ppout,DUM,DUM,DUM,DUM,DUM,DUM,DUM, &
-    			THICK(I_WHAT),izero)
-     	END IF
-! ** Set up the correct versors.
-	KK = 0
-	IF (I_SCREEN(I_WHAT).EQ.0)THEN
-     		KK = 1
-     		POLE =   SL_DIS(I_WHAT)
-     	ELSE IF (I_SCREEN(I_WHAT).EQ.1) THEN
-     		KK = 2
-     		POLE = - SL_DIS(I_WHAT)
-     	ELSE
-     		CALL LEAVE ('SCREEN', &
-     			'	Wrong values for screen position.',izero)
-     	END IF
+        IF (I_ABS(I_WHAT).EQ.1) THEN
+          FTEMP = F_REFL
+          F_REFL = 0
+          FILE_TMP = FILE_REFL
+          FILE_REFL = FILE_ABS(I_WHAT)
+          tmp = THICK(I_WHAT) * user_units_to_cm
+          CALL REFLEC (ppout,DUM,DUM,DUM,DUM,DUM,DUM,DUM,tmp,izero)
+       END IF
+       ! ** Set up the correct versors.
+       KK = 0
+       IF (I_SCREEN(I_WHAT).EQ.0)THEN
+           KK = 1
+           POLE = SL_DIS(I_WHAT)
+       ELSE IF (I_SCREEN(I_WHAT).EQ.1) THEN
+           KK = 2
+           POLE = - SL_DIS(I_WHAT)
+       ELSE
+           CALL LEAVE ('SCREEN','      Wrong values for screen position.',izero)
+       END IF
 
-     	DO  10 I=1,3
-     	 UX_SC(I) =   UX_SCR(I,KK)
-     	 WY_SC(I) =   WY_SCR(I,KK)
-     	 VZ_SC(I) =   VZ_SCR(I,KK)
-10     	CONTINUE
+       DO  10 I=1,3
+           UX_SC(I) = UX_SCR(I,KK)
+           WY_SC(I) = WY_SCR(I,KK)
+           VZ_SC(I) = VZ_SCR(I,KK)
+10     CONTINUE
 
-! ** Computes first the intercept onto the screen plane and the 
-! ** absorption, if set.
-     	ATTEN	=   1.0D0
+        ! ** Computes first the intercept onto the screen plane and the 
+        ! ** absorption, if set.
+        ATTEN = 1.0D0
+        DO 100 J=1,NPOINT
+                ! ** Checks if the ray has been reflected by the mirror.
+                IF (RAY(10,J).LT.-1.0D6) GO TO 100
+                P_IN(1)      =   RAY(1,J)
+                P_IN(2)      =   RAY(2,J)
+                P_IN(3)      =   RAY(3,J)
+                V_OUT(1)  =   RAY(4,J)
+                V_OUT(2)  =   RAY(5,J)
+                V_OUT(3)  =   RAY(6,J)
+                A_VEC(1) = RAY(7,J)
+                A_VEC(2) = RAY(8,J)
+                A_VEC(3) = RAY(9,J)
+                AP_VEC(1) = AP_IN(1,J)
+                AP_VEC(2) = AP_IN(2,J)
+                AP_VEC(3) = AP_IN(3,J)
+                ABOVE = POLE - P_IN(1)*WY_SC(1) &
+                             - P_IN(2)*WY_SC(2) &
+                             - P_IN(3)*WY_SC(3)
+                BELOW   =   WY_SC(1)*V_OUT(1) + WY_SC(2)*V_OUT(2) + &
+                            WY_SC(3)*V_OUT(3)
+                IF (BELOW.NE.0.0D0) THEN
+                    DIST      =   ABOVE/BELOW
+                ELSE
+                    RAY(10,J)  = - 1.0D4*I_ELEMENT - 1.0D2*I_WHAT
+                    GO TO 100
+                END IF
+                
+                ! ** Computes now the intersections onto screen plane.
+                
+                P_SCREEN(1)  =   P_IN(1) + DIST*V_OUT(1)
+                P_SCREEN(2)  =   P_IN(2) + DIST*V_OUT(2)
+                P_SCREEN(3)  =   P_IN(3) + DIST*V_OUT(3)
+                
+                ! ** Rotate now the results in the SCREEN reference plane.
+                ! ** Computes the projection of P_IN onto the image plane versors.
+                
+                CALL SCALAR(WY_SC,POLE,SCR_CEN)
+                CALL VECTOR(SCR_CEN,P_SCREEN,P_SCREEN)
+                
+                CALL DOT(P_SCREEN,UX_SC,UX_1)
+                CALL DOT(P_SCREEN,VZ_SC,VZ_1)
+                CALL DOT(P_SCREEN,WY_SC,WY_1)
+                
+                ! ** Computes now the new directions for the beam in the U,V,N ref.
+                
+                CALL DOT(V_OUT,UX_SC,VV_1)
+                CALL DOT(V_OUT,WY_SC,VV_2)
+                CALL DOT(V_OUT,VZ_SC,VV_3)
+                
+                ! ** Computes the new directions of A in the U,V,N ref.frame
+                
+                CALL DOT(A_VEC,UX_SC,A_1)
+                CALL DOT(A_VEC,WY_SC,A_2)
+                CALL DOT(A_VEC,VZ_SC,A_3)
+                
+                ! ** This will compute the transmission coefficient.
+                IF (I_ABS(I_WHAT).EQ.1) THEN
+                    ! bug found Peter Sondhauss peter.sondhauss@maxlab.lu.se 2013-07029
+                    ! there is a call to the subroutine REFLEC with a wrong setting of the flag 
+                    ! K_WHAT (last parameter). K_WHAT was set to be zero (izero), which is the 
+                    ! setting for initialization, i.e. reading of the file with dielectric 
+                    ! constants.  I have set K_WHAT to the value of 2 (transmission), or better 
+                    ! itwo. Now Shadow3 runs fast again, and the reflectivity values correspond 
+                    ! to those of the old Shadow version.
+                    !CALL      REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
+                    !             DUM,ATTEN,izero)
+                    CALL      REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
+                    DUM,ATTEN,itwo)
+                END IF
+                ! ** Saves the results
+                OUT(1,J)  =   UX_1
+                OUT(2,J)  =   WY_1
+                OUT(3,J)  =   VZ_1
+                OUT(4,J)  =   VV_1
+                OUT(5,J)  =   VV_2
+                OUT(6,J)  =   VV_3
+                RAY(7,J)  =   RAY(7,J)*ATTEN
+                OUT(7,J)  =   A_1*ATTEN
+                RAY(8,J)  =   RAY(8,J)*ATTEN
+                OUT(8,J)  =   A_2*ATTEN
+                RAY(9,J)  =   RAY(9,J)*ATTEN
+                OUT(9,J)  =   A_3*ATTEN
+                OUT(10,J) =   RAY(10,J)
+                OUT(11,J) =   RAY(11,J)
+                OUT(12,J) =   RAY(12,J)
+                IF (NCOL.GT.12) THEN
+                    PH_OUT (1,J) = PH_IN(1,J) + DIST
+                    IF (NCOL.EQ.18) THEN
+                        PH_OUT (2,J) = PH_IN(2,J)
+                        PH_OUT (3,J) = PH_IN(3,J)
+                        CALL DOT(AP_VEC,UX_SC,AP_1)
+                        CALL DOT(AP_VEC,WY_SC,AP_2)
+                        CALL DOT(AP_VEC,VZ_SC,AP_3)
+                        AP_IN  (1,J) = AP_IN(1,J)*ATTEN
+                        AP_OUT (1,J) = AP_1*ATTEN
+                        AP_IN  (2,J) = AP_IN(2,J)*ATTEN
+                        AP_OUT (2,J) = AP_2*ATTEN
+                        AP_IN  (3,J) = AP_IN(3,J)*ATTEN
+                        AP_OUT (3,J) = AP_3*ATTEN
+                    END IF
+                END IF
+100     CONTINUE
 
-     	DO 100	J=1,NPOINT
-
-! ** Checks if the ray has been reflected by the mirror.
-
-     	IF (RAY(10,J).LT.-1.0D6) GO TO 100
-
-     	P_IN(1)	=   RAY(1,J)
-     	P_IN(2)	=   RAY(2,J)
-	P_IN(3)	=   RAY(3,J)
-
-     	V_OUT(1)  =   RAY(4,J)
-     	V_OUT(2)  =   RAY(5,J)
-     	V_OUT(3)  =   RAY(6,J)
-
-	A_VEC(1) = RAY(7,J)
-	A_VEC(2) = RAY(8,J)
-	A_VEC(3) = RAY(9,J)
-
-	AP_VEC(1) = AP_IN(1,J)
-	AP_VEC(2) = AP_IN(2,J)
-	AP_VEC(3) = AP_IN(3,J)
-
-     	ABOVE	=   POLE	   - P_IN(1)*WY_SC(1) &
-     			    	   - P_IN(2)*WY_SC(2) &
-     			    	   - P_IN(3)*WY_SC(3)
-
-     	BELOW   =   WY_SC(1)*V_OUT(1) + WY_SC(2)*V_OUT(2) + &
-     		    WY_SC(3)*V_OUT(3)
-
-     	IF (BELOW.NE.0.0D0) THEN
-     		DIST	=   ABOVE/BELOW
-     	ELSE
-     		RAY(10,J)  = - 1.0D4*I_ELEMENT - 1.0D2*I_WHAT
-     		GO TO 100
-     	END IF
-
-! ** Computes now the intersections onto screen plane.
-
-     	P_SCREEN(1)  =   P_IN(1) + DIST*V_OUT(1)
-     	P_SCREEN(2)  =   P_IN(2) + DIST*V_OUT(2)
-     	P_SCREEN(3)  =   P_IN(3) + DIST*V_OUT(3)
-
-! ** Rotate now the results in the SCREEN reference plane.
-! ** Computes the projection of P_IN onto the image plane versors.
-
-     	CALL	SCALAR	(WY_SC,POLE,SCR_CEN)
-     	CALL 	VECTOR 	(SCR_CEN,P_SCREEN,P_SCREEN)
-
-     	CALL 	DOT 	(P_SCREEN,UX_SC,UX_1)
-     	CALL 	DOT 	(P_SCREEN,VZ_SC,VZ_1)
-     	CALL 	DOT 	(P_SCREEN,WY_SC,WY_1)
-
-! ** Computes now the new directions for the beam in the U,V,N ref.
-
-     	CALL 	DOT 	(V_OUT,UX_SC,VV_1)
-     	CALL 	DOT 	(V_OUT,WY_SC,VV_2)
-     	CALL 	DOT 	(V_OUT,VZ_SC,VV_3)
-
-! ** Computes the new directions of A in the U,V,N ref.frame
-
-     	CALL DOT (A_VEC,UX_SC,A_1)
-     	CALL DOT (A_VEC,WY_SC,A_2)
-     	CALL DOT (A_VEC,VZ_SC,A_3)
-
-! ** This will compute the transmission coefficient.
-     	IF (I_ABS(I_WHAT).EQ.1) THEN
-! bug found Peter Sondhauss peter.sondhauss@maxlab.lu.se 2013-07029
-! there is a call to the subroutine REFLEC with a wrong setting of the flag 
-! K_WHAT (last parameter). K_WHAT was set to be zero (izero), which is the 
-! setting for initialization, i.e. reading of the file with dielectric 
-! constants.  I have set K_WHAT to the value of 2 (transmission), or better 
-! itwo. Now Shadow3 runs fast again, and the reflectivity values correspond 
-! to those of the old Shadow version.
-     	 !CALL	REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
-     	 !		 DUM,ATTEN,izero)
-     	 CALL	REFLEC (PPOUT,RAY(11,J),VV_2,DUM,DUM,DUM,DUM, &
-     			 DUM,ATTEN,itwo)
-     	END IF
-! ** Saves the results
-     	OUT(1,J)  =   UX_1
-     	OUT(2,J)  =   WY_1
-     	OUT(3,J)  =   VZ_1
-     	OUT(4,J)  =   VV_1
-     	OUT(5,J)  =   VV_2
-     	OUT(6,J)  =   VV_3
-     	RAY(7,J)  =   RAY(7,J)*ATTEN
-     	OUT(7,J)  =   A_1*ATTEN
-     	RAY(8,J)  =   RAY(8,J)*ATTEN
-     	OUT(8,J)  =   A_2*ATTEN
-     	RAY(9,J)  =   RAY(9,J)*ATTEN
-     	OUT(9,J)  =   A_3*ATTEN
-     	OUT(10,J) =   RAY(10,J)
-     	OUT(11,J) =   RAY(11,J)
-     	OUT(12,J) =   RAY(12,J)
-	IF (NCOL.GT.12) THEN
-	  PH_OUT (1,J) = PH_IN(1,J) + DIST
-	  IF (NCOL.EQ.18) THEN
-	    PH_OUT (2,J) = PH_IN(2,J)
-	    PH_OUT (3,J) = PH_IN(3,J)
-	    CALL	DOT	(AP_VEC,UX_SC,AP_1)
-	    CALL	DOT	(AP_VEC,WY_SC,AP_2)
-	    CALL	DOT	(AP_VEC,VZ_SC,AP_3)
-	    AP_IN  (1,J) = AP_IN(1,J)*ATTEN
-	    AP_OUT (1,J) = AP_1*ATTEN
-	    AP_IN  (2,J) = AP_IN(2,J)*ATTEN
-	    AP_OUT (2,J) = AP_2*ATTEN
-	    AP_IN  (3,J) = AP_IN(3,J)*ATTEN
-	    AP_OUT (3,J) = AP_3*ATTEN
-	  END IF
-	END IF
-100	CONTINUE
-     	IF (I_SLIT(I_WHAT).EQ.1)	THEN
-    	 IF (K_SLIT(I_WHAT).EQ.0) THEN
-!C 
-!C 	  Rectangular first.
-!C 
-	  XCNTR = CX_SLIT(I_WHAT)
-	  ZCNTR = CZ_SLIT(I_WHAT)
-     	  U_1   = - RX_SLIT(I_WHAT)/2
-     	  U_2   =   RX_SLIT(I_WHAT)/2
-     	  V_1   = - RZ_SLIT(I_WHAT)/2
-     	  V_2   =   RZ_SLIT(I_WHAT)/2
-     	  DO 222 ICHECK=1,NPOINT
-!C 
-!C  Assume obstruction, and then reverse decision for aperture.
-!C 
-	    PX = OUT(1,ICHECK)-XCNTR
-	    PZ = OUT(3,ICHECK)-ZCNTR
-	    TEST = -1
-	    IF ((PX.GT.U_2.OR.PX.LT.U_1).OR. &
-     		(PZ.GT.V_2.OR.PZ.LT.V_1))THEN
-	      TEST = 1
-	    END IF
-	    IF (I_STOP(I_WHAT).EQ.0) THEN
-	      TEST = - TEST
-	    END IF
-
-     	    IF (TEST.LT.0.0D0) THEN
-     		RAY (10,ICHECK)	  = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
-     		OUT (10,ICHECK)	  = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
-     	    END IF
-222	  CONTINUE
-
-!C 
-!C  	Now elliptical
-!C 
-     	 ELSE IF (K_SLIT(I_WHAT).EQ.1) THEN
-	  AXLAR	=   RX_SLIT(I_WHAT)**2/4
-	  AXSMA	=   RZ_SLIT(I_WHAT)**2/4
-	  XCNTR =   CX_SLIT(I_WHAT)
-	  ZCNTR =   CZ_SLIT(I_WHAT)
-     	  DO 300 I=1,NPOINT
-	    PX = OUT(1,I)-XCNTR
-	    PZ = OUT(3,I)-ZCNTR
-     	    TEST = PX**2/AXLAR + PZ**2/AXSMA - 1.0D0
-     	    IF (I_STOP(I_WHAT).EQ.1)   TEST = - TEST
-     	    IF (TEST.GT.0.0D0) THEN
-     	      RAY  (10,I) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
-     	      OUT  (10,I) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
-     	    END IF
-300	  CONTINUE
-     	ELSE
-!C 
-!C  Now external (K_SLIT = 2)
-!C 
-	  CALL	SCREEN_EXTERNAL(I_WHAT,I_ELEMENT,RAY,OUT)
-     	END IF
-     	ELSE
-     	END IF
-!C 
-!C  EOF marker
-!C 
-if ((fwrite.eq.0).or.(fwrite.eq.2)) then
-     	KOUNTS	=   100*I_ELEMENT + I_WHAT
-     	CALL	FNAME	(LOCFILE,'screen',KOUNTS,ifour)
-	IFLAG	= 0
-     	CALL	WRITE_OFF (LOCFILE,OUT,PH_OUT,AP_OUT,NCOL,NPOINT,IFLAG, &
-                          izero,IERR)
-     	IF	(IERR.NE.0)	CALL LEAVE  &
-     		('SCREEN','Error writing SCREEN.',IERR)
-endif
-     	IF (I_ABS(I_WHAT).EQ.1) THEN
-	    F_REFL	=   FTEMP
-	    FILE_REFL 	=   FILE_TMP
-	END IF
-	WRITE(6,*)'Exit from SCREEN'
-	RETURN
+        IF (I_SLIT(I_WHAT).EQ.1) THEN
+            IF (K_SLIT(I_WHAT).EQ.0) THEN
+                !C 
+                !C         Rectangular first.
+                !C 
+                XCNTR = CX_SLIT(I_WHAT)
+                ZCNTR = CZ_SLIT(I_WHAT)
+                U_1   = - RX_SLIT(I_WHAT)/2
+                U_2   =   RX_SLIT(I_WHAT)/2
+                V_1   = - RZ_SLIT(I_WHAT)/2
+                V_2   =   RZ_SLIT(I_WHAT)/2
+                DO 222 ICHECK=1,NPOINT
+                    !C 
+                    !C  Assume obstruction, and then reverse decision for aperture.
+                    !C 
+                    PX = OUT(1,ICHECK)-XCNTR
+                    PZ = OUT(3,ICHECK)-ZCNTR
+                    TEST = -1
+                    IF ((PX.GT.U_2.OR.PX.LT.U_1).OR.(PZ.GT.V_2.OR.PZ.LT.V_1))THEN
+                        TEST = 1
+                    END IF
+                    IF (I_STOP(I_WHAT).EQ.0) THEN
+                        TEST = - TEST
+                    END IF
+        
+                    IF (TEST.LT.0.0D0) THEN
+                        RAY(10,ICHECK) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
+                        OUT(10,ICHECK) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
+                    END IF
+        222     CONTINUE
+        
+            ELSE IF (K_SLIT(I_WHAT).EQ.1) THEN
+                !C 
+                !C        Now elliptical
+                !C 
+                AXLAR = RX_SLIT(I_WHAT)**2/4
+                AXSMA = RZ_SLIT(I_WHAT)**2/4
+                XCNTR = CX_SLIT(I_WHAT)
+                ZCNTR = CZ_SLIT(I_WHAT)
+                DO 300 I=1,NPOINT
+                    PX = OUT(1,I)-XCNTR
+                    PZ = OUT(3,I)-ZCNTR
+                    TEST = PX**2/AXLAR + PZ**2/AXSMA - 1.0D0
+                    IF (I_STOP(I_WHAT).EQ.1)   TEST = - TEST
+                    IF (TEST.GT.0.0D0) THEN
+                        RAY  (10,I) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
+                        OUT  (10,I) = - 1.0D2*I_ELEMENT - 1.0D0*I_WHAT
+                    END IF
+        300     CONTINUE
+            ELSE
+                !C 
+                !C  Now external (K_SLIT = 2)
+                !C 
+                CALL SCREEN_EXTERNAL(I_WHAT,I_ELEMENT,RAY,OUT)
+            END IF
+        ELSE
+        END IF
+        !C 
+        !C  EOF marker
+        !C 
+        if ((fwrite.eq.0).or.(fwrite.eq.2)) then
+                KOUNTS = 100*I_ELEMENT + I_WHAT
+                CALL FNAME(LOCFILE,'screen',KOUNTS,ifour)
+                IFLAG = 0
+                CALL WRITE_OFF (LOCFILE,OUT,PH_OUT,AP_OUT,NCOL,NPOINT,IFLAG,izero,IERR)
+                IF (IERR.NE.0) CALL LEAVE('SCREEN','Error writing SCREEN.',IERR)
+        endif
+        IF (I_ABS(I_WHAT).EQ.1) THEN
+                F_REFL = FTEMP
+                FILE_REFL = FILE_TMP
+        END IF
+        WRITE(6,*)'Exit from SCREEN'
+        RETURN
 End Subroutine screen
 
 ! C+++
