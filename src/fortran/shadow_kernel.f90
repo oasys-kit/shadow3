@@ -1402,7 +1402,7 @@ Contains
     WRITE (24,1210) HOLO2(1),HOLO2(2),HOLO2(3)
     WRITE (24,1220) VTAN(1),VTAN(2),VTAN(3)
     WRITE (24,1000)
-    WRITE (24,*)	RULING
+    WRITE (24,*) RULING
     WRITE (24,1100)
     CLOSE (24)
     RETURN
@@ -6595,9 +6595,7 @@ End Subroutine screen_external_getdimensions
 ! C---
 SUBROUTINE SETSOUR
 
-!todo implicit?
-!    implicit real(kind=skr) (a-e,g-h,o-z)
-!    implicit integer(kind=ski)        (f,i-n)
+implicit none 
 
 real(kind=skr)    :: q_phot,sinn,sinm,graze,theta_b,deflec
 real(kind=skr)    :: sinbeta,theta_t
@@ -6608,6 +6606,12 @@ integer(kind=ski) :: ipsflag,ierr
 
 WRITE(6,*) 'Call to SETSOUR'
 
+!
+!------------------------- user units setup  -------------------------------------
+! 
+
+! TODO: check the phase term in gratings!!
+
 ! we (temporary) pass the user units to shadow in the OE variable DUMMY that is
 ! copied here to user_units_to_cm (initialized in shadow_globaldefinitions.f90)
 
@@ -6615,6 +6619,19 @@ user_units_to_cm = DUMMY
 if (user_units_to_cm .le. 0) then
     print*,'SETSOUR: Error: user_units_to_cm <=0. Reset to 1.0 (using cm)'
 end if
+
+!
+! be sure that the grating variables are in shadow internal units (lines/cm, etc)
+!
+if (f_grating .eq. 1) then
+    if (user_units_to_cm .ne. 1.0) then 
+      RULING = RULING / user_units_to_cm  ! lines/cm
+      RUL_A1 = RUL_A1 / (user_units_to_cm)**2
+      RUL_A2 = RUL_A2 / (user_units_to_cm)**3
+      RUL_A3 = RUL_A3 / (user_units_to_cm)**4
+      RUL_A4 = RUL_A4 / (user_units_to_cm)**5
+    endif
+endif
 
 ! srio@esrf.eu 2012-06-06
 ! debug (noticed by N. Canestrari) : 
@@ -8264,9 +8281,9 @@ end if
                 DIST = PPOUT(2)
             end If
             PHASE(1,ITIK) = PHASE(1,ITIK) + TWOPI*ORDER*PPOUT(2)*( Ruling &
-                + DIST * RUL_A1 &
-                + DIST**2 * RUL_A2 &
-                + DIST**3 * RUL_A3)/RAY(11,ITIK)
+                + (DIST*user_units_to_cm) * RUL_A1 &
+                + (DIST*user_units_to_cm)**2 * RUL_A2 &
+                + (DIST*user_units_to_cm)**3 * RUL_A3)/RAY(11,ITIK)
             ! End Ruben added for VLS grating
             !--------------------
 
@@ -8329,8 +8346,13 @@ end if
 ! C Test for sign flag
 ! C
      		IF (F_RUL_ABS.EQ.0) DIST = ABS(DIST)
-		RDENS	=   RULING + RUL_A1*DIST + RUL_A2*DIST**2 &
-     				+ RUL_A3*DIST**3 + RUL_A4*DIST**4
+!		RDENS	=   RULING + RUL_A1*DIST + RUL_A2*DIST**2 &
+!     				+ RUL_A3*DIST**3 + RUL_A4*DIST**4
+                RDENS = RULING + &
+                        RUL_A1*(DIST*user_units_to_cm) + &
+                        RUL_A2*(DIST*user_units_to_cm)**2 + &
+                        RUL_A3*(DIST*user_units_to_cm)**3 + &
+                        RUL_A4*(DIST*user_units_to_cm)**4
 		G_MODR	=   RDENS*TWOPI*ORDER*G_FAC
 	  END IF
      	ELSE IF (F_RULING.EQ.2) THEN
@@ -8406,6 +8428,7 @@ end if
      	   CALL SCALAR (VTAN,-1.0D0,VTAN)
      	 END IF
 	ELSE IF (F_RULING.EQ.3) THEN
+          !TODO: user_units_to_cm must appear around here...
 	  SPACING = SQRT((DIST_FAN-PPOUT(2))**2+PPOUT(1)**2)/RULING
 	  SPACING = SPACING/DIST_FAN
 	  ARG	  = PPOUT(1) /(DIST_FAN-PPOUT(2))
@@ -9730,21 +9753,22 @@ IF (F_GRATING.EQ.1) THEN ! grating
         WRITE(6,*)' '
     ELSE IF (F_RULING.EQ.3) THEN
         WRITE(6,*)' Position of ruling focus on mirror plane.'
+        ! TODO: AZIM_FAN is never used!!
         AZIM_FAN = RNUMBER ('Angle from Y axis         [ deg, CCW ] ? ')
-        DIST_FAN = RNUMBER ('Distance from grating center    [ cm ] ? ')
+        DIST_FAN = RNUMBER ('Distance from grating center    [ user units ] ? ')
         COMA_FAC = RNUMBER ('Coma correction factor  [ 0 for none ] ? ')
-        RULING   = RNUMBER ('Line density at grat. cent.   [ l/cm ] ? ')
+        RULING   = RNUMBER ('Line density at grat. cent.   [ l/user units ] ? ')
     ELSE IF (F_RULING.EQ.5) THEN
         WRITE(6,*)'Degree of polynomial is 4 :'
         WRITE(6,*)'   density = a0 + a1*w + a2*w^2 + a3*w^3 + a4*w^4'
         WRITE(6,*)'NOTICE : for a0, please enter the LINE DENSITY AT ORIGIN'
         WRITE(6,*)'units of density is LINES/CM'
         WRITE(6,*)'Please enter coefficients :'
-        RULING = RNUMBER ('a0 : ')
-        RUL_A1 = RNUMBER ('a1 : ')
-        RUL_A2 = RNUMBER ('a2 : ')
-        RUL_A3 = RNUMBER ('a3 : ')
-        RUL_A4 = RNUMBER ('a4 : ')
+        RULING = RNUMBER ('a0 lines/user_units: ')
+        RUL_A1 = RNUMBER ('a1 lines/user_units**2: ')
+        RUL_A2 = RNUMBER ('a2 lines/user_units**3: ')
+        RUL_A3 = RNUMBER ('a3 lines/user_units**4: ')
+        RUL_A4 = RNUMBER ('a4 lines/user_units**5: ')
         WRITE(6,*)'Use ABSOLUTE [ 0 ] or SIGNED [ 1 ] from origin ? '
         F_RUL_ABS = IRINT ('Then ? ')
         WRITE(6,*)'All set then.'

@@ -262,7 +262,6 @@ def histo1(beam, col, notitle=0, nofwhm=0,  bar=0,  **kwargs):
         hh = 0.5*numpy.max(tk2["histogram"])
         lines = [ [ (tk2["fwhm_coordinates"][0],hh), \
                     (tk2["fwhm_coordinates"][1],hh) ]]
-        print(lines)
         lc = collections.LineCollection(lines,color='red',linewidths=2)
         ax.add_collection(lc)
         if nofwhm != 1:

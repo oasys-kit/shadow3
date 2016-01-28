@@ -1414,7 +1414,7 @@ class OE(ShadowLib.OE):
             if self.FZP == 1:
                 txt += 'Element type                 Fresnel Zone Plate\n'
             txt += 'Element type                            GRATING\n'
-            txt += 'Order choosen ( inside are < 0 )        *d\n'%(self.ORDER)
+            txt += 'Order choosen ( inside are < 0 )        %d\n'%(self.ORDER)
             if self.F_CENTRAL == 1:
                 txt += 'Automatic Tuning                        YES\n'
                 if ((self.F_MONO == 0) and (self.F_CRYSTAL == 0)):
@@ -1436,12 +1436,15 @@ class OE(ShadowLib.OE):
                 txt += 'Uniform ruling. At pole [ lines/cm ]    %f\n'%(self.RULING)
 
             if (self.F_RULING == 2) and (self.F_CRYSTAL == 0):
-                txt += 'Holographic grating. Recording Wavelength:  %f\n'%(self.RULING)
+                txt += '    Holographic grating: \n'
+                txt += '    Recording Wavelength:       %f Angstroms\n'%(self.HOLO_W)
+                txt += '    Input Slit Distance:        %f \n'%(self.HOLO_R1)
+                txt += '    Exit Slit Distance:         %f \n'%(self.HOLO_R2)
+                txt += '    Input Slit Angle:           %f deg\n'%(self.HOLO_DEL)
+                txt += '    Exit Slit Angle:            %f deg\n'%(self.HOLO_GAM)
+                txt += '    Input  Slit rotation angle  %f deg\n'%(self.HOLO_RT1)
+                txt += '    Output Slit rotation angle  %f deg\n'%(self.HOLO_RT2)
 
-                txt += 'Input Slit Dist.'+T20+'Exit Slit Dist.'+T20+'Input Slit Angle',T60,'Exit Slit Angle\n'
-                txt += '%16.9g'%(self.HOLO_R1)+'%16.9g'%(self.HOLO_R2)+'%16.9g'%(self.HOLO_DEL)+'%16.9g'%(self.HOLO_GAM)+'\n'
-                txt += 'Input  Slit rotation angle  %f \n'%(self.HOLO_RT1*180.0/numpy.pi)
-                txt += 'Output Slit rotation angle  %f \n'%(self.HOLO_RT2*180.0/numpy.pi)
                 if (self.F_PW == 0):         txt += 'Spherical / Spherical\n'
                 if (self.F_PW == 1):         txt += 'Plane     / Spherical\n'
                 if (self.F_PW == 2):         txt += 'Spherical / Plane\n'
@@ -1454,19 +1457,20 @@ class OE(ShadowLib.OE):
                 if (self.F_VIRTUAL == 1):    txt += 'Real      / Virtual\n'
                 if (self.F_VIRTUAL == 2):    txt += 'Virtual   / Real\n'
                 if (self.F_VIRTUAL == 3):    txt + 'Virtual   / Virtual\n'
-            if (self.F_RULING == 5) and (self.F_CRYSTAL == 0):
-                txt += 'Mechanically ruled grating. Polinomial Coefficients: \n'
-                txt += 'Zero order term Coefficient:  %f\n'%(self.RULING)
-                txt += 'First                         %f\n'%(self.RUL_A1)
-                txt += 'Second                        %f\n'%(self.RUL_A2)
-                txt += 'Third                         %f\n'%(self.RUL_A3)
-                txt += 'Fourth                        %f\n'%(self.RUL_A4)
             if (self.F_RULING == 3) and (self.F_CRYSTAL == 0):
                 txt += 'Oriental fan type grating.\n'
-                txt += 'Fan pole angle from Y axis          %f\n'%(self.AZIM_FAN)
-                txt += '        distance from grating pole  %f\n'%(self.DIST_FAN)
+                txt += 'Fan pole angle from Y axis          %f deg\n'%(self.AZIM_FAN)
+                txt += '        distance from grating pole  %f %s\n'%(self.DIST_FAN,self.unit())
                 txt += 'Coma correction factor              %f\n'%(self.COMA_FAC)
-                txt += 'Line density at grating pole        %f\n'%(self.RULING)
+                txt += 'Line density at grating pole        %f lines/cm\n'%(self.RULING)
+            if (self.F_RULING == 5) and (self.F_CRYSTAL == 0):
+                txt += 'Mechanically ruled grating. Polinomial Coefficients: \n'
+                txt += 'Zero order term Coefficient:  %f lines/(%s  )\n'%(self.RULING,"cm")
+                txt += 'First                         %f lines/(%s^2)\n'%(self.RUL_A1,"cm")
+                txt += 'Second                        %f lines/(%s^3)\n'%(self.RUL_A2,"cm")
+                txt += 'Third                         %f lines/(%s^4)\n'%(self.RUL_A3,"cm")
+                txt += 'Fourth                        %f lines/(%s^5)\n'%(self.RUL_A4,"cm")
+
 
         if self.F_REFRAC == 1:
             if self.F_R_IND == 0:
