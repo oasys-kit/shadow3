@@ -1,6 +1,12 @@
 import Shadow
+import numpy
+import xraylib
 
-
+#
+# runs an absorber of 10 um thickness for a source at 10 keV
+#
+# The element symbol and number of rays can be set in test_attenuator()
+#
 
 def run_example_attenuator(user_units_to_cm=1.0,npoint=5000,iwrite=0):
     #
@@ -39,7 +45,7 @@ def run_example_attenuator(user_units_to_cm=1.0,npoint=5000,iwrite=0):
     oe1.F_SCREEN = 1
     oe1.N_SCREEN = 1
     oe1.I_ABS = numpy.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    oe1.FILE_ABS = numpy.array([b'Fe5_15.refl', b'', b'', b'', b'', b'', b'', b'', b'', b''])
+    oe1.FILE_ABS = numpy.array([b'prerefl.dat', b'', b'', b'', b'', b'', b'', b'', b'', b''])
     oe1.THICK = numpy.array([10e-4/user_units_to_cm, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 
@@ -70,46 +76,53 @@ def run_example_attenuator(user_units_to_cm=1.0,npoint=5000,iwrite=0):
 
     return beam
 
-if __name__ == "__main__":
 
-    import numpy
-    import xraylib
+def test_attenuator():
 
 
     #
     # create preprocessor file
     #
-    symbol = "Fe"
+    symbol = "Cu"
+    number_of_rays = 10000
+    cm_or_mm = 0  # 0=using cm, 1=using mm
+
+
+    #
+    # run prerefl
+    #
     density = xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(symbol))
 
-    Shadow.ShadowPreprocessorsXraylib.prerefl(interactive=0,SYMBOL=symbol,DENSITY=density,FILE="Fe5_15.refl",E_MIN=5000.0,E_MAX=15000.0,E_STEP=100.0)
+    Shadow.ShadowPreprocessorsXraylib.prerefl(interactive=0,SYMBOL=symbol,DENSITY=density,FILE="prerefl.dat",E_MIN=5000.0,E_MAX=15000.0,E_STEP=100.0)
 
     #
     # run SHADOW for a sample of thickness 10 um
-
-    npoint = 10000
-    beam_cm = run_example_attenuator(user_units_to_cm=1.0,npoint=npoint)
-
     #
-    # beam_mm = run_example_crystal_mosaic(user_units_to_cm=0.1)
-    #
-    # Shadow.ShadowTools.plotxy(beam_cm,1,3,nbins=101,nolost=1,title="Using units: cm")
-    print("Intensity: %f"%(beam_cm.intensity(nolost=1)))
+
+    if cm_or_mm == 0:
+        beam = run_example_attenuator(user_units_to_cm=1.0,npoint=number_of_rays)
+    else:
+        beam = run_example_attenuator(user_units_to_cm=0.1,npoint=number_of_rays)
+
+
+    print("Intensity: %f"%(beam.intensity(nolost=1)))
 
 
     #
     # check SHADOW results against xraylib attenuation
     #
-    cs1 = xraylib.CS_Total(xraylib.SymbolToAtomicNumber("Fe"), 10.0)
+    cs1 = xraylib.CS_Total(xraylib.SymbolToAtomicNumber(symbol), 10.0)
 
     # print("xralib Fe cross section [cm^2/g]: %f"%cs1)
     # print("xralib mu  [cm^-1]: %f"%(cs1*density))
 
-    sh100 = 100*beam_cm.intensity(nolost=1)/npoint
+    sh100 = 100*beam.intensity(nolost=1)/number_of_rays
     xrl100 = 100*numpy.exp(-cs1*density*10e-4)
-    print("xralib attenuation [per cent] for 10 um Fe at 10 keV: %f"%(xrl100))
+    print("xralib attenuation [per cent] for 10 um %s at 10 keV: %f"%(symbol,xrl100))
     print("Transmission [per cent]: %f"%(sh100))
 
     numpy.testing.assert_almost_equal(sh100,xrl100,2)
 
 
+if __name__ == "__main__":
+    test_attenuator()

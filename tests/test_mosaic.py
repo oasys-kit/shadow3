@@ -458,17 +458,29 @@ def run_example_crystal_mosaic(user_units_to_cm=1.0,iwrite=0):
         oe1.write("end.01")
         beam.write("star.01")
 
+    print(oe1.mirinfo())
 
     return beam
 
-if __name__ == "__main__":
 
-    import numpy
+
+def test_mosaic(plot=0):
+
+    cm_or_mm = 0  # 0=using cm, 1=using mm
 
     create_bragg_file()
-    beam_cm = run_example_crystal_mosaic(user_units_to_cm=1.0)
 
-    beam_mm = run_example_crystal_mosaic(user_units_to_cm=0.1)
+    if cm_or_mm == 0:
+        beam = run_example_crystal_mosaic(user_units_to_cm=1.0)
+        title = "Using units: cm"
+    else:
+        beam = run_example_crystal_mosaic(user_units_to_cm=0.1)
+        title = "Using units: mm"
 
-    Shadow.ShadowTools.plotxy(beam_cm,1,3,nbins=101,nolost=1,title="Using units: cm")
-    Shadow.ShadowTools.plotxy(beam_mm,1,3,nbins=101,nolost=1,title="Using units: mm")
+    if plot:
+        Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title=title)
+
+if __name__ == "__main__":
+
+
+    test_mosaic(plot=1)

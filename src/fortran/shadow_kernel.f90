@@ -4510,7 +4510,6 @@ IF (K_WHAT.EQ.0) THEN
         IF (iErr.NE.0) GOTO 222
         CLOSE (23)
         TFILM = ABSOR
-print*,">>>>>>>>>>>>>>>>>>>>>> STORED TFILM 1 : ",TFILM
         RETURN
 ! this part is for new ascii format
 222     continue
@@ -4529,7 +4528,6 @@ print*,">>>>>>>>>>>>>>>>>>>>>> STORED TFILM 1 : ",TFILM
         READ (23,*) (ZF2(I),I=1,NREFL)
         CLOSE (23)
         TFILM = ABSOR
-print*,">>>>>>>>>>>>>>>>>>>>>> STORED TFILM 1 : ",TFILM
         RETURN
     ELSE IF (F_REFL.EQ.2) THEN  !multilayer
         ! C
@@ -8709,7 +8707,7 @@ tmptmp1 = DEPTH_INC
              DEPTH_INC = DEPTH_INC*DEPTH_MFP
            ENDIF
 
-           if (depth_inc .gt. thickness*user_units_to_cm/sin_val) then 
+           if (depth_inc .gt. thickness/sin_val) then 
              print *,'MIRROR: Warning: Overestimated penetration',depth_inc,thickness*user_units_to_cm/sin_val
            end if
 

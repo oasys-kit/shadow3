@@ -1300,15 +1300,15 @@ class OE(ShadowLib.OE):
             for i in range(self.N_SCREEN):
                  txt += '    SCREEN %d : \n'%(i+1)
                  if self.I_SCREEN[i] == 0:
-                     txt += '      AFTER o.e.       at %f \n'%(self.SL_DIS[i])
+                     txt += '      AFTER o.e.       at %f %s\n'%(self.SL_DIS[i],self.unit())
                  else:
-                     txt += '      BEFORE o.e.      at %f \n'%self.SL_DIS[i]
+                     txt += '      BEFORE o.e.      at %f %s\n'%(self.SL_DIS[i],self.unit())
                  if self.I_SLIT[i] != 0:
                      txt += "      Type:  %s        %s  \n"%(TSLIT[self.I_STOP[i]],TSLITSHAPE[self.K_SLIT[i]])
                      txt += "      Dimensions: X: %f, Z: %f  \n"%(self.RX_SLIT[i],self.RZ_SLIT[i])
                      txt += "      Center at:  X: %f, Z: %f  \n"%(self.CX_SLIT[i],self.CZ_SLIT[i])
                  if self.I_ABS[i] != 0:
-                     txt += "      Attenuator thickness:  %f  \n"%(self.THICK[i])
+                     txt += "      Attenuator thickness:  %f  %s\n"%(self.THICK[i],self.unit())
                      txt += "      File with optical constants: %s\n"%(self.FILE_ABS[i].strip().decode())
 
         return txt
@@ -1395,12 +1395,13 @@ class OE(ShadowLib.OE):
 
         if ((self.F_GRATING == 0) and (self.F_CRYSTAL == 1)):
             txt += 'Element type                            CRYSTAL\n'
-            txt += 'Lattice Spacing                         %f\n'%(self.D_SPACING)
+            txt += 'Lattice Spacing                         %g cm\n'%(self.D_SPACING)
             txt += 'Bragg Reflection from  %s\n'%(self.FILE_REFL.strip().decode())
             if self.F_MOSAIC == 1:
                 txt += 'MOSAIC Crystal selected                \n'
-                txt += 'Mosaic crystal spread (st. dev)  [DEG]  %f\n'%(self.SPREAD_MOS*180.0/numpy.pi)
-                txt += 'Mosaic crystal thickness [%s]           %f\n'%(self.THICKNESS,self.unit())
+                txt += 'Mosaic crystal spread (st. dev) %f %s\n'%(self.SPREAD_MOS*180.0/numpy.pi,'deg')
+                txt += 'Mosaic crystal spread (FWHM)    %f %s\n'%(2*numpy.sqrt(2*numpy.log(2))*self.SPREAD_MOS*180.0/numpy.pi,'deg')
+                txt += 'Mosaic crystal thickness        %f %s\n'%(self.THICKNESS,self.unit())
             else:
                 if self.F_BRAGG_A == 1:
                     txt += 'Asymmetric Cut angle  [DEG]             %f\n'%(self.A_BRAGG*180.0/numpy/pi)
@@ -1483,22 +1484,23 @@ class OE(ShadowLib.OE):
 
             #txt += 'Relative Index of Refraction            %f\n'%(self.ALFA)
 
-        if self.F_REFLEC == 0:
-            txt += 'Reflectivity                            OFF\n'
-        else:
-            if self.F_REFL == 0:
-                txt += 'Reflectivity      ON     coefficients from: %s'%(self.FILE_REFL.strip().decode())
-            if self.F_REFL == 1:
-                txt += 'Reflectivity      ON     coefficients from TT:'
-            if self.F_REFL == 2:
-                txt += 'Multilayer        ON     coefficients and geometry from :  %s'%(self.FILE_REFL.strip().decode())
+        if self.F_CRYSTAL == 0:
+            if self.F_REFLEC == 0:
+                txt += 'Reflectivity                            OFF\n'
+            else:
+                if self.F_REFL == 0:
+                    txt += 'Reflectivity      ON     coefficients from: %s\n'%(self.FILE_REFL.strip().decode())
+                if self.F_REFL == 1:
+                    txt += 'Reflectivity      ON     coefficients from input parameter\n'
+                if self.F_REFL == 2:
+                    txt += 'Multilayer        ON     coefficients and geometry from :  %s\n'%(self.FILE_REFL.strip().decode())
 
 
-        if self.F_REFLEC == 1: txt += 'Polarization dependence                 YES\n'
-        if self.F_REFLEC == 2: txt += 'Polarization dependence                 NO\n'
+            if self.F_REFLEC == 1: txt += 'Polarization dependence                 YES\n'
+            if self.F_REFLEC == 2: txt += 'Polarization dependence                 NO\n'
 
         if self.FHIT_C == 0:
-            txt += 'Mirror dimensions                       UNLIMITED\n'
+            txt += 'Optical element dimensions                       UNLIMITED\n'
         else:
             if self.FSHAPE == 0:
                 txt += 'Invalid o.e. dimensions ( FSHAPE=0 )\n'
@@ -1519,10 +1521,10 @@ class OE(ShadowLib.OE):
 
     txt += TOPLIN
     txt += 'Central Axis parameters :\n'
-    txt += 'Source Plane Distance                    %f\n'%(self.T_SOURCE)
-    txt += 'Image  Plane                             %f\n'%(self.T_IMAGE)
-    txt += 'Incidence Angle                          %f\n'%(self.T_INCIDENCE*180.0/numpy.pi)
-    txt += 'Reflection/Diffraction Angle             %f\n'%(self.T_REFLECTION*180.0/numpy.pi)
+    txt += 'Source Plane Distance                    %f %s\n'%(self.T_SOURCE,self.unit())
+    txt += 'Image  Plane                             %f %s\n'%(self.T_IMAGE,self.unit())
+    txt += 'Incidence Angle                          %f %s\n'%(self.T_INCIDENCE*180.0/numpy.pi,'deg')
+    txt += 'Reflection/Diffraction Angle             %f %s\n'%(self.T_REFLECTION*180.0/numpy.pi,'deg')
 
     txt += self.screeninfo()
 
@@ -1536,9 +1538,9 @@ class OE(ShadowLib.OE):
                     txt += 'Same configuration as Central Axis      YES\n'
                 else:
                     txt += 'Same configuration as Central Axis      NO\n'
-                txt += 'Objective focus at                       %f\n'%(self.SSOUR)
-                txt += 'Image focus at                           %f\n'%(self.SIMAG)
-                txt += 'Incidence angle                          %f\n'%(self.THETA*180.0/numpy.pi)
+                txt += 'Objective focus at                       %f %s\n'%(self.SSOUR, self.unit())
+                txt += 'Image focus at                           %f %s\n'%(self.SIMAG, self.unit())
+                txt += 'Incidence angle                          %f %s\n'%(self.THETA*180.0/numpy.pi, 'deg')
 
 
         txt += 'Parameters used follow:\n'
@@ -1546,13 +1548,13 @@ class OE(ShadowLib.OE):
             txt += 'Spherical Radius  %f\n'%(self.RMIRR)
         if self.FMIRR == 2:
             ECCENT = numpy.sqrt(self.AXMAJ**2-self.AXMIN**2)/self.AXMAJ
-            txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
-            txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
-            txt += '   Semi-focal-length %f\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2))
+            txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
+            txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
+            txt += '   Semi-focal-length %f %s\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2),self.unit())
             txt += '   Eccentricity      %f\n'%(ECCENT)
         if self.FMIRR == 3:
-            txt  += '   Major Radius (optical)     %f\n'%(self.R_MAJ+self.R_MIN)
-            txt  += '   Minor Radius               %f\n'%(self.R_MIN)
+            txt  += '   Major Radius (optical)     %f %s\n'%(self.R_MAJ+self.R_MIN, self.unit())
+            txt  += '   Minor Radius               %f %s\n'%(self.R_MIN, self.unit())
         if self.FMIRR == 4:
             txt += '   Parabola Param.  %f\n'%(self.PARAM)
         if self.FMIRR == 5:
@@ -1562,12 +1564,12 @@ class OE(ShadowLib.OE):
         if self.FMIRR == 7:
             AFOCI = numpy.sqrt(self.AXMIN**2+self.AXMAJ**2)
             ECCENT = AFOCI/numpy.abs(self.AXMAJ)
-            txt += '   Semi-major axis   %f\n'%(self.AXMAJ)
-            txt += '   Semi-minor axis   %f\n'%(self.AXMIN)
-            txt += '   Semi-focal-length %f\n'%(AFOCI)
+            txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
+            txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
+            txt += '   Semi-focal-length %f %s\n'%(AFOCI,self.unit())
             txt += '   Eccentricity      %f\n'%(ECCENT)
         if self.FMIRR == 8:
-            txt += '   Cone half-angle   %f\n'%(self.CONE_A*180.0/numpy.pi)
+            txt += '   Cone half-angle   %f %s\n'%(self.CONE_A*180.0/numpy.pi,'deg')
         if self.FMIRR == 9:
             txt += '   Polynomial Coeff file    %s\n'%(self.FILE_MIR.strip().decode())
 
@@ -1576,30 +1578,30 @@ class OE(ShadowLib.OE):
         else:
             txt += 'Source of this O.E. moved               YES\n'
             txt += 'In SOURCE reference frame: \n'
-            txt += 'Source Movement X:  %f\n'%(self.X_SOUR)
-            txt += '                Y:  %f\n'%(self.Y_SOUR)
-            txt += '                Z:  %f\n'%(self.Z_SOUR)
-            txt += 'Source rot at X:    %f\n'%(self.X_SOUR_ROT*180.0/numpy.pi)
-            txt += '              Y:    %f\n'%(self.Y_SOUR_ROT*180.0/numpy.pi)
-            txt += '              Z:    %f\n'%(self.Z_SOUR_ROT*180.0/numpy.pi)
+            txt += 'Source Movement X:  %f %s\n'%(self.X_SOUR,self.unit())
+            txt += '                Y:  %f %s\n'%(self.Y_SOUR,self.unit())
+            txt += '                Z:  %f %s\n'%(self.Z_SOUR,self.unit())
+            txt += 'Source rot at X:    %f %s\n'%(self.X_SOUR_ROT*180.0/numpy.pi,'deg')
+            txt += '              Y:    %f %s\n'%(self.Y_SOUR_ROT*180.0/numpy.pi,'deg')
+            txt += '              Z:    %f %s\n'%(self.Z_SOUR_ROT*180.0/numpy.pi,'deg')
             txt += 'In MIRROR reference frame: \n'
-            txt += 'Source distance     %f\n'%(self.RDSOUR)
-            txt += '       rotation     %f\n'%(self.ALPHA_S*180.0/numpy.pi)
-            txt += 'Incidence angle     %f\n'%(self.RTHETA*180.0/numpy.pi)
-            txt += 'Source offset X:    %f\n'%(self.OFF_SOUX)
-            txt += '              Y:    %f\n'%(self.OFF_SOUY)
-            txt += '              Z:    %f\n'%(self.OFF_SOUZ)
+            txt += 'Source distance     %f %s\n'%(self.RDSOUR,self.unit())
+            txt += '       rotation     %f %s\n'%(self.ALPHA_S*180.0/numpy.pi,'deg')
+            txt += 'Incidence angle     %f %s\n'%(self.RTHETA*180.0/numpy.pi,'deg')
+            txt += 'Source offset X:    %f %s\n'%(self.OFF_SOUX,self.unit())
+            txt += '              Y:    %f %s\n'%(self.OFF_SOUY,self.unit())
+            txt += '              Z:    %f %s\n'%(self.OFF_SOUZ,self.unit())
 
         if self.F_MOVE == 0:
             txt += 'Mirror at pole position ( no mov. )     YES\n'
         else:
             txt += 'Mirror moved from pole. Parameters :\n'
-            txt += 'Displacement along X:    %f\n'%(self.OFFX)
-            txt += '                   Y:    %f\n'%(self.OFFY)
-            txt += '                   Z:    %f\n'%(self.OFFZ)
-            txt += 'Rotation around X:    %f\n'%(self.X_ROT*180.0/numpy.pi)
-            txt += '                Y:    %f\n'%(self.Y_ROT*180.0/numpy.pi)
-            txt += '                Z:    %f\n'%(self.Z_ROT*180.0/numpy.pi)
+            txt += 'Displacement along X:    %f %s\n'%(self.OFFX,self.unit())
+            txt += '                   Y:    %f %s\n'%(self.OFFY,self.unit())
+            txt += '                   Z:    %f %s\n'%(self.OFFZ,self.unit())
+            txt += 'Rotation around X:    %f %s\n'%(self.X_ROT*180.0/numpy.pi,'deg')
+            txt += '                Y:    %f %s\n'%(self.Y_ROT*180.0/numpy.pi,'deg')
+            txt += '                Z:    %f %s\n'%(self.Z_ROT*180.0/numpy.pi,'deg')
         if ( (self.FMIRR == 1) or (self.FMIRR == 2) or (self.FMIRR == 4) or\
             (self.FMIRR == 5) or (self.FMIRR == 7) or (self.FMIRR == 8) or\
             (self.FMIRR == 9) or (self.FMIRR == 10) ):
@@ -3170,13 +3172,13 @@ def test_only_source():
 
     #4 histograms
     ticket_h = beam.histo1(col=1, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2.35,sh))
+    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sh))
     ticket_h = beam.histo1(col=3, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2.35,sv))
+    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sv))
     ticket_h = beam.histo1(col=4, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2.35,shp))
+    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),shp))
     ticket_h = beam.histo1(col=6, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2.35,svp))
+    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),svp))
 
     return beam
 
