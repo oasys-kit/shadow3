@@ -1638,7 +1638,7 @@ class OE(ShadowLib.OE):
             txt += '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  \n'
             txt += ' with \n'
             for i in range(10):
-                txt += '  c[%d]= %f\n'%(i,self.CCC[i])
+                txt += '  c[%d]= %f\n'%(i+1,self.CCC[i])
 
     txt += TOPLIN
     txt += '***************                 E N D                  ***************\n'

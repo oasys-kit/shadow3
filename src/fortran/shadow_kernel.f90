@@ -1564,7 +1564,7 @@ Contains
          IF (ABS(rr_attenuation_ima).GT.1e-15) THEN
            ! for amplitudes use sqrt(reflectivity)
            !rr_reflectivity = sqrt(exp(-ABS(r_attenuation_ima*DIST)))
-           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_ima*DIST)))
+           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_ima*DIST*user_units_to_cm)))
          END IF
          !if (j.le.10) print *,'>>>>0 ima: ',rr_attenuation_ima,DIST,rr_reflectivity
       END IF
@@ -8886,7 +8886,7 @@ end do
          IF (ABS(rr_attenuation_obj).GT.1e-15) THEN
            ! for amplitudes use sqrt(reflectivity)
            !rr_reflectivity = sqrt(exp(-ABS(r_attenuation_obj*TPAR)))
-           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_obj*TPAR)))
+           rr_reflectivity = sqrt(exp(-ABS(rr_attenuation_obj*TPAR*user_units_to_cm)))
          END IF
 !if (itik.lt.10) print *,'>>>>0 obj: ',rr_attenuation_obj,TPAR,rr_reflectivity
       END IF
