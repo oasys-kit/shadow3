@@ -1404,7 +1404,7 @@ class OE(ShadowLib.OE):
                 txt += 'Mosaic crystal thickness        %f %s\n'%(self.THICKNESS,self.unit())
             else:
                 if self.F_BRAGG_A == 1:
-                    txt += 'Asymmetric Cut angle  [DEG]             %f\n'%(self.A_BRAGG*180.0/numpy/pi)
+                    txt += 'Asymmetric Cut angle                    %f deg\n'%(self.A_BRAGG*180.0/numpy.pi)
                 if self.F_JOHANSSON == 1:
                     txt += 'JOHANSSON Geometry selected            \n'
                     txt += 'Johansson radius                         %f %s\n'(self.R_JOHANSSON,self.unit())
@@ -1472,7 +1472,7 @@ class OE(ShadowLib.OE):
                 txt += 'Fourth                        %f lines/(%s^5)\n'%(self.RUL_A4,"cm")
 
 
-        if self.F_REFRAC == 1:
+        if self.F_REFRAC == 1 and self.F_CRYSTAL == 0:
             if self.F_R_IND == 0:
                 txt += "Index of refraction in object space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_OBJ,self.R_ATTENUATION_OBJ)
                 txt += "Index of refraction in image space: %14.10f. Attenuation coeff: %f\n"%(self.R_IND_IMA,self.R_ATTENUATION_IMA)
@@ -1502,6 +1502,8 @@ class OE(ShadowLib.OE):
 
             if self.F_REFLEC == 1: txt += 'Polarization dependence                 YES\n'
             if self.F_REFLEC == 2: txt += 'Polarization dependence                 NO\n'
+        else:
+            txt += 'Crystal structure parameters from file: %s \n'%(self.FILE_REFL.strip().decode())
 
         if self.FHIT_C == 0:
             txt += 'Optical element dimensions                       UNLIMITED\n'
@@ -1533,49 +1535,53 @@ class OE(ShadowLib.OE):
     txt += self.screeninfo()
 
     if self.F_REFRAC != 2:
-        if self.F_EXT == 1:
-            txt += 'Mirror parameters                       EXTERNAL\n'
-        else:
-            if self.FMIRR != 10:
-                txt += 'Mirror parameters                       COMPUTED\n'
-                if self.F_DEFAULT == 1:
-                    txt += 'Same configuration as Central Axis      YES\n'
-                else:
-                    txt += 'Same configuration as Central Axis      NO\n'
-                txt += 'Objective focus at                       %f %s\n'%(self.SSOUR, self.unit())
-                txt += 'Image focus at                           %f %s\n'%(self.SIMAG, self.unit())
-                txt += 'Incidence angle                          %f %s\n'%(self.THETA*180.0/numpy.pi, 'deg')
+        if self.FMIRR != 5:
+            if self.F_EXT == 1:
+                txt += 'Mirror parameters                       EXTERNAL\n'
+            else:
+                if self.FMIRR != 10:
+                    txt += 'Mirror parameters                       COMPUTED\n'
+                    if self.F_DEFAULT == 1:
+                        txt += 'Same configuration as Central Axis      YES\n'
+                    else:
+                        txt += 'Same configuration as Central Axis      NO\n'
+                    txt += 'Objective focus at                       %f %s\n'%(self.SSOUR, self.unit())
+                    txt += 'Image focus at                           %f %s\n'%(self.SIMAG, self.unit())
+                    txt += 'Incidence angle                          %f %s\n'%(self.THETA*180.0/numpy.pi, 'deg')
 
 
-        txt += 'Parameters used follow:\n'
-        if self.FMIRR == 1:
-            txt += 'Spherical Radius  %f\n'%(self.RMIRR)
-        if self.FMIRR == 2:
-            ECCENT = numpy.sqrt(self.AXMAJ**2-self.AXMIN**2)/self.AXMAJ
-            txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
-            txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
-            txt += '   Semi-focal-length %f %s\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2),self.unit())
-            txt += '   Eccentricity      %f\n'%(ECCENT)
-        if self.FMIRR == 3:
-            txt  += '   Major Radius (optical)     %f %s\n'%(self.R_MAJ+self.R_MIN, self.unit())
-            txt  += '   Minor Radius               %f %s\n'%(self.R_MIN, self.unit())
-        if self.FMIRR == 4:
-            txt += '   Parabola Param.  %f\n'%(self.PARAM)
-        if self.FMIRR == 5:
-            txt += '   Plane mirror \n'
-        if self.FMIRR == 6:
-            txt += '   Codling Slit\n'
-        if self.FMIRR == 7:
-            AFOCI = numpy.sqrt(self.AXMIN**2+self.AXMAJ**2)
-            ECCENT = AFOCI/numpy.abs(self.AXMAJ)
-            txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
-            txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
-            txt += '   Semi-focal-length %f %s\n'%(AFOCI,self.unit())
-            txt += '   Eccentricity      %f\n'%(ECCENT)
-        if self.FMIRR == 8:
-            txt += '   Cone half-angle   %f %s\n'%(self.CONE_A*180.0/numpy.pi,'deg')
-        if self.FMIRR == 9:
-            txt += '   Polynomial Coeff file    %s\n'%(self.FILE_MIR.strip().decode())
+            txt += 'Parameters used follow:\n'
+            if self.FMIRR == 1:
+                txt += 'Spherical Radius  %f\n'%(self.RMIRR)
+            if self.FMIRR == 2:
+                ECCENT = numpy.sqrt(self.AXMAJ**2-self.AXMIN**2)/self.AXMAJ
+                txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
+                txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
+                txt += '   Semi-focal-length %f %s\n'%(numpy.sqrt(self.AXMAJ**2-self.AXMIN**2),self.unit())
+                txt += '   Eccentricity      %f\n'%(ECCENT)
+            if self.FMIRR == 3:
+                txt  += '   Major Radius (optical)     %f %s\n'%(self.R_MAJ+self.R_MIN, self.unit())
+                txt  += '   Minor Radius               %f %s\n'%(self.R_MIN, self.unit())
+            if self.FMIRR == 4:
+                txt += '   Parabola Param.  %f\n'%(self.PARAM)
+            if self.FMIRR == 5:
+                txt += '   Plane mirror \n'
+            if self.FMIRR == 6:
+                txt += '   Codling Slit\n'
+            if self.FMIRR == 7:
+                AFOCI = numpy.sqrt(self.AXMIN**2+self.AXMAJ**2)
+                ECCENT = AFOCI/numpy.abs(self.AXMAJ)
+                txt += '   Semi-major axis   %f %s\n'%(self.AXMAJ,self.unit())
+                txt += '   Semi-minor axis   %f %s\n'%(self.AXMIN,self.unit())
+                txt += '   Semi-focal-length %f %s\n'%(AFOCI,self.unit())
+                txt += '   Eccentricity      %f\n'%(ECCENT)
+            if self.FMIRR == 8:
+                txt += '   Cone half-angle   %f %s\n'%(self.CONE_A*180.0/numpy.pi,'deg')
+            if self.FMIRR == 9:
+                txt += '   Polynomial Coeff file    %s\n'%(self.FILE_MIR.strip().decode())
+
+
+
 
         if self.FSTAT == 0:
             txt += 'Source of this O.E. moved               NO\n'

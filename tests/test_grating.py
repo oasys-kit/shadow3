@@ -142,7 +142,7 @@ def test_grating():
 
 
     number_of_rays = 10000
-    cm_or_mm = 0  # 0=using cm, 1=using mm
+    cm_or_mm = 1  # 0=using cm, 1=using mm
 
 
     if cm_or_mm == 0:
