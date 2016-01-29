@@ -33,7 +33,6 @@ def run_example_attenuator(user_units_to_cm=1.0,npoint=5000,iwrite=0):
     oe0.ISTAR1 = 1234567
     oe0.NPOINT = npoint
 
-    oe1.DUMMY = 1.0
     oe1.F_REFRAC = 2
     oe1.DUMMY = user_units_to_cm
     oe1.T_SOURCE = 100.0 / user_units_to_cm

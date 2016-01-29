@@ -535,7 +535,7 @@ class Beam(ShadowLib.Beam):
       ticket['bin_left'] = bins[:-1]
       ticket['bin_right'] = bins[:-1]+(bins[1]-bins[0])
       ticket['xrange'] = xrange
-      ticket['intensity'] = w.sum()
+      ticket['intensity'] = self.intensity(nolost=nolost)
       ticket['fwhm'] = None
       ticket['nrays'] = self.nrays(nolost=0)
       ticket['good_rays'] = self.nrays(nolost=1)
