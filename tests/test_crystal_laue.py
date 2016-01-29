@@ -1,7 +1,7 @@
 import Shadow
 
 #
-# runs a plane grating
+# runs a Laue crystal. Taken from a workspace in the Tutorials
 #
 # See: http://dx.doi.org/10.1088/0031-8949/73/5/014
 #
@@ -45,6 +45,7 @@ def run_example_crystal_laue(user_units_to_cm=1.0,npoint=5000,iwrite=0):
     oe0.SIGMAZ = 0.00902100001 / user_units_to_cm
     oe0.VDIV1 = 0.0
     oe0.VDIV2 = 0.0
+    oe0.NPOINT = npoint
 
     oe1.A_BRAGG = 55.0
     oe1.FHIT_C = 1
@@ -102,6 +103,8 @@ def test_crystal_laue():
 
     number_of_rays = 10000
     cm_or_mm = 0  # 0=using cm, 1=using mm
+
+
 
 
     if cm_or_mm == 0:

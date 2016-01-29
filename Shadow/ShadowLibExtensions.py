@@ -602,7 +602,10 @@ class Beam(ShadowLib.Beam):
     :param col_h: the horizontal column
     :param col_v: the vertical column
     :param nbins: number of bins
-    :param ref: ref=0:weight with rays, ref=1 or 23 weight with intensities, ref=col weight with col ,
+    :param ref      :
+               0, None, "no", "NO" or "No":   only count the rays
+               23, "Yes", "YES" or "yes":     weight with intensity (look at col=23 |E|^2 total intensity)
+               other value: use that column as weight
     :param nbins_h: number of bins in H
     :param nbins_v: number of bins in V
     :param nolost: 0 or None: all rays, 1=good rays, 2=only losses
@@ -614,8 +617,18 @@ class Beam(ShadowLib.Beam):
 
     ticket = {'error':1}
 
-    if ref == 1: ref = 23
+
     if ref == None: ref = 0
+    if ref == "No": ref = 0
+    if ref == "NO": ref = 0
+    if ref == "no": ref = 0
+
+    if ref == "Yes": ref = 23
+    if ref == "YES": ref = 23
+    if ref == "yes": ref = 23
+
+    if ref == 1:
+          print("Shadow.Beam.histo2: Warning: weighting with column 1 (X) [not with intensity as may happen in old versions]")
 
     if nbins_h == None: nbins_h = nbins
     if nbins_v == None: nbins_v = nbins
@@ -1352,11 +1365,14 @@ class OE(ShadowLib.OE):
     else:
 
         txt += 'Surface figure was defined as: %s \n'%(type1[str(self.FMIRR)])
-        if self.FCYL == 0:
-            txt += 'Cylindrical figure                      NO\n'
-        else:
-            txt += 'Cylindrical figure                      YES\n'
-            txt += 'Cylinder axis angle from X-axis         %f \n'%(self.CIL_ANG*180.0/numpy.pi)
+        if ( (self.FMIRR == 1) or (self.FMIRR == 2) or (self.FMIRR == 4) or \
+             (self.FMIRR == 7) or (self.FMIRR == 8) or (self.FMIRR == 9) or \
+             (self.FMIRR == 10) ):
+            if self.FCYL == 0:
+                txt += 'Cylindrical figure                      NO\n'
+            else:
+                txt += 'Cylindrical figure                      YES\n'
+                txt += 'Cylinder axis angle from X-axis         %f \n'%(self.CIL_ANG*180.0/numpy.pi)
 
 
         if self.F_ROUGHNESS == 1:
@@ -1395,8 +1411,8 @@ class OE(ShadowLib.OE):
 
         if ((self.F_GRATING == 0) and (self.F_CRYSTAL == 1)):
             txt += 'Element type                            CRYSTAL\n'
-            txt += 'Lattice Spacing                         %g cm\n'%(self.D_SPACING)
-            txt += 'Bragg Reflection from  %s\n'%(self.FILE_REFL.strip().decode())
+            txt += 'Lattice Spacing                         %g Angstroms\n'%(1e8*self.D_SPACING)
+            # txt += 'Bragg Reflection from file:             %s\n'%(self.FILE_REFL.strip().decode())
             if self.F_MOSAIC == 1:
                 txt += 'MOSAIC Crystal selected                \n'
                 txt += 'Mosaic crystal spread (st. dev) %f %s\n'%(self.SPREAD_MOS*180.0/numpy.pi,'deg')
