@@ -211,8 +211,8 @@ class Beam(ShadowLib.Beam):
             27   K = 2 pi / lambda * col4 [A^-1]
             28   K = 2 pi / lambda * col5 [A^-1]
             29   K = 2 pi / lambda * col6 [A^-1]
-            30   S0-stokes = |Es|^2 + |Ep|^2
-            31   S1-stokes = |Es|^2 - |Ep|^2
+            30   S0-stokes = |Ep|^2 + |Es|^2
+            31   S1-stokes = |Ep|^2 - |Es|^2
             32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
             33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
     '''
@@ -1308,6 +1308,8 @@ class OE(ShadowLib.OE):
 
   def screeninfo(self):
         txt = ""
+        TSLIT  = ('SLIT       ','STOP       ')
+        TSLITSHAPE = ('RECTANGULAR','ELLIPTICAL ','EXTERNAL   ')
         if self.F_SCREEN == 1:
             txt += '  SCREENS:     %d defined \n'%self.N_SCREEN
             for i in range(self.N_SCREEN):
@@ -1823,8 +1825,6 @@ class CompoundOE():
     TOPLIN = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
     TSCR = {}
     TYPE1 = {}
-    TSLIT  = ('SLIT       ','STOP       ')
-    TSLITSHAPE = ('RECTANGULAR','ELLIPTICAL ','EXTERNAL   ')
 
     TSCR["1"] = 'AFTER Mirror'
     TSCR["2"] = 'BEFORE  Mirror'
@@ -2639,7 +2639,6 @@ class CompoundOE():
       #
       #surface errors
       #
-
       if surface_error_files[0] != "":
         oe1.F_RIPPLE = 1
         oe1.FILE_RIP = surface_error_files[0].encode('utf-8')
@@ -3745,6 +3744,7 @@ def test_sysinfo_withscreen():
 
 
 
+
 if __name__ == '__main__':
     do_tests = 0
     if do_tests:
@@ -3757,5 +3757,6 @@ if __name__ == '__main__':
         test_id23_2()
         test_dcm()
         test_sysinfo_withscreen()
+
 
 
