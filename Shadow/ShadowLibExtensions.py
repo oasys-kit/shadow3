@@ -356,43 +356,37 @@ class Beam(ShadowLib.Beam):
           return numpy.array(numpy.where(w < 0)).size
 
 
-  def histo1(self,col,xrange=None,nbins=50,nolost=0,ref=0,write=None,factor=1.0):
-      '''
-      Calculate the histogram of a column, simply counting the rays, or weighting with the intensity.
+  def histo1(self,col,xrange=None,nbins=50,nolost=0,ref=0,write=None,factor=1.0,calculate_widths=1):
+      """
+      Calculate the histogram of a column, simply counting the rays, or weighting with another column.
       It returns a dictionary which contains the histogram data.
 
-      Inumpy.ts:
-         beam     : str instance with the name of the shadow file to be loaded, or a Shadow.Beam initialized instance.
-         col      : int for the chosen column.
-
-      Optional keywords:
-         xrange   : tuple or list of length 2 describing the interval of interest for x, the data read from the chosen column.
+      :param col: int for the chosen column.
+      :param xrange:  tuple or list of length 2 describing the interval of interest for x, the data read from the chosen column.
                     (default: None, thus using min and max of the array)
-         nbins    : number of bins of the histogram.
-         nolost   :
+      :param nbins:  number of bins of the histogram.
+      :param nolost:
                0   All rays
                1   Only good rays
                2   Only lost rays
-         ref      :
+      :param ref:
                0, None, "no", "NO" or "No":   only count the rays
                23, "Yes", "YES" or "yes":     weight with intensity (look at col=23 |E|^2 total intensity)
                other value: use that column as weight
-         write    :
+      :param write:
                None (default)   don't write any file
                file_name   write the histogram into the file 'file_name'.
-         factor   : a scalar factor to multiply the selected column before histogramming
+      :param factor:  a scalar factor to multiply the selected column before histogramming
                     (e.g., for changing scale from cm to um then factor=1e4).
+      :param calculate_widths:
+      :return:         a python dictionary with the calculated histogram. The following keys are set:
+               error, col, write, nolost, nbins, xrange, factor
+               histogram, bins, histogram_sigma, bin_center, bin_left, bin_right,
+               intensity, fwhm, nrays, good_rays,
 
-      Outputs:
-         a python dictionary with the calculated histogram. The following keys are set:
-               histogram, histogram_sigma, bin_center, bin_left, xramge, intensity
-               xrange, nbins, ref, nolost
 
 
-      Error:
-         if an error occurs an ArgsError is raised.
-
-      Possible choice for col are:
+      Memorandum: Possible choice for col are:
                1   X spatial coordinate [user's unit]
                1   X spatial coordinate [user's unit]
                2   Y spatial coordinate [user's unit]
@@ -427,6 +421,33 @@ class Beam(ShadowLib.Beam):
               31   S1-stokes = |Es|^2 - |Ep|^2
               32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
               33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
+      """
+
+
+
+      '''
+
+
+      Inputs:
+         beam     : str instance with the name of the shadow file to be loaded, or a Shadow.Beam initialized instance.
+         col      :
+
+      Optional keywords:
+         xrange   :
+         nbins    :
+         nolost   :
+         ref      :
+         write    :
+         factor   :
+
+      Outputs:
+
+
+
+      Error:
+         if an error occurs an ArgsError is raised.
+
+
       '''
       #initialize return value
       ticket = {'error':1}
@@ -452,7 +473,6 @@ class Beam(ShadowLib.Beam):
       ticket['nbins'] = nbins
       ticket['xrange'] = xrange
 
-      ticket['write'] = write
       ticket['factor'] = factor
       ticket['ref'] = ref
       
@@ -464,27 +484,6 @@ class Beam(ShadowLib.Beam):
 
       if factor != 1.0: x *= factor
 
-      # if nolost==0:
-      #   t = numpy.where(a!=-3299)
-      #
-      # if nolost==1:
-      #   t = numpy.where(a > 0.0)
-      #
-      # if nolost==2:
-      #   t = numpy.where(a < 0.0)
-      #
-      # if nolost > 2:
-      #   print ('invalid value for nolost flag: %d'%(nolost))
-      #   #raise KeyError ('invalid value for nolost flag: %d'%(nolost))
-      #   return ticket
-      #
-      #
-      # t = numpy.array(t)
-      # t.shape = -1
-      #
-      # if t.size == 0:
-      #   print ('no rays match the selection, the histogram will not be calculated')
-      #   return ticket
 
       if xrange == None:
           xrange = [x.min(), x.max() ]
@@ -551,12 +550,31 @@ class Beam(ShadowLib.Beam):
       ticket['histogram_path'] = numpy.array(tmp_h)
       ticket['bin_path'] = numpy.array(tmp_b)
 
-      #CALCULATE fwhm
-      tt = numpy.where(h>=max(h)*0.5)
-      if h[tt].size > 1:
-          binSize = bins[1]-bins[0]
-          ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0])
-          ticket['fwhm_coordinates'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
+      if calculate_widths > 0:
+          #CALCULATE fwhm
+          tt = numpy.where(h>=max(h)*0.5)
+          if h[tt].size > 1:
+              binSize = bins[1]-bins[0]
+              ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0])
+              ticket['fwhm_coordinates'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
+
+
+      if calculate_widths == 2:
+            # CALCULATE FW at 25% HEIGHT
+            tt = numpy.where(h>=max(h)*0.25)
+            if h[tt].size > 1:
+                binSize = bins[1]-bins[0]
+                ticket['fw25%m'] = binSize*(tt[0][-1]-tt[0][0])
+            else:
+                ticket["fw25%m"] = None
+
+            # CALCULATE FW at 75% HEIGHT
+            tt = numpy.where(h>=max(h)*0.75)
+            if h[tt].size > 1:
+                binSize = bins[1]-bins[0]
+                ticket['fw75%m'] = binSize*(tt[0][-1]-tt[0][0])
+            else:
+                ticket["fw75%m"] = None
 
       return ticket
 
@@ -590,7 +608,8 @@ class Beam(ShadowLib.Beam):
 
 
 
-  def histo2(self,col_h,col_v,nbins=25,ref=23, nbins_h=None, nbins_v=None, nolost=0,xrange=None,yrange=None):
+  def histo2(self,col_h,col_v,nbins=25,ref=23, nbins_h=None, nbins_v=None, nolost=0,xrange=None,yrange=None,
+             calculate_widths=1):
     """
 
     performs 2d histogram to prepare data for a plotxy plot
@@ -611,6 +630,7 @@ class Beam(ShadowLib.Beam):
     :param nolost: 0 or None: all rays, 1=good rays, 2=only losses
     :param xrange: range for H
     :param yrange: range for V
+    :param calculate_widths: 0=No, 1=calculate FWHM (default), 2=Calculate FWHM and FW at 25% and 75% if Maximum
     :return: a dictionary with all data needed for plot
     """
 
@@ -671,30 +691,63 @@ class Beam(ShadowLib.Beam):
     ticket['good_rays'] = self.nrays(nolost=1)
 
 
-    #CALCULATE fwhm
+    # CALCULATE fwhm
 
-    h = ticket['histogram_h']
-    tt = numpy.where(h>=max(h)*0.5)
-    if h[tt].size > 1:
-        binSize = ticket['bin_h_center'][1]-ticket['bin_h_center'][0]
-        ticket['fwhm_h'] = binSize*(tt[0][-1]-tt[0][0])
-        ticket['fwhm_coordinates_h'] = (ticket['bin_h_center'][tt[0][0]],ticket['bin_h_center'][tt[0][-1]])
-    else:
-        ticket["fwhm_h"] = None
+    if calculate_widths > 0:
+        h = ticket['histogram_h']
+        tt = numpy.where(h>=max(h)*0.5)
+        if h[tt].size > 1:
+            binSize = ticket['bin_h_center'][1]-ticket['bin_h_center'][0]
+            ticket['fwhm_h'] = binSize*(tt[0][-1]-tt[0][0])
+            ticket['fwhm_coordinates_h'] = (ticket['bin_h_center'][tt[0][0]],ticket['bin_h_center'][tt[0][-1]])
+        else:
+            ticket["fwhm_h"] = None
 
-    h = ticket['histogram_v']
-    tt = numpy.where(h>=max(h)*0.5)
-    if h[tt].size > 1:
-        binSize = ticket['bin_v_center'][1]-ticket['bin_v_center'][0]
-        ticket['fwhm_v'] = binSize*(tt[0][-1]-tt[0][0])
-        ticket['fwhm_coordinates_v'] = (ticket['bin_v_center'][tt[0][0]],ticket['bin_v_center'][tt[0][-1]])
-    else:
-        ticket["fwhm_v"] = None
+        h = ticket['histogram_v']
+        tt = numpy.where(h>=max(h)*0.5)
+        if h[tt].size > 1:
+            binSize = ticket['bin_v_center'][1]-ticket['bin_v_center'][0]
+            ticket['fwhm_v'] = binSize*(tt[0][-1]-tt[0][0])
+            ticket['fwhm_coordinates_v'] = (ticket['bin_v_center'][tt[0][0]],ticket['bin_v_center'][tt[0][-1]])
+        else:
+            ticket["fwhm_v"] = None
 
-    # print(">>>>Sum of H: ",ticket["histogram_h"].sum())
-    # print(">>>>Sum of V: ",ticket["histogram_v"].sum())
-    # print(">>>>Sum of I: ",ticket["histogram"].sum())
-    # print(">>>>Sum of W: ",weights.sum())
+
+    if calculate_widths == 2:
+        # CALCULATE FW at 25% HEIGHT
+        h = ticket['histogram_h']
+        tt = numpy.where(h>=max(h)*0.25)
+        if h[tt].size > 1:
+            binSize = ticket['bin_h_center'][1]-ticket['bin_h_center'][0]
+            ticket['fw25%m_h'] = binSize*(tt[0][-1]-tt[0][0])
+        else:
+            ticket["fw25%m_h"] = None
+
+        h = ticket['histogram_v']
+        tt = numpy.where(h>=max(h)*0.25)
+        if h[tt].size > 1:
+            binSize = ticket['bin_v_center'][1]-ticket['bin_v_center'][0]
+            ticket['fw25%m_v'] = binSize*(tt[0][-1]-tt[0][0])
+        else:
+            ticket["fw25%m_v"] = None
+
+        # CALCULATE FW at 75% HEIGHT
+        h = ticket['histogram_h']
+        tt = numpy.where(h>=max(h)*0.75)
+        if h[tt].size > 1:
+            binSize = ticket['bin_h_center'][1]-ticket['bin_h_center'][0]
+            ticket['fw75%m_h'] = binSize*(tt[0][-1]-tt[0][0])
+        else:
+            ticket["fw75%m_h"] = None
+
+        h = ticket['histogram_v']
+        tt = numpy.where(h>=max(h)*0.75)
+        if h[tt].size > 1:
+            binSize = ticket['bin_v_center'][1]-ticket['bin_v_center'][0]
+            ticket['fw75%m_v'] = binSize*(tt[0][-1]-tt[0][0])
+        else:
+            ticket["fw75%m_v"] = None
+
     return ticket
 
   def plotxy(self,*args, **kwargs):
@@ -1640,7 +1693,7 @@ class OE(ShadowLib.OE):
             txt += '    c[7]*X + c[8]*Y + c[9]*Z + c[10] = 0  \n'
             txt += ' with \n'
             for i in range(10):
-                txt += '  c[%d]= %f\n'%(i+1,self.CCC[i])
+                txt += '  c[%d]= %g\n'%(i+1,self.CCC[i])
 
     txt += TOPLIN
     txt += '***************                 E N D                  ***************\n'
@@ -3038,10 +3091,14 @@ class Source(ShadowLib.Source):
             txt += 'Source assumed TRIDIMENSIONAL.\n'
 
 
-
-        txt += 'Source Spatial Characteristics: '+TSPATIAL[str(1+self.FSOUR)]
-        txt += '\n'
-
+        if self.F_WIGGLER == 1:
+            txt += 'Source Type: Wiggler\n'
+            txt += 'File with Cumulative Distribution Function: %s\n'%self.FILE_TRAJ.strip().decode()
+        elif self.F_WIGGLER == 2:
+            txt += 'Source Type: Undulator\n'
+            txt += 'File with Cumulative Distribution Function: %s\n'%self.FILE_TRAJ.strip().decode()
+        else:
+            txt += 'Source Spatial Characteristics: '+TSPATIAL[str(1+self.FSOUR)]+'\n'
 
         if ((self.FSOUR == 1) or (self.FSOUR)) == 2:
             txt += 'Source width: %17.9g and Height: %17.9g'%(self.WXSOU,self.WZSOU)
@@ -3063,25 +3120,27 @@ class Source(ShadowLib.Source):
         # !C
         # !C Source Emission
         # !C
-        txt += TOPLIN
-        txt += 'Source Emission Characteristics\n'
-        txt += 'Distribution Type: %s \n'%(TANG[str(self.FDISTR)])
-        if self.FDISTR != 5:
-            txt += 'Distribution Limits. +X : %17.9g   -X: %17.9g   rad\n'%(self.HDIV1,self.HDIV2)
-            txt += '                     +Z : %17.9g   -Z: %17.9g   rad\n'%(self.VDIV1,self.VDIV2)
+        if self.F_WIGGLER == 0:
+            txt += TOPLIN
+            txt += 'Source Emission Characteristics\n'
+            txt += 'Distribution Type: %s \n'%(TANG[str(self.FDISTR)])
+            if self.FDISTR != 5:
+                txt += 'Distribution Limits. +X : %17.9g   -X: %17.9g   rad\n'%(self.HDIV1,self.HDIV2)
+                txt += '                     +Z : %17.9g   -Z: %17.9g   rad\n'%(self.VDIV1,self.VDIV2)
 
-        if ((self.FDISTR == 3) or (self.FDISTR == 7)):
-            txt += 'Horiz. StDev : %17.9g\n'%(self.SIGDIX)
-            txt += 'Verti. StDev : %17.9g\n'%(self.SIGDIZ)
+            if ((self.FDISTR == 3) or (self.FDISTR == 7)):
+                txt += 'Horiz. StDev : %17.9g\n'%(self.SIGDIX)
+                txt += 'Verti. StDev : %17.9g\n'%(self.SIGDIZ)
 
-        if self.FDISTR == 5:
-            txt += 'Cone Outer Aperture : %17.9g Inner Aperture : %17.9g \n'%(self.CONE_MAX,self.CONE_MIN)
+            if self.FDISTR == 5:
+                txt += 'Cone Outer Aperture : %17.9g Inner Aperture : %17.9g \n'%(self.CONE_MAX,self.CONE_MIN)
 
         # !C
         # !C Synchrotron Case
         # !C
         if ((self.FDISTR == 4) or (self.FDISTR == 6)):
-            txt += 'Magnetic Radius = %17.9g  m.  Beam Energy = %17.9g  GeV.\n'%(self.R_MAGNET,self.BENER)
+            if self.F_WIGGLER == 0:
+                txt += 'Magnetic Radius = %17.9g  m.  Beam Energy = %17.9g  GeV.\n'%(self.R_MAGNET,self.BENER)
             txt += 'Beam Emittancies. EPSI_X: %17.9g EPSI_Z: %17.9g \n'%(self.EPSI_X,self.EPSI_Z)
             txt += 'Distance from Waist.   X: %17.9g      Z: %17.9g \n'%(self.EPSI_DX,self.EPSI_DZ)
             txt += 'Polarization Used: %s \n'%(TPOL[str(self.F_POL)])
@@ -3113,7 +3172,8 @@ class Source(ShadowLib.Source):
             WAVE['9'] = self.PH9
             WAVE['10'] = self.PH10
 
-            txt += 'Source Photon Energy Distribution: %s \n'%(TPHOT[str(2+self.F_COLOR)])
+            if self.F_WIGGLER == 0:
+                txt += 'Source Photon Energy Distribution: %s \n'%(TPHOT[str(2+self.F_COLOR)])
             codata_h = numpy.array(6.62606957e-34)
             codata_ec = numpy.array(1.602176565e-19)
             codata_c = numpy.array(299792458.0)
@@ -3136,14 +3196,14 @@ class Source(ShadowLib.Source):
                 txt += 'From Photon Energy: %17.9g eV or %17.9g Angs.\n'%(photonArray['1'],WAVE['1'])
                 txt += ' to  Photon Energy: %17.9g eV or %17.9g Angs.\n'%(photonArray['2'],WAVE['2'])
 
-
-        if self.F_POLAR:
-            txt += 'Angular difference in phase is %12.5g \n'%(self.POL_ANGLE*180.0/numpy.pi)
-            txt += 'Degree of polarization is %12.5g \n'%(self.POL_DEG)
-            if self.F_COHER == 0:
-                txt += 'Source points have INCOHERENT phase.\n'
-            else:
-                txt += 'Source points have COHERENT phase.\n'
+        if self.F_WIGGLER == 0:
+            if self.F_POLAR:
+                txt += 'Angular difference in phase is %12.5g \n'%(self.POL_ANGLE*180.0/numpy.pi)
+                txt += 'Degree of polarization is %12.5g \n'%(self.POL_DEG)
+                if self.F_COHER == 0:
+                    txt += 'Source points have INCOHERENT phase.\n'
+                else:
+                    txt += 'Source points have COHERENT phase.\n'
 
         #
         # optimization
@@ -3196,14 +3256,24 @@ def test_only_source():
     print(src.sourcinfo(title='sourcinfo in python'))
 
     #4 histograms
-    ticket_h = beam.histo1(col=1, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sh))
+    ticket_h = beam.histo1(col=1, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes",calculate_widths=2)
+    print('Histogram FW25M col1: %f: '%(ticket_h['fw25%m']))
+    print('Histogram FWHM col1: %f, stdev: %f, initial: %f: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sh))
+    print('Histogram FW75M col1: %f: '%(ticket_h['fw75%m']))
+
+
     ticket_h = beam.histo1(col=3, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sv))
+    print('Histogram FWHM col3: %f, stdev: %f, initial: %f: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),sv))
     ticket_h = beam.histo1(col=4, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),shp))
+    print('Histogram FWHM col4: %f, stdev: %f, initial: %f: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),shp))
     ticket_h = beam.histo1(col=6, nbins = 500, nolost=1, write='HISTO1', xrange=None , ref="Yes")
-    print('Histogram FWHM: %f, stdev: %f, initial: %f\n: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),svp))
+    print('Histogram FWHM col6: %f, stdev: %f, initial: %f: '%(ticket_h['fwhm'],ticket_h['fwhm']/2*numpy.sqrt(2*numpy.log(2)),svp))
+
+    #side histograms using histo2
+    ticket_p = beam.histo2(1,3,nbins=500,ref="Yes",calculate_widths=2)
+    print('Histogram FW25M: col1: %f, col3: %f: '%(ticket_p['fw25%m_h'],ticket_p['fw25%m_v']))
+    print('Histogram FWHM: col1: %f, col3: %f: '%(ticket_p['fwhm_h'],ticket_p['fwhm_v']))
+    print('Histogram FW75M: col1: %f, col3: %f: '%(ticket_p['fw75%m_h'],ticket_p['fw75%m_v']))
 
     return beam
 
