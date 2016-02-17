@@ -2299,10 +2299,12 @@ class CompoundOE():
           oe1.F_R_IND = 2 #keyboard in object space, file in image space
           oe1.R_IND_OBJ = 1.0
           oe1.R_ATTENUATION_OBJ = 0.0
-          oe1.FILE_R_IND_IMA = prerefl_file.encode('utf-8')
+          # oe1.FILE_R_IND_IMA = prerefl_file.encode('utf-8')
+          oe1.FILE_R_IND_IMA = prerefl_file
 
           oe2.F_R_IND = 1 #file in object space, keyboard in image space
-          oe2.FILE_R_IND_OBJ = prerefl_file.encode('utf-8')
+          # oe2.FILE_R_IND_OBJ = prerefl_file.encode('utf-8')
+          oe2.FILE_R_IND_OBJ = prerefl_file
           oe2.R_IND_IMA = 1.0
           oe2.R_ATTENUATION_IMA = 0.0
       else:
@@ -2635,9 +2637,10 @@ class CompoundOE():
       oe2.F_REFLEC = 0
       oe1.F_REFL = 0 #prerefl
       oe2.F_REFL = 0
-      oe1.FILE_REFL = ''.encode('utf-8')
-      oe2.FILE_REFL = ''.encode('utf-8')
-
+      # oe1.FILE_REFL = ''.encode('utf-8')
+      # oe2.FILE_REFL = ''.encode('utf-8')
+      oe1.FILE_REFL = bytes('', encode('utf-8'))
+      oe2.FILE_REFL = bytes('', encode('utf-8'))
 
       if dimensions1 != [0,0]:
           oe1.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
@@ -2669,12 +2672,14 @@ class CompoundOE():
       if reflectivity_kind[0] == 1:  # mirror
           oe1.F_REFLEC = 1
           oe1.F_REFL = 0   # prerefl mirror
-          oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+          # oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+          oe1.FILE_REFL = reflectivity_files[0]
 
       if reflectivity_kind[0] == 2:  # multilayer
           oe1.F_REFLEC = 1
           oe1.F_REFL = 2   # multilayer
-          oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+          # oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
+          oe1.FILE_REFL = reflectivity_files[0]
 
       if reflectivity_kind[1] == 0:  # ideal
           oe2.F_REFLEC = 0
@@ -2682,26 +2687,30 @@ class CompoundOE():
       if reflectivity_kind[1] == 1:  # mirror
           oe2.F_REFLEC = 1
           oe2.F_REFL = 0   # prerefl mirror
-          oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+          # oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+          oe2.FILE_REFL = reflectivity_files[1]
 
       if reflectivity_kind[1] == 2:  # multilayer
           oe2.F_REFLEC = 1
           oe2.F_REFL = 2   # multilayer
-          oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+          # oe2.FILE_REFL = reflectivity_files[1].encode('utf-8')
+          oe2.FILE_REFL = reflectivity_files[1]
 
       #
       #surface errors
       #
       if surface_error_files[0] != "":
         oe1.F_RIPPLE = 1
-        oe1.FILE_RIP = surface_error_files[0].encode('utf-8')
+        # oe1.FILE_RIP = surface_error_files[0].encode('utf-8')
+        oe1.FILE_RIP = surface_error_files[0]
         oe1.F_G_S = 2
       else:
         oe1.F_RIPPLE = 0
 
       if surface_error_files[1] != "":
         oe2.F_RIPPLE = 1
-        oe2.FILE_RIP = surface_error_files[1].encode('utf-8')
+        # oe2.FILE_RIP = surface_error_files[1].encode('utf-8')
+        oe2.FILE_RIP = surface_error_files[1]
         oe2.F_G_S = 2
       else:
         oe2.F_RIPPLE = 0
@@ -2774,8 +2783,11 @@ class CompoundOE():
       oe2.T_REFLECTION = 0.0   # not used (autosetting)
 
 
-      oe1.FILE_REFL = reflectivity_file.encode('utf-8')
-      oe2.FILE_REFL = reflectivity_file.encode('utf-8')
+      # oe1.FILE_REFL = reflectivity_file.encode('utf-8')
+      # oe2.FILE_REFL = reflectivity_file.encode('utf-8')
+      oe1.FILE_REFL = reflectivity_file
+      oe2.FILE_REFL = reflectivity_file
+
       #
       #
       if dimensions1 != [0,0]:
