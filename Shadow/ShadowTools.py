@@ -1083,8 +1083,8 @@ def focnew(beam,nolost=1,mode=0,center=[0.0,0.0]):
             ticket['AX']             # \
             ticket['AZ']             #  focnew coefficients (to be used by focnew_scan)
             ticket['AT']             # /
-            ticket['x_waist']        # position of waist X (sagittal)
-            ticket['z_waist']        # position of waist Z (tangential)
+            ticket['x_waist']        # position of waist X
+            ticket['z_waist']        # position of waist Z
             ticket['t_waist']        # position of waist T (averaged)
             ticket['text'] = txt     # a text with focnew info
 
@@ -1165,22 +1165,24 @@ def focnew(beam,nolost=1,mode=0,center=[0.0,0.0]):
     SIGZ0 = numpy.sqrt(numpy.abs(AZ[2] - AZ[3]))
     SIGT0 = numpy.sqrt(numpy.abs(AT[2] - AT[3]))
 
-    txt += '.............   S A G I T T A L   ............\n'
+    # txt += '.............   S A G I T T A L   ............\n'
+    txt += '.............   X AXIS (column 1)    ............\n'
     txt += 'X coefficients :   %g %g %g\n'%(AX[0],AX[1],AX[2])
     txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(XBAR)),numpy.sqrt(numpy.abs(VXBAR)))
-    txt += 'Sagittal focus at       :  %g\n'%(TPARX)
+    txt += 'Focus along X at       :  %g\n'%(TPARX)
     txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGX)
     txt += 'Waist size at origin                :  %g\n'%(SIGX0)
 
-    txt += '.............  T A N G E N T I A L  .............\n'
+    # txt += '.............  T A N G E N T I A L  .............\n'
+    txt += '.............   Z AXIS (column 3)    ............\n'
     txt += 'Z coefficients :   %g %g %g\n'%(AZ[0],AZ[1],AZ[2])
     txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(ZBAR)),numpy.sqrt(numpy.abs(VZBAR)))
-    txt += 'Tangential focus at       :  %g\n'%(TPARZ)
+    txt += 'Focus along Z at       :  %g\n'%(TPARZ)
     txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGZ)
     txt += 'Waist size at origin                :  %g\n'%(SIGZ0)
 
     txt += '.............  L E A S T  C O N F U S I O N  ...............\n'
-    txt += 'Z coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
+    txt += 'XZ coefficients :   %g %g %g\n'%(AT[0],AT[1],AT[2])
     txt += 'Center : %g   Average versor : %g\n'%(numpy.sqrt(numpy.abs(TBAR)),numpy.sqrt(numpy.abs(VTBAR)))
     txt += 'Circle of least confusion :  %g\n'%(TPART)
     txt += 'Waist size at best focus (rms)	:  %g\n'%(SIGT)
@@ -1216,8 +1218,8 @@ def focnew_scan(A,x):
     import matplotlib.pylab as plt
     f2 = plt.figure(2)
     y = numpy.linespace(-10.,10.,101)
-    plt.plot(y,2.35*focnew_scan(tkt["AX"],y),label="x (tangential)")
-    plt.plot(y,2.35*focnew_scan(tkt["AZ"],y),label="z (sagittal)")
+    plt.plot(y,2.35*focnew_scan(tkt["AX"],y),label="x (column 1)")
+    plt.plot(y,2.35*focnew_scan(tkt["AZ"],y),label="z (column 3)")
     plt.plot(y,2.35*focnew_scan(tkt["AT"],y),label="combined x,z")
     plt.legend()
     plt.title("FOCNEW SCAN")
@@ -2154,9 +2156,9 @@ def test_focnew():
     # now the focnew scans
     f3 = plt.figure(3)
     y = numpy.linspace(ymin,ymax,ypoints)
-    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="x (tangential)")
-    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="z (sagittal)")
-    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined x,z")
+    plt.plot(y,2.35*focnew_scan(tkt2["AX"],y),label="X (column 1)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AZ"],y),label="Z (column 3)")
+    plt.plot(y,2.35*focnew_scan(tkt2["AT"],y),label="combined X,Z")
     plt.legend()
     plt.title("focnew")
     plt.xlabel("Y [cm]")
@@ -2174,10 +2176,10 @@ def test_ray_prop():
 
     # ray_prop results
     f1 = plt.figure(1)
-    plt.plot(tkt["y"],2.35*tkt["x_sd"],label="x (tangential)")
-    plt.plot(tkt["y"],2.35*tkt["x_wsd"],label="x weighted (tangential)")
-    plt.plot(tkt["y"],2.35*tkt["z_sd"],label="z (sagittal)")
-    plt.plot(tkt["y"],2.35*tkt["z_wsd"],label="z weighted (sagittal)")
+    plt.plot(tkt["y"],2.35*tkt["x_sd"],label="X (column 1)")
+    plt.plot(tkt["y"],2.35*tkt["x_wsd"],label="X (column 1) weighted ")
+    plt.plot(tkt["y"],2.35*tkt["z_sd"],label="Z (column 3)")
+    plt.plot(tkt["y"],2.35*tkt["z_wsd"],label="Z (column 3) weighted")
     plt.legend()
     plt.title("ray_prop")
     plt.xlabel("Y [cm]")

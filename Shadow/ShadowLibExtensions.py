@@ -2639,8 +2639,8 @@ class CompoundOE():
       oe2.F_REFL = 0
       # oe1.FILE_REFL = ''.encode('utf-8')
       # oe2.FILE_REFL = ''.encode('utf-8')
-      oe1.FILE_REFL = bytes('', encode('utf-8'))
-      oe2.FILE_REFL = bytes('', encode('utf-8'))
+      oe1.FILE_REFL = bytes('', 'utf-8')
+      oe2.FILE_REFL = bytes('', 'utf-8')
 
       if dimensions1 != [0,0]:
           oe1.FHIT_C = 1  #  mirror dimensions finite: yes (1), no(0).
@@ -2785,8 +2785,12 @@ class CompoundOE():
 
       # oe1.FILE_REFL = reflectivity_file.encode('utf-8')
       # oe2.FILE_REFL = reflectivity_file.encode('utf-8')
-      oe1.FILE_REFL = reflectivity_file
-      oe2.FILE_REFL = reflectivity_file
+      if isinstance(reflectivity_file,bytes):
+          oe1.FILE_REFL = reflectivity_file
+          oe2.FILE_REFL = reflectivity_file
+      else:
+          oe1.FILE_REFL = bytes(reflectivity_file, 'utf-8')
+          oe2.FILE_REFL = bytes(reflectivity_file, 'utf-8')
 
       #
       #
