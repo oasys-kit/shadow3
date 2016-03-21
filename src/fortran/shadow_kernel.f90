@@ -11005,6 +11005,11 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     
     real(kind=skr)    :: xxx=0,yyy=0,zzz=0
 
+    n_rej=0
+    k_rej=0
+    xxx=0
+    yyy=0
+    zzz=0
     ! C
     ! C Save the *big* arrays so it will:
     ! C  -- zero out the elements.

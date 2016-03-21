@@ -1871,6 +1871,11 @@ real(kind=skr)    :: z_traj, zin, zmax1, zmax2, zrand, zseed
 
 ! load gfile (moved from gen_source)
     
+n_rej=0
+k_rej=0
+xxx=0.0
+yyy=0.0
+zzz=0.0
 !
 ! put inputs (pool) into global variables
 !
