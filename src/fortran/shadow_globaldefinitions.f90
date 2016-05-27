@@ -48,23 +48,21 @@ module shadow_globaldefinitions
     real(kind=skr), parameter :: todeg  =57.295779513082320876798155
     real(kind=skr), parameter :: torad  = 0.017453292519943295769237
 
-    ! TODO: Change these values with new codata values (see NIST)
-    ! real(kind=skr), parameter :: tocm =   1.239852D-4
-    ! real(kind=skr), parameter :: toangs = 1.239852D+4
 
-    ! updated srio@esrf.eu 2012/05/24 
-    ! for full compatibility with shadow2, use old values
-    ! http://physics.nist.gov/cgi-bin/cuu/Value?h|search_for=plank
-    ! h    =6.62606957e-34
-    ! http://physics.nist.gov/cgi-bin/cuu/Value?c|search_for=light
-    ! c    =2.99792458e8  
-    ! http://physics.nist.gov/cgi-bin/cuu/Value?e|search_for=electron
-    ! ec   =1.602176565e-19
-    ! C_M_A    = 1.0e+10  m -> Angstrom
-    ! 
-    ! HC = H*C/EC*C_M_A ; conversion Angstrom <-> eV for particles with no mass
-    real(kind=skr), parameter :: tocm =   12398.4192920042D-8
-    real(kind=skr), parameter :: toangs = 12398.4192920042
+    ! introduced physical constants in globaldefinitions:  srio@esrf.eu 20160527 - NIST CODATA 2014
+    real(kind=skr),parameter :: codata_c                     = 2.99792458D8      !speed of light, m/s
+    real(kind=skr),parameter :: codata_rm                    = 9.10938356D-31    !electron rest mass  kg
+    real(kind=skr),parameter :: codata_e                     = 1.6021766208D-19  !electron charge, C
+    real(kind=skr),parameter :: codata_h                     = 6.626070040D-34   !Planck's constant   joules*sec
+    real(kind=skr),parameter :: codata_mee                   = 0.5109989461      ! electrom Mass equivalent in MeV
+    real(kind=skr),parameter :: codata_electric_permittivity = 8.854187817D-12   ! electric constant epsilon0
+    ! conversion Angstrom <-> eV for particles with no mass
+    ! codata_h*codata_c/codata_e*1d10
+    real(kind=skr), parameter :: toangs = 12398.419739640718    ! 12398.4192920042
+
+    real(kind=skr), parameter :: tocm =   12398.419739640718d-8 ! 12398.4192920042D-8
+
+
 
     ! for debugging purposes, set this to 1 to get a verbose output
     integer(kind=ski), public :: shadow3_verbose = 0

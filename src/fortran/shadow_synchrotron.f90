@@ -29,8 +29,8 @@ Module shadow_synchrotron
     !dimensions
     integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! number of points of electron trajectory
 
-    real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
-
+    ! updated and moved to globaldefinitionssrio@esrf.eu 20160527
+    ! real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
 
     ! this was in bm.blk
     !C
@@ -949,7 +949,6 @@ SUBROUTINE SETUP
         implicit none
 
 
-!todo: update all these numerical constants with latest CODATA values
         NP  = NDIM_TRAJ
         !srio !! THETA  = 1.0D0
         THETABM  = 1.0D0

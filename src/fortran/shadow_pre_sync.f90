@@ -23,55 +23,56 @@ Module shadow_Pre_Sync
     !---- Variables ----!
     implicit none
 
-!todo: fix this repetition
-!
-! the global variables here are only used for undulator and not for wiggler
-! 
+    !todo: fix this repetition
+    !
+    ! the global variables here are only used for undulator and not for wiggler
+    !
 
-!todo: check physical constants
-!DONE srio@esrf.eu 20131211 NIST codata values. Bug fixed (inconsistent 
-! values of c in undulators).
-real(kind=skr),parameter :: codata_c  = 2.99792458D8 !speed of light, m/s
-real(kind=skr),parameter :: codata_rm = 9.10938291D-31   !electron rest mass  kg
-real(kind=skr),parameter :: codata_e  = 1.602176565D-19  !electron charge, C
-real(kind=skr),parameter :: codata_h  = 6.62606957D-34   !Planck's constant   joules*sec
-real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
-real(kind=skr),parameter :: codata_electric_permittivity = 8.854187817D-12 ! electric constant epsilon0
+    !todo: check physical constants
+    !DONE srio@esrf.eu 20131211 NIST codata values. Bug fixed (inconsistent
+    ! values of c in undulators).
 
-!TODO: make NDIM* allocatable 
-!      (it is already done for NDIM_{A,E} in shadow_synchrotron.F90)
-! IF CHHANGED THESE NUMBERS, CHANGE ALSO cdf_z.f (Urgent code)!!
-!DONE allocatable arrays!
-!integer(kind=ski),parameter :: NDIM_A=101 !31 ! number of points for angle grids
-!integer(kind=ski),parameter :: NDIM_E=501 !51 ! number of points for energy grid
-integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
+    ! UPDATED AND MOVED TO GLOBAL DEFINITIONS srio@esrf.eu 20160527
+    ! real(kind=skr),parameter :: codata_c  = 2.99792458D8 !speed of light, m/s
+    ! real(kind=skr),parameter :: codata_rm = 9.10938291D-31   !electron rest mass  kg
+    ! real(kind=skr),parameter :: codata_e  = 1.602176565D-19  !electron charge, C
+    ! real(kind=skr),parameter :: codata_h  = 6.62606957D-34   !Planck's constant   joules*sec
+    ! real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
+    ! real(kind=skr),parameter :: codata_electric_permittivity = 8.854187817D-12 ! electric constant epsilon0
 
 
-        character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
+    !TODO: make NDIM* allocatable
+    !      (it is already done for NDIM_{A,E} in shadow_synchrotron.F90)
+    ! IF CHANGED THESE NUMBERS, CHANGE ALSO cdf_z.f (Urgent code)!!
+    !DONE allocatable arrays!
+    integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
 
-        integer(kind=ski)  :: N0,NPointId
-	real(kind=skr)     :: RLAU,ENERGY1,RLA1,RK,GA0
-	real(kind=skr)     :: BETA0,BETAX0,BETAY0,BETAZ0,B0,ER,RLEN
-	real(kind=skr)     :: PHI_E,THE_E,TAU,Z0,ZSTEP,ETAU,EZ0
-	real(kind=skr)     :: EZSTEP
-        integer(kind=ski)  :: NCOMP,ICOMP,IANGLE,IAPERTURE,IEXTERNAL,IOPT
-        integer(kind=ski)  :: IPASS,ITER,IINT,I_EDIV
-	real(kind=skr)     :: RCURR,BPASS,BDEL
-	real(kind=skr)     :: EDIVX,EDIVY
-        integer(kind=ski)  :: NE,NT,NP,NCHECK
-	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ,TOFZ,Z,BETAX,BETAZ
-	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ1,TOFZ1,Z1,BETAX1,BETAZ1
-	real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
-	real(kind=skr) :: emin,emax,estep,phimin,phimax,phistep
-	real(kind=skr) :: themin,themax,thestep,TOTPOWER
-	real(kind=skr) :: mx11,mx22,mx12,mz11,mz22,mz12
-!
+
+    character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
+
+    integer(kind=ski)  :: N0,NPointId
+    real(kind=skr)     :: RLAU,ENERGY1,RLA1,RK,GA0
+    real(kind=skr)     :: BETA0,BETAX0,BETAY0,BETAZ0,B0,ER,RLEN
+    real(kind=skr)     :: PHI_E,THE_E,TAU,Z0,ZSTEP,ETAU,EZ0
+    real(kind=skr)     :: EZSTEP
+    integer(kind=ski)  :: NCOMP,ICOMP,IANGLE,IAPERTURE,IEXTERNAL,IOPT
+    integer(kind=ski)  :: IPASS,ITER,IINT,I_EDIV
+    real(kind=skr)     :: RCURR,BPASS,BDEL
+    real(kind=skr)     :: EDIVX,EDIVY
+    integer(kind=ski)  :: NE,NT,NP,NCHECK
+    real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ,TOFZ,Z,BETAX,BETAZ
+    real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ1,TOFZ1,Z1,BETAX1,BETAZ1
+    real(kind=skr),dimension(NDIM_TRAJ) :: XOFZ2,TOFZ2,Z2,BETAX2,BETAZ2
+    real(kind=skr)     :: emin,emax,estep,phimin,phimax,phistep
+    real(kind=skr)     :: themin,themax,thestep,TOTPOWER
+    real(kind=skr)     :: mx11,mx22,mx12,mz11,mz22,mz12
+    !
 
     !---- Everything is private unless explicitly made public ----!
     private 
 
     !---- List of public functions ----!
-!    public :: 
+    !    public ::
     !---- List of public overloaded functions ----!
     !---- List of public subroutines ----!
     public ::  epath   ! wiggler+undulator
@@ -150,13 +151,6 @@ SUBROUTINE EPath(i_device)
 !C
 !C
 !C
-
-!TO DO: change this with latest NIST data
-!DONE srio@esrf.eu 20131105
-!        c  = 2.998D8        !speed of light, m/s
-!        rm = 9.109D-31      !electron rest mass  kg
-!        e  = 1.602D-19      !electron charge, C
-!        h  = 6.626D-34      !Planck's constant   joules*sec
         c  = codata_c
         rm = codata_rm
         e  = codata_e
@@ -1499,7 +1493,7 @@ END SUBROUTINE URead
 !C	PURPOSE		This is the program to
 !C			a) define all the parameters
 !C			b) write the (energy, theta, phi) array
-!C			c) write the parameters in a nemalist
+!C			c) write the parameters in a namelist
 !C
 !C
 !C---
@@ -1834,11 +1828,7 @@ integer(kind=ski) ::   l,nc
 !DIMENSION    AZR(1001),AZI(1001)
 !DIMENSION    N(3),P_PI(3),EP(3)
 !C
-!c     = 2.998D8  !M/SEC
 
-!c     = codata_c
-!e     = codata_e ! 1.602D-19  !COULOMB
-!h     = codata_h ! 6.626D-34  !PLANCK'S CONSTANT  JOULE*SEC
 hh    = codata_H/codata_E      !  "         "  eV*sec
 hbar  = codata_H/TWOPI  !  "         "      joule*sec
 hhbar = HH/TWOPI !  "         "  eV*sec
