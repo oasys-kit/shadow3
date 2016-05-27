@@ -194,6 +194,7 @@ module shadow_pre_sync_urgent
         double precision l1_s,lamda1,pd,period,ph_ang
         integer i,isign1,inc,idebug,ie,j,m,n,nomega,np_s,ne_s,nt_s
         integer nphi,nsig
+        integer use_undulator_binary_file
 
         double precision ptot,phi,xe,xpc,xps,th_ang,ye,ypc,yps
         double precision pi
@@ -246,34 +247,68 @@ module shadow_pre_sync_urgent
 !C
 !C	READ THE ANGLES FROM THE SHADOW BINARY FILE
 !C
-        OPEN (10,FILE='uphot.dat',STATUS='UNKNOWN',FORM='UNFORMATTED')
-        READ (10) NE_S,NT_S,NP_S
-        IF ( (NE_1 .ne. NE_S) .or.  &
-             (NT_1 .ne. NT_S) .or.  &
-             (NP_1 .ne. NP_S) ) THEN
-            write(*,*) "ERROR: Inconsistent dimensions: "
-            write(*,*) "    NE_1,NE_S",NE_1,NE_S
-            write(*,*) "    NT_1,NT_S",NT_1,NT_S
-            write(*,*) "    NP_1,NP_S",NP_1,NP_S
-            print *,'Error: CDF_Z_CALC'
-            return
-            ! STOP
-        END IF
-        DO 15 M=1,NE_S
-	   READ (10) ENER(M)
-15	CONTINUE
-        DO 25 M=1,NE_S
-	   DO 35 J=1,NT_S
-	      READ (10) THETA_S(J,M)
-35	   CONTINUE
-25	CONTINUE
-        DO 45 M=1,NE_S
-	   DO 55 J=1,NT_S
-	      DO 65 I=1,NP_S
-	         READ (10) PHI_S(I,J,M)
-65	      CONTINUE
-55	   CONTINUE
-45	CONTINUE
+      use_undulator_binary_file = 0  ! from now, use ASCII files. If change, do the same in shadow_pre_sync.f90
+
+      if (use_undulator_binary_file .eq. 1) then
+          OPEN (10,FILE='uphot.dat',STATUS='UNKNOWN',FORM='UNFORMATTED')
+          READ (10) NE_S,NT_S,NP_S
+      else
+          OPEN (10,FILE='uphot.dat',STATUS='UNKNOWN',FORM='FORMATTED')
+          READ (10,*) NE_S,NT_S,NP_S
+      endif
+
+      IF ( (NE_1 .ne. NE_S) .or.  &
+           (NT_1 .ne. NT_S) .or.  &
+           (NP_1 .ne. NP_S) ) THEN
+          write(*,*) "ERROR: Inconsistent dimensions: "
+          write(*,*) "    NE_1,NE_S",NE_1,NE_S
+          write(*,*) "    NT_1,NT_S",NT_1,NT_S
+          write(*,*) "    NP_1,NP_S",NP_1,NP_S
+          print *,'Error: CDF_Z_CALC'
+          return
+          ! STOP
+      END IF
+
+      if (use_undulator_binary_file .eq. 1) then
+        DO M=1,NE_S
+	        READ (10) ENER(M)
+        END DO
+
+        DO M=1,NE_S
+	        DO J=1,NT_S
+	            READ (10) THETA_S(J,M)
+            END DO
+        END DO
+
+        DO M=1,NE_S
+	        DO J=1,NT_S
+	            DO I=1,NP_S
+	                READ (10) PHI_S(I,J,M)
+                END DO
+            END DO
+        END DO
+      else
+        DO M=1,NE_S
+	        READ (10,*) ENER(M)
+        END DO
+
+        DO M=1,NE_S
+	        DO J=1,NT_S
+	            READ (10,*) THETA_S(J,M)
+            END DO
+        END DO
+
+        DO M=1,NE_S
+	        DO J=1,NT_S
+	            DO I=1,NP_S
+	                READ (10,*) PHI_S(I,J,M)
+                END DO
+            END DO
+        END DO
+      end if
+
+
+
 !C
 !C       CONSTANTS
 !C
@@ -398,23 +433,45 @@ module shadow_pre_sync_urgent
       		 END DO
 	   END DO
 	END DO
-	DO 46 M=1,NE_S
-	   DO 56 J=1,NT_S
-	      DO 66 I=1,NP_S
-	         WRITE (10) RNO(I,J,M)
-66	      CONTINUE
-56	   CONTINUE
-46	CONTINUE
-	DO 47 M=1,NE_S
-	   DO 57 J=1,NT_S
-	      DO 67 I=1,NP_S
-	         WRITE (10) POL_DEG(I,J,M)
-67	      CONTINUE
-57	   CONTINUE
-47	CONTINUE
+
+	if (use_undulator_binary_file .eq. 1) then
+	    DO M=1,NE_S
+	       DO J=1,NT_S
+	          DO I=1,NP_S
+	             WRITE (10) RNO(I,J,M)
+              END DO
+           END DO
+        END DO
+	    DO M=1,NE_S
+	       DO J=1,NT_S
+	          DO I=1,NP_S
+	             WRITE (10) POL_DEG(I,J,M)
+              END DO
+           END DO
+        END DO
+    else
+	    DO M=1,NE_S
+	       DO J=1,NT_S
+	          DO I=1,NP_S
+	             WRITE (10,*) RNO(I,J,M)
+              END DO
+           END DO
+        END DO
+	    DO M=1,NE_S
+	       DO J=1,NT_S
+	          DO I=1,NP_S
+	             WRITE (10,*) POL_DEG(I,J,M)
+              END DO
+           END DO
+        END DO
+    end if
+
+
 	CLOSE (10)
 	write(*,*) 'Calculations have been successfully completed !'
 	RETURN
+
+
         !STOP
 900     WRITE(6,9000)
 500     FORMAT('         ******  UNDUL_PHOT_URGENT - VERSION 1.3 - ******')

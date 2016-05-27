@@ -46,7 +46,7 @@ Module shadow_Pre_Sync
     ! IF CHANGED THESE NUMBERS, CHANGE ALSO cdf_z.f (Urgent code)!!
     !DONE allocatable arrays!
     integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
-    integer(kind=ski),parameter :: use_undulator_binary_files = 1 ! 0=ASCII, 1=BINARIES
+    integer(kind=ski),parameter :: use_undulator_binary_files = 0 ! 0=ASCII, 1=BINARIES
 
     character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
 
