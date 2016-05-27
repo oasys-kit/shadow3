@@ -46,7 +46,7 @@ Module shadow_Pre_Sync
     ! IF CHANGED THESE NUMBERS, CHANGE ALSO cdf_z.f (Urgent code)!!
     !DONE allocatable arrays!
     integer(kind=ski),parameter :: NDIM_TRAJ=1001 ! nr of points of e- trajectory
-
+    integer(kind=ski),parameter :: use_undulator_binary_files = 1 ! 0=ASCII, 1=BINARIES
 
     character(len=sklen) :: FOUT,FIN,FTRAJ,FINT
 
@@ -1621,7 +1621,7 @@ SUBROUTINE Undul_Set
         !C
 
         ! srio@esrf.eu 20131213
-        ! I have decided to jump this sectio that rearranges the angular 
+        ! I have decided to jump this section that rearranges the angular
         ! arrays depending on the energy. 
         ! I think this creates problems and it is preferred, in my opinion, 
         ! to keep the arrays linear and increment the number of points. 
@@ -1710,26 +1710,50 @@ SUBROUTINE Undul_Set
         !C (energy, theta, phi) array; otherwise, it already exists.
         !C
         IF (ITER.EQ.0) THEN
-          OPEN (20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
-          REWIND (20)
-          WRITE (20) NE, NT, NP
-          DO K = 1,NE
-              WRITE (20) UENER(K)
-          END DO
-          DO K = 1,NE
-             DO J = 1,NT
-                WRITE (20) UTHETA(J,K)
-             END DO
-          END DO
-          DO K = 1,NE
-             DO J = 1,NT
-                DO I = 1,NP
-                   WRITE (20) UPHI(I,J,K)
-                END DO
-             END DO
-          END DO
-          CLOSE (20)
-          PRINT *,'File written to disk: uphot.dat'
+          IF (use_undulator_binary_files .EQ. 1) THEN
+              OPEN (20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
+              REWIND (20)
+              WRITE (20) NE, NT, NP
+              DO K = 1,NE
+                  WRITE (20) UENER(K)
+              END DO
+              DO K = 1,NE
+                 DO J = 1,NT
+                    WRITE (20) UTHETA(J,K)
+                 END DO
+              END DO
+              DO K = 1,NE
+                 DO J = 1,NT
+                    DO I = 1,NP
+                       WRITE (20) UPHI(I,J,K)
+                    END DO
+                 END DO
+              END DO
+              CLOSE (20)
+              PRINT *,'File written to disk (binary): uphot.dat'
+          ELSE
+              OPEN (20, FILE='uphot.dat', STATUS='UNKNOWN', FORM='FORMATTED')
+              REWIND (20)
+              WRITE (20,*) NE, NT, NP
+              DO K = 1,NE
+                  WRITE (20,*) UENER(K)
+              END DO
+              DO K = 1,NE
+                 DO J = 1,NT
+                    WRITE (20,*) UTHETA(J,K)
+                 END DO
+              END DO
+              DO K = 1,NE
+                 DO J = 1,NT
+                    DO I = 1,NP
+                       WRITE (20,*) UPHI(I,J,K)
+                    END DO
+                 END DO
+              END DO
+              CLOSE (20)
+              PRINT *,'File written to disk (ascii): uphot.dat'
+          ENDIF
+
 
         END IF
 !C
@@ -2214,16 +2238,9 @@ implicit none
 
 real :: ttime,time0
 
-!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E) :: uphi,rn0,pol_deg
-!real(kind=skr),dimension(NDIM_A,NDIM_E)    :: utheta
-!real(kind=skr),dimension(NDIM_E)       :: uener
 real(kind=skr),dimension(:,:,:),allocatable :: uphi,rn0,pol_deg
 real(kind=skr),dimension(:,:),allocatable   :: utheta
 real(kind=skr),dimension(:),allocatable     :: uener
-
-!DIMENSION UPHI(31,31,51),UTHETA(31,51),UENER(51)
-!DIMENSION RN0(31,31,51)
-!DIMENSION POL_DEG(31,31,51)
 
 real(kind=skr)    :: ener,perc,phi, phot,pol,theta,totpoints
 integer(kind=ski) :: i,j,k,iOne,ipoints,iTmp,kCheck
@@ -2245,8 +2262,13 @@ CLOSE (21)
 !C
 !C Read in the (energy, theta, phi) array
 !C
-OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-READ (40) NE, NT, NP
+IF (use_undulator_binary_files .EQ. 1) THEN
+    OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
+    READ (40) NE, NT, NP
+ELSE
+    OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='FORMATTED')
+    READ (40,*) NE, NT, NP
+ENDIF
 !
 ! allocate arrays
 !
@@ -2256,23 +2278,44 @@ allocate( UPHI(NP,NT,NE) )
 allocate( RN0(NP,NT,NE) )
 allocate( POL_DEG(NP,NT,NE) )
 
-DO K = 1, NE
-    READ (40) UENER(K)
-END DO
 
-DO K = 1, NE
-    DO J = 1, NT
-        READ (40) UTHETA(J,K)
+IF (use_undulator_binary_files .EQ. 1) THEN
+    DO K = 1, NE
+        READ (40) UENER(K)
     END DO
-END DO
 
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            READ (40) UPHI(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40) UTHETA(J,K)
         END DO
     END DO
-END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+ELSE
+    DO K = 1, NE
+        READ (40,*) UENER(K)
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40,*) UTHETA(J,K)
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+ENDIF
 
   
 !C
@@ -2350,21 +2393,39 @@ END IF
 !C
 !C Write out all arrays.  APPENDED!!!!
 !C
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            WRITE (40) RN0(I,J,K)
+IF (use_undulator_binary_files .EQ. 1) THEN
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (40) RN0(I,J,K)
+            END DO
         END DO
     END DO
-END DO
 
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            WRITE (40) POL_DEG(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (40) POL_DEG(I,J,K)
+            END DO
         END DO
     END DO
-END DO
+ELSE
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (40,*) RN0(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (40,*) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+ENDIF
 
 CLOSE (40)
 
@@ -2721,12 +2782,6 @@ implicit none
 
 integer(kind=ski), intent(in)  :: np,nt,ne
 
-!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: rn0,cdf0,uphi
-!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: rn1,cdf1,utheta
-!real(kind=skr),dimension(NDIM_E),       intent(in) :: rn2,cdf2,uener
-!
-!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(out) :: pol_deg
-
 real(kind=skr),dimension(np,nt,ne), intent(in) :: rn0,cdf0,uphi
 real(kind=skr),dimension(nt,ne),    intent(in) :: rn1,cdf1,utheta
 real(kind=skr),dimension(ne),       intent(in) :: rn2,cdf2,uener
@@ -2767,7 +2822,7 @@ CALL RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
 ITYPE = 2
 IFLAG = IYES ('Do you want to create a SHADOW file ? ')
 IF (IFLAG.EQ.0) GO TO 30
-FNAME2 = RSTRING ('Name of (binary) file for SHADOW: ')
+FNAME2 = RSTRING ('Name of file for SHADOW: ')
 
 !C
 !C SHADOW defines the degree of polarization by |E| instead of |E|^2
@@ -2878,90 +2933,135 @@ END SUBROUTINE UWrite
 !C
 !C	SUBROUTINE 		RW_UNDUL
 !C
-!C	PURPOSE			write output files for source generation 
-!                               using SHADOW.
+!C	PURPOSE			write output files for source generation using SHADOW.
 !C
 !C	INPUT			arrays to write out (U*, ZERO,ONE,TWO,POL_DEG)
 !C                              itype: 1=write spectrum, 2=write SHADOW file.
 !C
-!C
-!C	OUTPUT			A file containing CDF's and POLARIZATION
-!C				or RN's
+!C	OUTPUT			A file containing CDF's and POLARIZATION or RN's
 !C---
 
 SUBROUTINE RW_UNDUL ( NP,NT,NE, UPHI, UTHETA, UENER, &
                       ZERO, ONE, TWO, POL_DEG, FNAME, ITYPE, IANGLE)
 
-!implicit real(kind=skr) (a-h,o-z)
-!implicit integer(kind=ski)        (i-n)
 implicit none
 
 integer(kind=ski), intent(in)    :: np,nt,ne,itype,iangle
-!real(kind=skr),dimension(NDIM_A,NDIM_A,NDIM_E), intent(in) :: uphi, zero, pol_deg
-!real(kind=skr),dimension(NDIM_A,NDIM_E),    intent(in) :: utheta, one
-!real(kind=skr),dimension(NDIM_E),       intent(in) :: uener, two
 real(kind=skr),dimension(np,nt,ne), intent(in) :: uphi, zero, pol_deg
 real(kind=skr),dimension(nt,ne),    intent(in) :: utheta, one
 real(kind=skr),dimension(ne),       intent(in) :: uener, two
 
-!DIMENSION  ZERO(31,31,51),ONE(31,51),TWO(51)
-!DIMENSION  POL_DEG(31,31,51)
-!DIMENSION  UPHI(31,31,51),UTHETA(31,51),UENER(51)
 character(len=sklen) :: FNAME
 integer(kind=ski)  :: i,j,k
 
-OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='UNFORMATTED')
-REWIND (31)
-!C  IF (ITYPE.EQ.2) THEN  !cartesian for SHADOW
-WRITE(31) NE,NT,NP,IANGLE
+IF (use_undulator_binary_files .EQ. 1) THEN
+    OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='UNFORMATTED')
+    REWIND (31)
+    !C  IF (ITYPE.EQ.2) THEN  !cartesian for SHADOW
+    WRITE(31) NE,NT,NP,IANGLE
 
-DO K = 1,NE
-    WRITE(31) UENER(K)
-END DO
-
-DO K = 1,NE
-    DO J = 1,NT
-        WRITE(31) UTHETA(J,K)
+    DO K = 1,NE
+        WRITE(31) UENER(K)
     END DO
-END DO
 
-DO K = 1, NE
-    DO J = 1,NT
-        DO I = 1,NP
-            WRITE(31) UPHI(I,J,K)
+    DO K = 1,NE
+        DO J = 1,NT
+            WRITE(31) UTHETA(J,K)
         END DO
     END DO
-END DO
 
-DO K = 1,NE
-    WRITE(31) TWO(K)
-END DO
-
-DO K = 1,NE
-    DO J = 1,NT
-        WRITE(31) ONE(J,K)
-    END DO
-END DO
-
-
-DO K = 1,NE
-    DO J = 1,NT
-        DO I = 1,NP
-            WRITE(31) ZERO(I,J,K)
+    DO K = 1, NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31) UPHI(I,J,K)
+            END DO
         END DO
     END DO
-END DO
 
-DO K = 1,NE
-    DO J = 1,NT
-        DO I = 1,NP
-            WRITE(31) POL_DEG(I,J,K)
+    DO K = 1,NE
+        WRITE(31) TWO(K)
+    END DO
+
+    DO K = 1,NE
+        DO J = 1,NT
+            WRITE(31) ONE(J,K)
         END DO
     END DO
-END DO
 
-CLOSE(31)
-PRINT *,'File written to disk: '//trim(fname)
+
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31) ZERO(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    CLOSE(31)
+    PRINT *,'File written to disk (binary): '//trim(fname)
+ELSE
+    OPEN (31,FILE=FNAME,STATUS='UNKNOWN', FORM='FORMATTED')
+    REWIND (31)
+    !C  IF (ITYPE.EQ.2) THEN  !cartesian for SHADOW
+    WRITE(31,*) NE,NT,NP,IANGLE
+
+    DO K = 1,NE
+        WRITE(31,*) UENER(K)
+    END DO
+
+    DO K = 1,NE
+        DO J = 1,NT
+            WRITE(31,*) UTHETA(J,K)
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31,*) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    DO K = 1,NE
+        WRITE(31,*) TWO(K)
+    END DO
+
+    DO K = 1,NE
+        DO J = 1,NT
+            WRITE(31,*) ONE(J,K)
+        END DO
+    END DO
+
+
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31,*) ZERO(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    DO K = 1,NE
+        DO J = 1,NT
+            DO I = 1,NP
+                WRITE(31,*) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    CLOSE(31)
+    PRINT *,'File written to disk (ascii): '//trim(fname)
+
+END IF
 
 RETURN
 END SUBROUTINE RW_Undul
@@ -3262,8 +3362,14 @@ CLOSE (21)
 !C
 !C Read in the arrays
 !C
-OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
-READ (40) NE, NT, NP
+
+IF (use_undulator_binary_files .EQ. 1) THEN
+    OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
+    READ (40) NE, NT, NP
+ELSE
+    OPEN (40, FILE='uphot.dat', STATUS='OLD', FORM='FORMATTED')
+    READ (40,*) NE, NT, NP
+END IF
 
 !
 ! allocate arrays
@@ -3285,44 +3391,82 @@ allocate( rn0(NP,NT,NE) )
 allocate( pol_deg(NP,NT,NE) )
 
 !
-
-DO K = 1, NE
-    READ (40) UENER(K)
-END DO
-
-DO K = 1, NE
-    DO J = 1, NT
-        READ (40) UTHETA(J,K)
+IF (use_undulator_binary_files .EQ. 1) THEN
+    DO K = 1, NE
+        READ (40) UENER(K)
     END DO
-END DO
 
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            READ (40) UPHI(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40) UTHETA(J,K)
         END DO
     END DO
-END DO
 
-  
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            READ (40) RN0(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) UPHI(I,J,K)
+            END DO
         END DO
     END DO
-END DO
 
 
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            READ (40) POL_DEG(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) RN0(I,J,K)
+            END DO
         END DO
     END DO
-END DO
+
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+ELSE
+    DO K = 1, NE
+        READ (40,*) UENER(K)
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40,*) UTHETA(J,K)
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) RN0(I,J,K)
+            END DO
+        END DO
+    END DO
+
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+END IF
 
 CLOSE (40)
+
 !C
 !C Integrate RN0 to get RN1 and RN2
 !C  
@@ -3399,27 +3543,54 @@ END IF
 !C
 !C Write the new (energy, theta, phi) array
 !C
-OPEN (45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
-REWIND (45)
-WRITE (45) NE, NT, NP
 
-DO K = 1, NE
-    WRITE (45) UENER(K)
-END DO
+IF (use_undulator_binary_files .EQ. 1) THEN
+    OPEN (45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='UNFORMATTED')
+    REWIND (45)
+    WRITE (45) NE, NT, NP
+ELSE
+    OPEN (45, FILE='uphot.dat', STATUS='UNKNOWN', FORM='FORMATTED')
+    REWIND (45)
+    WRITE (45,*) NE, NT, NP
+END IF
 
-DO K = 1, NE
-    DO J = 1, NT
-        WRITE (45) UTHETA(J,K)
+IF (use_undulator_binary_files .EQ. 1) THEN
+    DO K = 1, NE
+        WRITE (45) UENER(K)
     END DO
-END DO
 
-DO K = 1, NE
-    DO J = 1, NT
-        DO I = 1, NP
-            WRITE (45) UPHI(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            WRITE (45) UTHETA(J,K)
         END DO
     END DO
-END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (45) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+ELSE
+    DO K = 1, NE
+        WRITE (45,*) UENER(K)
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            WRITE (45,*) UTHETA(J,K)
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                WRITE (45,*) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+END IF
 
 CLOSE (45)
 !C
@@ -3474,8 +3645,14 @@ real(kind=skr) :: xx,zz,tmp_p,tmp_i
 ! get the arrays
 !
 !
+IF (use_undulator_binary_files .EQ. 1) THEN
     OPEN    (40, FILE='uphot.dat', STATUS='OLD', FORM='UNFORMATTED')
     READ    (40)    NE, NT, NP
+ELSE
+    OPEN    (40, FILE='uphot.dat', STATUS='OLD', FORM='FORMATTED')
+    READ    (40,*)    NE, NT, NP
+ENDIF
+
     !
     ! allocate arrays
     !
@@ -3485,33 +3662,85 @@ real(kind=skr) :: xx,zz,tmp_p,tmp_i
     allocate( RN0(NP,NT,NE) )
     allocate( POL_DEG(NP,NT,NE) )
 
-    DO 99 K = 1, NE
-    99 READ (40)    UENER(K)
 
-    DO 199 K = 1, NE
-        DO 199 J = 1, NT
-    199 READ (40) UTHETA(J,K)
+IF (use_undulator_binary_files .EQ. 1) THEN
+    DO K = 1, NE
+        READ (40)    UENER(K)
+    END DO
 
-    DO 299 K = 1, NE
-        DO 299 J = 1, NT
-        DO 299 I = 1, NP
-    299 READ (40) UPHI(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40) UTHETA(J,K)
+        END DO
+    END DO
 
-!
-!
-! get the intesity and pol_deg
-!
-!
-!C
-    DO 399 K = 1, NE
-        DO 399 J = 1, NT
-        DO 399 I = 1, NP
-    399 READ (40) RN0(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+    !
+    !
+    ! get the intesity and pol_deg
+    !
+    !
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) RN0(I,J,K)
+            END DO
+        END DO
+    END DO
 
-    DO 499 K = 1, NE
-        DO 499 J = 1, NT
-        DO 499 I = 1, NP
-    499 READ (40) POL_DEG(I,J,K)
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+ELSE
+    DO K = 1, NE
+        READ (40,*)    UENER(K)
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            READ (40,*) UTHETA(J,K)
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) UPHI(I,J,K)
+            END DO
+        END DO
+    END DO
+    !
+    !
+    ! get the intesity and pol_deg
+    !
+    !
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) RN0(I,J,K)
+            END DO
+        END DO
+    END DO
+
+    DO K = 1, NE
+        DO J = 1, NT
+            DO I = 1, NP
+                READ (40,*) POL_DEG(I,J,K)
+            END DO
+        END DO
+    END DO
+ENDIF
+
 
 close(40)
 

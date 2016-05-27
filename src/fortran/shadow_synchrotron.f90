@@ -32,70 +32,31 @@ Module shadow_synchrotron
     ! updated and moved to globaldefinitionssrio@esrf.eu 20160527
     ! real(kind=skr),parameter :: codata_mee  = 0.51099892   ! electrom Mass equivalent in MeV
 
-    ! this was in bm.blk
-    !C
-    !C Common block for bending magnet source code.
-    !C
-    !
-    !C
-    !C Define the PAD variables for RISC processors.
-    !C
-    !	INTEGER*4	IPAD1, IPAD2, IPAD3, IPAD4
-    !
-    !	COMMON	/FIRST/	PPAR(1001,2),PPER(1001,2),PTOT(1001,2)
-
     real(kind=skr),dimension(NDIM_TRAJ,2)   :: PPAR,PPER,PTOT
 
-    !	COMMON	/SECON/	PHOT,BENER,THETA,NP,IPAD1,STEP,X,N,IPAD2,BK,IER,
-    !     $			IPAD3,GAMM
     real(kind=skr) :: PHOT,STEP,X,BK,GAMM
     integer(kind=ski)        :: NP,IPAD1,N,IPAD2,IER,IPAD3
     ! DANGER: THETA here (in /SECON/, defined in SETUP,  has been renamed 
     ! to THETABM as another variable with the same name is used in trace
     real(kind=skr) :: THETABM
 
-    !	COMMON	/THIRD/	RAD,RLCR,RL,FCT,CONST,ARG,PSIMAX
     real(kind=skr) :: RAD,RLCR,RL,FCT,CONST,ARG,PSIMAX
 
-    !	COMMON	/FIFTH/	IC,IPAD4,PSI,IDATA
     real(kind=skr) :: PSI
     integer(kind=ski)        :: IC,IPAD4,IDATA
 
-    !	COMMON  /SIXTH/ PPAR_INT(1001),PPER_INT(1001),PTOT_INT(1001)
 
     real(kind=skr),dimension(NDIM_TRAJ)   :: PPAR_INT,PPER_INT,PTOT_INT
-
-    !	COMMON  /SEVNT/ SPLI_1(1000,3),SPLI_2(1000,3),
-    !     $			SPLI_3(1000,3),ANG_ARR(1001)
 
     real(kind=skr),dimension(NDIM_TRAJ)   :: ANG_ARR
     real(kind=skr),dimension(10013)  :: SPLI_1,SPLI_2,SPLI_3
 
-    !	COMMON	/EIGHT/ R_INPUT
     real(kind=skr)   :: R_INPUT
     !C
     !C The SOURCE and ALADDIN are also in ../../include/common.blk.in. KEEP
     !C THESE IN SYNC. Watch the B_ENER vs BENER *and* PHOTON_ vs PHOTON in 
     !C ALADDIN however.
     !C
-    !     	COMMON	/SOURCE	/	WXSOU,WYSOU,WZSOU,SIGMAX,SIGMAY,SIGMAZ,
-    !     $				HDIV1,HDIV2,VDIV1,VDIV2,SIGDIX,SIGDIZ,
-    !     $				CONV_FACT,CONE_MAX,CONE_MIN,X_SOUR,
-    !     $				Y_SOUR,
-    !     $				Z_SOUR,X_SOUR_ROT,Y_SOUR_ROT,Z_SOUR_ROT,
-    !     $				U_SOUR(3),V_SOUR(3),W_SOUR(3),
-    !     $				PLASMA_ANGLE
-
-
-    !     	COMMON	/ALADDIN/	PHOTON_(10),B_ENER,R_ALADDIN,
-    ! srio renames photon_ to photon_underscore
-    ! srio  real(kind=kind(1.0d0)),dimension(10)  :: photon_underscore
-    ! real(kind=kind(1.0d0))                :: B_ENER
-
-
-    !     $				EPSI_X,EPSI_Z,EPSI_DX,EPSI_DZ,R_MAGNET
-    !
-
 
     !	COMMON /SPL_ARR/	PHOT,PHOT_INV,XPHOT,PSI_INV,PSI_POL
     !srio	REAL*8		PHOT(5,1010),PHOT_INV(5,1010)
@@ -1783,8 +1744,7 @@ End Subroutine white
 ! C+++
 ! C	SUBROUTINE	SOURCE
 ! C
-! C	PURPOSE		To generate a (12,ndim) array describing the system
-! C			source.
+! C	PURPOSE		To generate a (18,ndim) array describing the system source.
 ! C
 ! C	INPUTS		From modules SETSOUR, MSETUP, through COMMON.BLK
 ! C			The following two input parameters are meant to
@@ -1804,10 +1764,6 @@ End Subroutine white
 ! C---
 SUBROUTINE SOURCESYNC (pool00, ray, npoint1) bind(C,NAME="SourceSync")
 
-
-! todo: remove implicits
-!implicit real(kind=skr) (a-e,g-h,o-z)
-!implicit integer(kind=ski)        (f,i-n)
 implicit none
 
 integer(kind=ski), intent(in)                         :: npoint1
@@ -1847,7 +1803,7 @@ real(kind=skr),dimension(10)       :: RELINT,PRELINT
 real(kind=skr),dimension(4)        :: II,DX,PHI_INT
 real(kind=skr),dimension(2)        :: JI,DZ,THE_INT 
    
-integer(kind=ski) :: n_rej=0, k_rej=0, f_wiggler_binary
+integer(kind=ski) :: n_rej=0, k_rej=0, use_wiggler_binary_files, use_undulator_binary_files
 real(kind=skr) :: xxx=0.0,yyy=0.0,zzz=0.0
 
 ! removing implicits...
@@ -1908,7 +1864,7 @@ IF (F_WIGGLER.EQ.1) THEN
     ! C
     !OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
 
-    f_wiggler_binary = 0
+    use_wiggler_binary_files = 0
     OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='FORMATTED')
     READ (29,*,err=898) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
 
@@ -1919,7 +1875,7 @@ go to 899
     close(29)
     OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
     READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
-    f_wiggler_binary = 1
+    use_wiggler_binary_files = 1
 
 899  continue
 
@@ -1943,7 +1899,7 @@ go to 899
      
 
     DO 13 I = 1, NP_TRAJ
-        if (f_wiggler_binary .EQ. 0) then
+        if (use_wiggler_binary_files .EQ. 0) then
             READ (29,*) XIN,YIN,SEEDIN,ANGIN,CIN
         else
             READ (29) XIN,YIN,SEEDIN,ANGIN,CIN
@@ -2138,13 +2094,22 @@ ELSE IF (F_WIGGLER.EQ.2) THEN
     ! C
     ! C Uudulator case : first read in the CDF's and degree of polarization.
     ! C
-    !!srio #ifdef vms
-    !!srio 	  OPEN	(30, FILE=FILE_TRAJ, STATUS='OLD',
-    !!srio      $	  	FORM='UNFORMATTED', READONLY)
-    !!srio #else
+
+
+    use_undulator_binary_files = 0
+
+    OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='FORMATTED')
+    READ(30,*,err=1313) NE,NT,NP,IANGLE
+    GO TO 1414
+
+    1313 continue
+    close(30)
     OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='UNFORMATTED')
-    !!srio #endif
     READ(30) NE,NT,NP,IANGLE
+    use_undulator_binary_files = 1
+
+    1414 continue
+
 
     allocate( CDFX (NP,NT,NE) )
     allocate( D_POL(NP,NT,NE) )
@@ -2153,50 +2118,97 @@ ELSE IF (F_WIGGLER.EQ.2) THEN
     allocate( UTHETA (NT,NE) )
     allocate( CDFW   (NE) )
     allocate( UENER  (NE) )
-    
-    DO K = 1,NE
-        READ (30) UENER(K)
-    END DO
 
-    DO K = 1,NE
-        DO J = 1,NT
-            READ (30)UTHETA(J,K)
+    IF (use_undulator_binary_files .EQ. 1) THEN
+        DO K = 1,NE
+            READ (30) UENER(K)
         END DO
-    END DO
 
-    DO K = 1,NE
-        DO J = 1,NT
-            DO I = 1,NP
-                READ (30) UPHI(I,J,K)
+        DO K = 1,NE
+            DO J = 1,NT
+                READ (30)UTHETA(J,K)
             END DO
         END DO
-    END DO
-    
-    DO K = 1,NE
-        READ (30) CDFW(K)
-    END DO
 
-    DO K = 1,NE
-        DO J = 1,NT
-            READ (30) CDFZ(J,K)
-        END DO
-    END DO
-
-    DO K = 1,NE
-        DO J = 1,NT
-            DO I = 1,NP
-                READ (30) CDFX(I,J,K)
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30) UPHI(I,J,K)
+                END DO
             END DO
         END DO
-    END DO
-    
-    DO K = 1,NE
-        DO J = 1,NT
-            DO I = 1,NP
-                READ (30) D_POL(I,J,K)
+
+        DO K = 1,NE
+            READ (30) CDFW(K)
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                READ (30) CDFZ(J,K)
             END DO
         END DO
-    END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30) CDFX(I,J,K)
+                END DO
+            END DO
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30) D_POL(I,J,K)
+                END DO
+            END DO
+        END DO
+    ELSE
+        DO K = 1,NE
+            READ (30,*) UENER(K)
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                READ (30,*)UTHETA(J,K)
+            END DO
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30,*) UPHI(I,J,K)
+                END DO
+            END DO
+        END DO
+
+        DO K = 1,NE
+            READ (30,*) CDFW(K)
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                READ (30,*) CDFZ(J,K)
+            END DO
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30,*) CDFX(I,J,K)
+                END DO
+            END DO
+        END DO
+
+        DO K = 1,NE
+            DO J = 1,NT
+                DO I = 1,NP
+                    READ (30,*) D_POL(I,J,K)
+                END DO
+            END DO
+        END DO
+
+    END IF
     
     CLOSE(30)
     ! C
