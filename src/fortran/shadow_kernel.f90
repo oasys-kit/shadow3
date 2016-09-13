@@ -4421,7 +4421,7 @@ real(kind=skr),             intent(out)  :: r_s,r_p,phases,phasep
 
 integer(kind=ski), parameter  :: dimMLenergy=300
 
-real(kind=skr),dimension(1000)   :: zf1,zf2
+real(kind=skr),dimension(:),allocatable   :: zf1,zf2
 real(kind=skr),dimension(dimMLenergy)    :: ener, &
             delta_s,beta_s,delta_e,beta_e,delta_o,beta_o
 
@@ -4504,6 +4504,20 @@ IF (K_WHAT.EQ.0) THEN
         READ (23,ERR=222) QMIN,QMAX,QSTEP,DEPTH0
         READ (23,IOSTAT=iErr) NREFL
         IF (iErr.NE.0) GOTO 222
+
+        IF (ALLOCATED(ZF1)) DEALLOCATE(ZF1)
+        ALLOCATE(ZF1(NREFL),STAT=ierr)
+        IF (ierr /= 0) THEN
+          print *,"REFLEC: Error allocating ZF1",NREFL 
+          return
+        END IF
+        IF (ALLOCATED(ZF2)) DEALLOCATE(ZF2)
+        ALLOCATE(ZF2(NREFL),STAT=ierr)
+        IF (ierr /= 0) THEN
+          print *,"REFLEC: Error allocating ZF2" 
+          return
+        END IF
+
         READ (23,IOSTAT=iErr) (ZF1(I),I=1,NREFL)
         IF (iErr.NE.0) GOTO 222
         READ (23,IOSTAT=iErr) (ZF2(I),I=1,NREFL)
@@ -4524,6 +4538,20 @@ IF (K_WHAT.EQ.0) THEN
         END IF
         READ (23,*) QMIN,QMAX,QSTEP,DEPTH0
         READ (23,*) NREFL
+
+        IF (ALLOCATED(ZF1)) DEALLOCATE(ZF1)
+        ALLOCATE(ZF1(NREFL),STAT=ierr)
+        IF (ierr /= 0) THEN
+          print *,"REFLEC: Error allocating ZF1" 
+          return
+        END IF
+        IF (ALLOCATED(ZF2)) DEALLOCATE(ZF2)
+        ALLOCATE(ZF2(NREFL),STAT=ierr)
+        IF (ierr /= 0) THEN
+          print *,"REFLEC: Error allocating ZF2" 
+          return
+        END IF
+
         READ (23,*) (ZF1(I),I=1,NREFL)
         READ (23,*) (ZF2(I),I=1,NREFL)
         CLOSE (23)
