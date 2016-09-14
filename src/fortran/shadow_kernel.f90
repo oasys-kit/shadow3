@@ -814,21 +814,41 @@ Contains
        R_S, R_P,PHASE_S, PHASE_P, DEPHT_MFP_S, DEPHT_MFP_P,  &
        DELTA_REF, THETA_B, KWHAT)
     
-    IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
-    IMPLICIT INTEGER(kind=ski)        (F,I-N)
+    implicit none 
+    !IMPLICIT REAL(kind=skr) (A-E,G-H,O-Z)
+    !IMPLICIT INTEGER(kind=ski)        (F,I-N)
     
-    REAL(KIND=skr)		ENERGY(1000)
-    REAL(KIND=skr)		FP_A(1000),FPP_A(1000),FP_B(1000),FPP_B(1000)
-    COMPLEX*16	CI,FA,FB,STRUCT,F_0,REFRAC
-    COMPLEX*16	RCS1,RCP1,RCS2,RCP2,RCS,RCP
-    COMPLEX*16	ETA_S,ETA_P
-    COMPLEX*16	GA,GA_BAR,GB,GB_BAR,FH,FH_BAR
-    COMPLEX*16	psi_h,psi_hbar,psi_0,psi_conj       !laue&perfect
-    COMPLEX*16	ctemp,cry_q,cry_z                   !laue&perfect
-    COMPLEX*16	br_x1,br_x2,br_delta1,br_delta2     !laue&perfect
-    COMPLEX*16	br_c1,br_c2                         !laue&perfect
-    REAL(KIND=skr)		CA(3),CB(3),FOA,F1A,F2A,FOB,F1B,F2B
-    INTEGER(KIND=ski)	ATNUM_A,ATNUM_B
+    integer(kind=ski),   intent(in)   :: kwhat
+    real(kind=skr),      intent(in)   :: q_phot,sin_q_ang,sin_q_ref
+    real(kind=skr),      intent(inout):: sin_brg
+    real(kind=skr),      intent(out)  :: r_s, r_p, phase_s, phase_p
+    real(kind=skr),      intent(out)  :: depht_mfp_s, depht_mfp_p
+    real(kind=skr),      intent(out)  :: delta_ref, theta_b
+
+    REAL(KIND=skr),dimension(:),allocatable :: ENERGY
+    REAL(KIND=skr),dimension(:),allocatable :: FP_A,FPP_A,FP_B,FPP_B
+
+    complex(kind=skx) :: CI,FA,FB,STRUCT,F_0,REFRAC
+    complex(kind=skx) :: RCS1,RCP1,RCS2,RCP2,RCS,RCP
+    complex(kind=skx) :: ETA_S,ETA_P
+    complex(kind=skx) :: GA,GA_BAR,GB,GB_BAR,FH,FH_BAR
+    complex(kind=skx) :: psi_h,psi_hbar,psi_0,psi_conj       !laue&perfect
+    complex(kind=skx) :: ctemp,cry_q,cry_z                   !laue&perfect
+    complex(kind=skx) :: br_x1,br_x2,br_delta1,br_delta2     !laue&perfect
+    complex(kind=skx) :: br_c1,br_c2                         !laue&perfect
+    real(kind=skr),dimension(3)    :: CA,CB
+    real(kind=skr)    :: FOA,F1A,F2A,FOB,F1B,F2B
+    integer(kind=ski) :: ATNUM_A,ATNUM_B
+
+    real(kind=skr) :: cos_alfa, cos_q_ang, cos_q_ref, cry_a, cry_alpha
+    real(kind=skr) :: cry_b, cry_t, ep, gamma_0, gamma_h, graze, phot
+    real(kind=skr) :: omega, pp, qq, qp_mosaic, qs_mosaic, r_lam0
+    real(kind=skr) :: r_p1, r_s1, r_struct, ratio, rn
+    real(kind=skr) :: rs_mosaic, rp_mosaic, sin_alfa, sin_gra, sin_q
+    real(kind=skr) :: temper, theta_inc_o, ass_fac
+    real(kind=skr) :: a_mosaic, aap_mosaic, aas_mosaic
+    real(kind=skr) :: absorp, alpha_zac, c_ppol
+    integer(kind=ski) :: i,nener,nrefl,i_latt, ierr
     ! C
     ! C SAVE the variables that need to be saved across subsequent invocations
     ! C of this subroutine. Note: D_SPACING is not included in the SAVE block
@@ -861,6 +881,38 @@ Contains
        READ (25,*) CA(1),CA(2),CA(3)
        READ (25,*) CB(1),CB(2),CB(3)
        READ (25,*) NREFL
+
+       IF (ALLOCATED(ENERGY)) DEALLOCATE(ENERGY)
+       IF (ALLOCATED(FP_A)) DEALLOCATE(FP_A)
+       IF (ALLOCATED(FP_B)) DEALLOCATE(FP_B)
+       IF (ALLOCATED(FPP_A)) DEALLOCATE(FPP_A)
+       IF (ALLOCATED(FPP_B)) DEALLOCATE(FPP_B)
+       ALLOCATE(ENERGY(NREFL),STAT=ierr)
+       IF (ierr /= 0) THEN
+         print *,"BRAGG: Error allocating ENERGY",NREFL 
+         return
+       END IF
+       ALLOCATE(FP_A(NREFL),STAT=ierr)
+       IF (ierr /= 0) THEN
+         print *,"BRAGG: Error allocating FP_A",NREFL 
+         return
+       END IF
+       ALLOCATE(FP_B(NREFL),STAT=ierr)
+       IF (ierr /= 0) THEN
+         print *,"BRAGG: Error allocating FP_B",NREFL 
+         return
+       END IF
+       ALLOCATE(FPP_A(NREFL),STAT=ierr)
+       IF (ierr /= 0) THEN
+         print *,"BRAGG: Error allocating FPP_A",NREFL 
+         return
+       END IF
+       ALLOCATE(FPP_B(NREFL),STAT=ierr)
+       IF (ierr /= 0) THEN
+         print *,"BRAGG: Error allocating FPP_B",NREFL 
+         return
+       END IF
+
        DO 199 I = 1, NREFL
           READ (25,*) ENERGY(I), FP_A(I), FPP_A(I)
 199    READ (25,*)    FP_B(I), FPP_B(I)
@@ -6628,7 +6680,8 @@ implicit none
 real(kind=skr)    :: q_phot,sinn,sinm,graze,theta_b,deflec
 real(kind=skr)    :: sinbeta,theta_t
 real(kind=skr)    :: cosx,sinx,cosy,siny,cosz,sinz
-real(kind=skr)    :: dumm1=0,zero=0.0,tmp
+real(kind=skr)    :: dumm1=0,zero=0.0
+real(kind=skr)    :: tmp,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8
 integer(kind=ski) :: ipsflag,ierr
 
 
@@ -6676,8 +6729,9 @@ END IF
 
 ! C
 IF (F_CRYSTAL.EQ.1) THEN
-    CALL    CRYSTAL    (0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,0.0D0, &
-        0.0D0,0.0D0,0.0D0,0.0D0,0.0D0,i_one)  
+    tmp = 0.0
+    CALL    CRYSTAL    (0.0D0,0.0D0,0.0D0,tmp,tmp1,tmp2,tmp3,tmp4, &
+        tmp5,tmp6,tmp7,tmp8,i_one)  
     ! C
     ! C Change units and FWHM->S.D. for the mosaic case
     ! C
