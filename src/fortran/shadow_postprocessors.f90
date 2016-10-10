@@ -3994,7 +3994,7 @@ subroutine sysplot
 
   implicit none 
 
-  real(kind=skr),dimension(20.24) :: AXIS (20,24)
+  real(kind=skr),dimension(20,24) :: AXIS
   real(kind=skr),dimension(3)     :: UVEC,VVEC,WVEC
 
   !DATA (12,N_DIM),PHASE(3,N_DIM),AP(3,N_DIM)
