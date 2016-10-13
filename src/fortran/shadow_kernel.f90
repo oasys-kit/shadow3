@@ -11516,7 +11516,6 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
        ! C
        ! C
 101    CONTINUE
-       I_CHANGE = 1
        GO TO (11,11,33,44,55,44,77), FDISTR
        
 11     CONTINUE
@@ -11686,7 +11685,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     ELSE
        PHASEX = WRAN(ISTAR1) * TWOPI
     END IF
-    PHASEZ = PHASEX + POL_ANGLE*I_CHANGE
+    PHASEZ = PHASEX + POL_ANGLE*TORAD
     GO TO (2020,2030,2040,2045) F_COLOR
     
 2010 CONTINUE

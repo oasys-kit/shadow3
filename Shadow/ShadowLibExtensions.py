@@ -1,5 +1,6 @@
 #
-# This file contains the new classes programmed in python  added to the 
+#
+# This file contains the new classes programmed in python  added to the
 # main objects (Beam, OE and Source) defined in C (in ShadowLib)
 #
 # It also define GeometricSource and Beamline
@@ -195,8 +196,8 @@ class Beam(ShadowLib.Beam):
             11   Energy [eV]
             12   Ray index
             13   Optical path length
-            14   Phase (s-polarization)
-            15   Phase (p-polarization)
+            14   Phase (s-polarization) in rad
+            15   Phase (p-polarization) in rad
             16   X component of the electromagnetic vector (p-polariz)
             17   Y component of the electromagnetic vector (p-polariz)
             18   Z component of the electromagnetic vector (p-polariz)
@@ -253,12 +254,12 @@ class Beam(ShadowLib.Beam):
         E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
         E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
         Cos = numpy.cos(ray[:,13]-ray[:,14])
-        column =  2*E2s*E2p*Cos
+        column =  2*numpy.sqrt(E2s*E2p)*Cos
     if col==32:
         E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
         E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
         Sin = numpy.sin(ray[:,13]-ray[:,14])
-        column =  2*E2s*E2p*Sin
+        column =  2*numpy.sqrt(E2s*E2p)*Sin
 
     if nolost == 0:
         return column.copy()
@@ -310,8 +311,8 @@ class Beam(ShadowLib.Beam):
               11   Energy [eV]
               12   Ray index
               13   Optical path length
-              14   Phase (s-polarization)
-              15   Phase (p-polarization)
+              14   Phase (s-polarization) in rad
+              15   Phase (p-polarization) in rad
               16   X component of the electromagnetic vector (p-polariz)
               17   Y component of the electromagnetic vector (p-polariz)
               18   Z component of the electromagnetic vector (p-polariz)
@@ -401,8 +402,8 @@ class Beam(ShadowLib.Beam):
               11   Energy [eV]
               12   Ray index
               13   Optical path length
-              14   Phase (s-polarization)
-              15   Phase (p-polarization)
+              14   Phase (s-polarization) in rad
+              15   Phase (p-polarization) in rad
               16   X component of the electromagnetic vector (p-polariz)
               17   Y component of the electromagnetic vector (p-polariz)
               18   Z component of the electromagnetic vector (p-polariz)
