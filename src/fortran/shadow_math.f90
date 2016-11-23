@@ -31,7 +31,7 @@ Module shadow_math
 !---- the vectorial calculus tools:   scalar, dot, cross, norm, vector, 
 !----                                 versor, proj, vsum, vdist
 
-    public :: wran, mysqrt
+    public :: wran, init_random_seed, mysqrt
     public :: rotate, spl_int, lin_int, atan_2, gauss, binormal
     public :: scalar, dot, cross, norm, vector, versor, proj, vsum, vdist
     public :: gnormal, rotvector, mfp, cross_m_flag
@@ -131,8 +131,14 @@ Contains
 END FUNCTION WRAN
 
 
-
 SUBROUTINE init_random_seed(iseed)
+     INTEGER(kind=ski),intent(in) :: iseed
+     call  init_random_seed_standard(iseed)
+     ! TODO: to be written initializer for penelope random generator
+     ! call  init_random_seed_penelope(iseed)
+END SUBROUTINE 
+
+SUBROUTINE init_random_seed_standard(iseed)
             INTEGER(kind=ski),intent(in) :: iseed
             INTEGER(kind=ski) :: i, clock
 

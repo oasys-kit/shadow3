@@ -3984,6 +3984,8 @@ IF (FMIRR.NE.10) CCC=0.0D0
 300	  CONTINUE
      	CLOSE (20)
 
+        call init_random_seed(IG_SEED)
+
      	  IF (F_R_RAN.EQ.1) THEN
      		DO 1000 I=1,N_RIP
      		X_GR(I) =   RWIDX2 + WRAN(IG_SEED)*RWIDX1
@@ -5516,6 +5518,10 @@ FILE_FAC        =       'NONE SPECIFIED'
 FILE_R_IND_OBJ  =       'NONE SPECIFIED'
 FILE_R_IND_IMA  =       'NONE SPECIFIED'
 
+
+!
+! reset random generators
+!
 WRITE(6,*)'Exit from RESET'
 
 RETURN
@@ -7547,6 +7553,12 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
 	  GOTO 5009
 	END IF
 ! C
+        IF (F_MOSAIC.EQ.1) THEN
+          call init_random_seed(MOSAIC_SEED)
+        END IF
+
+
+
 	XFIRST 	=   RWIDX2
 	XSECON 	=   RWIDX1
 	YFIRST 	=   RLEN2	! source side
@@ -11129,6 +11141,8 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
     
     KREJ = 0
     NREJ = 0
+
+    call init_random_seed(ISTAR1)
     ! C
     ! C Sets up some variables needed for the rest of the routine
     ! C

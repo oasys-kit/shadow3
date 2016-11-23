@@ -1843,6 +1843,8 @@ IDUMM = 0
    
 KREJ = 0
 NREJ = 0
+
+call init_random_seed(ISTAR1)
 ! C
 ! C Sets up some variables needed for the rest of the routine
 ! C
