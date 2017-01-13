@@ -29,6 +29,9 @@ M. Sanchez del Rio, N. Canestrari, F. Jiang and F. Cerrina
 Journal of Synchrotron Radiation Volume 18, Part 5 (September 2011)
 http://dx.doi.org/10.1107/S0909049511026306
 
+If you are (or want to be) a SHADOW user, it is recommended that you use
+a user interface (see #3). We strongly recommend OASYS (https://www.elettra.eu/oasys.html).
+
 2 Download
 ----------
 
@@ -38,10 +41,9 @@ SHADOW3 sources are downloaded using git:
 
   git clone https://github.com/srio/shadow3
 
-  however, the original repository at the EPN-campus is maintained, and
-  will be kept updated, from time to time: 
+  the original repository at the EPN-campus (git clone git://git.epn-campus.eu/repositories/shadow3) is now obsolete. 
 
-  git clone git://git.epn-campus.eu/repositories/shadow3
+  
 
 Other SHADOW web resources: 
 
@@ -51,18 +53,17 @@ Other SHADOW web resources:
 
   Documentation:
     Shadow Primer (for using shadow3 in command mode)
-      http://forge.epn-campus.eu/attachments/996/Shadow3Primer.pdf  
+      http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
 
   SHADOW user interfaces:
     ShadowOui: 
       Pretty fancy and new interface under python/oasys:
-      https://www.elettra.trieste.it/lightsources/labs-and-services/hard-x-ray-techniques-laboratory/oasys.html
-      http://ftp.esrf.eu/pub/scisoft/Oasys/ 
+      https://www.elettra.eu/oasys.html 
 
     ShadowVui:
       The traditional IDL-based interface working under XOP 2.4 and 2.3
       xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
-      xop2.3: ftp://ftp.esrf.fr/pub/scisoft/xop2.3/  
+      xop2.3: http://ftp.esrf.fr/pub/scisoft/xop2.3/  
 
   Official reference:
     http://dx.doi.org/10.1107/S0909049511026306 
@@ -71,7 +72,7 @@ Other SHADOW web resources:
 3 Important files
 -----------------
 
-in shadow3/src: fortran, c and other sources
+in shadow3/src: fortran, C and other sources
 in Shadow: python sources
 
 in docs: README files:
