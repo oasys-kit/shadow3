@@ -30,7 +30,7 @@ Journal of Synchrotron Radiation Volume 18, Part 5 (September 2011)
 http://dx.doi.org/10.1107/S0909049511026306
 
 If you are (or want to be) a SHADOW user, it is recommended that you use
-a user interface (see #3). We strongly recommend OASYS (https://www.elettra.eu/oasys.html).
+a user interface. We strongly recommend OASYS (https://www.elettra.eu/oasys.html).
 
 2 Download
 ----------
