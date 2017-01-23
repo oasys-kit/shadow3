@@ -81,6 +81,7 @@ else:
 #pksetup.setup(
 setup(
     name='shadow3',
+    version='17.1.23',
     packages=['Shadow'],
     url='http://github.com/srio/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
