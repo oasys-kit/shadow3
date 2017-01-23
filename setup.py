@@ -1,8 +1,28 @@
 # -*- coding: utf-8 -*-
 """Build and install Shadow3"""
-from __future__ import division, absolute_import, print_function
 
-#import datetime
+#
+# Memorandum: 
+#
+# Install from sources: 
+#     git clone https://github.com/srio/shadow3
+#     cd shadow3
+#     python setup.py sdist build
+#     python setup.py install
+#
+# Upload to pypi (when uploading, increment the version number):
+#     python setup.py register (only once, not longer needed)
+#     python setup.py sdist upload
+#          
+# Install from pypi:
+#     pip install shadow3
+#
+
+#
+# if problems compiling in new MacOS (>=10.10):
+# export MACOSX_DEPLOYMENT_TARGET=10.9
+#
+
 import glob
 import os
 import os.path
@@ -15,11 +35,8 @@ import sys
 
 import numpy
 from numpy.distutils.command.build_clib import build_clib
-#srio
 from distutils.core import setup
 import distutils.cmd
-
-#from pykern import pksetup
 
 class NullCommand(distutils.cmd.Command, object):
     """Use to eliminate a ``cmdclass``.
@@ -78,7 +95,6 @@ else:
     library_dirs=[]
     extra_link_args = []
 
-#pksetup.setup(
 setup(
     name='shadow3',
     version='17.1.23',
@@ -88,10 +104,6 @@ setup(
     author='Franco Cerrina and M. Sanchez del Rio',
     author_email='srio@esrf.eu',
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
-    #pksetup={  TODO: this gives a warning
- #   setup={
- #       'extra_directories': ['src/c', 'src/def', 'src/fortran'],
- #   },
     libraries=[
         ('shadow3c', {
             'some-random-param': 1,
@@ -124,7 +136,6 @@ setup(
     ],
     cmdclass={
         'build_clib': BuildClib,
-        #'build_src': pksetup.NullCommand,
         'build_src': NullCommand,
     },
     ext_modules=[
