@@ -2306,7 +2306,13 @@ Contains
           ! C srio@esrf.eu 2008-10-15
           ! C see http://ftp.esrf.fr/pub/scisoft/shadow/user_contributions/hyperbola_fixes_2008-10-22.txt
           ! C
-          IF ( ABS(TPAR1-T_SOURCE).LE.ABS(TPAR2-T_SOURCE)  ) THEN
+          ! IF ( ABS(TPAR1-T_SOURCE).LE.ABS(TPAR2-T_SOURCE)  ) THEN
+          !    TPAR=TPAR1
+          ! ELSE
+          !    TPAR=TPAR2
+          ! END IF
+          ! modified srio@esrf.eu 2017/2/10. See https://github.com/srio/shadow3/issues/24
+          IF ( ABS( ABS(TPAR1)-ABS(T_SOURCE)).LE.ABS(ABS(TPAR2)-ABS(T_SOURCE))  ) THEN
              TPAR=TPAR1
           ELSE
              TPAR=TPAR2

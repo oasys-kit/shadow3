@@ -212,8 +212,8 @@ class Beam(ShadowLib.Beam):
             27   K = 2 pi / lambda * col4 [A^-1]
             28   K = 2 pi / lambda * col5 [A^-1]
             29   K = 2 pi / lambda * col6 [A^-1]
-            30   S0-stokes = |Ep|^2 + |Es|^2
-            31   S1-stokes = |Ep|^2 - |Es|^2
+            30   S0-stokes = |Es|^2 + |Ep|^2
+            31   S1-stokes = |Es|^2 - |Ep|^2
             32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
             33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
     '''
@@ -249,7 +249,7 @@ class Beam(ShadowLib.Beam):
     if col==30:
         E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
         E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
-        column =  E2p-E2s
+        column =  E2s-E2p
     if col==31:
         E2s = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8] ]),axis=0)
         E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
