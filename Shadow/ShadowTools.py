@@ -794,7 +794,7 @@ def plotxy(beam,col_h,col_v, nofwhm=1, title="", **kwargs):
   axText.text(0.0,0.7,"intensity: %8.2f"%(tkt["intensity"]))
   axText.text(0.0,0.6,"total number of rays: "+str(tkt["nrays"]))
   axText.text(0.0,0.5,"total good rays: "+str(tkt["good_rays"]))
-  axText.text(0.0,0.4,"total lost rays: "+str(tkt["nrays"]-tkt["nrays"]))
+  axText.text(0.0,0.4,"total lost rays: "+str(tkt["nrays"]-tkt["good_rays"]))
   calfwhm = 1
   if tkt["fwhm_h"] != None:
     axText.text(0.0,0.3,"fwhm H: "+str(tkt["fwhm_h"]))
