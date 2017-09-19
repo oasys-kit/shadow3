@@ -1873,6 +1873,13 @@ class CompoundOE():
 
 
   def sysinfo(self,title="",comment=""):
+    """
+    Creates a text with information of the optical system containing for all elements
+
+    :param title: optional title
+    :param comment: optional comment
+    :return: an array of strings with the text
+    """
 
     txt = "\n"
 
@@ -1972,24 +1979,39 @@ class CompoundOE():
     txt += "\n\n                          OPTICAL SYSTEM CONFIGURATION\n"
     txt += "                           Laboratory Reference Frame.\n"
 
-    #txt += "OPT. Elem #       X =                 Y =                 Z =\n\n"
-    # optaxis_file = "optax.02"
-    #
-    # f = open(optaxis_file,'r')
-    # for i,oe in enumerate(self.list):
-    #     n = f.readline()
-    #     source = f.readline()
-    #     if i == 0:
-    #         txt += "       0        "+source
-    #     mirror = f.readline()
-    #     image = f.readline()
-    #     txt += "       %d        "%(i+1) + mirror
-    #     txt += "          %d'    "%(i+1) + image + "\n"
-    #     for j in range(5):
-    #         tmp = f.readline()
-    # f.close()
-
     txt += "OPT. Elem #       X =                 Y =                 Z =\n\n"
+
+
+    dic = self.syspositions()
+    txt += "       0    %18.11f     %18.11f     %18.11f\n"%(dic["source"][0],dic["source"][1],dic["source"][2])
+    for i in range(self.number_oe()):
+        txt += "       %d    %18.11f     %18.11f     %18.11f\n"%(    i+1,dic["mirr"][0,i],dic["mirr"][1,i],dic["mirr"][2,i])
+        txt += "          %d'    %18.11f     %18.11f     %18.11f\n"%(i+1,dic["star"][0,i],dic["star"][1,i],dic["star"][2,i])
+
+
+    txt += TOPLIN
+    txt += '********                 E N D                  ***************\n'
+    txt += TOPLIN
+
+    if oe.IDUMMY == 0:
+        txt += "Warning: Shadow.CompoundOE.sysinfo(): It seems that info is obtained from start.xx and not from end.xx data\n"
+
+    return(txt)
+
+
+  def syspositions(self):
+    """
+    return a dictionary with the positions of the source, o.e. and images
+
+    :return: dic
+            dic["source"]  numpy  array (icoor) with the three coordinates of source
+            dic["source"]  numpy  array (n_oe,icoor) with the three coordinates of optical elements for all elements
+            dic["source"]  numpy  array (n_oe,icoor) with the three coordinates of image positions for all elements
+            dic["optical_axis_x"] numpy array with the x coordinates of the optical axis
+            dic["optical_axis_y"] numpy array with the y coordinates of the optical axis
+            dic["optical_axis_z"] numpy array with the z coordinates of the optical axis
+    """
+
 
     #
     # this "nasty" part is because we may not have the optax.xx files available so we recalculate
@@ -2001,6 +2023,11 @@ class CompoundOE():
     W_VEC =   numpy.zeros( (4) )
     V_REF =   numpy.zeros( (4) )
     V_PERP =  numpy.zeros( (4) )
+
+    mirr = numpy.zeros((3,len(self.list)))
+    star = numpy.zeros_like(mirr)
+
+
     for i,oe in enumerate(self.list):
 
         if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
@@ -2058,7 +2085,12 @@ class CompoundOE():
             CENTRAL[22] =   V_PERP[1]
             CENTRAL[23] =   V_PERP[2]
             CENTRAL[24] =   V_PERP[3]
-            txt += "       0    %18.11f     %18.11f     %18.11f \n"%(CENTRAL[1],CENTRAL[2],CENTRAL[3])
+
+            source = numpy.zeros(3)
+            source [0] = CENTRAL[1]
+            source [1] = CENTRAL[2]
+            source [2] = CENTRAL[3]
+
         else:
             #    ! ** Computes now the OLD mirror reference frame in the lab. coordinates
             #    ! ** system. The rotation angle ALPHA of the current mirror is defined in
@@ -2147,18 +2179,27 @@ class CompoundOE():
             CENTRAL[23] =   V_PERP[2]
             CENTRAL[24] =   V_PERP[3]
 
-        txt += "       %d    %18.11f     %18.11f     %18.11f \n"%(i+1,CENTRAL[4],CENTRAL[5],CENTRAL[6])
-        txt += "          %d'   %18.11f     %18.11f     %18.11f \n"%(i+1,CENTRAL[7],CENTRAL[8],CENTRAL[9])
 
-    txt += TOPLIN
-    txt += '********                 E N D                  ***************\n'
-    txt += TOPLIN
+        mirr[0,i] = CENTRAL[4]
+        mirr[1,i] = CENTRAL[5]
+        mirr[2,i] = CENTRAL[6]
+        star[0,i] = CENTRAL[7]
+        star[1,i] = CENTRAL[8]
+        star[2,i] = CENTRAL[9]
 
-    if oe.IDUMMY == 0:
-        txt += "Warning: Shadow.CompoundOE.sysinfo(): It seems that infor is obtained from start.xx and not from end.xx info\n"
+    x = numpy.append(source[0],mirr[0,:])
+    x = numpy.append(x,star[0,-1])
+    x = numpy.round(x,10)
 
-    return(txt)
+    y = numpy.append(source[1],mirr[1,:])
+    y = numpy.append(y,star[1,-1])
+    y = numpy.round(y,10)
 
+    z = numpy.append(source[2],mirr[2,:])
+    z = numpy.append(z,star[2,-1])
+    z = numpy.round(z,10)
+
+    return {"source":source, "mirr":mirr, "star":star, "optical_axis_x":x, "optical_axis_y":y, "optical_axis_z":z}
 
 
   def mirinfo(self,title=None):
@@ -3851,8 +3892,6 @@ def test_sysinfo_withscreen():
 
     txt = coe.sysinfo()
     print(txt)
-
-
 
 
 if __name__ == '__main__':
