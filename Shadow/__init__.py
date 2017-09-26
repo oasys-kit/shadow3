@@ -3,7 +3,6 @@
 # import to the main level the main objects first defined in C (ShadowLib) 
 # then extended in ShadowLibExtensions
 #
-from __future__ import print_function
 #from Shadow import ShadowLib
 from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE 
 

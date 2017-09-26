@@ -1,12 +1,14 @@
-from __future__ import print_function
 import Shadow.ShadowLibExtensions as sd
 import numpy 
-import matplotlib.pyplot as plt
-import matplotlib
 import os
 import socket
 import getpass
 import datetime
+try:
+  import matplotlib.pyplot as plt
+  import matplotlib
+except:
+  pass
 
 
 class ArgsError(Exception):

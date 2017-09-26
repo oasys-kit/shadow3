@@ -6,12 +6,12 @@ import inspect
 import os
 
 try:
-    import matplotlib.pylab as plt
-    from matplotlib import collections
+  import matplotlib.pylab as plt
+  from matplotlib import collections
 
 except ImportError: 
-    print(sys.exc_info()[1]) 
-    pass
+  print(sys.exc_info()[1]) 
+  pass
 
 #TODO: remove ShadowToolsPrivate
 import Shadow.ShadowToolsPrivate as stp
@@ -1215,7 +1215,10 @@ def focnew_scan(A,x):
     Example:
     tkt = focnew("star.02")
 
-    import matplotlib.pylab as plt
+    try:
+        import matplotlib.pylab as plt
+    except:
+        raise Exception("Cannot load matplotlib")
     f2 = plt.figure(2)
     y = numpy.linespace(-10.,10.,101)
     plt.plot(y,2.35*focnew_scan(tkt["AX"],y),label="x (column 1)")
