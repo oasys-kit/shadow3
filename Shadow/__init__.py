@@ -4,6 +4,7 @@
 # then extended in ShadowLibExtensions
 #
 #from Shadow import ShadowLib
+from __future__ import print_function
 from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE 
 
 # Defined in C, not used at main level
