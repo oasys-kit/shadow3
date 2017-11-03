@@ -12,7 +12,9 @@
 #
 # Upload to pypi (when uploading, increment the version number):
 #     python setup.py register (only once, not longer needed)
-#     python setup.py sdist upload
+#     python setup.py sdist [upload]
+#     python setup.py bdist_wheel
+#     twine upload dist/*
 #          
 # Install from pypi:
 #     pip install shadow3
@@ -97,11 +99,11 @@ else:
 
 setup(
     name='shadow3',
-    version='17.10.5',
+    version='17.11.3',
     packages=['Shadow'],
     url='http://github.com/srio/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
-    author='Franco Cerrina and M. Sanchez del Rio',
+    author='Franco Cerrina and Manuel Sanchez del Rio',
     author_email='srio@esrf.eu',
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
     libraries=[
