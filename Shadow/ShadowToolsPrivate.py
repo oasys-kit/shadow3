@@ -218,6 +218,7 @@ def getLabel(col):
           [  r"$S_0 = \Vert\mathbf{E}_{\sigma}\Vert^2 + \Vert\mathbf{E}_{\pi}\Vert^2 $", "S0"  ],
           [  r"$S_1 = \Vert\mathbf{E}_{\sigma}\Vert^2 - \Vert\mathbf{E}_{\pi}\Vert^2 $", "S1"  ],
           [  r"$S_2 = 2 \Vert\mathbf{E}_{\sigma}\Vert \cdot \Vert\mathbf{E}_{\pi}\Vert \cos{(\phi_{\sigma}-\phi_{\pi})}$", "S2"  ],
-          [  r"$S_3 = 2 \Vert\mathbf{E}_{\sigma}\Vert \cdot \Vert\mathbf{E}_{\pi}\Vert \sin{(\phi_{\sigma}-\phi_{\pi})}$", "S3"  ]
+          [  r"$S_3 = 2 \Vert\mathbf{E}_{\sigma}\Vert \cdot \Vert\mathbf{E}_{\pi}\Vert \sin{(\phi_{\sigma}-\phi_{\pi})}$", "S3"  ],
+          [  r"Power [eV/s]", "Power"  ],
          ]
   return Label[col]

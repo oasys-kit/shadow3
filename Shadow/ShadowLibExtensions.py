@@ -216,6 +216,7 @@ class Beam(ShadowLib.Beam):
             31   S1-stokes = |Es|^2 - |Ep|^2
             32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
             33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
+            34   Power = intensity(col 23) * energy (col 11)
     '''
 
     #A2EV = 50676.89919462
@@ -260,6 +261,9 @@ class Beam(ShadowLib.Beam):
         E2p = numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [15,16,17] ]),axis=0)
         Sin = numpy.sin(ray[:,13]-ray[:,14])
         column =  2*numpy.sqrt(E2s*E2p)*Sin
+    if col==33: \
+        column =  numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0) *\
+        ray[:,10]/A2EV
 
     if nolost == 0:
         return column.copy()
@@ -331,6 +335,7 @@ class Beam(ShadowLib.Beam):
               31   S1-stokes = |Es|^2 - |Ep|^2
               32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
               33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
+              34   Power = intensity(col 23) * energy (col 11)
       '''
       ret = []
       if isinstance(col, int): return self.getshonecol(col,nolost=nolost)
@@ -422,6 +427,7 @@ class Beam(ShadowLib.Beam):
               31   S1-stokes = |Es|^2 - |Ep|^2
               32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
               33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
+              34   Power = Intensity * Energy
       """
 
 
