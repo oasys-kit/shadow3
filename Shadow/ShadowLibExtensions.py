@@ -25,7 +25,7 @@ class Beam(ShadowLib.Beam):
       beam_copy.rays = copy.deepcopy(self.rays)
       return beam_copy
 
-  def retrace(self,dist):
+  def retrace(self,dist,resetY=False):
     try:
       tof = (-self.rays[:,1].flatten() + dist)/self.rays[:,4].flatten()
       self.rays[:,0] += tof*self.rays[:,3].flatten()
@@ -33,6 +33,68 @@ class Beam(ShadowLib.Beam):
       self.rays[:,2] += tof*self.rays[:,5].flatten()
     except AttributeError:
       print ('retrace: No rays')
+
+    if resetY:
+      self.rays[:,1] = 0.0
+
+  def rotate(self,theta1,axis=1,rad=1):
+    """
+
+    :param theta1: the rotation angle in degrees (default=0)
+    :param axis: The axis number (Shadow's column) for the rotation
+                (i.e, 1:x (default), 2:y, 3:z)
+    :param file:
+    :param rad: set this flag when theta1 is in radiants
+    :return:
+    """
+
+    if not rad:
+        theta1 = theta1 * numpy.pi / 180
+
+    a1 = self.rays.copy()
+
+    if axis == 1:
+        torot = [2,3]
+    elif axis == 2:
+        torot = [1,3]
+    elif axis == 3:
+        torot = [1,2]
+
+
+    costh = numpy.cos(theta1)
+    sinth = numpy.sin(theta1)
+
+    tstart = numpy.array([1,4,7,16])
+
+    for i in range(len(tstart)):
+
+        newaxis = axis + tstart[i] - 1
+        newaxisi = newaxis - 1
+        newtorot = torot + tstart[i] - 1
+        newtoroti = newtorot - 1
+
+        self.rays[:,newtoroti[0]] =  a1[:,newtoroti[0]] * costh + a1[:,newtoroti[1]] * sinth
+        self.rays[:,newtoroti[1]] = -a1[:,newtoroti[0]] * sinth + a1[:,newtoroti[1]] * costh
+        self.rays[:,newaxisi]     =  a1[:,newaxisi]
+
+  def traceIdealLens(self,focal_x=0.0,focal_z=0.0,p=0.0,q=0.0):
+
+    if p != 0.0:
+        self.retrace(p,resetY=True)
+
+    # rotate around Z
+    if focal_x != 0.0:
+        # whatch out the minus!!
+        tan_two_theta = - self.getshcol(1) / focal_x
+        self.rotate(numpy.arctan(tan_two_theta),axis=3,rad=True)
+
+    # rotate around X
+    if focal_z != 0.0:
+        tan_two_theta = self.getshcol(3) / focal_z
+        self.rotate(numpy.arctan(tan_two_theta),axis=1,rad=True)
+
+    if q != 0.0:
+        self.retrace(q,resetY=True)
 
   def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,\
                       write_star_files=0, write_mirr_files=0):
@@ -3899,6 +3961,41 @@ def test_sysinfo_withscreen():
     txt = coe.sysinfo()
     print(txt)
 
+def test_ideal_lens():
+    from numpy.testing import assert_almost_equal
+    print("------------------ test_ideal() --------------------------------------------")
+    print("setting ideal lens for ID23-2")
+
+    # create source
+    src = Source()
+    src.set_energy_monochromatic(14200.0)
+    SIGMAX = 0.00374784
+    SIGMAZ = 0.000425671
+    SIGDIX = 0.000107037
+    SIGDIZ = 5.55325e-06
+    src.set_gauss(SIGMAX,SIGMAZ,SIGDIX,SIGDIZ)
+    src.write("start.00")
+
+    beam = Beam()
+    beam.genSource(src)
+    beam.write("begin.dat")
+    src.write("end.00")
+
+    x0 = beam.getshcol(1).std()
+    z0 = beam.getshcol(3).std()
+
+    p = 4275.0
+    q = 180.0
+    focal = 1.0 / (1.0/p + 1.0/q)
+    beam.traceIdealLens(focal_x=focal,focal_z=focal,p=p,q=q)
+
+    x1 = beam.getshcol(1).std()
+    z1 = beam.getshcol(3).std()
+
+    print(">>>> X before, after, mag, mag_theory: ",x0,x1,x1/x0,q/p)
+    print(">>>> Z before, after, mag, mag_theory: ",z0,z1,z1/z0,q/p)
+    assert_almost_equal(x1/x0,q/p,3)
+    assert_almost_equal(z1/z0,q/p,3)
 
 if __name__ == '__main__':
     do_tests = 0
@@ -3912,5 +4009,4 @@ if __name__ == '__main__':
         test_id23_2()
         test_dcm()
         test_sysinfo_withscreen()
-
-
+        test_ideal_lens()
