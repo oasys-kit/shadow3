@@ -1916,6 +1916,8 @@ beam = Shadow.Beam()
             template += "oe0 = Shadow.Source()\n"
         elif isinstance(element,Shadow.OE):
             template += "oe%d = Shadow.OE()\n"%(i)
+        elif isinstance(element,Shadow.IdealLensOE):
+            template += "oe%d = Shadow.IdealLensOE()\n"%(i)
         else:
             raise Exception("Error: Element not known")
 
@@ -1929,43 +1931,51 @@ beam = Shadow.Beam()
             oe1 = Shadow.Source()
         elif isinstance(element,Shadow.OE):
             oe1 = Shadow.OE()
+        elif isinstance(element,Shadow.IdealLensOE):
+            oe1 = Shadow.IdealLensOE()
         else:
             raise Exception("Error: Element not known")
 
-        memB = inspect.getmembers(oe1B)
-        mem = inspect.getmembers(oe1)
-        for i,var in enumerate(memB):
-            ivar = mem[i]
-            ivarB = memB[i]
-            if ivar[0].isupper():
-                if isinstance(ivar[1],numpy.ndarray):
-                    # print("                  are ALL different ? ", (ivar[1] != ivarB[1]).all())
-                    # print("                  are the same ? ", (ivar[1] == ivarB[1]).all())
-                    # print("                  there is at least ONE diff ? ", not((ivar[1] == ivarB[1]).all()))
 
-                    if not( (ivar[1] == ivarB[1]).all()) :
-                        line = "oe"+str(ioe)+"."+ivar[0]+" = numpy.array("+str(ivarB[1].tolist())+ ")\n"
-                        template += line
+        if isinstance(oe1B,Shadow.IdealLensOE):
+            template += "oe"+str(ioe)+".T_SOURCE = "+str(oe1B.T_SOURCE).strip()+"\n"
+            template += "oe"+str(ioe)+".T_IMAGE = "+str(oe1B.T_IMAGE).strip()+"\n"
+            template += "oe"+str(ioe)+".focal_x = "+str(oe1B.focal_x).strip()+"\n"
+            template += "oe"+str(ioe)+".focal_z = "+str(oe1B.focal_z).strip()+"\n"
+        else:
+            memB = inspect.getmembers(oe1B)
+            mem = inspect.getmembers(oe1)
+            for i,var in enumerate(memB):
+                ivar = mem[i]
+                ivarB = memB[i]
+                if ivar[0].isupper():
+                    if isinstance(ivar[1],numpy.ndarray):
+                        # print("                  are ALL different ? ", (ivar[1] != ivarB[1]).all())
+                        # print("                  are the same ? ", (ivar[1] == ivarB[1]).all())
+                        # print("                  there is at least ONE diff ? ", not((ivar[1] == ivarB[1]).all()))
 
-                    # if (ivar[1] != ivarB[1]).all():
-                    #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
-                    #     if ("SPECIFIED" in line):
-                    #         pass
-                    #     else:
-                    #         template += line
-                else:
-                    if ivar[1] != ivarB[1]:
-                        if isinstance(ivar[1],(str,bytes)):
-                            line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1]).strip()+"\n"
-                            #line = re.sub('\s{2,}', ' ',line)
-                            if "SPECIFIED" in line:
-                                pass
-                            else:
-                                template += line
-                        else:
-                            line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                        if not( (ivar[1] == ivarB[1]).all()) :
+                            line = "oe"+str(ioe)+"."+ivar[0]+" = numpy.array("+str(ivarB[1].tolist())+ ")\n"
                             template += line
 
+                        # if (ivar[1] != ivarB[1]).all():
+                        #     line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                        #     if ("SPECIFIED" in line):
+                        #         pass
+                        #     else:
+                        #         template += line
+                    else:
+                        if ivar[1] != ivarB[1]:
+                            if isinstance(ivar[1],(str,bytes)):
+                                line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1]).strip()+"\n"
+                                #line = re.sub('\s{2,}', ' ',line)
+                                if "SPECIFIED" in line:
+                                    pass
+                                else:
+                                    template += line
+                            else:
+                                line = "oe"+str(ioe)+"."+ivar[0]+" = "+str(ivarB[1])+"\n"
+                                template += line
 
 
     template += """\n\n
@@ -1981,21 +1991,28 @@ if iwrite:
     beam.write("begin.dat")
 """
 
-    template_oe = """\n
+    template_oeA = """\n
 #
 #run optical element {0}
 #
 print("    Running optical element: %d"%({0}))
 if iwrite:
     oe{0}.write("start.{1}")
-beam.traceOE(oe{0},{0})
+"""
+
+    template_oeB = """\n
 if iwrite:
     oe{0}.write("end.{1}")
     beam.write("star.{1}")
 """
 
     for i in range(1,n_elements):
-        template += template_oe.format(i,"%02d"%(i))
+        template += template_oeA.format(i,"%02d"%(i))
+        if isinstance(list_optical_elements[i],Shadow.OE):
+            template += "\nbeam.traceOE(oe%d,%d)"%(i,i)
+        elif isinstance(list_optical_elements[i],Shadow.IdealLensOE):
+            template += "\nbeam.traceIdealLensOE(oe%d,%d)"%(i,i)
+        template += template_oeB.format(i,"%02d"%(i))
 
 #
 # display results (using ShadowTools, matplotlib needed)
@@ -2138,7 +2155,10 @@ def test_make_script_compoundOE():
                  dimensions1=[6,20],dimensions2=[6,30],reflectivity_kind=[0,0],reflectivity_files=["",""],\
                  ) # surface_error_files=["waviness.dat","waviness.dat"])
 
-    make_python_script_from_list([[[[src]]],kb,[kb]],script_file="tmp.py")
+    ideallens1 = Shadow.IdealLensOE(focal_x=0.8,focal_z=0.8,T_SOURCE=0.8,T_IMAGE=0.0)
+    ideallens2 = Shadow.IdealLensOE(focal_x=0.8,T_SOURCE=0.0,T_IMAGE=0.8)
+
+    make_python_script_from_list([[[[src]]],kb,ideallens1,ideallens2,[kb]],script_file="tmp.py")
 
     # trace
     beam.traceCompoundOE(kb,write_start_files=1,write_end_files=0,write_star_files=0)
@@ -2282,5 +2302,6 @@ if __name__=="__main__":
         test_focnew()
         test_ray_prop()
         test_make_script()
-        test_make_script_compoundOE()
         test_make_script_withscreen()
+        test_make_script_compoundOE()
+

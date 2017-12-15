@@ -77,10 +77,10 @@ class Beam(ShadowLib.Beam):
         self.rays[:,newtoroti[1]] = -a1[:,newtoroti[0]] * sinth + a1[:,newtoroti[1]] * costh
         self.rays[:,newaxisi]     =  a1[:,newaxisi]
 
-  def traceIdealLens(self, ideal_lens):
+  def traceIdealLensOE(self, ideal_lens, from_oe=None):
 
-    if ideal_lens.p is not None:
-        self.retrace(ideal_lens.p,resetY=True)
+    if ideal_lens.T_SOURCE != 0:
+        self.retrace(ideal_lens.T_SOURCE,resetY=True)
 
     # rotate around Z
     if ideal_lens.focal_x is not None:
@@ -93,8 +93,11 @@ class Beam(ShadowLib.Beam):
         tan_two_theta = self.getshcol(3) / ideal_lens.focal_z
         self.rotate(numpy.arctan(tan_two_theta),axis=1,rad=True)
 
-    if ideal_lens.q is not None:
-        self.retrace(ideal_lens.q,resetY=True)
+    if ideal_lens.T_IMAGE != 0:
+        self.retrace(ideal_lens.T_IMAGE,resetY=True)
+
+    ideal_lens.IDUMMY = 1
+    ideal_lens.T_REFLECTION = numpy.pi # in radiants now
 
   def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,\
                       write_star_files=0, write_mirr_files=0):
@@ -114,96 +117,43 @@ class Beam(ShadowLib.Beam):
       :param write_mirr_files:  0=No (default), 1=Yes (all), 2: only first and last ones
       :return: a new compoundOE with the list of the OE objects after tracing (the info of end.xx files)
       """
-      # oe_index = from_oe
-      # oe_n = compoundOE.number_oe()
-      # list = CompoundOE()
-      #
-      # for i,oe in enumerate(compoundOE.list):
-      #   print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,oe_index))
-      #
-      #   print(">>>>>>>>> FILE_SOURCE before 0",len(oe.FILE_SOURCE))
-      #   oe1 = oe.duplicate()
-      #   print(">>>>>>>>> FILE_SOURCE before 1",len(oe1.FILE_SOURCE))
-      #   iwrite = 0
-      #   if write_mirr_files == 1: iwrite = 1
-      #   if write_mirr_files == 2 and i == 0: iwrite = 1
-      #   if write_mirr_files == 2 and i == oe_n-1: iwrite = 1
-      #   if iwrite:
-      #       oe1.FWRITE = 1
-      #   iwrite = 0
-      #   if write_start_files == 1: iwrite = 1
-      #   if write_start_files == 2 and i == 0: iwrite = 1
-      #   if write_start_files == 2 and i == oe_n-1: iwrite = 1
-      #
-      #   if iwrite:
-      #       #TODO: check possible bug: the length of FILE_SOURCE is changed when writing start file
-      #       print(">>>>>>>> TRACE BEFORE WRITE  <<<<<< type(oe1.FILE_SOURCE)",i,(oe1.FILE_SOURCE),len(oe1.FILE_SOURCE))
-      #       #tmp = oe1.duplicate()
-      #       oe1.write("start.%02d"%(oe_index))
-      #       print(">>>>>>>> TRACE AFTER WRITE  <<<<<< type(oe1.FILE_SOURCE)",i,(oe1.FILE_SOURCE),len(oe1.FILE_SOURCE))
-      #
-      #       print("File written to disk: start.%02d"%(oe_index))
-      #
-      #   print(">>>>>>>>> FILE_SOURCE before",len(oe1.FILE_SOURCE),len(oe1.FILE_REFL))
-      #   #tmp = oe1.duplicate()
-      #   self.traceOE(oe1,oe_index)
-      #   print(">>>>>>>>> FILE_SOURCE after",len(oe1.FILE_SOURCE),len(oe1.FILE_REFL))
-      #
-      #   list.append(oe1)
-      #
-      #   iwrite = 0
-      #   if write_star_files == 1: iwrite = 1
-      #   if write_star_files == 2 and i == 0: iwrite = 1
-      #   if write_star_files == 2 and i == oe_n-1: iwrite = 1
-      #   if iwrite == 1:
-      #       self.write("star.%02d"%(oe_index))
-      #       print("File written to disk: star.%02d"%(oe_index))
-      #
-      #   iwrite = 0
-      #   if write_end_files == 1: iwrite = 1
-      #   if write_end_files == 2 and i == 0: iwrite = 1
-      #   if write_end_files == 2 and i == oe_n-1: iwrite = 1
-      #   if write_end_files == 1:
-      #       oe1.write("end.%02d"%(oe_index))
-      #       print("File written to disk: end.%02d"%(oe_index))
-      #
-      #   oe_index += 1
-      #
-      # return list
 
       oe_n = len(compoundOE.list)
       for i in range(oe_n):
           print("\nTracing compound oe %d from %d. Absolute oe number is: %d"%(i+1,oe_n,from_oe+i))
 
-          #if wanted to write mirr.xx, tell SHADOW to do it
-          if write_mirr_files == 1:
-            compoundOE.list[i].FWRITE = 1
-          if write_mirr_files == 2:
-            if i == 0 or i == oe_n-1:
+          if isinstance(compoundOE.list[i],OE):
+              #if wanted to write mirr.xx, tell SHADOW to do it
+              if write_mirr_files == 1:
                 compoundOE.list[i].FWRITE = 1
-          #dump start.xx files, if selected
-          if write_start_files == 1:
-            compoundOE.list[i].write("start.%02d"%(from_oe+i))
-          if write_start_files == 2:
-            if i == 0 or i == oe_n-1:
+              if write_mirr_files == 2:
+                if i == 0 or i == oe_n-1:
+                    compoundOE.list[i].FWRITE = 1
+              #dump start.xx files, if selected
+              if write_start_files == 1:
                 compoundOE.list[i].write("start.%02d"%(from_oe+i))
+              if write_start_files == 2:
+                if i == 0 or i == oe_n-1:
+                    compoundOE.list[i].write("start.%02d"%(from_oe+i))
 
+              self.traceOE( compoundOE.list[i], from_oe+1)
 
-
-          self.traceOE( compoundOE.list[i], from_oe+1)
-
-          #dump star.xx files, if selected
-          if write_star_files == 1:
-            self.write("star.%02d"%(from_oe+i))
-          if write_star_files == 2:
-            if i == 0 or i == oe_n-1:
+              #dump star.xx files, if selected
+              if write_star_files == 1:
                 self.write("star.%02d"%(from_oe+i))
-          #dump end.xx files, of selected
-          if write_end_files == 1:
-            compoundOE.list[i].write("end.%02d"%(from_oe+i))
-          if write_end_files == 2:
-            if i == 0 or i == oe_n-1:
+              if write_star_files == 2:
+                if i == 0 or i == oe_n-1:
+                    self.write("star.%02d"%(from_oe+i))
+              #dump end.xx files, of selected
+              if write_end_files == 1:
                 compoundOE.list[i].write("end.%02d"%(from_oe+i))
+              if write_end_files == 2:
+                if i == 0 or i == oe_n-1:
+                    compoundOE.list[i].write("end.%02d"%(from_oe+i))
+          elif isinstance(compoundOE.list[i],IdealLensOE):
+              self.traceIdealLensOE( compoundOE.list[i], from_oe+1)
+          else:
+              raise Exception("OE type not understood")
 
       return
 
@@ -1772,13 +1722,19 @@ class OE(ShadowLib.OE):
 
 class IdealLensOE():
 
-  def __init__(self,focal_x=None,focal_z=None,p=None,q=None,user_units_to_cm=1.0):
+  def __init__(self,focal_x=None,focal_z=None,T_SOURCE=0,T_IMAGE=0,idummy=0,user_units_to_cm=1.0,):
 
-    self.p = p
-    self.q = q
+    self.T_SOURCE = T_SOURCE
+    self.T_IMAGE = T_IMAGE
+    self.IDUMMY = idummy
     self.focal_x = focal_x
     self.focal_z = focal_z
     self.user_units_to_cm = user_units_to_cm
+
+    # fixed
+    self.T_INCIDENCE  = 0.0
+    self.T_REFLECTION = 180.0
+    self.ALPHA        = 0.0
 
   def unit(self):
       if self.user_units_to_cm == 1.0:
@@ -1790,8 +1746,8 @@ class IdealLensOE():
 
       return (str(self.user_units_to_cm)+" * m")
 
-  def info(self):
-    return "\n\n\n **** INFO: I am an Ideal Lens ***\n\n\n"
+  def duplicate(self):
+      return IdealLensOE(self.focal_x,self.focal_z,self.T_SOURCE,self.T_IMAGE,self.IDUMMY,self.user_units_to_cm)
 
   def mirinfo(self,title=None):
 
@@ -1818,8 +1774,8 @@ class IdealLensOE():
     txt += TOPLIN
 
     txt += '\nElement type                             IDEAL LENS\n\n\n'
-    txt += 'Source Plane Distance                    %f %s\n'%(self.p,self.unit())
-    txt += 'Image  Plane                             %f %s\n\n\n'%(self.q,self.unit())
+    txt += 'Source Plane Distance                    %f %s\n'%(self.T_SOURCE,self.unit())
+    txt += 'Image  Plane                             %f %s\n\n\n'%(self.T_IMAGE,self.unit())
 
     if self.focal_x is not None:
       txt += 'Focal length X                           %f %s\n'%(self.focal_x,self.unit())
@@ -1887,13 +1843,16 @@ class CompoundOE():
     for i,oe in enumerate(self.list):
         #1) Distances summary
         oetype = 'UNKNOWN'
-        if oe.F_REFRAC == 1:
-            oetype = 'REFRACTOR'
-        else:
-            oetype = 'MIRROR'
-        if oe.F_CRYSTAL == 1: oetype = 'CRYSTAL'
-        if oe.F_GRATING == 1: oetype = 'GRATING'
-        if oe.F_REFRAC == 2: oetype = 'EMPTY'
+        if isinstance(oe,OE):
+            if oe.F_REFRAC == 1:
+                oetype = 'REFRACTOR'
+            else:
+                oetype = 'MIRROR'
+            if oe.F_CRYSTAL == 1: oetype = 'CRYSTAL'
+            if oe.F_GRATING == 1: oetype = 'GRATING'
+            if oe.F_REFRAC == 2: oetype = 'EMPTY'
+        elif isinstance(oe,IdealLensOE):
+            oetype = 'IDEAL LENS'
 
         tot = tot + oe.T_SOURCE + oe.T_IMAGE
         totoe = tot - oe.T_IMAGE
@@ -1902,50 +1861,54 @@ class CompoundOE():
 
         # 2) focusing summary
 
-        if oe.FMIRR != 5 and oe.FMIRR != 9:
-           if oe.FMIRR == 1:
-             if oe.FCYL == 0:
-                 oeshape='SPHERE'
-             else:
-                 oeshape='CYLINDER'
-           if oe.FMIRR == 2:
-             if oe.FCYL == 0:
-                 oeshape='ELLIPSOID'
-             else:
-                 oeshape='ELLIPSE'
-           if oe.FMIRR == 3:
-             oeshape='TOROID'
-           if oe.FMIRR == 4:
-             if oe.FCYL == 0:
-                 oeshape='PARABOLID'
-             else:
-                 oeshape='PARABOLA'
-           if oe.FMIRR == 6:
-             oeshape='CODLING SLIT'
-           if oe.FMIRR == 7:
-             if oe.FCYL == 0:
-                 oeshape='HYPERBOLOID'
-             else:
-                 oeshape='HYPERBOLA'
-           if oe.FMIRR == 8:
-             oeshape='CONE'
-           if oe.FMIRR == 9:
-             oeshape='POLYNOMIAL'
-           if oe.FMIRR == 10:
-             oeshape='CONIC COEFF'
-           if oe.F_DEFAULT == 1:
-             pp = oe.T_SOURCE
-             qq = oe.T_IMAGE
-           else:
-             pp = oe.SSOUR
-             qq = oe.SIMAG
+        if isinstance(oe,OE):
+            if oe.FMIRR != 5 and oe.FMIRR != 9:
+               if oe.FMIRR == 1:
+                 if oe.FCYL == 0:
+                     oeshape='SPHERE'
+                 else:
+                     oeshape='CYLINDER'
+               if oe.FMIRR == 2:
+                 if oe.FCYL == 0:
+                     oeshape='ELLIPSOID'
+                 else:
+                     oeshape='ELLIPSE'
+               if oe.FMIRR == 3:
+                 oeshape='TOROID'
+               if oe.FMIRR == 4:
+                 if oe.FCYL == 0:
+                     oeshape='PARABOLID'
+                 else:
+                     oeshape='PARABOLA'
+               if oe.FMIRR == 6:
+                 oeshape='CODLING SLIT'
+               if oe.FMIRR == 7:
+                 if oe.FCYL == 0:
+                     oeshape='HYPERBOLOID'
+                 else:
+                     oeshape='HYPERBOLA'
+               if oe.FMIRR == 8:
+                 oeshape='CONE'
+               if oe.FMIRR == 9:
+                 oeshape='POLYNOMIAL'
+               if oe.FMIRR == 10:
+                 oeshape='CONIC COEFF'
+               if oe.F_DEFAULT == 1:
+                 pp = oe.T_SOURCE
+                 qq = oe.T_IMAGE
+               else:
+                 pp = oe.SSOUR
+                 qq = oe.SIMAG
 
-           if oe.F_EXT == 1:
-              line = '%10d %10s %10s %10s %10s \n'%( i+1,oeshape,'?','?','?')
-           else:
-              line = '%10d %10s %10.2f %10.2f %10.2f \n'%(i+1,oeshape,pp,qq,pp/qq)
-           txt2 += line
+               if oe.F_EXT == 1:
+                  line = '%10d %10s %10s %10s %10s \n'%( i+1,oeshape,'?','?','?')
+               else:
+                  line = '%10d %10s %10.2f %10.2f %10.2f \n'%(i+1,oeshape,pp,qq,pp/qq)
 
+               txt2 += line
+        elif isinstance(oe,IdealLensOE):
+            line = '%10d %10s %10s %10s %10s \n'%( i+1,"IDEAL LENS",'?','?','?')
+            txt2 += line
 
         if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
             T_INCIDENCE  = oe.T_INCIDENCE  * numpi.pi / 180.0
@@ -2046,64 +2009,76 @@ class CompoundOE():
         txt += ' \n'
         txt += 'Optical Element # %d      System Number: \n'%(J)
 
-        if oe.F_REFRAC == 2:
-            TEXT = "EMPTY ELEMENT"
+        if isinstance(oe,OE):
+            if oe.F_REFRAC == 2:
+                TEXT = "EMPTY ELEMENT"
+            else:
+                if oe.F_REFRAC == 0:
+                    TEXT = "REFLECTOR"
+                else:
+                    TEXT = "REFRACTOR"
+                if oe.F_CRYSTAL == 1:
+                    TEXT += "-CRYSTAL"
+                elif oe.F_GRATING == 1:
+                    TEXT += "-GRATING"
+                else:
+                    TEXT += "-MIRROR"
+
+                TEXT += "    " + TYPE1[str(oe.FMIRR)]
+
+                if oe.FHIT_C == 1:
+                    TEXT += "    DIMENSIONS CHECKED"
+                else:
+                    TEXT += "    UNLIMITED"
+
+                if oe.F_EXT == 1:
+                    TEXT += "    CURVATURE: EXTERNAL"
+                else:
+                    TEXT += "    CURVATURE: COMPUTED"
+
+                if oe.F_REFLEC == 0:
+                    TEXT += "    REFLECTIVITY OFF"
+                else:
+                    TEXT += "    REFLECTIVITY ON"
+
+            TODEG = 180.0/numpy.pi
+
+            if oe.IDUMMY == 0 and oe.F_CENTRAL == 1:
+                TEXT += "\n\n ** Error: Shadow.CompoundOE.sysinfo(): F_CENTRAL == %d => T_INCIDENCE and T_REFLECTION not calculated. **\n\n"%oe.F_CENTRAL
+
+            if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
+                T_INCIDENCE  = oe.T_INCIDENCE / TODEG
+                T_REFLECTION = oe.T_REFLECTION / TODEG
+                ALPHA        = oe.ALPHA / TODEG
+            else:
+                T_INCIDENCE  = oe.T_INCIDENCE
+                T_REFLECTION = oe.T_REFLECTION
+                ALPHA        = oe.ALPHA
+
+
+            TODEG = 180.0/numpy.pi
+
+            txt +=  '\n'
+            txt +=  TEXT+"\n"
+            txt +=  '\n'
+            txt +=  '  Orientation        %f deg\n'%(ALPHA*TODEG)
+            txt +=  '  Source Plane       %f %s \n'   %(oe.T_SOURCE,oe.unit())
+            txt +=  '  Incidence Ang.     %f deg\n'%(T_INCIDENCE*TODEG)
+            txt +=  '  Reflection Ang.    %f deg\n'%(T_REFLECTION*TODEG)
+            txt +=  '  Image Plane        %f %s\n'   %(oe.T_IMAGE,oe.unit())
+            txt += 	BREAK
+
+            txt += oe.screeninfo()
+        elif isinstance(oe,IdealLensOE):
+            txt += "\nIDEAL LENS\n\n"
+            txt +=  '  Source Plane       %f %s \n'   %(oe.T_SOURCE,oe.unit())
+            txt +=  '  Image Plane        %f %s\n'   %(oe.T_IMAGE,oe.unit())
+            txt += 	BREAK
+
+
         else:
-            if oe.F_REFRAC == 0:
-                TEXT = "REFLECTOR"
-            else:
-                TEXT = "REFRACTOR"
-            if oe.F_CRYSTAL == 1:
-                TEXT += "-CRYSTAL"
-            elif oe.F_GRATING == 1:
-                TEXT += "-GRATING"
-            else:
-                TEXT += "-MIRROR"
+            raise Exception("OE not understood.")
 
-            TEXT += "    " + TYPE1[str(oe.FMIRR)]
-
-            if oe.FHIT_C == 1:
-                TEXT += "    DIMENSIONS CHECKED"
-            else:
-                TEXT += "    UNLIMITED"
-
-            if oe.F_EXT == 1:
-                TEXT += "    CURVATURE: EXTERNAL"
-            else:
-                TEXT += "    CURVATURE: COMPUTED"
-
-            if oe.F_REFLEC == 0:
-                TEXT += "    REFLECTIVITY OFF"
-            else:
-                TEXT += "    REFLECTIVITY ON"
-
-        TODEG = 180.0/numpy.pi
-
-        if oe.IDUMMY == 0 and oe.F_CENTRAL == 1:
-            TEXT += "\n\n ** Error: Shadow.CompoundOE.sysinfo(): F_CENTRAL == %d => T_INCIDENCE and T_REFLECTION not calculated. **\n\n"%oe.F_CENTRAL
-
-        if oe.IDUMMY == 0: # oe not changed by shadow, angles in deg changed to rad
-            T_INCIDENCE  = oe.T_INCIDENCE / TODEG
-            T_REFLECTION = oe.T_REFLECTION / TODEG
-            ALPHA        = oe.ALPHA / TODEG
-        else:
-            T_INCIDENCE  = oe.T_INCIDENCE
-            T_REFLECTION = oe.T_REFLECTION
-            ALPHA        = oe.ALPHA
-
-        TODEG = 180.0/numpy.pi
-
-        txt +=  '\n'
-        txt +=  TEXT+"\n"
-        txt +=  '\n'
-        txt +=  '  Orientation        %f deg\n'%(ALPHA*TODEG)
-        txt +=  '  Source Plane       %f %s \n'   %(oe.T_SOURCE,oe.unit())
-        txt +=  '  Incidence Ang.     %f deg\n'%(T_INCIDENCE*TODEG)
-        txt +=  '  Reflection Ang.    %f deg\n'%(T_REFLECTION*TODEG)
-        txt +=  '  Image Plane        %f %s\n'   %(oe.T_IMAGE,oe.unit())
-        txt += 	BREAK
-
-        txt += oe.screeninfo()
 
     txt += "\n\n                          OPTICAL SYSTEM CONFIGURATION\n"
     txt += "                           Laboratory Reference Frame.\n"
@@ -2167,6 +2142,7 @@ class CompoundOE():
             T_INCIDENCE  = oe.T_INCIDENCE
             T_REFLECTION = oe.T_REFLECTION
             ALPHA        = oe.ALPHA
+
 
         COSAL = numpy.cos(ALPHA)
         SINAL = numpy.sin(ALPHA)
@@ -2402,6 +2378,10 @@ class CompoundOE():
     if isinstance(item, CompoundOE):
         for i in range(item.number_oe()):
             self.list.append(item.list[i].duplicate())
+        return self
+
+    if isinstance(item, IdealLensOE):
+        self.list.append(item.duplicate())
         return self
 
     print("Failed to append: object not understood: %s. "%type(item))
@@ -4049,9 +4029,8 @@ def test_ideal_lens():
     q = 180.0
     focal = 1.0 / (1.0/p + 1.0/q)
 
-    ideallens1 = IdealLensOE(focal,focal,p,q)
-    print(ideallens1.info(),ideallens1.mirinfo())
-    beam.traceIdealLens(ideallens1)
+    ideallens1 = IdealLensOE(focal_x=focal,focal_z=focal,T_SOURCE=p,T_IMAGE=q)
+    beam.traceIdealLensOE(ideallens1)
 
     x1 = beam.getshcol(1).std()
     z1 = beam.getshcol(3).std()
@@ -4096,8 +4075,9 @@ def test_ideal_lens2():
     q = 0.8
     focalx = 1.0 / (1.0/p + 1.0/q)
     focalz = focalx
-    print(">>>> p,q,Fx,FZ",p,q,focalx,focalz)
-    beam.traceIdealLens(focal_x=focalx,focal_z=focalz,p=p,q=q)
+    ideallens1 = IdealLensOE(focal_x=focalx,focal_z=focalz,T_SOURCE=p,T_IMAGE=q)
+    print(ideallens1.mirinfo())
+    beam.traceIdealLensOE(ideallens1)
 
     x1 = beam.getshcol(1).std()
     z1 = beam.getshcol(3).std()
@@ -4106,6 +4086,68 @@ def test_ideal_lens2():
     print(">>>> Z before, after, mag, mag_theory: ",z0,z1,z1/z0,q/p)
     assert_almost_equal(x1/x0,q/p,3)
     assert_almost_equal(z1/z0,q/p,3)
+
+def test_compound_ideal_lens():
+    from numpy.testing import assert_almost_equal
+    print("------------------ test_compound_ideal_lens() --------------------------------------------")
+    print("setting ideal lens for ID23-2")
+
+    # create source
+    oe0 = Source()
+    oe0.FDISTR = 1
+    oe0.FSOUR = 1
+    oe0.F_PHOT = 0
+    oe0.HDIV1 = 0.005
+    oe0.HDIV2 = 0.005
+    oe0.IDO_VX = 0
+    oe0.IDO_VZ = 0
+    oe0.IDO_X_S = 0
+    oe0.IDO_Y_S = 0
+    oe0.IDO_Z_S = 0
+    oe0.ISTAR1 = 0
+    oe0.NPOINT = 2500
+    oe0.PH1 = 9137.65
+    oe0.VDIV1 = 0.00075
+    oe0.VDIV2 = 0.00075
+    oe0.WXSOU = 0.0003
+    oe0.WZSOU = 0.00015
+
+    beam = Beam()
+    beam.genSource(oe0)
+
+    x0 = beam.getshcol(1).std()
+    z0 = beam.getshcol(3).std()
+
+    p = 0.8
+    q = 0.8
+    focalx = 1.0 / (1.0/p + 1.0/q)
+    focalz = focalx
+
+    ideallens1 = IdealLensOE(focal_x=0.8,focal_z=0.8,T_SOURCE=0.8,T_IMAGE=0.0)
+    ideallens2 = IdealLensOE(focal_x=0.8,focal_z=0.8,T_SOURCE=0.0,T_IMAGE=0.8)
+
+    print(ideallens2.mirinfo())
+
+    beam.traceIdealLensOE(ideallens1)
+    beam.traceIdealLensOE(ideallens2)
+
+    twolenses = CompoundOE()
+    twolenses.append(ideallens1)
+    twolenses.append(ideallens2)
+
+    beam.traceCompoundOE(twolenses)
+
+    print(twolenses.sysinfo())
+    print(twolenses.info())
+
+    x1 = beam.getshcol(1).std()
+    z1 = beam.getshcol(3).std()
+
+    print(">>>> X before, after, mag, mag_theory: ",x0,x1,x1/x0,q/p)
+    print(">>>> Z before, after, mag, mag_theory: ",z0,z1,z1/z0,q/p)
+    assert_almost_equal(x1/x0,q/p,3)
+    assert_almost_equal(z1/z0,q/p,3)
+
 
 
 if __name__ == '__main__':
@@ -4120,7 +4162,10 @@ if __name__ == '__main__':
         test_id23_2()
         test_dcm()
         test_sysinfo_withscreen()
-    test_ideal_lens()
+
+        test_ideal_lens()
+        test_ideal_lens2()
+        test_compound_ideal_lens()
 
 
-    # test_ideal_lens2()
+    #
