@@ -77,24 +77,24 @@ class Beam(ShadowLib.Beam):
         self.rays[:,newtoroti[1]] = -a1[:,newtoroti[0]] * sinth + a1[:,newtoroti[1]] * costh
         self.rays[:,newaxisi]     =  a1[:,newaxisi]
 
-  def traceIdealLens(self,focal_x=0.0,focal_z=0.0,p=0.0,q=0.0):
+  def traceIdealLens(self, ideal_lens):
 
-    if p != 0.0:
-        self.retrace(p,resetY=True)
+    if ideal_lens.p is not None:
+        self.retrace(ideal_lens.p,resetY=True)
 
     # rotate around Z
-    if focal_x != 0.0:
+    if ideal_lens.focal_x is not None:
         # whatch out the minus!!
-        tan_two_theta = - self.getshcol(1) / focal_x
+        tan_two_theta = - self.getshcol(1) / ideal_lens.focal_x
         self.rotate(numpy.arctan(tan_two_theta),axis=3,rad=True)
 
     # rotate around X
-    if focal_z != 0.0:
-        tan_two_theta = self.getshcol(3) / focal_z
+    if ideal_lens.focal_z is not None:
+        tan_two_theta = self.getshcol(3) / ideal_lens.focal_z
         self.rotate(numpy.arctan(tan_two_theta),axis=1,rad=True)
 
-    if q != 0.0:
-        self.retrace(q,resetY=True)
+    if ideal_lens.q is not None:
+        self.retrace(ideal_lens.q,resetY=True)
 
   def traceCompoundOE(self,compoundOE,from_oe=1,write_start_files=0,write_end_files=0,\
                       write_star_files=0, write_mirr_files=0):
@@ -1770,6 +1770,67 @@ class OE(ShadowLib.OE):
 
     return txt
 
+class IdealLensOE():
+
+  def __init__(self,focal_x=None,focal_z=None,p=None,q=None,user_units_to_cm=1.0):
+
+    self.p = p
+    self.q = q
+    self.focal_x = focal_x
+    self.focal_z = focal_z
+    self.user_units_to_cm = user_units_to_cm
+
+  def unit(self):
+      if self.user_units_to_cm == 1.0:
+          return 'cm'
+      if self.user_units_to_cm == 0.1:
+          return 'mm'
+      if self.user_units_to_cm == 100.0:
+          return 'm'
+
+      return (str(self.user_units_to_cm)+" * m")
+
+  def info(self):
+    return "\n\n\n **** INFO: I am an Ideal Lens ***\n\n\n"
+
+  def mirinfo(self,title=None):
+
+    '''
+    mimics SHADOW mirinfo postprocessor. Returns a text array.
+    :return: a text array with the result
+    '''
+    #
+    txt = ''
+
+
+    TOPLIN = '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
+    T20 = '                    '
+    T60 = T20 + T20 + T20
+    txt += TOPLIN
+    txt += '********************   OPTICAL ELEMENT  DESCRIPTION   ********************\n'
+
+    if title is None:
+        txt += '\n\n'
+    else:
+        txt += title+'\n'
+    txt += TOPLIN
+
+    txt += TOPLIN
+
+    txt += '\nElement type                             IDEAL LENS\n\n\n'
+    txt += 'Source Plane Distance                    %f %s\n'%(self.p,self.unit())
+    txt += 'Image  Plane                             %f %s\n\n\n'%(self.q,self.unit())
+
+    if self.focal_x is not None:
+      txt += 'Focal length X                           %f %s\n'%(self.focal_x,self.unit())
+    if self.focal_z is not None:
+      txt += 'Focal length Z                           %f %s\n'%(self.focal_z,self.unit())
+
+    txt += TOPLIN
+    txt += '***************                 E N D                  ***************\n'
+    txt += TOPLIN
+
+    return txt
 
 
 class CompoundOE():
@@ -3987,7 +4048,10 @@ def test_ideal_lens():
     p = 4275.0
     q = 180.0
     focal = 1.0 / (1.0/p + 1.0/q)
-    beam.traceIdealLens(focal_x=focal,focal_z=focal,p=p,q=q)
+
+    ideallens1 = IdealLensOE(focal,focal,p,q)
+    print(ideallens1.info(),ideallens1.mirinfo())
+    beam.traceIdealLens(ideallens1)
 
     x1 = beam.getshcol(1).std()
     z1 = beam.getshcol(3).std()
@@ -3996,6 +4060,53 @@ def test_ideal_lens():
     print(">>>> Z before, after, mag, mag_theory: ",z0,z1,z1/z0,q/p)
     assert_almost_equal(x1/x0,q/p,3)
     assert_almost_equal(z1/z0,q/p,3)
+
+def test_ideal_lens2():
+    from numpy.testing import assert_almost_equal
+    print("------------------ test_ideal() --------------------------------------------")
+    print("setting ideal lens for ID23-2")
+
+    # create source
+    oe0 = Source()
+    oe0.FDISTR = 1
+    oe0.FSOUR = 1
+    oe0.F_PHOT = 0
+    oe0.HDIV1 = 0.005
+    oe0.HDIV2 = 0.005
+    oe0.IDO_VX = 0
+    oe0.IDO_VZ = 0
+    oe0.IDO_X_S = 0
+    oe0.IDO_Y_S = 0
+    oe0.IDO_Z_S = 0
+    oe0.ISTAR1 = 0
+    oe0.NPOINT = 2500
+    oe0.PH1 = 9137.65
+    oe0.VDIV1 = 0.00075
+    oe0.VDIV2 = 0.00075
+    oe0.WXSOU = 0.0003
+    oe0.WZSOU = 0.00015
+
+    beam = Beam()
+    beam.genSource(oe0)
+
+    x0 = beam.getshcol(1).std()
+    z0 = beam.getshcol(3).std()
+
+    p = 0.8
+    q = 0.8
+    focalx = 1.0 / (1.0/p + 1.0/q)
+    focalz = focalx
+    print(">>>> p,q,Fx,FZ",p,q,focalx,focalz)
+    beam.traceIdealLens(focal_x=focalx,focal_z=focalz,p=p,q=q)
+
+    x1 = beam.getshcol(1).std()
+    z1 = beam.getshcol(3).std()
+
+    print(">>>> X before, after, mag, mag_theory: ",x0,x1,x1/x0,q/p)
+    print(">>>> Z before, after, mag, mag_theory: ",z0,z1,z1/z0,q/p)
+    assert_almost_equal(x1/x0,q/p,3)
+    assert_almost_equal(z1/z0,q/p,3)
+
 
 if __name__ == '__main__':
     do_tests = 0
@@ -4009,4 +4120,7 @@ if __name__ == '__main__':
         test_id23_2()
         test_dcm()
         test_sysinfo_withscreen()
-        test_ideal_lens()
+    test_ideal_lens()
+
+
+    # test_ideal_lens2()
