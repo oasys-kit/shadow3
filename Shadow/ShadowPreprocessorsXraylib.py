@@ -129,7 +129,7 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
     return None
 
 
-def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.0,S_DENSITY=2.33,S_MATERIAL="Si",E_DENSITY=2.40,E_MATERIAL="B4C",O_DENSITY=9.40,O_MATERIAL="Ru",GRADE_DEPTH=0,N_PAIRS=70,THICKNESS=33.1,GAMMA=0.483,ROUGHNESS_EVEN=3.3,ROUGHNESS_ODD=3.1,FILE_DEPTH="myfile_depth.dat",GRADE_SURFACE=0,FILE_SHADOW="mlayer1.sha",FILE_THICKNESS="mythick.dat",FILE_GAMMA="mygamma.dat",AA0=1.0,AA1=0.0,AA2=0.0):
+def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.0,S_DENSITY=2.33,S_MATERIAL="Si",E_DENSITY=2.40,E_MATERIAL="B4C",O_DENSITY=9.40,O_MATERIAL="Ru",GRADE_DEPTH=0,N_PAIRS=70,THICKNESS=33.1,GAMMA=0.483,ROUGHNESS_EVEN=3.3,ROUGHNESS_ODD=3.1,FILE_DEPTH="myfile_depth.dat",GRADE_SURFACE=0,FILE_SHADOW="mlayer1.sha",FILE_THICKNESS="mythick.dat",FILE_GAMMA="mygamma.dat",AA0=1.0,AA1=0.0,AA2=0.0,AA3=0.0):
 
     """
      SHADOW preprocessor for multilayers - python+xraylib version
@@ -244,15 +244,17 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
             print("A second degree polynomial fit of the thickness grading")
             print("must be available:")
             print("t(y) = BILATER_THICHNESS(y)/BILAYER_THICKNESS(y=0)")
-            print("t(y) = a0 + a1*y + a2*(y^2)  ")
+            print("t(y) = a0 + a1*y + a2*(y^2) + a3*(y^3)  ")
             print("a0 (constant term) ")
             print("a1 (slope term) ")
             print("a2 (quadratic term) ")
-            tmp = input("Enter a0, a1, a2: ")
+            print("a3 (cubic term) ")
+            tmp = input("Enter a0, a1, a2, a3: ")
             tmp = tmp.split()
             a0 = float(tmp[0])
             a1 = float(tmp[1])
             a2 = float(tmp[2])
+            a3 = float(tmp[3])
     else:
         #--- From input keywords...
         fileout = FILE
@@ -291,6 +293,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
         a0 = float(AA0)
         a1 = float(AA1)
         a2 = float(AA2)
+        a3 = float(AA3)
         #--
  
     ###--------------------------------------------------------------------------------------
@@ -340,7 +343,7 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
     if igrade == 1:
         f.write("%s \n" % fgrade)
     elif igrade == 2:  # igrade=2, coefficients
-        f.write("%f  %f  %f \n"%(a0,a1,a2))
+        f.write("%f  %f  %f  %f\n"%(a0,a1,a2,a3))
     ###--------------------------------------------------------------------------------------
     f.close()
     print("File written to disk: %s" % fileout)

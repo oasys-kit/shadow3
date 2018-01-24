@@ -4496,7 +4496,8 @@ real(kind=skr),dimension(6)           :: pds
 
 real(kind=skr)   :: lateral_grade_constant=1D0 !initialization avoids save
 real(kind=skr)   :: lateral_grade_slope=0D0 
-real(kind=skr)   :: lateral_grade_quadratic=0D0 
+real(kind=skr)   :: lateral_grade_quadratic=0D0
+real(kind=skr)   :: lateral_grade_cubic=0D0
 integer(kind=ski):: i_grade=0
 
 real(kind=skr)   :: ab_coeff, cos_ref, del_x, depth0, elfactor, gfact
@@ -4726,8 +4727,11 @@ IF (K_WHAT.EQ.0) THEN
           !
           ! laterally gradded multilayer
           !
-          read(iunit,*) lateral_grade_constant,lateral_grade_slope, &
-                        lateral_grade_quadratic
+
+          ! srio@esrf.eu added cubic term (requested B Meyer, LNLS)
+          read(iunit,*,IOSTAT=iErr) lateral_grade_constant,lateral_grade_slope, &
+                        lateral_grade_quadratic,lateral_grade_cubic
+
         end if
 
         close(unit=iunit)
@@ -4849,7 +4853,8 @@ IF (K_WHAT.EQ.1) THEN
         ELSE IF (I_GRADE.EQ.2) THEN
             TFACT = lateral_grade_constant+ &
                     lateral_grade_slope*pin(2) + &
-                    lateral_grade_quadratic*pin(2)*pin(2)
+                    lateral_grade_quadratic*pin(2)*pin(2) + &
+                    lateral_grade_cubic*pin(2)*pin(2)*pin(2)
         ELSE
         END IF
 

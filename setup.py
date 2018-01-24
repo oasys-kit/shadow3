@@ -8,7 +8,8 @@
 #     git clone https://github.com/srio/shadow3
 #     cd shadow3
 #     python setup.py sdist build
-#     pip install .
+#     python -m pip install -e . --no-deps --no-binary :all:
+#     # pip install .
 #
 # Upload to pypi (when uploading, increment the version number):
 #     python setup.py register (only once, not longer needed)
@@ -99,7 +100,7 @@ else:
 
 setup(
     name='shadow3',
-    version='17.11.3',
+    version='18.1.24',
     packages=['Shadow'],
     url='http://github.com/srio/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
