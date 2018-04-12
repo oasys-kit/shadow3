@@ -102,11 +102,10 @@
 	    - for each screen, include absorption yes(1), no (0).
  i_stop	=   0,            0,            0,            0,            0, 
        	    0,            0,            0,            0,            0
-	    - for each screen with stop, obstruction (0), or aperture
-	    (1).
+	    - for each screen with aperture/stop, aperture (0) obstruction (0).
  i_slit	=   0,            0,            0,            0,            0, 
        	    0,            0,            0,            0,            0
-	    - for each screen, is there an aperture stop yes(1), no (0).
+	    - for each screen, is there an aperture/stop yes(1), no (0).
  k_slit	=   0,            0,            0,            0,            0, 
        	    0,            0,            0,            0,            0
 	    - for each stop/slit, specify a shape: rectangular (0),
