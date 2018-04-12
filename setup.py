@@ -102,7 +102,7 @@ else:
 
 setup(
     name='shadow3',
-    version='18.4.10',
+    version='18.4.11',
     packages=['Shadow'],
     url='http://github.com/srio/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
