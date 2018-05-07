@@ -229,6 +229,10 @@ class Beam(ShadowLib.Beam):
             32   S2-stokes = 2 |Es| |Ep| cos(phase_s-phase_p)
             33   S3-stokes = 2 |Es| |Ep| sin(phase_s-phase_p)
             34   Power = intensity(col 23) * energy (col 11)
+            35   Angle-X with Y: |arcsin(X')|
+            36   Angle-Z with Y: |arcsin(Z')|
+            37   Angle-X with Y: |arcsin(X') - mean(arcsin(X'))|
+            38   Angle-Z with Y: |arcsin(Z') - mean(arcsin(Z'))|
     '''
 
     #A2EV = 50676.89919462
@@ -276,6 +280,31 @@ class Beam(ShadowLib.Beam):
     if col==33: \
         column =  numpy.sum(numpy.array([ ray[:,i]*ray[:,i] for i in [6,7,8,15,16,17] ]),axis=0) *\
         ray[:,10]/A2EV
+
+    if col==34:
+        column = numpy.abs(numpy.arcsin(ray[:,3]))
+    if col==35:
+        column = numpy.abs(numpy.arcsin(ray[:,5]))
+    if col==36:
+        if nolost == 1:
+            f  = numpy.where(ray[:,9] > 0.0)
+            if len(f[0])==0:
+                col_mean = numpy.mean(ray[:,3])
+            else:
+                col_mean = numpy.mean(ray[f,3])
+        else:
+            col_mean = numpy.mean(ray[:,3])
+        column = numpy.abs(numpy.arcsin(ray[:,3] - col_mean))
+    if col==37:
+        if nolost == 1:
+            f  = numpy.where(ray[:,9] > 0.0)
+            if len(f[0])==0:
+                col_mean = numpy.mean(ray[:,5])
+            else:
+                col_mean = numpy.mean(ray[f,5])
+        else:
+            col_mean = numpy.mean(ray[:,5])
+        column = numpy.abs(numpy.arcsin(ray[:,5] - col_mean))
 
     if nolost == 0:
         return column.copy()
@@ -374,7 +403,7 @@ class Beam(ShadowLib.Beam):
           return numpy.array(numpy.where(w < 0)).size
 
 
-  def histo1(self,col,xrange=None,nbins=50,nolost=0,ref=0,write=None,factor=1.0,calculate_widths=1):
+  def histo1(self,col,xrange=None,nbins=50,nolost=0,ref=0,write=None,factor=1.0,calculate_widths=1,calculate_hew=0):
       """
       Calculate the histogram of a column, simply counting the rays, or weighting with another column.
       It returns a dictionary which contains the histogram data.
@@ -594,6 +623,14 @@ class Beam(ShadowLib.Beam):
                 ticket['fw75%m'] = binSize*(tt[0][-1]-tt[0][0])
             else:
                 ticket["fw75%m"] = None
+
+      if calculate_hew:
+            # CALCULATE HALF-ENERGY-WIDTH
+            cdf = numpy.cumsum(ticket["histogram"])
+            cdf /= cdf.max()
+            # hew is two times  the x value that has cdf=0.5 (Eq. 9 in ﻿https://arxiv.org/pdf/1505.07474v2.pdf)
+            hew = 2 * float(bin_center[numpy.argwhere(cdf>0.5)][0])
+            ticket["hew"] = hew
 
       return ticket
 
@@ -4148,6 +4185,57 @@ def test_compound_ideal_lens():
     assert_almost_equal(x1/x0,q/p,3)
     assert_almost_equal(z1/z0,q/p,3)
 
+def test_hew():
+    from numpy.testing import assert_almost_equal
+
+    oe0 = Source()
+
+    oe0.FDISTR = 3
+    oe0.FSOUR = 0
+    oe0.F_PHOT = 0
+    oe0.HDIV1 = 0.0
+    oe0.HDIV2 = 0.0
+    oe0.IDO_VX = 0
+    oe0.IDO_VZ = 0
+    oe0.IDO_X_S = 0
+    oe0.IDO_Y_S = 0
+    oe0.IDO_Z_S = 0
+    oe0.ISTAR1 = 0
+    oe0.NPOINT = 50000
+    oe0.PH1 = 1000.0
+    oe0.SIGDIX = 1e-06  #  sigma=1 urad
+    oe0.SIGDIZ = 1e-06  #  sigma=1 urad
+    oe0.VDIV1 = 0.0
+    oe0.VDIV2 = 0.0
+
+    beam = Beam()
+    beam.genSource(oe0)
+
+    tkt = beam.histo1(21,nolost=True,ref=23,nbins=101,calculate_hew=True)
+    print("hew (col 21 angle with Y): %f urad = %f arcsec"%(tkt["hew"]*1e6,tkt["hew"]*180/numpy.pi*3600))
+    assert_almost_equal(tkt["hew"]*1e6,2.355,1)
+
+    tkt = beam.histo1(35,nolost=True,ref=23,nbins=101,calculate_hew=True)
+    print("hew (col 35 |X'|): %f urad = %f arcsec"%(tkt["hew"]*1e6,tkt["hew"]*180/numpy.pi*3600))
+    assert_almost_equal(tkt["hew"]*1e6,1.3,1)
+
+    tkt = beam.histo1(36,nolost=True,ref=23,nbins=101,calculate_hew=True)
+    print("hew (col 36 |Z'|): %f urad = %f arcsec"%(tkt["hew"]*1e6,tkt["hew"]*180/numpy.pi*3600))
+    assert_almost_equal(tkt["hew"]*1e6,1.3,1)
+
+
+
+    tkt = beam.histo1(37,nolost=True,ref=23,nbins=101,calculate_hew=True)
+    print("hew (col 37 |X'-mean|): %f urad = %f arcsec"%(tkt["hew"]*1e6,tkt["hew"]*180/numpy.pi*3600))
+    assert_almost_equal(tkt["hew"]*1e6,1.3,1)
+
+    tkt = beam.histo1(38,nolost=True,ref=23,nbins=101,calculate_hew=True)
+    print("hew (col 38 |Z'-mean|): %f urad = %f arcsec"%(tkt["hew"]*1e6,tkt["hew"]*180/numpy.pi*3600))
+    assert_almost_equal(tkt["hew"]*1e6,1.3,1)
+
+    # from srxraylib.plot.gol import plot
+    # plot(tkt["bin_path"],tkt["histogram_path"])
+
 
 
 if __name__ == '__main__':
@@ -4167,5 +4255,5 @@ if __name__ == '__main__':
         test_ideal_lens2()
         test_compound_ideal_lens()
 
-
+    test_hew()
     #
