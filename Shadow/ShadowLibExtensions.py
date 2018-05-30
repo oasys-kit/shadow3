@@ -286,25 +286,33 @@ class Beam(ShadowLib.Beam):
     if col==35:
         column = numpy.abs(numpy.arcsin(ray[:,5]))
     if col==36:
+        f = self.getshonecol(10)
+        w = self.getshonecol(23)
+        xp = self.getshonecol(4)
         if nolost == 1:
-            f  = numpy.where(ray[:,9] > 0.0)
-            if len(f[0])==0:
-                col_mean = numpy.mean(ray[:,3])
+            findices  = numpy.where(f > 0.0)
+            if len(findices[0])==0:
+                col_mean = numpy.average(xp, weights=w)
             else:
-                col_mean = numpy.mean(ray[f,3])
+                col_mean = numpy.average(xp[findices], weights=w[findices])
         else:
-            col_mean = numpy.mean(ray[:,3])
-        column = numpy.abs(numpy.arcsin(ray[:,3] - col_mean))
+            col_mean = numpy.average(xp, weights=w)
+        column = numpy.abs(numpy.arcsin(xp - col_mean))
     if col==37:
+        f = self.getshonecol(10)
+        w = self.getshonecol(23)
+        zp = self.getshonecol(6)
         if nolost == 1:
-            f  = numpy.where(ray[:,9] > 0.0)
-            if len(f[0])==0:
-                col_mean = numpy.mean(ray[:,5])
+            findices  = numpy.where(f > 0.0)
+            if len(findices[0])==0:
+                col_mean = numpy.average(zp, weights=w)
             else:
-                col_mean = numpy.mean(ray[f,5])
+                col_mean = numpy.average(zp[findices], weights=w[findices])
         else:
-            col_mean = numpy.mean(ray[:,5])
-        column = numpy.abs(numpy.arcsin(ray[:,5] - col_mean))
+            col_mean = numpy.average(zp, weights=w)
+
+
+        column = numpy.abs(numpy.arcsin(zp - col_mean))
 
     if nolost == 0:
         return column.copy()
@@ -4255,5 +4263,5 @@ if __name__ == '__main__':
         test_ideal_lens2()
         test_compound_ideal_lens()
 
-    test_hew()
-    #
+        test_hew()
+        #
