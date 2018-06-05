@@ -32,35 +32,30 @@ a user interface. We strongly recommend OASYS (https://www.elettra.eu/oasys.html
 
 SHADOW3 sources are downloaded using git: 
 
-  since 2015-10-16 the master shadow3 git repository is at github.com:
-
   git clone https://github.com/oasys-kit/shadow3
 
-  the original repository at the EPN-campus (git clone git://git.epn-campus.eu/repositories/shadow3) is now obsolete. 
-
-  
 
 Other SHADOW web resources: 
 
-  shadow3 binary distributions (not updated):
-    shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
-    shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
+  - shadow3 binary distributions (not updated):
+    -- shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
+    -- shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
 
-  Documentation:
-    Shadow Primer (for using shadow3 in command mode)
+  - Documentation:
+    -- Shadow Primer (for using shadow3 in command mode)
       http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
 
-  SHADOW user interfaces:
-    ShadowOui: 
-      Pretty fancy and new interface under python/oasys:
-      https://www.elettra.eu/oasys.html 
+  - SHADOW user interfaces:
+    -- ShadowOui: 
+      Pretty fancy and new interface under OASYS (http://www.elettra.eu/oasys.html):
+      https://github.com/oasys-kit/shadowoui 
 
-    ShadowVui:
+    -- ShadowVui:
       The traditional IDL-based interface working under XOP 2.4 and 2.3
-      xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
-      xop2.3: http://ftp.esrf.fr/pub/scisoft/xop2.3/  
+      --- xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
+      --- xop2.3: http://ftp.esrf.fr/pub/scisoft/xop2.3/  
 
-  Official reference:
+  - Official reference:
     http://dx.doi.org/10.1107/S0909049511026306 
 
 
@@ -70,31 +65,35 @@ in shadow3/src: fortran, C and other sources
 in Shadow: python sources
 
 in docs: README files:
-  README_API.txt 
-  README_CRL.txt 
-  README_MPI.txt 
-  README_PYTHON.txt
-  source.nml   (description of the source variables, as in start.00)
-  oe.nml       (description of the optical element variables, as in start.01)
+  - README_API.txt 
+  - README_CRL.txt 
+  - README_MPI.txt 
+  - README_PYTHON.txt
+  - source.nml   (description of the source variables, as in start.00)
+  - oe.nml       (description of the optical element variables, as in start.01)
 
 in data: data files: 
-  PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
+  - PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
 
 ## 4 Building SHADOW
   binary:
+  ```
   cd src
-  Check (edit) the Makefile if you need to redefine compilers etc.
-  The use of Makefile is documented in its header. Basically:
+  # Check (edit) the Makefile if you need to redefine compilers etc.
+  # The use of Makefile is documented in its header. Basically:
   make           : builds shadow3 the main program
   make all       : builds shadow3, libraries, etc
   make install   : installation (see Makefile)
+  ```
 
   python API:
+  
   in shadow3 directory, use the standard python setup:
   
+  ```
   python3 setup.py build
   sudo python3 setup.py install
-
+  ```
 
 ## 5 Other info
 
