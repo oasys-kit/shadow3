@@ -1,9 +1,7 @@
---------------------------------------------------------------------------------
-                           SHADOW 3.0 SOURCE DISTRIBUTION
---------------------------------------------------------------------------------
+# SHADOW 3.0 SOURCE DISTRIBUTION
 
 
-Contents:
+## Contents:
 
 
 1 What is SHADOW
@@ -13,9 +11,7 @@ Contents:
 5 Other info
 6 Contact
 
---------------------------------------------------------------------------------
-1 What is SHADOW
-----------------
+## 1 What is SHADOW
 
 SHADOW is an open source ray tracing code for modeling optical systems. 
 
@@ -32,14 +28,13 @@ http://dx.doi.org/10.1107/S0909049511026306
 If you are (or want to be) a SHADOW user, it is recommended that you use
 a user interface. We strongly recommend OASYS (https://www.elettra.eu/oasys.html).
 
-2 Download
-----------
+## 2 Download
 
 SHADOW3 sources are downloaded using git: 
 
   since 2015-10-16 the master shadow3 git repository is at github.com:
 
-  git clone https://github.com/srio/shadow3
+  git clone https://github.com/oasys-kit/shadow3
 
   the original repository at the EPN-campus (git clone git://git.epn-campus.eu/repositories/shadow3) is now obsolete. 
 
@@ -69,8 +64,7 @@ Other SHADOW web resources:
     http://dx.doi.org/10.1107/S0909049511026306 
 
 
-3 Important files
------------------
+## 3 Important files
 
 in shadow3/src: fortran, C and other sources
 in Shadow: python sources
@@ -86,8 +80,7 @@ in docs: README files:
 in data: data files: 
   PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
 
-4 Building SHADOW
-----------------
+## 4 Building SHADOW
   binary:
   cd src
   Check (edit) the Makefile if you need to redefine compilers etc.
@@ -103,11 +96,9 @@ in data: data files:
   sudo python3 setup.py install
 
 
-5 Other info
-------------
+## 5 Other info
 
-6 Contact
----------
+## 6 Contact
 
 SHADOW is currently maintained by Manuel Sanchez del Rio (srio@esrf.eu)
 

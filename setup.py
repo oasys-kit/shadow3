@@ -5,7 +5,7 @@
 # Memorandum: 
 #
 # Install from sources: 
-#     git clone https://github.com/srio/shadow3
+#     git clone https://github.com/oasys-kit/shadow3
 #     cd shadow3
 #     python setup.py sdist build
 #     # install 
@@ -104,7 +104,7 @@ setup(
     name='shadow3',
     version='18.5.30',
     packages=['Shadow'],
-    url='http://github.com/srio/shadow3',
+    url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
     author='Franco Cerrina and Manuel Sanchez del Rio',
     author_email='srio@esrf.eu',
