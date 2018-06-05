@@ -4,12 +4,12 @@
 ## Contents:
 
 
-1 What is SHADOW
-2 Download
-3 Source files
-4 Building SHADOW
-5 Other info
-6 Contact
+1. What is SHADOW
+2. Download
+3. Source files
+4. Building SHADOW
+5. Other info
+6. Contact
 
 ## 1 What is SHADOW
 
@@ -93,11 +93,17 @@ Other SHADOW web resources:
   
   ```
   python3 setup.py build
-  sudo python3 setup.py install
+  pip install .
   ```
 
 ## 5 Other info
-
+  For python users, some wheels are available:
+  - in the official http://pypi.org:
+    ```
+    pip install shadow3
+    ```
+  - in the http://ftp.esrf.eu/pub/scisoft/shadow3/wheels directory. 
+  
 ## 6 Contact
 
 SHADOW is currently maintained by Manuel Sanchez del Rio (srio@esrf.eu)
