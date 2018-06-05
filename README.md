@@ -32,25 +32,26 @@ a user interface. We strongly recommend OASYS (https://www.elettra.eu/oasys.html
 
 SHADOW3 sources are downloaded using git: 
 
+  ```
   git clone https://github.com/oasys-kit/shadow3
-
+  ```
 
 Other SHADOW web resources: 
 
   - shadow3 binary distributions (not updated):
-    -- shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
-    -- shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
+     - shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
+     - shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
 
   - Documentation:
-    -- Shadow Primer (for using shadow3 in command mode)
+     - Shadow Primer (for using shadow3 in command mode)
       http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
 
   - SHADOW user interfaces:
-    -- ShadowOui: 
+     - ShadowOui: 
       Pretty fancy and new interface under OASYS (http://www.elettra.eu/oasys.html):
       https://github.com/oasys-kit/shadowoui 
 
-    -- ShadowVui:
+     - ShadowVui:
       The traditional IDL-based interface working under XOP 2.4 and 2.3
       --- xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
       --- xop2.3: http://ftp.esrf.fr/pub/scisoft/xop2.3/  
@@ -61,10 +62,10 @@ Other SHADOW web resources:
 
 ## 3 Important files
 
-in shadow3/src: fortran, C and other sources
-in Shadow: python sources
+- in shadow3/src: fortran, C and other sources
+- in Shadow: python sources
 
-in docs: README files:
+- in docs: README files:
   - README_API.txt 
   - README_CRL.txt 
   - README_MPI.txt 
@@ -72,7 +73,7 @@ in docs: README files:
   - source.nml   (description of the source variables, as in start.00)
   - oe.nml       (description of the optical element variables, as in start.01)
 
-in data: data files: 
+- in data: data files: 
   - PRELIB1.DAT and PRELIB2.DAT (data file containg the oprical library)
 
 ## 4 Building SHADOW
