@@ -1,6 +1,6 @@
 import Shadow
 import numpy
-import xraylib
+import np_xraylib
 
 #
 # runs an absorber of 10 um thickness for a source at 10 keV
@@ -143,7 +143,7 @@ def test_lens():
     #
     if use_prerefl:
         symbol = "Si"
-        density = xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(symbol))
+        density = np_xraylib.ElementDensity(np_xraylib.SymbolToAtomicNumber(symbol))
         Shadow.ShadowPreprocessorsXraylib.prerefl(interactive=0,SYMBOL=symbol,DENSITY=density,FILE="prerefl.dat",E_MIN=5000.0,E_MAX=15000.0,E_STEP=100.0)
 
     #

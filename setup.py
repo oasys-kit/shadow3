@@ -43,6 +43,10 @@ from numpy.distutils.command.build_clib import build_clib
 from distutils.core import setup
 import distutils.cmd
 
+INSTALL_REQUIRES = (
+    'matplotlib'
+)
+
 class NullCommand(distutils.cmd.Command, object):
     """Use to eliminate a ``cmdclass``.
     Does nothing but complies with :class:`distutils.cmd.Command` protocol.
@@ -143,6 +147,7 @@ setup(
         'build_clib': BuildClib,
         'build_src': NullCommand,
     },
+    install_requires=INSTALL_REQUIRES,
     ext_modules=[
         setuptools.Extension(
             name='Shadow.ShadowLib',
