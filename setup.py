@@ -2,23 +2,23 @@
 """Build and install Shadow3"""
 
 #
-# Memorandum: 
+# Memorandum:
 #
-# Install from sources: 
+# Install from sources:
 #     git clone https://github.com/oasys-kit/shadow3
 #     cd shadow3
 #     python setup.py sdist build
-#     # install 
+#     # install
 #     python -m pip install .
-#     # or install using links (developer) 
+#     # or install using links (developer)
 #     python -m pip install -e . --no-deps --no-binary :all:
 #
 # Upload to pypi (when uploading, increment the version number):
 #     python setup.py register (only once, not longer needed)
-#     python setup.py sdist 
+#     python setup.py sdist
 #     python setup.py bdist_wheel
 #     python -m twine upload dist/*
-#          
+#
 # Install from pypi:
 #     python -m pip install shadow3
 #
@@ -28,22 +28,18 @@
 # export MACOSX_DEPLOYMENT_TARGET=10.9
 #
 
-import glob
-import os
-import os.path
-import pip
-import platform
+import sys
+import subprocess
+from distutils.core import setup
+import distutils.cmd
 import setuptools
 import setuptools.command.test
-import subprocess
-import sys
 
 import numpy
 from numpy.distutils.command.build_clib import build_clib
-from distutils.core import setup
-import distutils.cmd
 
 INSTALL_REQUIRES = (
+    'scipy',
     'matplotlib'
 )
 
@@ -59,7 +55,7 @@ class NullCommand(distutils.cmd.Command, object):
 
     def finalize_options(*args, **kwargs):
         pass
-    
+
     def run(*args, **kwargs):
         pass
 
@@ -68,11 +64,11 @@ class BuildClib(build_clib, object):
     """Set up for shadow3c build"""
 
     def finalize_options(self):
-            try:
-                build_clib.finalize_options(self)
-            except AttributeError:
-                pass
-            
+        try:
+            build_clib.finalize_options(self)
+        except AttributeError:
+            pass
+
 
     def build_libraries(self, *args, **kwargs):
         """Modify the f90 compiler flags and build shadow_version.h"""
@@ -82,7 +78,7 @@ class BuildClib(build_clib, object):
             if f in f90:
                 f90.remove(f)
         f90.extend(('-cpp', '-ffree-line-length-none', '-fomit-frame-pointer', '-I' + self.build_clib))
-                #srio: not needed for python  
+                #srio: not needed for python
 	#self.__version_h()
         return super(BuildClib, self).build_libraries(*args, **kwargs)
 
@@ -90,11 +86,10 @@ class BuildClib(build_clib, object):
 
 if sys.platform == 'darwin':
     compile_options = "_COMPILE4MAX"
-    import subprocess
     #library_dirs=subprocess.check_output(["locate", "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
     library_dirs=subprocess.check_output(["gfortran" , "--print-file-name" , "libgfortran.dylib"]).decode().replace("/libgfortran.dylib","").split("\n")[:-1]
     extra_link_args = ['-Wl,-no_compact_unwind']
-    
+
 elif sys.platform == 'linux':
     compile_options = "_COMPILE4NIX"
     library_dirs=[]

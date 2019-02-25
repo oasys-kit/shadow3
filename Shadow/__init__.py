@@ -4,6 +4,7 @@
 # then extended in ShadowLibExtensions
 #
 #from Shadow import ShadowLib
+import sys
 from __future__ import print_function
 from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE, IdealLensOE
 
@@ -16,17 +17,14 @@ from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE, IdealLensOE
 #     ShadowPreprocessorsXraylib: preprocessors (bragg, etc) using Xraylib
 #     ShadowSrw: Srw+Shadow binding
 #
-import sys
 try:
     import Shadow.ShadowTools as ShadowTools
 except ImportError:
     print(sys.exc_info()[1]) 
-    pass
 try:
     import Shadow.ShadowPreprocessorsXraylib as ShadowPreprocessorsXraylib
 except ImportError:
     print(sys.exc_info()[1]) 
-    pass
 #try:
 #    import Shadow.ShadowSrw as ShadowSrw
 #except:
