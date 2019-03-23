@@ -4,8 +4,8 @@
 # then extended in ShadowLibExtensions
 #
 #from Shadow import ShadowLib
-import sys
 from __future__ import print_function
+import sys
 from Shadow.ShadowLibExtensions import OE, Source, Beam, CompoundOE, IdealLensOE
 
 # Defined in C, not used at main level

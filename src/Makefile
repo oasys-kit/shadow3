@@ -10,7 +10,6 @@
 #       make examples   : compiles examples and tools using libraries:
 #                         examplesFortran: fortran examples statically linked
 #                         examplesMore: C and C++ examples dymamically linked
-#       make idl        : creates idl bind
 #       make preprocess : creates *.f90 files (to be exported to other platforms)
 #
 #       make softclean  : cleans files created when running make 
@@ -178,13 +177,13 @@ shadow3.o: fortran/shadow3.f90
 #objects ingredients
 #
 
-shadow_version.o: shadow_version.h fortran/shadow_version.f90
+shadow_version.o: fortran/shadow_version.h fortran/shadow_version.f90
 	$(FC) $(FFLAGS) -c fortran/shadow_version.f90 
 
 # shadow_version.sh creates shadow_version.h including compilation info 
 # for current system
-shadow_version.h:
-	./shadow_version.sh $(FC)
+#shadow_version.h:
+#	./shadow_version.sh $(FC)
 
 shadow_globaldefinitions.o: fortran/shadow_globaldefinitions.f90
 	$(FC) $(FFLAGS) -c fortran/shadow_globaldefinitions.f90 
@@ -234,10 +233,9 @@ shadow_crl.o: fortran/shadow_crl.f90
 #
 # lib target ----------------
 #
-lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
+lib: $(OBJFMODULES) shadow_bind_c.o 
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
-	$(CXX) $(LIBFLAGS) $(CFLAGS) -o libshadow3c++$(SO) shadow_bind_cpp.o -L. -lshadow3 #$(OBJFMODULES)
 
 shadow_bind_c.o: c/shadow_bind_c.c
 	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
