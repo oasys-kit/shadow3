@@ -318,9 +318,9 @@ BREAK	='    ----------------'
              write(30,*) '    created/accepted ratio: ', & 
                          real(pool00%NTOTALPOINT)/real(pool00%NPOINT)
              IF (pool00%F_BOUND_SOUR.EQ.1) THEN
-              write(30,*) '    file with phase-space volume: '//trim(pool00%FILE_BOUND)
+              write(30,*) '    file with phase-space volume: '//trim(GfConvertStringArrToString(pool00%FILE_BOUND))
              ELSE
-              write(30,*) '    file with slit/acceptance: '//trim(pool00%FILE_BOUND)
+              write(30,*) '    file with slit/acceptance: '//trim(GfConvertStringArrToString(pool00%FILE_BOUND))
              ENDIF
           END IF
 !C
@@ -430,7 +430,8 @@ SUBROUTINE MirInfo
         END IF
 
         IF (p1%F_ROUGHNESS.EQ.1) THEN
-        WRITE (20,*) 'Roughness on from '//trim(p1%FILE_ROUGH)
+        WRITE (20,*) 'Roughness on from '&
+                //trim(GfConvertStringArrToString(p1%FILE_ROUGH))
         WRITE (20,*) 'RMS in Y (angstroms)                   ',p1%ROUGH_Y
         WRITE (20,*) 'RMS in X (angstroms)                   ',p1%ROUGH_X
         ENDIF
@@ -469,7 +470,8 @@ SUBROUTINE MirInfo
         ELSE IF (p1%F_CRYSTAL.EQ.1) THEN
             WRITE (20,*) 'Element type                            CRYSTAL'
             WRITE (20,*) 'Lattice Spacing                        ',p1%D_SPACING
-            WRITE (20,*) 'Bragg Reflection from '//trim(p1%FILE_REFL)
+            WRITE (20,*) 'Bragg Reflection from '&
+                    //trim(GfConvertStringArrToString(p1%FILE_REFL))
             IF (p1%F_MOSAIC.EQ.1) THEN
                 WRITE (20,*) 'MOSAIC Crystal selected                '
                 WRITE (20,*) 'Mosaic crystal spread (st. dev)  [DEG] ',p1%SPREAD_MOS*TODEG
@@ -556,14 +558,18 @@ SUBROUTINE MirInfo
                 write(20,*) "Index of refraction in object space: ",p1%R_IND_OBJ," Attenuation coeff: ",p1%R_ATTENUATION_OBJ
                 write(20,*) "Index of refraction in image space: ",p1%R_IND_IMA," Attenuation coeff: ",p1%R_ATTENUATION_IMA
            else if (p1%F_R_IND .EQ. 1) then
-                write(20,*) "Index of refraction in object space from file "//trim(p1%FILE_R_IND_OBJ)
+                write(20,*) "Index of refraction in object space from file "&
+                        //trim(GfConvertStringArrToString(p1%FILE_R_IND_OBJ))
                 write(20,*) "Index of refraction in image space: ",p1%R_IND_IMA," Attenuation coeff: ",p1%R_ATTENUATION_IMA
            else if (p1%F_R_IND .EQ. 2) then
                 write(20,*) "Index of refraction in object space: ",p1%R_IND_OBJ," Attenuation coeff: ",p1%R_ATTENUATION_OBJ
-                write(20,*) "Index of refraction in image space from file "//trim(p1%FILE_R_IND_IMA)
+                write(20,*) "Index of refraction in image space from file "&
+                        //trim(GfConvertStringArrToString(p1%FILE_R_IND_IMA))
            else if (p1%F_R_IND .EQ. 3) then
-               write(20,*) "Index of refraction in object space from file "//trim(p1%FILE_R_IND_OBJ)
-               write(20,*) "Index of refraction in image space from file "//trim(p1%FILE_R_IND_IMA)
+               write(20,*) "Index of refraction in object space from file "&
+                       //trim(GfConvertStringArrToString(p1%FILE_R_IND_OBJ))
+               write(20,*) "Index of refraction in image space from file "&
+                       //trim(GfConvertStringArrToString(p1%FILE_R_IND_IMA))
            end if
         END IF
 
@@ -571,11 +577,12 @@ SUBROUTINE MirInfo
             WRITE (20,*) 'Reflectivity                            OFF'
         ELSE
             IF (p1%F_REFL.EQ.0) THEN
-                WRITE (20,*) 'Reflectivity      ON     coefficients from: ',p1%FILE_REFL
+                WRITE (20,*) 'Reflectivity      ON     coefficients from: ',GfConvertStringArrToString(p1%FILE_REFL)
             ELSE IF (p1%F_REFL.EQ.1) THEN
                 WRITE (20,*) 'Reflectivity      ON     coefficients from TT:'
             ELSE IF (p1%F_REFL.EQ.2) THEN
-                WRITE (20,*) 'Multilayer        ON     coefficients and geometry from : '//trim(p1%FILE_REFL)
+                WRITE (20,*) 'Multilayer        ON     coefficients and geometry from : '//&
+                        trim(GfConvertStringArrToString(p1%FILE_REFL))
             END IF
             IF (p1%F_REFLEC.EQ.1) WRITE (20,*) &
             'Polarization dependence                 YES'
@@ -656,7 +663,8 @@ SUBROUTINE MirInfo
         ELSE IF (p1%FMIRR.EQ.8) THEN
             WRITE (20,*)'   Cone half-angle  ',p1%CONE_A*TODEG
         ELSE IF (p1%FMIRR.EQ.9) THEN
-            WRITE (20,*)'   Polynomial Coeff file   '//trim(p1%FILE_MIR)
+            WRITE (20,*)'   Polynomial Coeff file   '//&
+                    trim(GfConvertStringArrToString(p1%FILE_MIR))
         END IF
 
         IF (p1%FSTAT.EQ.0) THEN

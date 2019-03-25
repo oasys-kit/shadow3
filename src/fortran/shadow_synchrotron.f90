@@ -1867,7 +1867,7 @@ IF (F_WIGGLER.EQ.1) THEN
     !OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
 
     use_wiggler_binary_files = 0
-    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='FORMATTED')
+    OPEN (29, FILE=GfConvertStringArrToString(FILE_TRAJ), STATUS='OLD', FORM='FORMATTED')
     READ (29,*,err=898) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
 
 go to 899
@@ -1875,7 +1875,7 @@ go to 899
 898  continue
     ! try binary file
     close(29)
-    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
+    OPEN (29, FILE=GfConvertStringArrToString(FILE_TRAJ), STATUS='OLD', FORM='UNFORMATTED')
     READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
     use_wiggler_binary_files = 1
 
@@ -1985,7 +1985,7 @@ ELSE IF (F_WIGGLER.EQ.3) THEN
     ! C
     ! C Elliptical wiggler case:
     ! C
-    OPEN (29, FILE=FILE_TRAJ, STATUS='OLD', FORM='UNFORMATTED')
+    OPEN (29, FILE=GfConvertStringArrToString(FILE_TRAJ), STATUS='OLD', FORM='UNFORMATTED')
     READ (29) NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
  
     !array allocation
@@ -2100,13 +2100,13 @@ ELSE IF (F_WIGGLER.EQ.2) THEN
 
     use_undulator_binary_files = 0
 
-    OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='FORMATTED')
+    OPEN(30, FILE=GfConvertStringArrToString(FILE_TRAJ), STATUS='OLD',FORM='FORMATTED')
     READ(30,*,err=1313) NE,NT,NP,IANGLE
     GO TO 1414
 
     1313 continue
     close(30)
-    OPEN(30, FILE=FILE_TRAJ, STATUS='OLD',FORM='UNFORMATTED')
+    OPEN(30, FILE=GfConvertStringArrToString(FILE_TRAJ), STATUS='OLD',FORM='UNFORMATTED')
     READ(30) NE,NT,NP,IANGLE
     use_undulator_binary_files = 1
 
@@ -3292,7 +3292,8 @@ DO 10000 ITIK=1,NTOTAL  !start mega-loop on number of rays
 
           if ( (ntotalpoint.gt.0) .and. (n_rej.ge.ntotalpoint)) then
             PRINT *,'sourceSync: too many rejected rays: ',ntotalpoint
-            PRINT *,'sourceSync:    check inputs (NTOTALPOINT) and/or file: '//trim(file_bound)
+            PRINT *,'sourceSync:    check inputs (NTOTALPOINT) and/or file: '//&
+                    trim(GfConvertStringArrToString(file_bound))
             PRINT *,'sourceSync:    Exit'
             npoint = itik - 1 ! the current index is a bad ray
             ! exit

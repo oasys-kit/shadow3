@@ -63,7 +63,7 @@ Module shadow_kernel
 
   	!---- Variables SOURCE ----!
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=1), dimension(length) :: name
 #include "shadow_source.def"
 
 
@@ -82,9 +82,9 @@ Module shadow_kernel
     ! NOTE: FOR ADDING A NEW VARIABLE, IT SHOULD BE ADDED IN *.def
     
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=1), dimension(length) :: name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) ftype(kind=fkind), dimension(arrdim) :: name
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=length), dimension(arrdim) :: name
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=1), dimension(arrdim, length) :: name
 #include "shadow_oe_without_repetitions.def"
 
 
@@ -639,9 +639,9 @@ Contains
        IF (F_BOUND_SOUR .eq. 1) THEN !  histo3 method
          !OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=IERR)
          ! changed to formatted, srio@esrf.eu 20120525
-         OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
+         OPEN (30, FILE=GfConvertStringArrToString(FILE_BOUND), STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
          IF (IERR.NE.0) THEN
-            WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
+            WRITE(6,*)'Error opening file: '//trim(GfConvertStringArrToString(FILE_BOUND))
             print *,'Error: SOURCE_BOUND: Aborted'
             return
             !STOP 'Fatal error. Aborted'
@@ -669,9 +669,9 @@ Contains
          END DO
          WRITE(6,*)'Phase space boundaries file read succesfully.'
        ELSE ! method 2, slit
-         OPEN (30, FILE=FILE_BOUND, STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
+         OPEN (30, FILE=GfConvertStringArrToString(FILE_BOUND), STATUS='OLD', FORM='FORMATTED', IOSTAT=IERR)
          IF (IERR.NE.0) THEN
-            WRITE(6,*)'Error opening file: '//trim(FILE_BOUND)
+            WRITE(6,*)'Error opening file: '//trim(GfConvertStringArrToString(FILE_BOUND))
             print *, 'Error: SOURCE_BOUND: Aborted'
             return 
             ! STOP 'Fatal error. Aborted'
@@ -689,7 +689,7 @@ Contains
 
        CLOSE (30)
        RETURN
-101    WRITE(6,*)'Error reading from file '//trim(FILE_BOUND)
+101    WRITE(6,*)'Error reading from file '//trim(GfConvertStringArrToString(FILE_BOUND))
        return 
        ! STOP
     ELSE IF (IFLAG.EQ.1) THEN
@@ -865,10 +865,10 @@ Contains
     ! C If flag is < 0, reads in the reflectivity data
     ! C
     IF (KWHAT.LT.0) THEN
-       OPEN (25,FILE=FILE_REFL,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+       OPEN (25,FILE=GfConvertStringArrToString(FILE_REFL),STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-          print *,"Error: MIRROR: File not found: "//trim(file_refl)
+          print *,"Error: MIRROR: File not found: "//trim(GfConvertStringArrToString(file_refl))
           return 
           ! stop 'File not found. Aborted.'
         end if
@@ -3554,7 +3554,7 @@ SUBROUTINE READPOLY (INFILE, IERR)
 ! C	5/12/92 G.J.
 ! C
 	IF (F_FACET.EQ.1) THEN
-	  CALL	READPOLY(FILE_FAC,IERR)
+	  CALL	READPOLY(GfConvertStringArrToString(FILE_FAC),IERR)
 	  IF (IERR.NE.0) CALL LEAVE &
      		('MSETUP','Error from READPOLY in Facet',IERR)
 	END IF
@@ -3831,7 +3831,7 @@ IF (FMIRR.NE.10) CCC=0.0D0
 ! C Polynomial case
 ! C
  9	CONTINUE
-       	CALL	READPOLY (FILE_MIR, IERR)
+       	CALL	READPOLY (GfConvertStringArrToString(FILE_MIR), IERR)
        	IF (IERR.NE.0) CALL LEAVE  &
      		('MSETUP','Return error from READPOLY',IERR)
 ! C
@@ -3963,12 +3963,12 @@ IF (FMIRR.NE.10) CCC=0.0D0
 ! C CHECK/FIXME: Replace OPEN calls with library routine FOPENR()
 ! C	CALL FOPENR (20, FILE_RIP, 'FORMATTED', IFERR, IOSTAT)
 ! C
-	OPEN (20,FILE=FILE_RIP,STATUS='OLD',IOSTAT=IOSTAT)
+	OPEN (20,FILE=GfConvertStringArrToString(FILE_RIP),STATUS='OLD',IOSTAT=IOSTAT)
 ! C
 	IF (IOSTAT.NE.0) THEN
 	  CALL LEAVE ('MSETUP', &
      		      'Error opening file "' //  &
-     		      FILE_RIP(1:IBLANK(FILE_RIP)) // '".', &
+     		      TRIM(GfConvertStringArrToString(FILE_RIP)) // '".', &
      		      IOSTAT)
 	END IF
      	READ (20,*)	N_RIP
@@ -4506,6 +4506,7 @@ real(kind=skr)   :: rho, rs1, rs2, tfact, tfilm, wnum0, xin, xlam, yin, gamma1
 integer(kind=ski):: i,j,nrefl,ierr,ier,index1,iunit
 integer(kind=ski):: ngx, ngy, ntx, nty, nin, npair
 
+
 ! C
 ! C SAVE the variables that need to be saved across subsequent invocations
 ! C of this subroutine.
@@ -4556,10 +4557,10 @@ IF (K_WHAT.EQ.0) THEN
        ! other codes to create it).
        ! Note: the old binary format is also accepted when reading 
        !  
-        OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
+        OPEN  (23,FILE=GfConvertStringArrToString(FILE_REFL),STATUS='OLD', &
                       FORM='UNFORMATTED', IOSTAT=iErr)
         IF (ierr /= 0 ) then
-             PRINT *,"Error: REFLEC: File not found: "//TRIM(file_refl)
+             PRINT *,"Error: REFLEC: File not found: "//TRIM(GfConvertStringArrToString(file_refl))
              RETURN 
              ! STOP ' Fatal error: aborted'
         END IF
@@ -4591,11 +4592,11 @@ IF (K_WHAT.EQ.0) THEN
 ! this part is for new ascii format
 222     continue
         close(23)
-        OPEN  (23,FILE=FILE_REFL,STATUS='OLD', &
+        OPEN  (23,FILE=GfConvertStringArrToString(FILE_REFL),STATUS='OLD', &
                       FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         IF (ierr /= 0 ) then
-             PRINT *,"Error: REFLEC: File not found: "//TRIM(file_refl)
+             PRINT *,"Error: REFLEC: File not found: "//TRIM(GfConvertStringArrToString(file_refl))
              return 
              ! STOP ' Fatal error: aborted'
         END IF
@@ -4642,16 +4643,16 @@ IF (K_WHAT.EQ.0) THEN
         iunit = 23
         ! WARNING: I got sometimes segmentation fault around this point. 
         !          Problem not identified....  srio@esrf.eu 2010-08-26
-        open(unit=iunit,FILE=FILE_REFL,status='OLD',IOSTAT=iErr)
+        open(unit=iunit,FILE=GfConvertStringArrToString(FILE_REFL),status='OLD',IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
-            print *,"MIRROR: Error: File not found: "//trim(file_refl)
+            print *,"MIRROR: Error: File not found: "//trim(GfConvertStringArrToString(file_refl))
             return 
             ! stop 'File not found. Aborted.'
         end if
         READ(iunit,*) NIN
         IF (NIN > dimMLenergy) THEN 
-            print *,'REFLEC: Error: In file: '//trim(file_refl)
+            print *,'REFLEC: Error: In file: '//trim(GfConvertStringArrToString(file_refl))
             print *,'               Maximum number of energy points is',dimMLenergy
             print *,'               Using number of energy points',NIN
             print *,'MIRROR: Error reading file. Aborted.'
@@ -5289,8 +5290,8 @@ DO 11 I=1,10
     K_SLIT(I) = 0
     I_STOP(I) = 0
     I_ABS(I) = 0
-    FILE_ABS(I) = 'NONE SPECIFIED'
-    FILE_SCR_EXT(I) = 'NONE SPECIFIED'
+    FILE_ABS(I,:) = GfConvertStringToStringArr('NONE SPECIFIED')
+    FILE_SCR_EXT(I,:) = GfConvertStringToStringArr('NONE SPECIFIED')
 11 CONTINUE
 ! C
 ! C  SYSTEM block
@@ -6096,8 +6097,8 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
         IF (I_ABS(I_WHAT).EQ.1) THEN
           FTEMP = F_REFL
           F_REFL = 0
-          FILE_TMP = FILE_REFL
-          FILE_REFL = FILE_ABS(I_WHAT)
+          FILE_TMP = GfConvertStringArrToString(FILE_REFL)
+          FILE_REFL = FILE_ABS(I_WHAT,:)
           tmp = THICK(I_WHAT) * user_units_to_cm
           CALL REFLEC (ppout,DUM,DUM,DUM,DUM,DUM,DUM,DUM,tmp,izero)
        END IF
@@ -6360,7 +6361,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 ! C indices (into xvec and zvec) and number of points per polygon.
 ! C 
         IFLAG = 0
-        filename = FILE_SCR_EXT(I_SCR)
+        filename = GfConvertStringArrToString(FILE_SCR_EXT(I_SCR,:))
         CALL SCREEN_EXTERNAL_GETDIMENSIONS(filename, N_POLYS,N_POINTS,IFLAG)
         !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POLYS: ',N_POLYS
         !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POINTS: ',N_POINTS
@@ -6851,7 +6852,7 @@ END IF
 if (f_roughness.eq.1) then
     ipsflag = -1
     ierr = 0
-    call pspect (tmp,tmp,ierr,ipsflag, file_rough)
+    call pspect (tmp,tmp,ierr,ipsflag, GfConvertStringArrToString(file_rough))
     if (ierr.ne.0) call leave ('Error on return from roughness: PSPECT','SETSOUR',izero)
     if (f_grating.eq.0.and.f_bragg_a.eq.0) f_ruling = 10 
 end if
@@ -7142,14 +7143,14 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
             ! C Replace OPEN calls with library routine FOPENR()
             ! C	  CALL FOPENR(20, FILE_RIP, 'UNFORMATTED', IFERR, IOSTAT)
             ! C
-            inquire( file = file_rip, exist=lTrueFalse, formatted=stmp)
+            inquire( file = GfConvertStringArrToString(file_rip), exist=lTrueFalse, formatted=stmp)
             if (lTruefalse .eqv. .false.) then
-                print *,'SUR_SPLINE: Error: File not found: '//trim(FILE_RIP)
+                print *,'SUR_SPLINE: Error: File not found: '//trim(GfConvertStringArrToString(FILE_RIP))
                 ierr = -1000
                 return
             endif
             if (trim(stmp) .ne. "FORMATTED") then 
-               OPEN  (20, FILE=FILE_RIP, STATUS='OLD', FORM='UNFORMATTED')
+               OPEN  (20, FILE=GfConvertStringArrToString(FILE_RIP), STATUS='OLD', FORM='UNFORMATTED')
                READ  (20) NX, NY
                if ((NX .gt. 100000) .or. (NY .gt. 1000000) .or. & 
                    (NX .lt. 0) .or. (NY .lt. 0)) then 
@@ -7176,7 +7177,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                ! This part has been copied from shadow_preprocessors->presurface
                !
                !print*,'SUR_SPLINE: data input file before presurface.'
-               OPEN  (20, FILE=FILE_RIP, STATUS='OLD', FORM='FORMATTED')
+               OPEN  (20, FILE=GfConvertStringArrToString(FILE_RIP), STATUS='OLD', FORM='FORMATTED')
                READ  (20,*) NX, NY
                if ((nx .lt. 4) .or. (ny .lt. 4)) then
                   !print *,'SUR_SPLINE: Error: Not enough points to define arrays. Must be at'
@@ -7211,7 +7212,7 @@ SUBROUTINE SUR_SPLINE (XIN, YIN, ZOUT, VVOUT, IERR, SERR)
                CALL IBCCCU ( Z, X, NX, Y, NY, CSPL, iTmp2, WK, IER)
                IF (IER.EQ.132) THEN
                    WRITE(6,*)'SUR_SPLINE: Error: The X and/or Y array are/is not ordered properly.' 
-                   WRITE(6,*)'            Please check data in '//trim(FILE_RIP)
+                   WRITE(6,*)'            Please check data in '//trim(GfConvertStringArrToString(FILE_RIP))
                    !STOP
                    return
                END IF
@@ -8566,7 +8567,7 @@ end if
 ! C
             IPSFLAG = 1
             IERR = 0
-            CALL PSPECT (X1,X2,IERR,IPSFLAG,file_rough)
+            CALL PSPECT (X1,X2,IERR,IPSFLAG,GfConvertStringArrToString(file_rough))
 
 		IF (IERR.NE.0) CALL LEAVE  &
      		('MIRROR', 'Error on return from roughness: PSPECT', izero)
@@ -9466,16 +9467,16 @@ SUBROUTINE TRACE_STEP (NSAVE,ICOUNT, IPASS, RAY, PHASE, AP)
 
      	IF (IPASS.EQ.1) THEN
           !CALL RBEAM (FILE_SOURCE,RAY,PHASE,AP,NCOL,NPOINT,IFLAG,IERR)
-          CALL RBEAM (FILE_SOURCE,RAY,PHASE,AP,IERR)
+          CALL RBEAM (GfConvertStringArrToString(FILE_SOURCE),RAY,PHASE,AP,IERR)
 	  IF (IERR.NE.0) THEN
 	    CALL LEAVE ('TRACE_STEP', &
      		'Error reading source image "' // &
-     		FILE_SOURCE(1:IBLANK(FILE_SOURCE)) // '".', &
+     		TRIM(GfConvertStringArrToString(FILE_SOURCE)) // '".', &
      		IERR)
      	  END IF
 
           ! srio: get NCOL from source file. Up to here it is undefined
-          CALL beamGetDim (FILE_SOURCE,NCOL,NP,IFLAG,IERR)
+          CALL beamGetDim (GfConvertStringArrToString(FILE_SOURCE),NCOL,NP,IFLAG,IERR)
 
 	  NSAVE	= NCOL
 ! C
@@ -9986,7 +9987,8 @@ IF (F_GRATING.EQ.0) THEN  !no-grating
 
     IF (F_CRYSTAL.EQ.1) THEN !crystal
         WRITE(6,*) 'File containing crystal parameters ?'
-        READ    (5,111)    FILE_REFL
+        READ    (5,111) TEXT
+        FILE_REFL = GfConvertStringToStringArr(TEXT)
         F_MOSAIC = IYES ('Is it a mosaic crystal [ Y/N ] ? ')
         if (f_mosaic.eq.1.or.f_refrac.eq.1) THICKNESS = RNUMBER ('What is the crystal thickness [user units] ? ')
         IF (F_MOSAIC.EQ.1) THEN ! mosaic=yes
@@ -10084,10 +10086,12 @@ IF (F_REFRAC.EQ.0) THEN
            GAMMA= RNUMBER ('GAMMA = ')
        ELSE IF (F_REFL.EQ.0) THEN
            WRITE(6,*) 'File with optical constants ?'
-           READ (5,111) FILE_REFL
+           READ (5,111) TEXT 
+           FILE_REFL = GfConvertStringToStringArr(TEXT)
        ELSE
            WRITE(6,*) 'File with thicknesses and refractive indices of multilayer ?'
-           READ (5,111)FILE_REFL
+           READ (5,111) TEXT 
+           FILE_REFL = GfConvertStringToStringArr(TEXT)
            F_THICK = IYES ('Vary thicknesses as the cosine of the angle from the pole? ')
        END IF 
     ELSE
@@ -10335,7 +10339,7 @@ IF (F_SCREEN.NE.0) THEN
             K_SLIT(I) = IRINT ('Stop shape [ 0 r, 1 e, 2 ex ] ? ')
             IF (K_SLIT(I).EQ.2) THEN
                 !        XXFILSCR(I) = RSTRING('File containing the mask coordinates ? ')
-                FILE_SCR_EXT(I) = RSTRING('File containing the mask coordinates ? ')
+                FILE_SCR_EXT(I,:) = GfConvertStringToStringArr(RSTRING('File containing the mask coordinates ? '))
             ELSE
                 RX_SLIT(I)= RNUMBER ('Dimension along X ? ')
                 RZ_SLIT(I)= RNUMBER ('                Z ? ')
@@ -10347,7 +10351,8 @@ IF (F_SCREEN.NE.0) THEN
         I_ABS(I)= IYES ('Include absorption [ Y/N ] ? ')
         IF (I_ABS(I).EQ.1) THEN
             WRITE(6,*) 'File with optical constants ?'
-            READ (5,111)      FILE_ABS(I)
+            READ (5,111) TEXT
+            FILE_ABS(I,:) = GfConvertStringToStringArr(TEXT)
             THICK(I) = RNUMBER ('Thickness of film [ cm ] ? ')
         END IF
 11  CONTINUE
@@ -10398,8 +10403,8 @@ END IF
 !c
 !c
 IF (I_OENUM.EQ.1) THEN
-    FILE_SOURCE = RSTRING ('File containing the source array [Default: begin.dat] ? ')
-    IF (trim(FILE_SOURCE) == "") FILE_SOURCE="begin.dat"
+    FILE_SOURCE = GfConvertStringToStringArr(RSTRING ('File containing the source array [Default: begin.dat] ? '))
+    IF (trim(GfConvertStringArrToString(FILE_SOURCE)) == "") FILE_SOURCE=GfConvertStringToStringArr("begin.dat")
 END IF
 10101	CONTINUE
 !c
@@ -10546,9 +10551,9 @@ SUBROUTINE INPUT_SOURCE1
        WYSOU =  0.2D0
        WZSOU =  0.2D0
        PLASMA_ANGLE =  0.00000D0
-       FILE_TRAJ = "NONE SPECIFIED" 
-       FILE_SOURCE =  "NONE SPECIFIED"
-       FILE_BOUND =  "NONE SPECIFIED"
+       FILE_TRAJ = GfConvertStringToStringArr("NONE SPECIFIED")
+       FILE_SOURCE =  GfConvertStringToStringArr("NONE SPECIFIED")
+       FILE_BOUND =  GfConvertStringToStringArr("NONE SPECIFIED")
        OE_NUMBER =  0
        IDUMMY =  0
        DUMMY =  0.00000D0
@@ -11857,7 +11862,7 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
 
           if ( (ntotalpoint.gt.0) .and. (n_rej.ge.ntotalpoint)) then
             PRINT *,'sourceGeom: too many rejected rays: ',ntotalpoint
-            PRINT *,'sourceGeom:    check inputs (NTOTALPOINT) and/or file: '//trim(file_bound)
+            PRINT *,'sourceGeom:    check inputs (NTOTALPOINT) and/or file: '//trim(GfConvertStringArrToString(file_bound))
             PRINT *,'sourceGeom:    Exit'
             npoint = itik-1  ! the current index is a bad ray...
             ! exit
@@ -11925,12 +11930,12 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
   Subroutine PoolOEToGlobal(oe) !bind(C,NAME="PoolOEToGlobal")
     
     type(poolOE),intent(in out) :: oe
-    integer(kind=ski) :: i
+    integer(kind=ski) :: i, j
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) name = oe%name
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) name = oe%name
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) forall(i=1:arrdim) name(i) = oe%name(i)
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) forall(i=1:arrdim) name(i) = oe%name(i)
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) name = oe%name
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) name = oe%name
 #include "shadow_oe.def"
 
 
@@ -11971,8 +11976,8 @@ SUBROUTINE sourceGeom (pool00,ray,npoint1) !bind(C,NAME="sourceGeom")
 
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe%name = name
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) oe%name = name
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) forall(i=1:arrdim) oe%name(i) = name(i)
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) forall(i=1:arrdim) oe%name(i) = name(i)
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) oe%name = name
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) oe%name = name
 #include "shadow_oe.def"
 
 !     
@@ -12469,10 +12474,10 @@ SUBROUTINE Shadow3Trace
 ! 
 
           IF ( .NOT.( ALLOCATED(Ray).AND.ALLOCATED(Ap).AND.ALLOCATED(Phase) ) ) THEN
-            CALL beamGetDim (file_source,ncol1,np,iflag,ierr)
+            CALL beamGetDim (GfConvertStringArrToString(file_source),ncol1,np,iflag,ierr)
 
             IF ((iflag.NE.0).OR.(ierr.NE.0)) THEN
-              PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(file_source)
+              PRINT *,'TRACE: beamGetDim: Error in file: '//TRIM(GfConvertStringArrToString(file_source))
               !STOP
               return
             ELSE
@@ -12618,10 +12623,10 @@ case (0)  ! load files
 
     if ((f_r_ind.eq.1).or.(f_r_ind.eq.3)) then 
         ! only new ascii output from prerefl is accepted for lenses
-        OPEN  (23,FILE=FILE_R_IND_OBJ,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+        OPEN  (23,FILE=GfConvertStringArrToString(FILE_R_IND_OBJ),STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         IF (ierr /= 0 ) then
-             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_obj)
+             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(GfConvertStringArrToString(file_r_ind_obj))
              !STOP ' Fatal error: aborted'
              return
         END IF
@@ -12646,16 +12651,16 @@ case (0)  ! load files
         READ (23,*) (zf1_obj(I),I=1,NREFL_obj)
         READ (23,*) (zf2_obj(I),I=1,NREFL_obj)
         CLOSE (23)
-        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(FILE_R_IND_OBJ)
+        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(GfConvertStringArrToString(FILE_R_IND_OBJ))
     end if
 
 
     if ((f_r_ind.eq.2).or.(f_r_ind.eq.3)) then 
         ! only new ascii output from prerefl is accepted for lenses
-        OPEN  (23,FILE=FILE_R_IND_IMA,STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
+        OPEN  (23,FILE=GfConvertStringArrToString(FILE_R_IND_IMA),STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         IF (ierr /= 0 ) then
-             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(file_r_ind_ima)
+             PRINT *,"GET_REFRACTION_INDEX: Error: File not found: "//TRIM(GfConvertStringArrToString(file_r_ind_ima))
              !STOP ' Fatal error: aborted'
              return
         END IF
@@ -12680,7 +12685,7 @@ case (0)  ! load files
         READ (23,*) (zf1_ima(I),I=1,NREFL_ima)
         READ (23,*) (zf2_ima(I),I=1,NREFL_ima)
         CLOSE (23)
-        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(FILE_R_IND_IMA)
+        if (i_debug.gt.0) print *,">>Debug: file read successfully: "//trim(GfConvertStringArrToString(FILE_R_IND_IMA))
     end if
 ! C
 ! C This is the normal calculation part;
@@ -12819,7 +12824,7 @@ call GET_REFRACTION_INDEX (k_what,WNUM,rr_ind_obj,rr_attenuation_obj, &
 !print outputs
 print *,"------------------------------------------------------------------------"
 print *,"Inputs: "
-print *,"   prerefl file: "//trim(FILE_R_IND_OBJ)//" gives for E=",energy1,"eV: "
+print *,"   prerefl file: "//trim(GfConvertStringArrToString(FILE_R_IND_OBJ))//" gives for E=",energy1,"eV: "
 print *,"   energy [eV]:                       ",energy1
 print *,"   wavelength [A]:                    ",(1d0/wnum)*twopi*1e+8
 print *,"   wavenumber (2 pi/lambda) [cm^-1]:  ",wnum
@@ -12943,7 +12948,7 @@ do i=1,thetaN
     if ( (thetaN .eq. 1) .and. (energyN .eq. 1) ) then
        print *,"------------------------------------------------------------------------"
        print *,"Inputs: "
-       print *,"   pre_mlayer file: "//trim(FILE_REFL)//" gives for E=",energy1,"eV: "
+       print *,"   pre_mlayer file: "//trim(GfConvertStringArrToString(FILE_REFL))//" gives for E=",energy1,"eV: "
        print *,"   energy [eV]:                       ",energy
        print *,"   grazing angle [deg]:               ",theta
        print *,"   wavelength [A]:                    ",(1d0/wnum)*twopi*1e+8
