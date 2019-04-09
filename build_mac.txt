@@ -1,0 +1,19 @@
+running build
+running build_py
+creating build
+creating build/lib.macosx-10.9-x86_64-3.6
+creating build/lib.macosx-10.9-x86_64-3.6/Shadow
+copying ./Shadow/ShadowToolsPrivate.py -> build/lib.macosx-10.9-x86_64-3.6/Shadow
+copying ./Shadow/ShadowTools.py -> build/lib.macosx-10.9-x86_64-3.6/Shadow
+copying ./Shadow/ShadowPreprocessorsXraylib.py -> build/lib.macosx-10.9-x86_64-3.6/Shadow
+copying ./Shadow/__init__.py -> build/lib.macosx-10.9-x86_64-3.6/Shadow
+copying ./Shadow/ShadowLibExtensions.py -> build/lib.macosx-10.9-x86_64-3.6/Shadow
+running build_ext
+building 'Shadow.ShadowLib' extension
+creating build/temp.macosx-10.9-x86_64-3.6
+creating build/temp.macosx-10.9-x86_64-3.6/src
+creating build/temp.macosx-10.9-x86_64-3.6/src/c
+
+gcc -Wno-unused-result -Wsign-compare -Wunreachable-code -fno-common -dynamic -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -arch x86_64 -g -I./src/def -I/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/numpy/core/include -I/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m -c src/c/shadow_bind_python.c -o build/temp.macosx-10.9-x86_64-3.6/src/c/shadow_bind_python.o -msse -msse2
+
+gcc -bundle -undefined dynamic_lookup -arch x86_64 -g build/temp.macosx-10.9-x86_64-3.6/src/c/shadow_bind_python.o -L./src -lshadow3 -lshadow3c -o build/lib.macosx-10.9-x86_64-3.6/Shadow/ShadowLib.cpython-36m-darwin.so -msse -msse2
