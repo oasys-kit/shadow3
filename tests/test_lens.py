@@ -1,6 +1,6 @@
 import Shadow
 import numpy
-import xraylib
+#import xraylib
 
 #
 # runs an absorber of 10 um thickness for a source at 10 keV

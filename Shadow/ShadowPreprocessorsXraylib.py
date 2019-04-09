@@ -27,7 +27,7 @@ __contact__ = "srio@esrf.eu"
 __copyright = "ESRF, 2012"
 
 import math
-import np_xraylib 
+import xraylib 
 # these ones needed in bragg
 import cmath
 import numpy
@@ -99,11 +99,11 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
     f.write("%i \n" % int(npoint))
     for i in range(npoint):
        energy = (estart+estep*i)*1e-3
-       tmp = 2e0*(1e0-np_xraylib.Refractive_Index_Re(iMaterial,energy,density))
+       tmp = 2e0*(1e0-xraylib.Refractive_Index_Re(iMaterial,energy,density))
        f.write("%e \n" % tmp)
     for i in range(npoint):
        energy = (estart+estep*i)*1e-3
-       tmp2 = 2e0*(np_xraylib.Refractive_Index_Im(iMaterial,energy,density))
+       tmp2 = 2e0*(xraylib.Refractive_Index_Im(iMaterial,energy,density))
        f.write("%e \n" % tmp2)
     print("File written to disk: %s" % out_file)
     f.close()
@@ -111,7 +111,7 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
     # test (not needed)
     itest = 0
     if itest:
-       cdtest = np_xraylib.CompoundParser(iMaterial)
+       cdtest = xraylib.CompoundParser(iMaterial)
        print ("    ",iMaterial," contains %i atoms and %i elements"% (cdtest['nAtomsAll'], cdtest['nElements']))
        for i in range(cdtest['nElements']):
           print ("    Element %i: %lf %%" % (cdtest['Elements'][i],cdtest['massFractions'][i]*100.0))
@@ -122,8 +122,8 @@ def prerefl(interactive=True, SYMBOL="SiC",DENSITY=3.217,FILE="prerefl.dat",E_MI
           energy = (estart+estep*i)*1e-3
           qq = qmin+qstep*i
           print (energy,qq, \
-              2e0*(1e0-np_xraylib.Refractive_Index_Re(iMaterial,energy,density)),\
-              2e0*(np_xraylib.Refractive_Index_Im(iMaterial,energy,density)) )
+              2e0*(1e0-xraylib.Refractive_Index_Re(iMaterial,energy,density)),\
+              2e0*(xraylib.Refractive_Index_Im(iMaterial,energy,density)) )
        print (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     return None
@@ -312,20 +312,20 @@ def pre_mlayer(interactive=True, FILE="pre_mlayer.dat",E_MIN=5000.0,E_MAX=20000.
 
     for i in range(np):
         energy = 30e0*math.pow(10,elfactor*(istart+i-1)) *1e-3 # in keV!!
-        delta = 1e0-np_xraylib.Refractive_Index_Re(matSubstrate,energy,denSubstrate)
-        beta = np_xraylib.Refractive_Index_Im(matSubstrate,energy,denSubstrate)
+        delta = 1e0-xraylib.Refractive_Index_Re(matSubstrate,energy,denSubstrate)
+        beta = xraylib.Refractive_Index_Im(matSubstrate,energy,denSubstrate)
         f.write( ("%26.17e "*2+"\n") % tuple([delta,beta]) )
     
     for i in range(np):
         energy = 30e0*math.pow(10,elfactor*(istart+i-1)) *1e-3 # in keV!!
-        delta = 1e0-np_xraylib.Refractive_Index_Re(matEven,energy,denEven)
-        beta = np_xraylib.Refractive_Index_Im(matEven,energy,denEven)
+        delta = 1e0-xraylib.Refractive_Index_Re(matEven,energy,denEven)
+        beta = xraylib.Refractive_Index_Im(matEven,energy,denEven)
         f.write( ("%26.17e  "*2+"\n") % tuple([delta,beta]) )
 
     for i in range(np):
         energy = 30e0*math.pow(10,elfactor*(istart+i-1)) *1e-3 # in keV!!
-        delta = 1e0-np_xraylib.Refractive_Index_Re(matOdd,energy,denOdd)
-        beta = np_xraylib.Refractive_Index_Im(matOdd,energy,denOdd)
+        delta = 1e0-xraylib.Refractive_Index_Re(matOdd,energy,denOdd)
+        beta = xraylib.Refractive_Index_Im(matOdd,energy,denOdd)
         f.write( ("%26.17e "*2+"\n") % tuple([delta,beta]) )
 
 
@@ -416,7 +416,7 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
 
     f = open(fileout, 'wt')
 
-    cryst = np_xraylib.Crystal_GetCrystal(descriptor)
+    cryst = xraylib.Crystal_GetCrystal(descriptor)
     volume = cryst['volume']
 
     #test crystal data - not needed
@@ -440,7 +440,7 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
     #1/V*electronRadius
     f.write( "%e " % ((1e0/volume)*(codata_e2_mc2*1e2)) ) 
     #dspacing
-    dspacing = np_xraylib.Crystal_dSpacing(cryst, hh, kk, ll)
+    dspacing = xraylib.Crystal_dSpacing(cryst, hh, kk, ll)
     f.write( "%e " % (dspacing*1e-8) ) 
     f.write( "\n")
     #Z's
@@ -468,9 +468,9 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
         xx01 = 1e0/2e0/dspacing
         xx00 = xx01-0.1
         xx02 = xx01+0.1
-        yy00= np_xraylib.FF_Rayl(int(zeta),xx00)
-        yy01= np_xraylib.FF_Rayl(int(zeta),xx01)
-        yy02= np_xraylib.FF_Rayl(int(zeta),xx02)
+        yy00= xraylib.FF_Rayl(int(zeta),xx00)
+        yy01= xraylib.FF_Rayl(int(zeta),xx01)
+        yy02= xraylib.FF_Rayl(int(zeta),xx02)
         xx = numpy.array([xx00,xx01,xx02])
         yy = numpy.array([yy00,yy01,yy02])
         fit = numpy.polyfit(xx,yy,2)
@@ -486,10 +486,10 @@ def bragg(interactive=True, DESCRIPTOR="Si",H_MILLER_INDEX=1,K_MILLER_INDEX=1,L_
     f.write( ("%i \n") % npoint)
     for i in range(npoint): 
         energy = (emin+estep*i)
-        f1a = np_xraylib.Fi(int(zetas[0]),energy*1e-3)
-        f2a = np_xraylib.Fii(int(zetas[0]),energy*1e-3)
-        f1b = np_xraylib.Fi(int(zetas[1]),energy*1e-3)
-        f2b = np_xraylib.Fii(int(zetas[1]),energy*1e-3)
+        f1a = xraylib.Fi(int(zetas[0]),energy*1e-3)
+        f2a = xraylib.Fii(int(zetas[0]),energy*1e-3)
+        f1b = xraylib.Fi(int(zetas[1]),energy*1e-3)
+        f2b = xraylib.Fii(int(zetas[1]),energy*1e-3)
         out = numpy.array([energy,f1a,abs(f2a),f1b,abs(f2b)])
         f.write( ("%20.11e %20.11e %20.11e \n %20.11e %20.11e \n") % ( tuple(out.tolist()) ) )
 
