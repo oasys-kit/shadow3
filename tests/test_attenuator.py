@@ -1,6 +1,6 @@
 import Shadow
 import numpy
-import np_xraylib
+import xraylib
 
 #
 # runs an absorber of 10 um thickness for a source at 10 keV
@@ -90,7 +90,7 @@ def test_attenuator():
     #
     # run prerefl
     #
-    density = np_xraylib.ElementDensity(np_xraylib.SymbolToAtomicNumber(symbol))
+    density = xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(symbol))
 
     Shadow.ShadowPreprocessorsXraylib.prerefl(interactive=0,SYMBOL=symbol,DENSITY=density,FILE="prerefl.dat",E_MIN=5000.0,E_MAX=15000.0,E_STEP=100.0)
 
@@ -110,7 +110,7 @@ def test_attenuator():
     #
     # check SHADOW results against xraylib attenuation
     #
-    cs1 = np_xraylib.CS_Total(np_xraylib.SymbolToAtomicNumber(symbol), 10.0)
+    cs1 = xraylib.CS_Total(xraylib.SymbolToAtomicNumber(symbol), 10.0)
 
     # print("xralib Fe cross section [cm^2/g]: %f"%cs1)
     # print("xralib mu  [cm^-1]: %f"%(cs1*density))
