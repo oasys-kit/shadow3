@@ -157,7 +157,7 @@ static PyTypeObject ShadowSourceType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
 #else
-  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+  PyVarObject_HEAD_INIT( NULL, 0 )
 #endif
   "Source",                                          /* tp_name           */
   sizeof ( Shadow_Source ),                          /* tp_basicsize      */
@@ -498,7 +498,7 @@ static PyTypeObject ShadowOEType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
 #else
-  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+  PyVarObject_HEAD_INIT( NULL, 0 )
 #endif
   "OE",                                              /* tp_name           */
   sizeof ( Shadow_OE ),                              /* tp_basicsize      */
@@ -754,7 +754,7 @@ static PyTypeObject ShadowBeamType = {
   PyObject_HEAD_INIT ( NULL )
   0,                                                 /* ob_size           */
 #else
-  PyVarObject_HEAD_INIT( &PyType_Type, 0 )
+  PyVarObject_HEAD_INIT( NULL, 0 )
 #endif
   "Beam",                                            /* tp_name           */
   sizeof ( Shadow_Beam ),                            /* tp_basicsize      */
