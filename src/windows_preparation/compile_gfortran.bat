@@ -1,5 +1,8 @@
 del *.o *.mod *.dll *.exe
 
+REM
+REM  compile shadow sources (including fortran binding)
+REM
 gfortran -static -ffree-line-length-none -O2 -c shadow_globaldefinitions.f90
 gfortran -static -ffree-line-length-none -O2 -c stringio.f90
 gfortran -static -ffree-line-length-none -O2 -c gfile.f90
@@ -20,11 +23,15 @@ gfortran -static -ffree-line-length-none -O2 -c shadow_bind_f.f90
 
 gfortran -shared -lm -fPIC -o libshadow3.dll *.o
 
-gfortran -static -ffree-line-length-none -O2 -c shadow3.f90
-gfortran -static -ffree-line-length-none -O2 -o shadow3.exe shadow3.o libshadow3.dll
+REM  create shadow3.exe - not needed for python
+REM  gfortran -static -ffree-line-length-none -O2 -c shadow3.f90
+REM  gfortran -static -ffree-line-length-none -O2 -o shadow3.exe shadow3.o libshadow3.dll
 
 gcc -c shadow_bind_c.c
 gcc -shared -lm  -fPIC  -o libshadow3c.dll shadow_bind_c.o -L. -lshadow3
 
+REM
+REM  copy created libraries to main dir
+REM
 copy libshadow3.dll ..\..
 copy libshadow3c.dll ..\..
