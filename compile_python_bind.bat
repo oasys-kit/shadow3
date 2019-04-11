@@ -3,10 +3,9 @@ REM  see https://github.com/GeoscienceAustralia/tcrm/wiki/Compiling-the-C-extens
 REM
 REM  python libs
 REM
-copy c:\anaconda3\python3.dll .
-REM  create .def
-C:\mingw64\mingw32\bin\gendef python3.dll
-dlltool --dllname python3.dll --def python3.def --output-lib libpython3.a
+REM copy c:\anaconda3\python3.dll .
+REM C:\mingw64\mingw32\bin\gendef python3.dll
+REM dlltool --dllname python3.dll --def python3.def --output-lib libpython3.a
 
 REM
 REM  compile bind
@@ -17,7 +16,8 @@ gcc -c src/c/shadow_bind_python.c -I./src/def/ -Ic:/anaconda3/include -Ic:/anaco
 REM
 REM  create binding
 REM
-gcc -shared -s shadow_bind_python.o -Lc:/anaconda3/libs -L./src -lshadow3c -lshadow3 libpython3.a -o ShadowLib.pyd
+REM gcc -shared -s shadow_bind_python.o -Lc:/anaconda3/libs -L./src -lshadow3c -lshadow3 libpython3.a -o ShadowLib.pyd
+gcc -shared -s shadow_bind_python.o -Lc:/anaconda3/libs -L./src -lshadow3c -lshadow3 c:\anaconda3\python3.dll -o ShadowLib.pyd
 
 
 REM  install
@@ -33,9 +33,3 @@ copy tests\test_lens.py .
 REM Check that it imports without error:
 REM python -c "import Shadow"
 python test_lens.py
-
-REM
-REM Install
-REM
-mkdir c:\anaconda3\Lib\site-packages\Shadow
-copy Shadow\*.* c:\anaconda3\Lib\site-packages\Shadow
