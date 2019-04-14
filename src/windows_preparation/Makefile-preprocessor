@@ -90,12 +90,21 @@ preprocess: $(FMODULESPRE) shadow3.f90
 
 all: preprocess
 
+shadow3: $(OBJFMODULES) shadow3.o
+	$(FC) $(LINKFLAGS) -o shadow3$(EXE) shadow3.o $(OBJFMODULES) 
+
+
+shadow3.o: shadow3.f90
+	$(FC) $(FFLAGS) -c shadow3.f90 
+
 # 
 # dependencies and rules
 #
 
 %.f90: %.F90
 	$(CPP) $(COMPILEOPT) $< -o $@
+%.o: %.f90
+	$(FC) $(FFLAGS) $< -o $@
 
 #
 # cleaning 

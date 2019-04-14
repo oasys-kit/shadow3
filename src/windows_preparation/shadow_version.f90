@@ -1,4 +1,3 @@
-!---- MODULE:  shadow_version
 
 Module shadow_version
 
@@ -11,7 +10,7 @@ Contains
 
 SUBROUTINE shadow_version_info
 
-#include "shadow_version.h"
+print*,""
 
 
 END SUBROUTINE shadow_version_info

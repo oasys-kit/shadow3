@@ -23,9 +23,9 @@ cp ../fortran/shadow_postprocessors.f90        shadow_postprocessors.F90
 #echo "" > shadow_version.F90
 cp ../fortran/shadow_version.f90  .
 
-make -f Makefile-preprocessor preprocess
+make -f Makefile-preprocessor preprocess shadow3
 
-/bin/rm *.F90 *.o *.mod *.def
+#/bin/rm *.F90 *.o *.mod *.def
 
 make
 
