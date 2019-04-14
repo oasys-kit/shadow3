@@ -4,23 +4,72 @@ import numpy
 
 import distutils
 from distutils.core import setup, Extension
+from distutils.command.build import build
+from shutil import which
+from subprocess import run as sub_run
+from subprocess import Popen
+
+import setuptools
+from setuptools import setup, Extension
+# from distutils.core import setup
 
 headers = glob (os.path.join ("src/def","*.h") )
 #header = headers + glob (os.path.join ("Include/numpy","*.h") )
+here = os.path.abspath(os.path.dirname(__file__))
+
+def check_dependencies():
+    '''
+    Check dependencies for Windows (msbuild) and Unix (make).
+    :raises Exception: if one is missing, an exception is raised.
+    '''
+    if sys.platform == 'win32':
+        if not which("msbuild"):
+            # TODO: We need to find a better approach here.
+            raise Exception("You need to install the SDK Windows 8.1 with Visual Studio Utils and set msbuild.exe path in global environment")
+    else:
+        if not which("make"):
+            raise Exception("You need to install make in order to execute the makefile to build Shadow")
+
+
+class ShadowBuild(build):
+    '''
+    This class is a wrapper to build Shadow before making link before Shadow
+    '''
+    def run(self):
+        check_dependencies()
+        if sys.platform == 'win32':
+            path_to_bat = os.path.join(here, 'src')
+            bat_name = "make.bat"
+            try:
+                batch_process = Popen(bat_name, cwd=path_to_bat, shell=True)
+                stdout, stderr = batch_process.communicate()
+                if stderr:
+                    raise Exception('An error occur during Shadow compilation. Message: {}'.format(stderr))
+            except OSError as err:
+                raise OSError('{} should be located on src. Current path: {}'.format(bat_name, path_to_bat))
+            super().run()
+        else:
+            sub_run(['make', '-C', os.path.join(here, 'src'), 'clean'])
+            sub_run(['make', '-C', os.path.join(here, 'src'), 'lib'])
+            super().run()
+            # sub_run(['make', '-C', os.path.join(here, 'src'), 'clean'])
+
 
 setup ( name = "Shadow",
         version = "0.1.0",
-	packages=["Shadow"],
+	    packages=["Shadow"],
         package_dir={"Shadow":"./Shadow"},
+        cmdclass={'build': ShadowBuild},
+        include_package_data=True,
         ext_modules = [Extension('Shadow.ShadowLib',
                                  ['src/c/shadow_bind_python.c'],
-                                 include_dirs  = ['./src/def', numpy.get_include()],
-                                 library_dirs  = ['./src'],
+                                 include_dirs  = ['src/def', numpy.get_include()],
+                                 library_dirs  = ['src'],
                                  libraries     = ['shadow3','shadow3c'],
-                                 extra_compile_args = ['-msse','-msse2'],
-                                 extra_link_args = ['-msse','-msse2'],
+                                 # extra_compile_args = ['-msse','-msse2'],
+                                 # extra_link_args = ['-msse','-msse2'],
                                 ),
                       ],
-        data_files=[('ll', ['src/libshadow3.so','src/libshadow3c.so'])],
+        # data_files=[('src', ['src/libshadow3.so','src/libshadow3c.so'])],
         )
 
