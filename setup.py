@@ -5,9 +5,10 @@
 # Usage:
 #
 #
+# # for macOSX
+#
 # python3 setup.py sdist
 # python3 setup.py bdist_wheel
-# # for macOSX
 # cp src/libshadow*.so .
 # delocate-wheel -w fixed_wheels -v dist/Shadow-0.1.0-cp36-cp36m-macosx_10_9_x86_64.whl
 # python3 -m pip install fixed_wheels/Shadow-0.1.0-cp36-cp36m-macosx_10_9_x86_64.whl
@@ -71,7 +72,7 @@ class ShadowBuild(build):
             # sub_run(['make', '-C', os.path.join(here, 'src'), 'clean'])
 
 
-setup ( name = "Shadow",
+setup ( name = "shadow3",
         version = "0.1.0",
 	    packages=["Shadow"],
         package_dir={"Shadow":"./Shadow"},
