@@ -15,6 +15,18 @@
 #
 #
 
+# In windows:
+# I patched the file anaconda3/Lib/distutils/cygwinccompiler.py
+# elif int(msc_ver) >= 1900:
+# # VS2015 / MSVC 14.0
+# return []  # ['msvcr140']
+# python3 setup.py bdist_wheel
+# do manuallu:
+# rename .whl to .zip
+# add libshadow3.dll and libshadow3c.dll to Shadow in the zipp file
+# rename back .zip to .whl
+
+
 import os, sys, string, re
 from glob import glob
 import numpy
@@ -40,9 +52,8 @@ def check_dependencies():
     :raises Exception: if one is missing, an exception is raised.
     '''
     if sys.platform == 'win32':
-        if not which("msbuild"):
-            # TODO: We need to find a better approach here.
-            raise Exception("You need to install the SDK Windows 8.1 with Visual Studio Utils and set msbuild.exe path in global environment")
+        if not which("gfortran"):
+            raise Exception("You need to install the gfortran compiles (in conda mingw32)")
     else:
         if not which("make"):
             raise Exception("You need to install make in order to execute the makefile to build Shadow")
@@ -76,7 +87,7 @@ setup ( name = "shadow3",
         version = "0.1.0",
 	    packages=["Shadow"],
         package_dir={"Shadow":"./Shadow"},
-        # package_data={'Shadow/Shadow':['src/libshadow3.so','src/libshadow3c.so']},
+        # package_data={'Shadow':['libshadow3.so','libshadow3c.so']},
         cmdclass={'build': ShadowBuild},
         # include_package_data=True,
         ext_modules = [Extension('Shadow.ShadowLib',
