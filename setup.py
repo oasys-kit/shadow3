@@ -1,3 +1,19 @@
+
+#
+#
+# setup.py for shadow3
+# Usage:
+#
+#
+# python3 setup.py sdist
+# python3 setup.py bdist_wheel
+# # for macOSX
+# cp src/libshadow*.so .
+# delocate-wheel -w fixed_wheels -v dist/Shadow-0.1.0-cp36-cp36m-macosx_10_9_x86_64.whl
+# python3 -m pip install fixed_wheels/Shadow-0.1.0-cp36-cp36m-macosx_10_9_x86_64.whl
+#
+#
+
 import os, sys, string, re
 from glob import glob
 import numpy
@@ -59,12 +75,13 @@ setup ( name = "Shadow",
         version = "0.1.0",
 	    packages=["Shadow"],
         package_dir={"Shadow":"./Shadow"},
+        # package_data={'Shadow/Shadow':['src/libshadow3.so','src/libshadow3c.so']},
         cmdclass={'build': ShadowBuild},
-        include_package_data=True,
+        # include_package_data=True,
         ext_modules = [Extension('Shadow.ShadowLib',
                                  ['src/c/shadow_bind_python.c'],
                                  include_dirs  = ['src/def', numpy.get_include()],
-                                 library_dirs  = ['src'],
+                                 library_dirs  = ['./src'],
                                  libraries     = ['shadow3','shadow3c'],
                                  # extra_compile_args = ['-msse','-msse2'],
                                  # extra_link_args = ['-msse','-msse2'],

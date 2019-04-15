@@ -236,6 +236,8 @@ shadow_crl.o: fortran/shadow_crl.f90
 lib: $(OBJFMODULES) shadow_bind_c.o 
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
+#	cp libshadow3$(SO) ..
+#	cp libshadow3c$(SO) ..
 
 shadow_bind_c.o: c/shadow_bind_c.c
 	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
@@ -320,10 +322,10 @@ python:
 	echo "Not supported: please use directly python setup.py "
 
 clean: softclean
-	/bin/rm ../shadow3$(EXE) 
+	/bin/rm -f ../shadow3$(EXE) 
 
 softclean:  
-	/bin/rm -f *.o *.mod *$(SO) *.a *.dylib
+	/bin/rm -f *.o *.mod ./*$(SO) ../*$(SO) *.a *.dylib
 	/bin/rm -f version.txt
 	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp
 	/bin/rm -f example_shadow_format
