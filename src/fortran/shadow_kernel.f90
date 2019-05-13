@@ -84,7 +84,7 @@ Module shadow_kernel
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=1), dimension(length) :: name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) ftype(kind=fkind), dimension(arrdim) :: name
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=1), dimension(arrdim, length) :: name
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=1), dimension(length, arrdim) :: name
 #include "shadow_oe_without_repetitions.def"
 
 
@@ -5290,8 +5290,8 @@ DO 11 I=1,10
     K_SLIT(I) = 0
     I_STOP(I) = 0
     I_ABS(I) = 0
-    FILE_ABS(I,:) = GfConvertStringToStringArr('NONE SPECIFIED')
-    FILE_SCR_EXT(I,:) = GfConvertStringToStringArr('NONE SPECIFIED')
+    FILE_ABS(:,I) = GfConvertStringToStringArr('NONE SPECIFIED')
+    FILE_SCR_EXT(:,I) = GfConvertStringToStringArr('NONE SPECIFIED')
 11 CONTINUE
 ! C
 ! C  SYSTEM block
@@ -6098,7 +6098,7 @@ SUBROUTINE SCREEN (RAY,AP_IN,PH_IN,I_WHAT,I_ELEMENT)
           FTEMP = F_REFL
           F_REFL = 0
           FILE_TMP = GfConvertStringArrToString(FILE_REFL)
-          FILE_REFL = FILE_ABS(I_WHAT,:)
+          FILE_REFL = FILE_ABS(:,I_WHAT)
           tmp = THICK(I_WHAT) * user_units_to_cm
           CALL REFLEC (ppout,DUM,DUM,DUM,DUM,DUM,DUM,DUM,tmp,izero)
        END IF
@@ -6361,7 +6361,7 @@ SUBROUTINE SCREEN_EXTERNAL(I_SCR,I_ELEMENT,RAY,RAY_OUT)
 ! C indices (into xvec and zvec) and number of points per polygon.
 ! C 
         IFLAG = 0
-        filename = GfConvertStringArrToString(FILE_SCR_EXT(I_SCR,:))
+        filename = GfConvertStringArrToString(FILE_SCR_EXT(:,I_SCR))
         CALL SCREEN_EXTERNAL_GETDIMENSIONS(filename, N_POLYS,N_POINTS,IFLAG)
         !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POLYS: ',N_POLYS
         !print *,'>>> SCREEN_EXTERNAL_GETDIMENSIONS: N_POINTS: ',N_POINTS
@@ -10339,7 +10339,7 @@ IF (F_SCREEN.NE.0) THEN
             K_SLIT(I) = IRINT ('Stop shape [ 0 r, 1 e, 2 ex ] ? ')
             IF (K_SLIT(I).EQ.2) THEN
                 !        XXFILSCR(I) = RSTRING('File containing the mask coordinates ? ')
-                FILE_SCR_EXT(I,:) = GfConvertStringToStringArr(RSTRING('File containing the mask coordinates ? '))
+                FILE_SCR_EXT(:,I) = GfConvertStringToStringArr(RSTRING('File containing the mask coordinates ? '))
             ELSE
                 RX_SLIT(I)= RNUMBER ('Dimension along X ? ')
                 RZ_SLIT(I)= RNUMBER ('                Z ? ')
@@ -10352,7 +10352,7 @@ IF (F_SCREEN.NE.0) THEN
         IF (I_ABS(I).EQ.1) THEN
             WRITE(6,*) 'File with optical constants ?'
             READ (5,111) TEXT
-            FILE_ABS(I,:) = GfConvertStringToStringArr(TEXT)
+            FILE_ABS(:,I) = GfConvertStringToStringArr(TEXT)
             THICK(I) = RNUMBER ('Thickness of film [ cm ] ? ')
         END IF
 11  CONTINUE

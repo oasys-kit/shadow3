@@ -106,9 +106,9 @@ contains
       character(kind=skc, len=sklen) :: tempString
 
       iOut = .true.
-      do i=1,size(varval, dim=1)
+      do i=1,size(varval, dim=2)
         write(f,'(I2)') i
-        iOut = GfGetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i,:)) .and. iOut
+        iOut = GfGetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(:,i)) .and. iOut
       end do
     end function
 
@@ -153,9 +153,9 @@ contains
       character(len=5) :: f
 
       iOut = .true.
-      do i=1,size(varval, dim=1)
+      do i=1,size(varval, dim=2)
         write(f,'(I2)') i
-        iOut = GfForceSetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i,:)) .and. iOut
+        iOut = GfForceSetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(:,i)) .and. iOut
       end do
     end function
 
