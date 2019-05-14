@@ -2878,8 +2878,10 @@ class CompoundOE():
       if reflectivity_kind[0] == 1:  # mirror
           oe1.F_REFLEC = 1
           oe1.F_REFL = 0   # prerefl mirror
-          # oe1.FILE_REFL = reflectivity_files[0].encode('utf-8')
-          oe1.FILE_REFL = reflectivity_files[0]
+          if isinstance(reflectivity_files[0],bytes):
+            oe1.FILE_REFL = reflectivity_files[0]
+          else:
+            oe1.FILE_REFL = bytes(reflectivity_files[0], 'utf-8')
 
       if reflectivity_kind[0] == 2:  # multilayer
           oe1.F_REFLEC = 1
