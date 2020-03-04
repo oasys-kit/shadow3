@@ -6794,7 +6794,9 @@ IF (F_CRYSTAL.EQ.1) THEN
     ! C Define diffraction order for Johansson geometry 
     ! C
     IF (F_JOHANSSON.EQ.1) THEN
+    IF (F_BRAGG_A.EQ.0) THEN   ! otherwise its done before
         A_BRAGG    =   TORAD*A_BRAGG
+    ENDIF
         IF (A_BRAGG.LT.0.0) ORDER = -1
         IF (A_BRAGG.GE.0.0) ORDER = +1
         F_BRAGG_A   = 1
@@ -8401,6 +8403,7 @@ end if
 ! C surface line density on the basis of the d_spacing and of the local asymmetry
 ! C angle.
 ! C
+
 	  IF (F_JOHANSSON.EQ.1) THEN
 ! *
 ! * arc fom origin to intercept point on the YZ plane
@@ -8833,7 +8836,6 @@ end if
              CALL MFP(tmp,MOSAIC_SEED,i_two)
              CALL MFP(ARG,MOSAIC_SEED,i_one)
              CALL MFP(DEPTH_INC,MOSAIC_SEED,ione)
-tmptmp1 = DEPTH_INC
              DEPTH_INC = DEPTH_INC*DEPTH_MFP
            ENDIF
 
