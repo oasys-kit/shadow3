@@ -103,6 +103,7 @@ Other SHADOW web resources:
     pip install shadow3
     ```
   - in the http://ftp.esrf.eu/pub/scisoft/shadow3/wheels directory. 
+  - Other documents, mostly obsolete, can be found at https://github.com/srio/shadow3-docs
   
 ## 6 Contact
 
