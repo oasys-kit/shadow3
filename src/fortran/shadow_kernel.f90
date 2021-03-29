@@ -827,6 +827,13 @@ Contains
 
     REAL(KIND=skr),dimension(:),allocatable :: ENERGY
     REAL(KIND=skr),dimension(:),allocatable :: FP_A,FPP_A,FP_B,FPP_B
+!X.J. Yu, slsyxj@nus.edu.sg, Add for complex crystal
+    REAL(KIND=skr),allocatable::		FP_1(:,:),FPP_2(:,:),FCOL(:),CC(:,:)        
+    REAL(KIND=skr),allocatable::		F0(:),F1(:),F2(:) ,F_ATNUM(:)       !add F_ATNUM for float number of electrons
+    COMPLEX*16,allocatable::	        GG(:),GG_BAR(:),FF(:)               
+    INTEGER(KIND=ski)                   N_BATOM,N_ZCOL,J                    
+    INTEGER(KIND=ski),allocatable::	    I_ZCOL(:)                           
+!----------------------------------------------------------------------------------------------------
 
     complex(kind=skx) :: CI,FA,FB,STRUCT,F_0,REFRAC
     complex(kind=skx) :: RCS1,RCP1,RCS2,RCP2,RCS,RCP
@@ -858,7 +865,9 @@ Contains
          ATNUM_A,ATNUM_B,TEMPER, &
          GA,GA_BAR,GB,GB_BAR, &
          CA,CB, &
-         NREFL, ENERGY, FP_A, FPP_A, FP_B, FPP_B
+         NREFL, ENERGY, FP_A, FPP_A, FP_B, FPP_B,  &
+         N_BATOM,N_ZCOL,FP_1,FPP_2,FCOL,GG,GG_BAR, &               ! Add for complex crystal    
+         I_ZCOL,CC,F_ATNUM,F0,F1,F2,FF                             ! Add for complex crystal    
     ! C
     CI	= (0.0D0,1.0D0)
     ! C
@@ -873,49 +882,73 @@ Contains
           ! stop 'File not found. Aborted.'
         end if
        READ (25,*) I_LATT,RN,D_SPACING
-       READ (25,*) ATNUM_A,ATNUM_B,TEMPER
-       READ (25,*) GA
-       READ (25,*) GA_BAR
-       READ (25,*) GB
-       READ (25,*) GB_BAR
-       READ (25,*) CA(1),CA(2),CA(3)
-       READ (25,*) CB(1),CB(2),CB(3)
-       READ (25,*) NREFL
-
-       IF (ALLOCATED(ENERGY)) DEALLOCATE(ENERGY)
-       IF (ALLOCATED(FP_A)) DEALLOCATE(FP_A)
-       IF (ALLOCATED(FP_B)) DEALLOCATE(FP_B)
-       IF (ALLOCATED(FPP_A)) DEALLOCATE(FPP_A)
-       IF (ALLOCATED(FPP_B)) DEALLOCATE(FPP_B)
-       ALLOCATE(ENERGY(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating ENERGY",NREFL 
-         return
-       END IF
-       ALLOCATE(FP_A(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FP_A",NREFL 
-         return
-       END IF
-       ALLOCATE(FP_B(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FP_B",NREFL 
-         return
-       END IF
-       ALLOCATE(FPP_A(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FPP_A",NREFL 
-         return
-       END IF
-       ALLOCATE(FPP_B(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FPP_B",NREFL 
-         return
-       END IF
+       IF (I_LATT .GT. -1 ) THEN    !Ordinary crystals
+           READ (25,*) ATNUM_A,ATNUM_B,TEMPER
+           READ (25,*) GA
+           READ (25,*) GA_BAR
+           READ (25,*) GB
+           READ (25,*) GB_BAR
+           READ (25,*) CA(1),CA(2),CA(3)
+           READ (25,*) CB(1),CB(2),CB(3)
+           READ (25,*) NREFL
+           N_BATOM = 2          !max two different atoms in ordinary crystals
+           N_ZCOL = 10          !not used in case of Ordinary crystals
+       else                     ! complex crystals
+           READ (25,*) N_BATOM,N_ZCOL,NREFL,TEMPER
+       end if
+!   Allocate all dynamic memory 
+!   X.J. Yu, slsyxj@nus.edu.sg, Singapore Synchrotorn Light Source
+#include "crystal_allocMemory.f90"
+!--------------------------------------------------------------
+       IF (I_LATT .GT. -1 ) THEN                    ! TRUE for ordinary crystal
+!comment out by X.J. Yu
+       !IF (ALLOCATED(ENERGY)) DEALLOCATE(ENERGY)
+       !IF (ALLOCATED(FP_A)) DEALLOCATE(FP_A)
+       !IF (ALLOCATED(FP_B)) DEALLOCATE(FP_B)
+       !IF (ALLOCATED(FPP_A)) DEALLOCATE(FPP_A)
+       !IF (ALLOCATED(FPP_B)) DEALLOCATE(FPP_B)
+       !ALLOCATE(ENERGY(NREFL),STAT=ierr)
+       !IF (ierr /= 0) THEN
+       !  print *,"BRAGG: Error allocating ENERGY",NREFL 
+       !  return
+       !END IF
+       !ALLOCATE(FP_A(NREFL),STAT=ierr)
+       !IF (ierr /= 0) THEN
+       !  print *,"BRAGG: Error allocating FP_A",NREFL 
+       !  return
+       !END IF
+       !ALLOCATE(FP_B(NREFL),STAT=ierr)
+       !IF (ierr /= 0) THEN
+       !  print *,"BRAGG: Error allocating FP_B",NREFL 
+       !  return
+       !END IF
+       !ALLOCATE(FPP_A(NREFL),STAT=ierr)
+       !IF (ierr /= 0) THEN
+       !  print *,"BRAGG: Error allocating FPP_A",NREFL 
+       !  return
+       !END IF
+       !ALLOCATE(FPP_B(NREFL),STAT=ierr)
+       !IF (ierr /= 0) THEN
+       !  print *,"BRAGG: Error allocating FPP_B",NREFL 
+       !  return
+       !END IF
 
        DO 199 I = 1, NREFL
           READ (25,*) ENERGY(I), FP_A(I), FPP_A(I)
-199    READ (25,*)    FP_B(I), FPP_B(I)
+199       READ (25,*) FP_B(I), FPP_B(I)
+       ELSE                                 ! this for complex crystal
+           DO 601 I = 1, N_BATOM
+             READ (25,*) F_ATNUM(I), GG(I),GG_BAR(I)
+             READ (25,*) CC(I,1),CC(I,2),CC(I,3)
+601        CONTINUE           
+           DO 602 I = 1, N_ZCOL
+602           READ (25,*) I_ZCOL(I), FCOL(I)
+           DO 604 I = 1, NREFL
+              READ (25,*) ENERGY(I)
+              DO 603 J = 1,  N_BATOM
+603              READ (25,*) FP_1(J,I),FPP_2(J,I)
+604         CONTINUE           
+       END IF                               ! Add for complex crystal
        CLOSE (25)
        RETURN
     ELSE
@@ -939,19 +972,29 @@ Contains
 299    IF (ENERGY(I).GT.PHOT) GO TO 101
        ! C
        I = NREFL
-101    NENER = I - 1	
-       F1A	= FP_A(NENER) + (FP_A(NENER+1) - FP_A(NENER)) *  &
-            (PHOT - ENERGY(NENER)) / & 
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F2A	= FPP_A(NENER) + (FPP_A(NENER+1) - FPP_A(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F1B	= FP_B(NENER) + (FP_B(NENER+1) - FP_B(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F2B	= FPP_B(NENER) + (FPP_B(NENER+1) - FPP_B(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
+101    NENER = I - 1
+       IF (I_LATT .GT. -1 ) THEN            ! True for ordinary crystal
+           F1A	= FP_A(NENER) + (FP_A(NENER+1) - FP_A(NENER)) *  &
+                (PHOT - ENERGY(NENER)) / & 
+                (ENERGY(NENER+1) - ENERGY(NENER))
+           F2A	= FPP_A(NENER) + (FPP_A(NENER+1) - FPP_A(NENER)) *  &
+                (PHOT - ENERGY(NENER)) /  &
+                (ENERGY(NENER+1) - ENERGY(NENER))
+           F1B	= FP_B(NENER) + (FP_B(NENER+1) - FP_B(NENER)) *  &
+                (PHOT - ENERGY(NENER)) /  &
+                (ENERGY(NENER+1) - ENERGY(NENER))
+           F2B	= FPP_B(NENER) + (FPP_B(NENER+1) - FPP_B(NENER)) *  &
+                (PHOT - ENERGY(NENER)) /  &
+                (ENERGY(NENER+1) - ENERGY(NENER))
+       ELSE                                 ! this for complex crystal
+	        DO J = 1, N_BATOM
+	            F1(J)	= FP_1(J,NENER) + (FP_1(J,NENER+1) - FP_1(J,NENER)) * &
+      		      (PHOT - ENERGY(NENER)) / (ENERGY(NENER+1) - ENERGY(NENER))
+	            F2(J)	= FPP_2(J,NENER) + (FPP_2(J,NENER+1) - FPP_2(J,NENER)) *  &
+      		      (PHOT - ENERGY(NENER)) / (ENERGY(NENER+1) - ENERGY(NENER))
+	        ENDDO
+       END IF                                ! Add for complex crystal
+       
        R_LAM0 	= TWOPI/Q_PHOT
        ! C
        ! C Calculates the reflection algles and other useful parameters
@@ -993,41 +1036,66 @@ Contains
        ! C
        ! C
        ! C
-       FOA	= CA(3)*RATIO**2 + CA(2)*RATIO + CA(1)
-       FOB	= CB(3)*RATIO**2 + CB(2)*RATIO + CB(1)
-       FA	= FOA + F1A + CI*F2A
-       FB	= FOB + F1B + CI*F2B
+       IF (I_LATT .GT. -1 ) THEN            !True for ordinary crystal
+           FOA	= CA(3)*RATIO**2 + CA(2)*RATIO + CA(1)
+           FOB	= CB(3)*RATIO**2 + CB(2)*RATIO + CB(1)
+           FA	= FOA + F1A + CI*F2A
+           FB	= FOB + F1B + CI*F2B
+       ELSE                                 ! this for complex crystal
+            DO J = 1, N_BATOM
+               F0(J) = CC(J,3)*RATIO**2 + CC(J,2)*RATIO + CC(J,1)
+               FF(J) = F0(J) + F1(J) + CI*F2(J)
+            ENDDO            
+       END IF                                ! Add complex for crystal
        ! C
        ! C Compute the ABSORPtion coefficient and Fo.
        ! C
-       IF (I_LATT.EQ.0) THEN
+       IF (I_LATT.EQ.0) THEN                                        !ZincBlende
           ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
           F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
-       ELSE IF (I_LATT.EQ.1) THEN
+       ELSE IF (I_LATT.EQ.1) THEN                                   !Rocksalt
           ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
           F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
-       ELSE IF (I_LATT.EQ.2) THEN
+       ELSE IF (I_LATT.EQ.2) THEN                                   !simple FCC
           FB	 = (0.0D0,0.0D0)
           ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*DIMAG(FA))
           F_0 = 4*(F1A + ATNUM_A + CI*F2A)
-       ELSE IF (I_LATT.EQ.3) THEN
+       ELSE IF (I_LATT.EQ.3) THEN                                   !CsCl structure
           ABSORP = 2.0D0*RN*R_LAM0*(DIMAG(FA)+DIMAG(FB))
           F_0 = (F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B)
-       ELSE IF (I_LATT.EQ.4) THEN
+       ELSE IF (I_LATT.EQ.4) THEN                                   !Hexagonal Close-Packed structure
           FB     = (0.0D0,0.0D0)
           ABSORP = 2.0D0*RN*R_LAM0*(2.0D0*(DIMAG(FA)))
-          F_0 = 2*(F1A+ CI*F2A )
-       ELSE IF (I_LATT.EQ.5) THEN
+          F_0 = 2*(F1A+ CI*F2A + ATNUM_A)           ! ATNUM_A added by X.J. Yu
+       ELSE IF (I_LATT.EQ.5) THEN                                   !Hexagonal Graphite structure
           FB     = (0.0D0,0.0D0)
           ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)))
-          F_0 = 4*(F1A + CI*F2A )
+          F_0 = 4*(F1A + CI*F2A  + ATNUM_A )        ! ATNUM_A added by X.J. Yu
+       ELSE IF (I_LATT .EQ. -1 ) THEN           ! This for complex crystal
+          F_0 = (0.0D0,0.0D0)
+           DO J = 1, N_ZCOL
+           F_0   = F_0 +  (F_ATNUM(I_ZCOL(J)) + F1(I_ZCOL(J)) + &           !F_ATUM, for float number of electrons
+           CI * F2(I_ZCOL(J))) * FCOL(J)                                    !FCOL is occupancy,should be considered
+           ENDDO
+           ABSORP = 2.0D0*RN*R_LAM0*DIMAG(F_0)
        END IF
        ! C	
        ! C FH and FH_BAR are the structure factors for (h,k,l) and (-h,-k,-l).
        ! C
        ! C srio, Added TEMPER here (95/01/19)
-       FH 	= ( (GA * FA) + (GB * FB) )*TEMPER
-       FH_BAR	= ( (GA_BAR * FA) + (GB_BAR * FB) )*TEMPER
+       IF (I_LATT .GT. -1 ) THEN                    ! True for complex crystal
+           FH 	= ( (GA * FA) + (GB * FB) )*TEMPER
+           FH_BAR	= ( (GA_BAR * FA) + (GB_BAR * FB) )*TEMPER
+       ELSE                                         ! this for complex crystal
+          FH = (0.0D0,0.0D0)
+          FH_BAR = (0.0D0,0.0D0)
+          DO J = 1, N_BATOM
+           FH 	= FH + (GG(J) * FF(J) )*TEMPER
+           FH_BAR  = FH_BAR + (GG_BAR(J) * FF(J))*TEMPER
+          ENDDO          
+       END IF                                       
+       ! End the change for complex crystal
+       !------------------------------------------------------------------------
        ! using mysqrt to avoid problems in windows. See mysqrt in
        ! shadow_math module
        ! STRUCT 	= SQRT(FH * FH_BAR) 
