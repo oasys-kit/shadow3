@@ -1,6 +1,9 @@
 import Shadow
 import numpy
-#import xraylib
+
+# using mac oasys, for plots
+from srxraylib.plot.gol import set_qt
+set_qt()
 
 #
 # runs an absorber of 10 um thickness for a source at 10 keV
@@ -142,6 +145,7 @@ def test_lens():
     # run prerefl
     #
     if use_prerefl:
+        import xraylib
         symbol = "Si"
         density = xraylib.ElementDensity(xraylib.SymbolToAtomicNumber(symbol))
         Shadow.ShadowPreprocessorsXraylib.prerefl(interactive=0,SYMBOL=symbol,DENSITY=density,FILE="prerefl.dat",E_MIN=5000.0,E_MAX=15000.0,E_STEP=100.0)

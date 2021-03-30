@@ -614,6 +614,19 @@ class Beam(ShadowLib.Beam):
               ticket['fwhm'] = binSize*(tt[0][-1]-tt[0][0])
               ticket['fwhm_coordinates'] = (bin_center[tt[0][0]],bin_center[tt[0][-1]])
 
+          #CALCULATE fwhm with subpixel resolution (as suggested by A Wojdyla)
+          ixl_e = tt[0][0]
+          ixr_e = tt[0][-1]
+          try:
+              xl = ixl_e - (h[ixl_e] - max(h)*0.5) / (h[ixl_e] - h[ixl_e - 1])
+              xr = ixr_e - (h[ixr_e] - max(h)*0.5) / (h[ixr_e + 1] - h[ixr_e])
+              ticket['fwhm_subpixel'] = binSize * numpy.abs(xr - xl)
+              ticket['fwhm_subpixel_coordinates'] = \
+                (numpy.interp(xl, range(bin_center.size), bin_center),
+                numpy.interp(xr, range(bin_center.size), bin_center))
+          except:
+              ticket['fwhm_subpixel'] = None
+
 
       if calculate_widths == 2:
             # CALCULATE FW at 25% HEIGHT
@@ -4246,6 +4259,48 @@ def test_hew():
     # from srxraylib.plot.gol import plot
     # plot(tkt["bin_path"],tkt["histogram_path"])
 
+def test_fwhm():
+    from numpy.testing import assert_almost_equal
+
+    oe0 = Source()
+
+    oe0.FDISTR = 3
+    oe0.F_COLOR = 3
+    oe0.F_PHOT = 0
+    oe0.HDIV1 = 0.0
+    oe0.HDIV2 = 0.0
+    oe0.ISTAR1 = 5676561
+    oe0.NPOINT = 50000
+    oe0.PH1 = 379.1
+    oe0.PH2 = 379.1
+    oe0.SIGDIX = 2.8130065349342457e-05
+    oe0.SIGDIZ = 2.7944598343119502e-05
+    oe0.SIGMAX = 2.1574735780763598e-05
+    oe0.SIGMAZ = 2.3133292545804222e-05
+    oe0.VDIV1 = 0.0
+    oe0.VDIV2 = 0.0
+
+    beam = Beam()
+    beam.genSource(oe0)
+
+    tkt = beam.histo1(6,nolost=True,ref=23,nbins=101,calculate_widths=True)
+    # from srxraylib.plot.gol import plot
+    # plot(tkt["bin_path"],
+    #      tkt["histogram_path"],
+    #      tkt["bin_center"],
+    #      tkt["histogram"],
+    #      (tkt["fwhm_subpixel_coordinates"][0], tkt["fwhm_subpixel_coordinates"][1]),
+    #      (tkt["histogram_path"].max() * 0.5, tkt["histogram_path"].max() * 0.5),
+    #      (tkt["fwhm_coordinates"][0],tkt["fwhm_coordinates"][1]),
+    #      (tkt["histogram_path"].max()*0.5,tkt["histogram_path"].max()*0.5),
+    #      legend=["histogram","histogram","FWHM (subpixel)","FWHM (standard)"]
+    #      )
+
+    print("fwhm (col 3) standard: %f  subpixel: %f "%( tkt["fwhm"]*1e6, tkt["fwhm_subpixel"]*1e6 ))
+    assert( numpy.abs(tkt["fwhm"] - tkt["fwhm_subpixel"]) < (tkt["bin_center"][1] - tkt["bin_center"][0]))
+
+
+
 
 
 if __name__ == '__main__':
@@ -4267,3 +4322,4 @@ if __name__ == '__main__':
 
         test_hew()
         #
+    test_fwhm()
