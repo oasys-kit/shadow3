@@ -27,6 +27,7 @@ module GFile
     public :: GfTypeAllocate
     public :: GfGetValue, GfSetValue, GfForceSetValue
     public :: GfGetArrValue, GfSetArrValue
+    public :: GfConvertStringArrToString, GfConvertStringToStringArr
 
     private :: GfGetValueString, GfGetValueInteger, GfGetValueReal
     private :: GfSetValueString, GfSetValueInteger, GfSetValueReal
@@ -76,18 +77,38 @@ module GFile
     end interface
 
 contains
+    function GfConvertStringArrToString(inString) result(outString)
+      character(len=1), intent(in) , dimension(:) :: inString
+      character(len=SIZE(inString)) :: outString
+      integer :: i
+      do i = 1, SIZE(inString)
+        outString(i:i) = inString(i)
+      end do
+    end function 
+
+    function GfConvertStringToStringArr(inString) result(outString)
+      character(len=*), intent(in) :: inString
+      character(len=1), dimension(len(inString)) :: outString
+      integer :: i
+      do i = 1, LEN(inString)
+        outString(i) = inString(i:i)
+      end do
+    end function
+
     function GfGetArrayValueString(g1,varname,varval) result(iOut)
       type(GfType), intent(in) :: g1
       character(kind=skc,len=*), intent(in) :: varname
-      character(kind=skc,len=*), intent(inout) :: varval(:)
+      character(kind=skc,len=1), intent(inout) :: varval(:,:)
       logical :: iOut
       integer :: i
       character(len=5) :: f
+      character(kind=skc) :: tempStringArr(sklen)
+      character(kind=skc, len=sklen) :: tempString
 
       iOut = .true.
-      do i=1,size(varval)
+      do i=1,size(varval, dim=2)
         write(f,'(I2)') i
-        iOut = GfGetValueString(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfGetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(:,i)) .and. iOut
       end do
     end function
 
@@ -102,7 +123,7 @@ contains
       iOut = .true.
       do i=1,size(varval)
         write(f,'(I2)') i
-        iOut = GfGetValueInteger(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfGetValueInteger(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
       end do
     end function
 
@@ -117,7 +138,7 @@ contains
       iOut = .true.
       do i=1,size(varval)
         write(f,'(I2)') i
-        iOut = GfGetValueReal(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfGetValueReal(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
       end do
     end function
 
@@ -126,15 +147,15 @@ contains
     function GfSetArrayValueString(g1,varname,varval) result(iOut)
       type(GfType), intent(inout) :: g1
       character(kind=skc,len=*), intent(in) :: varname
-      character(kind=skc,len=*), intent(in) :: varval(:)
+      character(kind=skc,len=1), intent(in) :: varval(:,:)
       logical :: iOut
       integer :: i
       character(len=5) :: f
 
       iOut = .true.
-      do i=1,size(varval)
+      do i=1,size(varval, dim=2)
         write(f,'(I2)') i
-        iOut = GfForceSetValueString(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfForceSetValueString(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(:,i)) .and. iOut
       end do
     end function
 
@@ -149,7 +170,7 @@ contains
       iOut = .true.
       do i=1,size(varval)
         write(f,'(I2)') i
-        iOut = GfForceSetValueInteger(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfForceSetValueInteger(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
       end do
     end function
 
@@ -164,7 +185,7 @@ contains
       iOut = .true.
       do i=1,size(varval)
         write(f,'(I2)') i
-        iOut = GfForceSetValueReal(g1,varname//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
+        iOut = GfForceSetValueReal(g1,TRIM(varname)//"("//trim(adjustl(f))//")",varval(i)) .and. iOut
       end do
     end function
 
@@ -212,17 +233,21 @@ contains
     function GfGetValueString (g1, variableName, variable) result(iOut)
        type(GfType), intent(in)         :: g1
        character(len=*),  intent(in)    :: variableName
-       character(len=*),  intent(inout) :: variable
+       character(len=1),  intent(inout) :: variable(:)
        logical                          :: iOut
 
        integer(kind=ski)          :: j
        character(len=sklen)       :: var
+       character(len=sklen) :: tempString
+       integer :: i
 
        iOut = GfIsDefined(g1,variableName,j)
 
        if (iOut) then 
          read(g1%variableValues(j),fmt="(a)") var
-         variable = trim(var)
+         do i = 1, len_trim(var)
+           variable(i) = var(i:i)
+         end do
        end if
 
        if (.not. iOut) print *,"Warning GfGetValueString: "//trim(variableName)
@@ -239,6 +264,7 @@ contains
 
        integer(kind=ski) :: j
        integer(kind=ski) :: var
+       character(len=sklen) :: tempString
 
        iOut = GfIsDefined(g1, variableName, j)
 
@@ -261,6 +287,7 @@ contains
 
        integer(kind=ski)          :: j
        real(kind=skr)             :: var
+       character(len=sklen) :: tempString
 
        iOut = GfIsDefined(g1, variableName, j)
 
@@ -268,7 +295,6 @@ contains
          read (g1%variableValues(j),fmt=*) var
          variable=var
        end if
-
 
        if (.not. iOut) print *,"Warning GfGetValueReal: "//trim(variableName)
 
@@ -280,15 +306,17 @@ contains
     function GfSetValueString (g1, variableName, variable) result(iOut)
        type(GfType),      intent(inout) :: g1
        character(len=*),  intent(in)    :: variableName
-       character(len=*),  intent(in)    :: variable
+       character(len=1),  intent(in)    :: variable(:)
        logical                          :: iOut
 
-       integer(kind=ski)                :: j
+       integer(kind=ski)                :: j, i
 
        iOut = GfIsDefined(g1, variableName, j)
 
        if (iOut) then
-         g1%variableValues(j) = variable
+         do i = 1, SIZE(variable)
+           g1%variableValues(j)(i:i) = variable(i)
+         end do
        endif
 
        if (.not. iOut) print *,"Warning GfSetValueString: "//trim(variableName)
@@ -312,7 +340,6 @@ contains
          write(g1%variableValues(j),fmt=*) variable
        endif
 
-   
        if (.not. iOut) print *,"Warning GfSetValueInteger: "//trim(variableName)
 
 
@@ -337,7 +364,6 @@ contains
          write(g1%variableValues(j),fmt="(g30.15)") variable
        endif
 
-
        if (.not. iOut) print *,"Warning GfSetValueReal: "//trim(variableName)
 
 
@@ -348,13 +374,16 @@ contains
     function GfForceSetValueString (g1, variableName, variable) result(iout)
         type (gftype),      intent(inout) :: g1
         character(len=*),   intent(in)    :: variableName
-        character(len=*),   intent(in)    :: variable
+        character(len=1),   intent(in)    :: variable(:)
         logical                           :: iOut
 
         type (gftype)             :: g2
         integer(kind=ski)         :: i
+        character(len=sklen) :: tempString 
 
         iOut = .true.
+
+        tempString = GfConvertStringArrToString(variable)
 
         if ( .not. gfIsDefined(g1, variableName, i) ) then
                 g2 = g1
@@ -365,7 +394,7 @@ contains
                 do i=1, g1%nLines-1
                     g1%fileLines(i) = g2%fileLines(i)
                 end do
-                g1%fileLines(g1%nLines) = variableName//" = "//variable
+                g1%fileLines(g1%nLines) = variableName//" = "//tempString
 
                 do i=1, g1%nvariables-1
                     g1%variableNames(i) = g2%variableNames(i)
@@ -411,10 +440,11 @@ contains
                    g1%variableNames(i) = g2%variableNames(i)
                    g1%variableValues(i) = g2%variableValues(i)
                 end do
-                g1%variableNames(g1%nVariables)=variableName
+                g1%variableNames(g1%nVariables) = variableName
                 g1%variableValues(g1%nVariables)="  "
         end if
         iOut = gfSetValue(g1, variableName, variable)
+
 
        if (.not. iOut) print *,"Warning GfForceSetValueReal: "//trim(variableName)
 
@@ -449,10 +479,11 @@ contains
                g1%variableNames(i)=g2%variableNames(i)
                g1%variableValues(i)=g2%variableValues(i)
             end do
-            g1%variableNames(g1%nVariables)=variableName
+            g1%variableNames(g1%nVariables) = variableName
             g1%variableValues(g1%nVariables)="  "
         end if
         iOut = gfSetValue(g1, variablename, variable)
+
 
        if (.not. iOut) print *,"Warning GfForceSetValueInteger: "//trim(variableName)
 
@@ -611,7 +642,6 @@ contains
        integer(kind=ski), optional,intent(out) :: variableIndex
        logical :: iOut
        integer(kind=ski) :: i
-
 
        iOut = .false.
 

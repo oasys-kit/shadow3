@@ -10,7 +10,6 @@
 #       make examples   : compiles examples and tools using libraries:
 #                         examplesFortran: fortran examples statically linked
 #                         examplesMore: C and C++ examples dymamically linked
-#       make idl        : creates idl bind
 #       make preprocess : creates *.f90 files (to be exported to other platforms)
 #
 #       make softclean  : cleans files created when running make 
@@ -74,7 +73,7 @@ endif
 #
 # customize compiler and flags
 #
-FC = gfortran
+FC ?= gfortran
 FFLAGS = -I ./def/ -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 LINKFLAGS = $(32BITS) $(STATIC)
 
@@ -95,11 +94,11 @@ LINKFLAGS = $(32BITS) $(STATIC)
 #STATIC=-static -static-libgfortran -static-libgcc
 #FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 
-CC = gcc
+CC ?= gcc
 #CC = x86_64-w64-mingw32-gcc
 #CC = i686-w64-mingw32-gcc
 
-CXX = g++
+CXX ?= g++
 #CXX = x86_64-w64-mingw32-g++
 #CXX = i686-w64-mingw32-g++
 
@@ -178,13 +177,13 @@ shadow3.o: fortran/shadow3.f90
 #objects ingredients
 #
 
-shadow_version.o: shadow_version.h fortran/shadow_version.f90
+shadow_version.o: fortran/shadow_version.h fortran/shadow_version.f90
 	$(FC) $(FFLAGS) -c fortran/shadow_version.f90 
 
 # shadow_version.sh creates shadow_version.h including compilation info 
 # for current system
-shadow_version.h:
-	./shadow_version.sh $(FC)
+#shadow_version.h:
+#	./shadow_version.sh $(FC)
 
 shadow_globaldefinitions.o: fortran/shadow_globaldefinitions.f90
 	$(FC) $(FFLAGS) -c fortran/shadow_globaldefinitions.f90 
@@ -234,10 +233,11 @@ shadow_crl.o: fortran/shadow_crl.f90
 #
 # lib target ----------------
 #
-lib: $(OBJFMODULES) shadow_bind_c.o shadow_bind_cpp.o
+lib: $(OBJFMODULES) shadow_bind_c.o 
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
-	$(CXX) $(LIBFLAGS) $(CFLAGS) -o libshadow3c++$(SO) shadow_bind_cpp.o -L. -lshadow3 #$(OBJFMODULES)
+#	cp libshadow3$(SO) ..
+#	cp libshadow3c$(SO) ..
 
 shadow_bind_c.o: c/shadow_bind_c.c
 	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
@@ -322,10 +322,10 @@ python:
 	echo "Not supported: please use directly python setup.py "
 
 clean: softclean
-	/bin/rm ../shadow3$(EXE) 
+	/bin/rm -f ../shadow3$(EXE) 
 
 softclean:  
-	/bin/rm -f *.o *.mod *$(SO) *.a *.dylib
+	/bin/rm -f *.o *.mod ./*$(SO) ../*$(SO) *.a *.dylib
 	/bin/rm -f version.txt
 	/bin/rm -f gen_source trace trace3 trace3mpi trace3_c trace3_cpp
 	/bin/rm -f example_shadow_format
