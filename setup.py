@@ -8,8 +8,8 @@ from distutils.core import setup, Extension
 headers = glob (os.path.join ("Include","*.h") )
 #header = headers + glob (os.path.join ("Include/numpy","*.h") )
 
-setup ( name = "Shadow",
-        version = "0.0.100",
+setup ( name = "shadow3",
+        version = "22.1.31",
 	packages=["Shadow"],
         package_dir={"Shadow":"."},
         ext_modules = [Extension('Shadow.ShadowLib',

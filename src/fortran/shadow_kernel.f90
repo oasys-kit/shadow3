@@ -12287,7 +12287,7 @@ SUBROUTINE DeAlloc
     ! (corresponds to start.xx) and if IDUMMY=1 it is (end.xx)
     IDUMMY = 1
     
-    WRITE(6,*)'Exit from DEALLOC'
+    WRITE(6,*)'Exit from DEALLOC||||||||||||||>>>>>>>>>>>>>>>>'
 
     RETURN
          
