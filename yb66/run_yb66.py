@@ -120,4 +120,8 @@ if __name__ == "__main__":
     Shadow.ShadowTools.plotxy(beam3, 6, 23, nbins=201, nolost=1, title="shadow3 diff profile")
 
 
+    os.system("../shadow3 < shadow3.inp")
+    b = Shadow.Beam()
+    b.load("star.01")
+    Shadow.ShadowTools.plotxy(b, 6, 23, nbins=201, nolost=1, title="shadow3 diff profile FROM < shadow3.inp")
 
