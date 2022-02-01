@@ -1,0 +1,4 @@
+../shadow3 < shadow3.inp
+../shadow3 < plotxy.inp
+gnuplot plotxy.gpl
+
