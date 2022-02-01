@@ -379,6 +379,31 @@ Module shadow_kernel
     real(kind=skr)                 :: delo, beto, dele, bete, dels, bets
 
 
+!
+! new crystals
+!
+integer(kind=ski),public,parameter        :: NMAXENER=1000, NMAXATOMS=100
+type, public :: crystalData
+    !C   RN: the constant (e^2/mc^2)/V or the ration between the classical e-
+    !C        radius and the volume of the unit cell [cm^(-2)]
+    real(kind=skr)                               :: rn,d_spacing
+    integer(kind=ski)                            :: itype
+    real(kind=skr),dimension(NMAXATOMS)          :: atnum
+    real(kind=skr),dimension(NMAXATOMS)          :: temper
+    integer(kind=ski)                            :: nbatom
+    complex(kind=skx),dimension(NMAXATOMS)       :: G,G_BAR
+    real(kind=skr),dimension(NMAXATOMS)          :: G_0
+    integer(kind=ski)                            :: nf0coeff
+    real(kind=skr),dimension(NMAXATOMS,11)       :: f0coeff
+    integer(kind=ski)                            :: npoint
+    real(kind=skr),dimension(NMAXENER)           :: energy
+    real(kind=skr),dimension(NMAXATOMS,NMAXENER) :: fp,fpp,fcompton
+    real(kind=skr),dimension(NMAXATOMS)          :: fract
+    character(len=sklen)                         :: filename
+    real(kind=skr)                               :: version
+end type crystalData
+
+
   
   !---- Everything FROM HERE is private unless explicitly made public ----!
   !     private
@@ -419,7 +444,9 @@ Module shadow_kernel
   !   character(len=sklen), dimension(:), allocatable :: variableValues
   !End Type GfType
   
-  
+  ! added for new crystals
+  ! type(oeSetup)    :: oe1
+
   !---- Interfaces ----!
   ! this is an example as used in gfile
   !Interface  GfGetValue
@@ -788,6 +815,439 @@ Contains
   ! USED BY TRACE....
   !
 
+
+!C+++
+!C       SUBROUTINE      crystal_loadCrystalData
+!C
+!C       PURPOSE         Stores the crystallographic data from externam file
+!C                       created with a preprocessor (xop/xcrystal or bragg)
+!C
+!C       ALGORITHM
+!C
+!C       MODIFIED        Created by M. Sanchez del Rio
+!C
+!C                       Modified by MSR 96/12/19 to include the number
+!C                       of coefficients in the f0 parametrization. This
+!C                       number is 9 for the CromerMann data and 11 for
+!C                       the Waasmaier Kirfel data. Note that the crystal
+!C                       file has changed!
+!C                       Modified by MSR 2011/08/16 to port to g95 and
+!C                       integrate in Shadow3
+!C
+!C---
+!C
+!C INPUT AND OUTPUT PARAMETERS:
+!C   FILEIN : input, the name of the file with data
+!C   xtal:    output, the type containing the data loaded from file.
+!C
+!C
+SUBROUTINE crystal_loadCrystalData (FILEIN,xtal)
+
+implicit none
+
+character(len=sklen),intent(in) :: FILEIN
+type(crystalData),intent(out)   :: xtal
+
+
+integer(kind=ski)   :: if0center
+integer(kind=ski)   :: i,j,nener,ierr
+integer(kind=ski)   :: i_debug=0
+character(len=sklen):: text
+
+
+if (i_debug.gt.0) write(i_debug,*) '<><> crystal_loadCrystalData: file is: '//trim(FILEIN)
+  OPEN (25,FILE=FILEIN,STATUS='OLD', FORM='FORMATTED',ERR=77)
+  read(25,'(A)',err=79)  text
+  read(25,*,err=79)  xtal%version, xtal%itype
+  if (xtal%itype.NE.1) then
+    write (*,*) 'CRYSTAL_LOADCRYSTALDATA: Error: Data file type not yet implemented.'
+   stop
+  end if
+  read(25,'(A)',err=79)  text
+  read(25,*,err=79)  xtal%RN,xtal%d_spacing  !,TEMPER
+  read(25,'(A)',err=79)  text
+  read(25,*,err=79)  xtal%nbatom
+  if (xtal%nbatom.GT.NMAXATOMS) then
+    write (*,*) 'CRYSTAL_LOADCRYSTALDATA: Error: Maximum number of atoms allowad: ',NMAXATOMS
+  end if
+
+  read(25,'(A)',err=79) text
+  read(25,*,err=79)  (xtal%ATNUM(I),i=1,xtal%nbatom)
+
+  read(25,'(A)',err=79) text
+  read(25,*,err=79)  (xtal%FRACT(I),i=1,xtal%nbatom)
+
+  read(25,'(A)',err=79) text
+  read(25,*,err=79)  (xtal%TEMPER(I),i=1,xtal%nbatom)
+
+  read(25,'(A)',err=79) text
+  read(25,*,err=79) (xtal%G_0(i),i=1,xtal%nbatom)
+
+  read(25,'(A)',err=79)  text
+  do i=1,xtal%nbatom
+    read(25,*,err=79)  xtal%G(I)
+    read(25,*,err=79)  xtal%G_BAR(I)
+  end do
+
+  read(25,'(A)',err=79) text
+  do i=1,xtal%nbatom
+    read(25,*,err=79)  xtal%nf0coeff,(xtal%f0coeff(i,j),j=1,xtal%nf0coeff)
+  end do
+  read(25,'(A)',err=79)  text
+  read(25,*,err=79)  xtal%NPOINT
+  read(25,'(A)',err=79)  text
+  do I = 1, xtal%NPOINT
+    read(25,*,err=79)  xtal%energy(i)
+    if ( (xtal%version-2.39).GT.0) then
+        ! new version (since 2.4) implements compton correction factor
+        ! mu = mu_photoelectric*Fcompton
+        ! where Fcompton=mu_total/mu_photoelectric
+        ! and mu_total is usually mu_photoelectric+mu_compton
+        ! (elastic may be also added)
+        do j=1,xtal%nbatom
+           read (25,*,err=79) xtal%FP(j,i),xtal%FPP(j,i),xtal%Fcompton(j,i)
+        end do
+    else
+        do j=1,xtal%nbatom
+           read (25,*,err=79) xtal%FP(j,i),xtal%FPP(j,i)
+           xtal%Fcompton(j,i) = 1.0d0
+        end do
+    endif
+  END DO
+  xtal%filename = FILEIN
+
+CLOSE (25)
+RETURN
+
+77 CONTINUE
+79 CONTINUE
+   print *,'crystal_loadCrystalData: Error reading file: '//trim(FILEIN)
+   stop
+END SUBROUTINE crystal_loadCrystalData
+
+!C+++
+!C       SUBROUTINE    crystal_printCrystalData
+!C
+!C       PURPOSE         Print the stored crystallographic data from
+!C                       preprocessor (xop/xcrystal or bragg)
+!C
+!C       ALGORITHM
+!C
+!C       MODIFIED        Created by M. Sanchez del Rio
+!C
+!C
+!C---
+SUBROUTINE crystal_printCrystalData (xtal)
+
+implicit none
+
+type(crystalData),intent(in) :: xtal
+integer(kind=ski)            :: i,j
+
+  print *,' '
+  print *,'============== in crystal_printCrystalData =================='
+  print *,'NMAXATOMS=',NMAXATOMS
+  print *,'NMAXENER=',NMAXENER
+  print *,'RN=',xtal%rn
+  print *,'d_spacing=',xtal%d_spacing
+  print *,'ATNUM=',xtal%atnum(1:xtal%NBATOM)
+  print *,'TEMPER=',xtal%temper(1:xtal%NBATOM)
+  print *,'NBATOM,=',xtal%nbatom
+  print *,'G=',xtal%g(1:xtal%NBATOM)
+  print *,'G_BAR=',xtal%g_bar(1:xtal%NBATOM)
+  print *,'G_0=',xtal%g_0(1:xtal%NBATOM)
+  print *,'NF0COEFF=',xtal%nf0coeff
+  print *,'F0COEFF=',xtal%f0coeff(1:xtal%NBATOM,1:11)
+  print *,'NPOINT=',xtal%npoint
+  print *,'FRACT=',xtal%fract(1:xtal%NBATOM)
+  print *,'filename=',trim(xtal%filename)
+  print *,"energy  atom_index  FP  FPP  "
+  print *,'============================================================='
+  print *,' '
+
+  DO I = 1, xtal%NPOINT
+    do j=1,xtal%nbatom
+       print *,xtal%energy(i),j, xtal%FP(j,i),xtal%FPP(j,i)
+    end do
+  END DO
+  RETURN
+
+END SUBROUTINE crystal_printCrystalData
+
+
+
+
+!C+++
+!C       SUBROUTINE    CRYSTAL_FH
+!C
+!C       PURPOSE         Computes the structute factor of a crystal
+!C                       from data stored in crystalData type
+!C
+!C       ALGORITHM
+!C
+!C       MODIFIED        Created by M. Sanchez del Rio  (Feb. 1996)
+!C
+!C                       Modified by MSR 96/12/19 to include the number
+!C                       of coefficients in the f0 parametrization. This
+!C                       number is 9 for the CromerMann data and 11 for
+!C                       the Waasmaier Kirfel data. Note that the crystal
+!C                       file has changed!
+!C
+!C---
+!C
+!C INPUT PARAMETERS:
+!C   fUnit: fileUnit
+!C     fUnit = [-Inf,3) Not used
+!C     fUnit >= 3       Writes info in file unit=fUnit
+!    xtal: type with crystal data
+!C   PHOT [real]: Photon energy in eV
+!C   THETA [real]: Scattering grazing angle in rads
+!C
+!C OUTPUT PARAMETERS:
+!C   FH           |
+!C   FH_BAR       |
+!C   F_0          |    Complex with the returned structure factors
+!C   PSI_H        |    F, Psi and the refraction index.
+!C   PSI_HBAR     |
+!C   PSI_0        |
+!C   REFRAC       |
+!C
+!C
+SUBROUTINE CRYSTAL_FH(fUnit, xtal, PHOT, THETA, &                      ! inputs
+                    FH,FH_BAR,F_0,PSI_H,PSI_HBAR,PSI_0,REFRAC,STRUCT) ! outputs
+
+implicit none
+
+integer(kind=ski),intent(in)::  fUnit
+type(crystalData),intent(in)   :: xtal
+real(kind=skr),intent(in)   ::  PHOT,THETA
+complex(kind=skx),intent(out) :: FH,FH_BAR,F_0
+complex(kind=skx),intent(out) :: psi_h,psi_hbar,psi_0,REFRAC,STRUCT
+
+integer(kind=ski):: if0center
+integer(kind=ski):: i,j,nener,ierr
+
+real(kind=skr),dimension(NMAXATOMS) :: F0,F1,F2,F2compton
+
+real(kind=skr)   :: r_lam0,ratio,version
+real(kind=skr)   :: delta_ref,absorp,absorpNoCompton
+complex(kind=skx):: psi_conj,F_0compton
+complex(kind=skx):: ci,F(NMAXATOMS)
+
+integer(kind=ski):: i_debug=0
+
+CI = (0.0D0,1.0D0)
+
+if (i_debug.GT.0) then
+  write(i_debug,*) '<><> CRYSTAL_FH: fUnit=',fUnit
+  write(i_debug,*) '<><> CRYSTAL_FH: xtal%d_spacing=',xtal%d_spacing
+  write(i_debug,*) '<><> CRYSTAL_FH: xtal%rn=',xtal%rn
+endif
+
+!C
+!C Computes structure factor at given wavelength and angle.
+!C
+if (i_debug.EQ.1) then
+  write (i_debug,*) '<><>CRYSTAL_FH: working at energy: ',phot
+  write (i_debug,*) '<><>CRYSTAL_FH: working at angle [rads] : ',theta
+  write (i_debug,*) '<><>CRYSTAL_FH: working at angle [deg] : ',theta*todeg
+endif
+
+IF (PHOT.LT.xtal%ENERGY(1).OR.PHOT.GT.xtal%ENERGY(xtal%npoint)) THEN
+ write (*,*) 'CRYSTAL_FH: Error: Incoming photon energy is out of range: ',PHOT
+ RETURN
+END IF
+
+!C
+!C Build the fo scattering form factor from its coefficients
+!C
+ratio = sin(theta)/(toangs/phot)
+if (ratio.GT.2) then
+ write (*,*) 'CRYSTAL_FH: ratio sin(theta)/lambda > 2'
+ write (*,*) '    ratio : ',ratio
+ write (*,*) '    Paramatrizatiog for Fo may fail.'
+end if
+if (i_debug.gt.0) write (i_debug,*) 'CRYSTAL_FH: ratio is : ',ratio
+if0center = (1+xtal%nf0coeff)/2
+
+do j=1,xtal%nbatom
+  f0 (j) = xtal%f0coeff(j,if0center)
+  do i=1,if0center-1
+    f0(j) = f0(j) + xtal%f0coeff(j,i) * &
+            dexp(-1.0d0*xtal%f0coeff(j,i+if0center)*ratio**2)
+    if (i_debug.gt.0) write (i_debug,*) '<><>CRYSTAL_FH:  f0 i,j = ',f0(j),i,j
+  end do
+  if (i_debug.gt.0) write (i_debug,*) '<><>CRYSTAL_FH: F0(j) = ',F0(j)
+end do
+!C
+!C Interpolate for the atomic scattering factor.
+!C
+DO 299 I = 1, xtal%npoint
+299         IF (xtal%ENERGY(I).GT.PHOT) GO TO 101
+!C
+I = xtal%npoint
+101       NENER = I - 1
+do j=1,xtal%nbatom
+ F1(j)= xtal%FP(j,NENER) + (xtal%FP(j,NENER+1) - &
+      xtal%FP(j,NENER)) * (PHOT - xtal%ENERGY(NENER)) / &
+      (xtal%ENERGY(NENER+1) - xtal%ENERGY(NENER))
+ F2(j)= xtal%FPP(j,NENER) + (xtal%FPP(j,NENER+1) - &
+      xtal%FPP(j,NENER)) * (PHOT - xtal%ENERGY(NENER)) / &
+      (xtal%ENERGY(NENER+1) - xtal%ENERGY(NENER))
+ F2compton(j)= &
+      xtal%FPP(j,NENER)*xtal%Fcompton(j,NENER) +&
+     (xtal%FPP(j,NENER+1)*xtal%Fcompton(j,NENER+1) - &
+      xtal%FPP(j,NENER)*xtal%Fcompton(j,NENER)) * &
+      (PHOT - xtal%ENERGY(NENER)) / &
+      (xtal%ENERGY(NENER+1) - xtal%ENERGY(NENER))
+ if (i_debug.gt.0) then
+   write (i_debug,*) '<><>CRYSTAL_FH: F1 = ',F1(j)
+   write (i_debug,*) '<><>CRYSTAL_FH: F2 = ',F2(j)
+   write (i_debug,*) '<><>CRYSTAL_FH: Fcompton(j,NENER) = ', &
+               xtal%Fcompton(j,NENER)
+ endif
+end do
+R_LAM0 = TOCM/PHOT
+if (i_debug.gt.0) write (i_debug,*) '<><>CRYSTAL_FH:  R_LAM0  =', R_LAM0
+
+do j=1,xtal%nbatom
+ F(j)= F0(j) + F1(j) + CI*F2(j)
+ if (i_debug.gt.0) write (i_debug,*) '<><>CRYSTAL_FH: F = ',F(j)
+end do
+
+!C
+!C FH and FH_BAR are the structure factors for (h,k,l) and (-h,-k,-l).
+!C
+F_0        = (0.0D0, 0.0D0)
+F_0compton = (0.0D0, 0.0D0)
+FH         = (0.0D0, 0.0D0)
+FH_BAR     = (0.0D0, 0.0D0)
+do i=1,xtal%nbatom
+  FH = FH + (xtal%G(i) * F(i) * xtal%TEMPER(i) * &
+       xtal%FRACT(i))
+  !C From Brennan's private communication:
+  !C Changing the temperature doesn't change F0, but it does change
+  !C Chi0, due to changing the size of the unit cell, which changes
+  !C gamma.
+  !C MSR 96/02/14
+
+  !
+  ! todo: check whether the compton correction affects also f1.
+  !       Now, it only affects the imaginary part f2 but not for the structure
+  !       factor, only for the refraction index (and attenuation coeff).
+  F_0 = F_0 + xtal%G_0(i) * (xtal%atnum(i) + F1(i) + &
+        CI * F2(i)) * xtal%FRACT(i)
+  F_0compton = F_0compton +  &
+               xtal%G_0(i) * (xtal%atnum(i) + F1(i) + &
+               CI * F2compton(i)) * xtal%FRACT(i)
+  FH_BAR = FH_BAR + (xtal%G_BAR(i) * F(i) * &
+           xtal%TEMPER(i) * xtal%FRACT(i))
+end do
+
+STRUCT = sqrt(FH * FH_BAR)
+
+if (i_debug.gt.0) then
+ write (i_debug,*) '<><>CRYSTAL_FH: FH = ',FH
+ write (i_debug,*) '<><>CRYSTAL_FH: FH_BAR = ',FH_BAR
+ write (i_debug,*) '<><>CRYSTAL_FH: f_0 = ',f_0
+ write (i_debug,*) '<><>CRYSTAL_FH: STRUCT = ',STRUCT
+ write (i_debug,*) ' '
+ write (i_debug,*) '<><>CRYSTAL_FH: xtal%RN = ',xtal%RN
+ write (i_debug,*) '<><>CRYSTAL_FH: r_lam0 = ',r_lam0
+endif
+
+!C
+!C   PSI_CONJ = F*( note: PSI_HBAR is PSI at -H position and is
+!C   proportional to fh_bar but PSI_CONJ is complex conjugate os PSI_H)
+!C
+! srio@esrf.eu 20140116  added sign (see Zachariasen pag 114, eq. 3.95)
+psi_h    = -xtal%rn*r_lam0**2/pi*fh
+psi_hbar = -xtal%rn*r_lam0**2/pi*fh_bar
+psi_0    = -xtal%rn*r_lam0**2/pi*f_0
+psi_conj = -xtal%rn*r_lam0**2/pi*conjg(fh)
+
+if (i_debug.gt.0) then
+  write (i_debug,*) '<><>CRYSTAL_FH: PSI_H = ',PSI_H
+  write (i_debug,*) '<><>CRYSTAL_FH: PSI_HBAR = ',PSI_HBAR
+  write (i_debug,*) '<><>CRYSTAL_FH: PSI_0 = ',PSI_0
+endif
+
+!C
+!C computes refractive index.
+!C ([3.171] of Zachariasen's book)
+!C
+
+!
+! values without compton correction
+!
+REFRAC    = (1.0D0,0.0D0) - R_LAM0**2*xtal%RN*F_0/TWOPI
+DELTA_REF = 1.0D0 - DREAL(REFRAC)
+ABSORP    = 2.0d0 * TWOPI *(-DIMAG(REFRAC)) / R_LAM0
+if (i_debug.gt.0) then
+  write (i_debug,*) '<><>CRYSTAL_FH: REFRAC NO_COMPTON= ', REFRAC
+  write (i_debug,*) '<><>CRYSTAL_FH: DELTA_REF NO_COMPTON= ', DELTA_REF
+  write (i_debug,*) '<><>CRYSTAL_FH: ABSORP NO_COMPTON= ', ABSORP
+endif
+
+!
+! values WITH compton correction
+!
+absorpNoCompton = absorp
+REFRAC = (1.0D0,0.0D0) - R_LAM0**2*xtal%RN*F_0compton/TWOPI
+DELTA_REF  = 1.0D0 - DREAL(REFRAC)
+ABSORP        = 2.0d0 * TWOPI *(-DIMAG(REFRAC)) / R_LAM0
+if (i_debug.EQ.1) then
+  write (i_debug,*) '<><>CRYSTAL_FH: REFRAC = ', REFRAC
+  write (i_debug,*) '<><>CRYSTAL_FH: DELTA_REF = ', DELTA_REF
+  write (i_debug,*) '<><>CRYSTAL_FH: ABSORP = ', ABSORP
+endif
+
+!C
+!C if fUnit > 3, write text to unit fUnit
+!C
+if (fUnit.gt.3) then
+write(fUnit,*) ' '
+write(fUnit,*) '******************************************************'
+write(fUnit,*) '           **  DIFF_PAT  v1.8  (24 Mar 2014) **       '
+write(fUnit,*) 'Crystal data from file '//trim(xtal%filename)
+WRITE(fUnit,*) '       at energy    = ',PHOT,' eV'
+WRITE(fUnit,*) '                    = ',R_LAM0*1E8,' Angstroms'
+WRITE(fUnit,*) '       and at angle = ',THETA*TODEG,' degrees'
+WRITE(fUnit,*) '                    = ',THETA,' rads'
+write(fUnit,*) '******************************************************'
+WRITE(fUnit,*) ' '
+do j=1,xtal%nbatom
+  WRITE(fUnit,*) 'For atom ',j,':'
+  WRITE(fUnit,*) '       fo + fp+ i fpp = '
+  WRITE(fUnit,*) '        ',f0(j),'+',f1(j),'+ i',f2(j),'= '
+  WRITE(fUnit,*) '        ',f0(j)+f1(j)+ci*f2(j)
+  WRITE(fUnit,*) '       Z = ',xtal%atnum(j)
+end do
+WRITE(fUnit,*) 'Structure factor F(0,0,0) = ',F_0
+WRITE(fUnit,*) 'Structure factor FH = ',FH
+WRITE(fUnit,*) 'Structure factor FH_BAR = ',FH_BAR
+WRITE(fUnit,*) 'Structure factor F(h,k,l) = sqrt(FH*FH_BAR) ',STRUCT
+WRITE(fUnit,*) 'Psi_0  = ',psi_0
+WRITE(fUnit,*) 'Psi_H  = ',psi_h
+WRITE(fUnit,*) 'Psi_HBar  = ',psi_hbar
+WRITE(fUnit,*) '|Psi_H/Psi_HBar|  = ',cdabs(psi_h/psi_hbar)
+WRITE(fUnit,*) 'sqrt(Psi_H*Psi_HBar)  = ',sqrt(psi_h*psi_hbar)
+WRITE(fUnit,*) '|Psi_H|  = ',cdabs(psi_h)
+WRITE(fUnit,*) 'Refraction index = 1 - delta - i*beta :'
+WRITE(fUnit,*) '           delta = ',DELTA_REF
+WRITE(fUnit,*) '            beta = ',-1.0D0*DIMAG(REFRAC)
+WRITE(fUnit,*) 'Absorption coeff = ',ABSORP,' cm^-1'
+WRITE(fUnit,*) 'Absorption correction (mu_total/mu_photoelec) = ',ABSORP/absorpNoCompton
+WRITE(fUnit,*) ' '
+WRITE(fUnit,*) 'e^2/(mc^2)/V = ',xtal%rn,' cm^-2'
+WRITE(fUnit,*) 'd-spacing = ',xtal%d_spacing*1.0E8,' Angstroms'
+WRITE(fUnit,*) 'SIN(theta)/Lambda = ',Ratio
+WRITE(fUnit,*) ' '
+endif
+END SUBROUTINE CRYSTAL_FH
+
+
+
 ! C
 ! C
 ! C+++
@@ -849,6 +1309,13 @@ Contains
     real(kind=skr) :: a_mosaic, aap_mosaic, aas_mosaic
     real(kind=skr) :: absorp, alpha_zac, c_ppol
     integer(kind=ski) :: i,nener,nrefl,i_latt, ierr
+    !
+    ! new crystals
+    !
+    character(len=1) :: stmp
+    integer(kind=ski) :: i_file_refl_version
+    type(crystalData) :: xtal
+
     ! C
     ! C SAVE the variables that need to be saved across subsequent invocations
     ! C of this subroutine. Note: D_SPACING is not included in the SAVE block
@@ -858,13 +1325,13 @@ Contains
          ATNUM_A,ATNUM_B,TEMPER, &
          GA,GA_BAR,GB,GB_BAR, &
          CA,CB, &
-         NREFL, ENERGY, FP_A, FPP_A, FP_B, FPP_B
+         NREFL, ENERGY, FP_A, FPP_A, FP_B, FPP_B, i_file_refl_version, xtal
     ! C
     CI	= (0.0D0,1.0D0)
     ! C
     ! C If flag is < 0, reads in the reflectivity data
     ! C
-    IF (KWHAT.LT.0) THEN
+    IF (KWHAT.LT.0) THEN ! load file
        OPEN (25,FILE=GfConvertStringArrToString(FILE_REFL),STATUS='OLD', FORM='FORMATTED', IOSTAT=iErr)
         ! srio added test
         if (iErr /= 0 ) then
@@ -872,189 +1339,265 @@ Contains
           return 
           ! stop 'File not found. Aborted.'
         end if
-       READ (25,*) I_LATT,RN,D_SPACING
-       READ (25,*) ATNUM_A,ATNUM_B,TEMPER
-       READ (25,*) GA
-       READ (25,*) GA_BAR
-       READ (25,*) GB
-       READ (25,*) GB_BAR
-       READ (25,*) CA(1),CA(2),CA(3)
-       READ (25,*) CB(1),CB(2),CB(3)
-       READ (25,*) NREFL
 
-       IF (ALLOCATED(ENERGY)) DEALLOCATE(ENERGY)
-       IF (ALLOCATED(FP_A)) DEALLOCATE(FP_A)
-       IF (ALLOCATED(FP_B)) DEALLOCATE(FP_B)
-       IF (ALLOCATED(FPP_A)) DEALLOCATE(FPP_A)
-       IF (ALLOCATED(FPP_B)) DEALLOCATE(FPP_B)
-       ALLOCATE(ENERGY(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating ENERGY",NREFL 
-         return
-       END IF
-       ALLOCATE(FP_A(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FP_A",NREFL 
-         return
-       END IF
-       ALLOCATE(FP_B(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FP_B",NREFL 
-         return
-       END IF
-       ALLOCATE(FPP_A(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FPP_A",NREFL 
-         return
-       END IF
-       ALLOCATE(FPP_B(NREFL),STAT=ierr)
-       IF (ierr /= 0) THEN
-         print *,"BRAGG: Error allocating FPP_B",NREFL 
-         return
+       READ(25,'(A)') stmp
+
+       if (stmp .eq. '#') then
+           i_file_refl_version = 2
+       else
+           i_file_refl_version = 1
+       endif
+
+       REWIND (25)
+
+       ! file_refl version 1
+       IF (i_file_refl_version == 1) THEN
+
+           READ (25,*) I_LATT,RN,D_SPACING
+           READ (25,*) ATNUM_A,ATNUM_B,TEMPER
+           READ (25,*) GA
+           READ (25,*) GA_BAR
+           READ (25,*) GB
+           READ (25,*) GB_BAR
+           READ (25,*) CA(1),CA(2),CA(3)
+           READ (25,*) CB(1),CB(2),CB(3)
+           READ (25,*) NREFL
+
+           IF (ALLOCATED(ENERGY)) DEALLOCATE(ENERGY)
+           IF (ALLOCATED(FP_A)) DEALLOCATE(FP_A)
+           IF (ALLOCATED(FP_B)) DEALLOCATE(FP_B)
+           IF (ALLOCATED(FPP_A)) DEALLOCATE(FPP_A)
+           IF (ALLOCATED(FPP_B)) DEALLOCATE(FPP_B)
+           ALLOCATE(ENERGY(NREFL),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating ENERGY",NREFL
+             return
+           END IF
+           ALLOCATE(FP_A(NREFL),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating FP_A",NREFL
+             return
+           END IF
+           ALLOCATE(FP_B(NREFL),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating FP_B",NREFL
+             return
+           END IF
+           ALLOCATE(FPP_A(NREFL),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating FPP_A",NREFL
+             return
+           END IF
+           ALLOCATE(FPP_B(NREFL),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating FPP_B",NREFL
+             return
+           END IF
+
+           DO 199 I = 1, NREFL
+              READ (25,*) ENERGY(I), FP_A(I), FPP_A(I)
+    199    READ (25,*)    FP_B(I), FPP_B(I)
+           CLOSE (25)
+
+        END IF
+
+       ! file_refl version 2
+       IF (i_file_refl_version == 2) THEN
+           CLOSE (25)
+           Call crystal_loadCrystalData (GfConvertStringArrToString(FILE_REFL),xtal)
+           ! Call crystal_printCrystalData (xtal)
+
+           RN = xtal%RN
+           D_SPACING = xtal%D_SPACING
        END IF
 
-       DO 199 I = 1, NREFL
-          READ (25,*) ENERGY(I), FP_A(I), FPP_A(I)
-199    READ (25,*)    FP_B(I), FPP_B(I)
-       CLOSE (25)
+
        RETURN
-    ELSE
+
+
+    ELSE ! normal calculation
+
+       PHOT	= Q_PHOT/TWOPI*TOCM
+       R_LAM0 	= TWOPI/Q_PHOT
+
+
        ! C
        ! C Computes reflectivities at given wavelength and angle.
        ! C
-       PHOT	= Q_PHOT/TWOPI*TOCM
-       IF (PHOT.LT.ENERGY(1).OR.PHOT.GT.ENERGY(NREFL)) THEN
- 	  CALL	MSSG ('CRYSTAL ','Incoming photon energy is out of range.',IERR)
-          R_S = 0.0D0
-	  R_P	= 0.0D0
-          PHASE_S = 0.0D0
-          PHASE_P = 0.0D0
-	  THETA_B = 0.0D0
-          RETURN
-       END IF
-       ! C
-       ! C Interpolate for the atomic scattering factor.
-       ! C
-       DO 299 I = 1, NREFL
-299    IF (ENERGY(I).GT.PHOT) GO TO 101
-       ! C
-       I = NREFL
-101    NENER = I - 1	
-       F1A	= FP_A(NENER) + (FP_A(NENER+1) - FP_A(NENER)) *  &
-            (PHOT - ENERGY(NENER)) / & 
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F2A	= FPP_A(NENER) + (FPP_A(NENER+1) - FPP_A(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F1B	= FP_B(NENER) + (FP_B(NENER+1) - FP_B(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       F2B	= FPP_B(NENER) + (FPP_B(NENER+1) - FPP_B(NENER)) *  &
-            (PHOT - ENERGY(NENER)) /  &
-            (ENERGY(NENER+1) - ENERGY(NENER))
-       R_LAM0 	= TWOPI/Q_PHOT
-       ! C
-       ! C Calculates the reflection algles and other useful parameters
-       ! C
-       SIN_ALFA  = SIN(A_BRAGG)
-       COS_ALFA  = SQRT(1.0D0-SIN_ALFA**2)
-       COS_Q_ANG = SQRT(1.0D0-SIN_Q_ANG**2)
-       ! C	Debugging: COSS_Q_REF is passed in the arguments to take into 
-       ! C	account the possible crystal movements in the asymmetrical case.
-       ! C	COS_Q_REF = COS_Q_ANG + R_LAM0*SIN_ALFA/D_SPACING
-       COS_Q_REF = SQRT(1.0D0-SIN_Q_REF**2)
-       IF (COS_Q_REF.GT.1.0) THEN
-          CALL MSSG ('Error in Crystal','cos>1',IERR)
-          R_S	= 0.0D0
-          R_P	= 0.0D0
-          PHASE_S = 0.0D0
-          PHASE_P = 0.0D0
-          GO TO 1122
-       END IF
-       ! C	SIN_Q_REF = SQRT(1.0D0-COS_Q_REF**2)
-       SIN_GRA	  = R_LAM0/D_SPACING/2.0D0
-       GRAZE	  = ASIN(SIN_GRA)
-       ASS_FAC	  = SIN_Q_ANG/SIN_Q_REF
-       ! C
-       ! C Interpolation
-       ! C
-       if (f_refrac.eq.1.and.f_mosaic.eq.1) then
-          sin_q   = sin_brg
-       else 
-          SIN_Q   = SIN_Q_ANG*COS_ALFA - COS_Q_ANG*SIN_ALFA
-       end if
-       ! C
-       ! C MSR 92/10/24 for the inclined monochromator the above definition of
-       ! C sin_q does not work. Set as in Mosaic Laue. To be confirmed
-       ! C and check with the Laue case
-       ! C
-       if (f_refrac.ne.1.and.f_bragg_a.eq.1) sin_q=sin_brg
-       RATIO	= abs(SIN_Q/R_LAM0*1.0D-8)
-       ! C
-       ! C
-       ! C
-       FOA	= CA(3)*RATIO**2 + CA(2)*RATIO + CA(1)
-       FOB	= CB(3)*RATIO**2 + CB(2)*RATIO + CB(1)
-       FA	= FOA + F1A + CI*F2A
-       FB	= FOB + F1B + CI*F2B
-       ! C
-       ! C Compute the ABSORPtion coefficient and Fo.
-       ! C
-       IF (I_LATT.EQ.0) THEN
-          ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
-          F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
-       ELSE IF (I_LATT.EQ.1) THEN
-          ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
-          F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
-       ELSE IF (I_LATT.EQ.2) THEN
-          FB	 = (0.0D0,0.0D0)
-          ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*DIMAG(FA))
-          F_0 = 4*(F1A + ATNUM_A + CI*F2A)
-       ELSE IF (I_LATT.EQ.3) THEN
-          ABSORP = 2.0D0*RN*R_LAM0*(DIMAG(FA)+DIMAG(FB))
-          F_0 = (F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B)
-       ELSE IF (I_LATT.EQ.4) THEN
-          FB     = (0.0D0,0.0D0)
-          ABSORP = 2.0D0*RN*R_LAM0*(2.0D0*(DIMAG(FA)))
-          F_0 = 2*(F1A+ CI*F2A )
-       ELSE IF (I_LATT.EQ.5) THEN
-          FB     = (0.0D0,0.0D0)
-          ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)))
-          F_0 = 4*(F1A + CI*F2A )
-       END IF
-       ! C	
-       ! C FH and FH_BAR are the structure factors for (h,k,l) and (-h,-k,-l).
-       ! C
-       ! C srio, Added TEMPER here (95/01/19)
-       FH 	= ( (GA * FA) + (GB * FB) )*TEMPER
-       FH_BAR	= ( (GA_BAR * FA) + (GB_BAR * FB) )*TEMPER
-       ! using mysqrt to avoid problems in windows. See mysqrt in
-       ! shadow_math module
-       ! STRUCT 	= SQRT(FH * FH_BAR) 
-       STRUCT = mySQRT(FH * FH_BAR) 
-       ! C
-       ! C computes refractive index.
-       ! C
-       REFRAC = (1.0D0,0.0D0) - R_LAM0**2*RN*F_0/TWOPI
-       DELTA_REF  = 1.0D0 - DREAL(REFRAC)
-       ! C
-       ! C THETA_B is the Bragg angle corrected for refraction for sym case,
-       ! C following Warren
-       ! C
-       if (f_refrac.ne.1) then
-          THETA_B = R_LAM0/(1-(DELTA_REF/SIN_GRA**2))/2.0D0/D_SPACING
-          THETA_B = ASIN(THETA_B)
-          ! C
-          ! C Now THETA_B is the Bragg angle corrected for refraction for asym case
-          ! C following Handbook of SR
-          ! C
-          if (f_refrac.eq.1) ass_fac = -1.0d0*ass_fac
-          THETA_INC_O = 0.5D0*(1.0D0+1.0D0/ASS_FAC)*(THETA_B-GRAZE)
-          THETA_B = GRAZE + A_BRAGG + THETA_INC_O   
-       else
-          theta_b = graze
-       end if
-       ! C
+        if (i_file_refl_version .eq. 2) then
+
+
+            theta = asin(sin_q_ang)
+
+            call CRYSTAL_FH(0, xtal, PHOT, THETA, &                      ! inputs
+                        FH,FH_BAR,F_0,PSI_H,PSI_HBAR,PSI_0,REFRAC,STRUCT)
+
+            ABSORP = 2.0D0*RN*R_LAM0*DIMAG(FH)
+            REFRAC = (1.0D0,0.0D0) - R_LAM0**2*RN*F_0/TWOPI
+            DELTA_REF  = 1.0D0 - DREAL(REFRAC)
+            STRUCT = mySQRT(FH * FH_BAR)
+
+            SIN_GRA	  = R_LAM0/D_SPACING/2.0D0
+            GRAZE	  = ASIN(SIN_GRA)
+            ASS_FAC	  = SIN_Q_ANG/SIN_Q_REF
+
+           ! C
+           ! C THETA_B is the Bragg angle corrected for refraction for sym case,
+           ! C following Warren
+           ! C
+           if (f_refrac.ne.1) then
+              THETA_B = R_LAM0/(1-(DELTA_REF/SIN_GRA**2))/2.0D0/D_SPACING
+              THETA_B = ASIN(THETA_B)
+              ! C
+              ! C Now THETA_B is the Bragg angle corrected for refraction for asym case
+              ! C following Handbook of SR
+              ! C
+              if (f_refrac.eq.1) ass_fac = -1.0d0*ass_fac
+              THETA_INC_O = 0.5D0*(1.0D0+1.0D0/ASS_FAC)*(THETA_B-GRAZE)
+              THETA_B = GRAZE + A_BRAGG + THETA_INC_O
+           else
+              theta_b = graze
+           end if
+
+
+        else ! version 1 of preprocessor file
+
+              IF (PHOT.LT.ENERGY(1).OR.PHOT.GT.ENERGY(NREFL)) THEN
+              CALL	MSSG ('CRYSTAL ','Incoming photon energy is out of range.',IERR)
+                  R_S = 0.0D0
+              R_P	= 0.0D0
+                  PHASE_S = 0.0D0
+                  PHASE_P = 0.0D0
+              THETA_B = 0.0D0
+                  RETURN
+               END IF
+               ! C
+               ! C Interpolate for the atomic scattering factor.
+               ! C
+               DO 299 I = 1, NREFL
+        299    IF (ENERGY(I).GT.PHOT) GO TO 101
+               ! C
+               I = NREFL
+        101    NENER = I - 1
+               F1A	= FP_A(NENER) + (FP_A(NENER+1) - FP_A(NENER)) *  &
+                    (PHOT - ENERGY(NENER)) / &
+                    (ENERGY(NENER+1) - ENERGY(NENER))
+               F2A	= FPP_A(NENER) + (FPP_A(NENER+1) - FPP_A(NENER)) *  &
+                    (PHOT - ENERGY(NENER)) /  &
+                    (ENERGY(NENER+1) - ENERGY(NENER))
+               F1B	= FP_B(NENER) + (FP_B(NENER+1) - FP_B(NENER)) *  &
+                    (PHOT - ENERGY(NENER)) /  &
+                    (ENERGY(NENER+1) - ENERGY(NENER))
+               F2B	= FPP_B(NENER) + (FPP_B(NENER+1) - FPP_B(NENER)) *  &
+                    (PHOT - ENERGY(NENER)) /  &
+                    (ENERGY(NENER+1) - ENERGY(NENER))
+               R_LAM0 	= TWOPI/Q_PHOT
+               ! C
+               ! C Calculates the reflection algles and other useful parameters
+               ! C
+               SIN_ALFA  = SIN(A_BRAGG)
+               COS_ALFA  = SQRT(1.0D0-SIN_ALFA**2)
+               COS_Q_ANG = SQRT(1.0D0-SIN_Q_ANG**2)
+               ! C	Debugging: COSS_Q_REF is passed in the arguments to take into
+               ! C	account the possible crystal movements in the asymmetrical case.
+               ! C	COS_Q_REF = COS_Q_ANG + R_LAM0*SIN_ALFA/D_SPACING
+               COS_Q_REF = SQRT(1.0D0-SIN_Q_REF**2)
+               IF (COS_Q_REF.GT.1.0) THEN
+                  CALL MSSG ('Error in Crystal','cos>1',IERR)
+                  R_S	= 0.0D0
+                  R_P	= 0.0D0
+                  PHASE_S = 0.0D0
+                  PHASE_P = 0.0D0
+                  GO TO 1122
+               END IF
+               ! C	SIN_Q_REF = SQRT(1.0D0-COS_Q_REF**2)
+               SIN_GRA	  = R_LAM0/D_SPACING/2.0D0
+               GRAZE	  = ASIN(SIN_GRA)
+               ASS_FAC	  = SIN_Q_ANG/SIN_Q_REF
+               ! C
+               ! C Interpolation
+               ! C
+               if (f_refrac.eq.1.and.f_mosaic.eq.1) then
+                  sin_q   = sin_brg
+               else
+                  SIN_Q   = SIN_Q_ANG*COS_ALFA - COS_Q_ANG*SIN_ALFA
+               end if
+               ! C
+               ! C MSR 92/10/24 for the inclined monochromator the above definition of
+               ! C sin_q does not work. Set as in Mosaic Laue. To be confirmed
+               ! C and check with the Laue case
+               ! C
+               if (f_refrac.ne.1.and.f_bragg_a.eq.1) sin_q=sin_brg
+               RATIO	= abs(SIN_Q/R_LAM0*1.0D-8)
+               ! C
+               ! C
+               ! C
+               FOA	= CA(3)*RATIO**2 + CA(2)*RATIO + CA(1)
+               FOB	= CB(3)*RATIO**2 + CB(2)*RATIO + CB(1)
+               FA	= FOA + F1A + CI*F2A
+               FB	= FOB + F1B + CI*F2B
+               ! C
+               ! C Compute the ABSORPtion coefficient and Fo.
+               ! C
+               IF (I_LATT.EQ.0) THEN
+                  ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
+                  F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
+               ELSE IF (I_LATT.EQ.1) THEN
+                  ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)+DIMAG(FB)))
+                  F_0 = 4*((F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B))
+               ELSE IF (I_LATT.EQ.2) THEN
+                  FB	 = (0.0D0,0.0D0)
+                  ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*DIMAG(FA))
+                  F_0 = 4*(F1A + ATNUM_A + CI*F2A)
+               ELSE IF (I_LATT.EQ.3) THEN
+                  ABSORP = 2.0D0*RN*R_LAM0*(DIMAG(FA)+DIMAG(FB))
+                  F_0 = (F1A + ATNUM_A + F1B + ATNUM_B) + CI*(F2A + F2B)
+               ELSE IF (I_LATT.EQ.4) THEN
+                  FB     = (0.0D0,0.0D0)
+                  ABSORP = 2.0D0*RN*R_LAM0*(2.0D0*(DIMAG(FA)))
+                  F_0 = 2*(F1A+ CI*F2A )
+               ELSE IF (I_LATT.EQ.5) THEN
+                  FB     = (0.0D0,0.0D0)
+                  ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)))
+                  F_0 = 4*(F1A + CI*F2A )
+               END IF
+               ! C
+               ! C FH and FH_BAR are the structure factors for (h,k,l) and (-h,-k,-l).
+               ! C
+               ! C srio, Added TEMPER here (95/01/19)
+               FH 	= ( (GA * FA) + (GB * FB) )*TEMPER
+               FH_BAR	= ( (GA_BAR * FA) + (GB_BAR * FB) )*TEMPER
+               ! using mysqrt to avoid problems in windows. See mysqrt in
+               ! shadow_math module
+               ! STRUCT 	= SQRT(FH * FH_BAR)
+               STRUCT = mySQRT(FH * FH_BAR)
+               ! C
+               ! C computes refractive index.
+               ! C
+               REFRAC = (1.0D0,0.0D0) - R_LAM0**2*RN*F_0/TWOPI
+               DELTA_REF  = 1.0D0 - DREAL(REFRAC)
+               ! C
+               ! C THETA_B is the Bragg angle corrected for refraction for sym case,
+               ! C following Warren
+               ! C
+               if (f_refrac.ne.1) then
+                  THETA_B = R_LAM0/(1-(DELTA_REF/SIN_GRA**2))/2.0D0/D_SPACING
+                  THETA_B = ASIN(THETA_B)
+                  ! C
+                  ! C Now THETA_B is the Bragg angle corrected for refraction for asym case
+                  ! C following Handbook of SR
+                  ! C
+                  if (f_refrac.eq.1) ass_fac = -1.0d0*ass_fac
+                  THETA_INC_O = 0.5D0*(1.0D0+1.0D0/ASS_FAC)*(THETA_B-GRAZE)
+                  THETA_B = GRAZE + A_BRAGG + THETA_INC_O
+               else
+                  theta_b = graze
+               end if
+               ! C
+
+
+        endif
+
        IF (F_MOSAIC.EQ.1) THEN
           ! C
           ! C >>>>>>>>>>>>>>>>>>>> Mosaic crystal calculation <<<<<<<<<<<<<<<<<<
@@ -4197,7 +4740,7 @@ Subroutine MOSAIC_old (VVIN,VNOR,WAVEN,VNORG)
 ! * Compute now the correct Bragg angle (including N)
 ! *
           CALL CRYSTAL (WAVEN,SINN,SINN,DUMM,DUMM,DUMM, &
-                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,ione)
+                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,itwo)
 ! *
 ! * redefinition of bragg angle and incident angle. Now refered to 
 ! * the surfece normal
@@ -4333,7 +4876,7 @@ Subroutine MOSAIC (VVIN,VNOR,WAVEN,VNORG)
 ! * Compute now the correct Bragg angle (including N)
 ! *
           CALL CRYSTAL (WAVEN,SINN,SINN,DUMM,DUMM,DUMM, &
-                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,ione)
+                             DUMM,DUMM,DUMM,DUMM,DUMM,THETA_B,itwo)
 ! *
 ! * Redefinition of bragg angle and incident angle. Now referred to 
 ! * the surfece normal (from here, theta_b is called theta_D in 
@@ -6821,7 +7364,7 @@ IF (F_CRYSTAL.EQ.1) THEN
         !C
         if (f_refrac.eq.0) then                                  !bragg
            CALL CRYSTAL (Q_PHOT,SINN,SINM,zero,DUMM1,DUMM1,DUMM1, &
-                                    DUMM1,DUMM1,DUMM1,DUMM1,THETA_B,ione)
+                                    DUMM1,DUMM1,DUMM1,DUMM1,THETA_B,itwo)
         else if (f_refrac.eq.1) then                             !laue
            if (order.eq.-1) then             ! rays onto bragg planes
               if (a_bragg.ge.0) theta_b = a_bragg + graze
@@ -12287,7 +12830,7 @@ SUBROUTINE DeAlloc
     ! (corresponds to start.xx) and if IDUMMY=1 it is (end.xx)
     IDUMMY = 1
     
-    WRITE(6,*)'Exit from DEALLOC||||||||||||||>>>>>>>>>>>>>>>>'
+    WRITE(6,*)'Exit from DEALLOC'
 
     RETURN
          

@@ -47,60 +47,73 @@ if __name__ == "__main__":
 
     print("Using crystal descriptor: ", descriptor)
 
-    from xoppylib.crystals.create_bragg_preprocessor_file_v1 import create_bragg_preprocessor_file_v1
+    version = 2.2    # 1=Si, v1;  2.1=Si v2; 2.2 = YB66 v2
 
-    # create_bragg_preprocessor_file_v1(interactive=False,
-    #     DESCRIPTOR="Si", H_MILLER_INDEX=1, K_MILLER_INDEX=1, L_MILLER_INDEX=1, TEMPERATURE_FACTOR=1.0,
-    #     E_MIN=5000.0, E_MAX=15000.0, E_STEP=100.0,
-    #     SHADOW_FILE="xcrystals.bra",
-    #     material_constants_library=dx)
+    if version == 1:
+        from xoppylib.crystals.create_bragg_preprocessor_file_v1 import create_bragg_preprocessor_file_v1
+
+        create_bragg_preprocessor_file_v1(interactive=False,
+            DESCRIPTOR="Si", H_MILLER_INDEX=1, K_MILLER_INDEX=1, L_MILLER_INDEX=1, TEMPERATURE_FACTOR=1.0,
+            E_MIN=5000.0, E_MAX=15000.0, E_STEP=100.0,
+            SHADOW_FILE="xcrystal.bra",
+            material_constants_library=xraylib)
+
+    elif version == 2.1:
+        from xoppylib.crystals.create_bragg_preprocessor_file_v2 import create_bragg_preprocessor_file_v2
+
+        create_bragg_preprocessor_file_v2(interactive=False,
+            DESCRIPTOR="Si", H_MILLER_INDEX=1, K_MILLER_INDEX=1, L_MILLER_INDEX=1, TEMPERATURE_FACTOR=1.0,
+            E_MIN=5000.0, E_MAX=15000.0, E_STEP=100.0,
+            SHADOW_FILE="xcrystal.bra",
+            material_constants_library=xraylib)
+
+    elif version == 2.2:
+        bragg_dictionary = bragg_calc2(descriptor=descriptor,
+                                       hh=4, kk=0, ll=0,
+                                       temper=1.0,
+                                       emin=ENERGY - 100.0, emax=ENERGY + 100.0,
+                                       estep=(SCANTO - SCANFROM) / SCANPOINTS, fileout="xcrystal.bra",
+                                       material_constants_library=dx)
 
 
-    # bragg_dictionary = bragg_calc2(descriptor=descriptor,
-    #                                hh=4, kk=0, ll=0,
-    #                                temper=1.0,
-    #                                emin=ENERGY - 100.0, emax=ENERGY + 100.0,
-    #                                estep=(SCANTO - SCANFROM) / SCANPOINTS, fileout="xcrystal.bra",
-    #                                material_constants_library=dx)
+    if False:
+        run_diff_pat_new(
+            bragg_dictionary,
+            preprocessor_file="xcrystal.bra",
+            MOSAIC=0,
+            GEOMETRY=0,
+            SCAN=2,
+            UNIT=1,
+            SCANFROM=SCANFROM,
+            SCANTO=SCANTO,
+            SCANPOINTS=SCANPOINTS,
+            ENERGY=ENERGY,
+            ASYMMETRY_ANGLE=0.0,
+            THICKNESS=0.7,
+            MOSAIC_FWHM=0.1,
+            RSAG=125.0,
+            RMER=1290.0,
+            ANISOTROPY=0,
+            POISSON=0.22,
+            CUT="2 -1 -1 ; 1 1 1 ; 0 0 0",
+            FILECOMPLIANCE="mycompliance.dat",
+        )
+
+        # import os
+        # command = "..\diff_pat.exe < xoppy.inp"
+        # # print("Running command '%s' in directory: %s " % (command, locations.home_bin_run()))
+        # print("\n--------------------------------------------------------\n")
+        # os.system(command)
+        # print("\n--------------------------------------------------------\n")
 
 
-    # run_diff_pat_new(
-    #     bragg_dictionary,
-    #     preprocessor_file="xcrystal.bra",
-    #     MOSAIC=0,
-    #     GEOMETRY=0,
-    #     SCAN=2,
-    #     UNIT=1,
-    #     SCANFROM=SCANFROM,
-    #     SCANTO=SCANTO,
-    #     SCANPOINTS=SCANPOINTS,
-    #     ENERGY=ENERGY,
-    #     ASYMMETRY_ANGLE=0.0,
-    #     THICKNESS=0.7,
-    #     MOSAIC_FWHM=0.1,
-    #     RSAG=125.0,
-    #     RMER=1290.0,
-    #     ANISOTROPY=0,
-    #     POISSON=0.22,
-    #     CUT="2 -1 -1 ; 1 1 1 ; 0 0 0",
-    #     FILECOMPLIANCE="mycompliance.dat",
-    # )
-    #
-    # # import os
-    # # command = "..\diff_pat.exe < xoppy.inp"
-    # # # print("Running command '%s' in directory: %s " % (command, locations.home_bin_run()))
-    # # print("\n--------------------------------------------------------\n")
-    # # os.system(command)
-    # # print("\n--------------------------------------------------------\n")
-    #
-    #
-    # #
-    # # example plot
-    # #
-    # from srxraylib.plot.gol import plot
-    #
-    # data = numpy.loadtxt("diff_pat.dat", skiprows=5)
-    # plot(data[:, 0], data[:, -1])
+        #
+        # example plot
+        #
+        from srxraylib.plot.gol import plot
+
+        data = numpy.loadtxt("diff_pat.dat", skiprows=5)
+        plot(data[:, 0], data[:, -1])
 
 
     #
@@ -119,7 +132,7 @@ if __name__ == "__main__":
 
     Shadow.ShadowTools.plotxy(beam3, 6, 23, nbins=201, nolost=1, title="shadow3 diff profile")
 
-
+    os.system("rm star.01")
     os.system("../shadow3 < shadow3.inp")
     b = Shadow.Beam()
     b.load("star.01")
