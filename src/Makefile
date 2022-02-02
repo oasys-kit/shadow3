@@ -59,7 +59,7 @@ ifeq ($(uname_S), Linux)
 endif
 ifeq ($(uname_S), Darwin)
     #needed for gfortran in macos 10.10
-    export MACOSX_DEPLOYMENT_TARGET=10.9
+    #export MACOSX_DEPLOYMENT_TARGET=10.9
     SO=.so
     EXE=
     COMPILEOPT=-D_COMPILE4MAX
@@ -73,7 +73,7 @@ endif
 #
 # customize compiler and flags
 #
-FC ?= gfortran
+FC = gfortran
 FFLAGS = -I ./def/ -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 LINKFLAGS = $(32BITS) $(STATIC)
 

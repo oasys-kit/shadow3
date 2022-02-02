@@ -3,7 +3,8 @@ from glob import glob
 import numpy
 
 import distutils
-from distutils.core import setup, Extension
+#from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 headers = glob (os.path.join ("Include","*.h") )
 #header = headers + glob (os.path.join ("Include/numpy","*.h") )
