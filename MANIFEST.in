@@ -1,3 +1,5 @@
-include src/c/*
-include src/fortran/*
-include src/def/*
+recursive-include Shadow *.pyx
+recursive-include Shadow *.py
+recursive-include Shadow *
+
+include README.md
