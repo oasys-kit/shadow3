@@ -6,4 +6,6 @@ It included changes to compile with new gfortran compilers (thanks Tom Schoonjan
 and calculation of any crystal structure via a new bragg preprocessor file (thanks Xiaojiang Yu).
 
 
+Please install: 
 
+/Applications/Oasys1.2.app/Contents/MacOS/PythonApp -m pip install https://raw.githubusercontent.com/oasys-kit/shadow3/devel-gfortran-yb66/wheels/shadow3-22.2.7-cp37-cp37m-macosx_10_6_intel.whl
