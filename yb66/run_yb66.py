@@ -127,8 +127,8 @@ if __name__ == "__main__":
 
 
     oe_list = define_beamline()
-    oe_list[0].FWRITE = 1
-    beam3 = run_beamline(beam3_source, oe_list)
+    oe_list[0].FWRITE = 0
+    beam3 = run_beamline(beam3_source, oe_list, iwrite=0)
 
     Shadow.ShadowTools.plotxy(beam3, 6, 23, nbins=201, nolost=1, title="shadow3 diff profile")
 
@@ -136,5 +136,5 @@ if __name__ == "__main__":
     os.system("../shadow3 < shadow3.inp")
     b = Shadow.Beam()
     b.load("star.01")
-    Shadow.ShadowTools.plotxy(b, 6, 23, nbins=201, nolost=1, title="shadow3 diff profile FROM < shadow3.inp")
+    Shadow.ShadowTools.plotxy(b, 6, 24, nbins=201, nolost=1, title="shadow3 diff profile FROM < shadow3.inp")
 

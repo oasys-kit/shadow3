@@ -1799,6 +1799,7 @@ END SUBROUTINE CRYSTAL_FH
                 RCS	= RCS2
              END IF
              RCS	= RCS*SQRT(FH/FH_BAR)
+             RCS = RCS * 1.0  ! added by srio@esrf.eu:  without this it switches to NaN in MacOS (no idea why)
              IF (((CDABS(RCP1))**2).LE.1) THEN
                 RCP	= RCP1
              ELSE 

@@ -68,6 +68,8 @@ def define_beamline():
     oe1.T_REFLECTION = 75.6898061088
     oe1.T_SOURCE = 3.0
 
+    oe1.FILE_SOURCE = b'begin.dat'  #   very important, otherwise does not run shadow3-trace-systemfile
+
 
     return oe_list
 
@@ -103,6 +105,9 @@ oe_list = define_beamline()
 
 beam = run_beamline(beam, oe_list, iwrite=1)
 
-# Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
+
+from srxraylib.plot.gol import set_qt
+set_qt()
+Shadow.ShadowTools.plotxy(beam,6,23,nbins=101,nolost=1,title="Reflectivity")
 # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
 # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
