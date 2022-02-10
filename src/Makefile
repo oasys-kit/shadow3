@@ -236,8 +236,9 @@ shadow_crl.o: fortran/shadow_crl.f90
 lib: $(OBJFMODULES) shadow_bind_c.o 
 	$(FC) $(LIBFLAGS) $(CFLAGS) -o libshadow3$(SO) $(OBJFMODULES)
 	$(CC) $(LIBFLAGS) $(CFLAGS) -o libshadow3c$(SO) shadow_bind_c.o -L. -lshadow3 #$(OBJFMODULES)
-#	cp libshadow3$(SO) ..
-#	cp libshadow3c$(SO) ..
+	cp libshadow3$(SO) ..
+	cp libshadow3c$(SO) ..
+	echo 'Note library files libshadow3.so and libshadow3c.so are also copied to root directory (./..) '
 
 shadow_bind_c.o: c/shadow_bind_c.c
 	$(CC) $(CFLAGS) -c c/shadow_bind_c.c
