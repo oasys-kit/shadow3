@@ -1427,7 +1427,41 @@ END SUBROUTINE CRYSTAL_FH
         if (i_file_refl_version .eq. 2) then
 
 
-            theta = asin(sin_q_ang)
+
+            SIN_ALFA  = SIN(A_BRAGG)
+            COS_ALFA  = SQRT(1.0D0-SIN_ALFA**2)
+            COS_Q_ANG = SQRT(1.0D0-SIN_Q_ANG**2)
+            COS_Q_REF = SQRT(1.0D0-SIN_Q_REF**2)
+
+            ! C
+            ! C Interpolation
+            ! C
+            if (f_refrac.eq.1.and.f_mosaic.eq.1) then
+            sin_q   = sin_brg
+            else
+            SIN_Q   = SIN_Q_ANG*COS_ALFA - COS_Q_ANG*SIN_ALFA
+            end if
+
+
+            ! C
+            ! C MSR 92/10/24 for the inclined monochromator the above definition of
+            ! C sin_q does not work. Set as in Mosaic Laue. To be confirmed
+            ! C and check with the Laue case
+            ! C
+            if (f_refrac.ne.1.and.f_bragg_a.eq.1) sin_q=sin_brg
+            RATIO	= abs(SIN_Q/R_LAM0*1.0D-8)
+            THETA = asin(SIN_Q)
+            !THETA = asin(RATIO * (R_LAM0*1.0D-8))
+
+
+            COS_Q_ANG = SQRT(1.0D0-SIN_Q_ANG**2)
+
+            SIN_GRA	  = R_LAM0/D_SPACING/2.0D0
+            GRAZE	  = ASIN(SIN_GRA)
+            ASS_FAC	  = SIN_Q_ANG/SIN_Q_REF
+
+
+
 
             call CRYSTAL_FH(0, xtal, PHOT, THETA, &                      ! inputs
                         FH,FH_BAR,F_0,PSI_H,PSI_HBAR,PSI_0,REFRAC,STRUCT)
@@ -1437,9 +1471,6 @@ END SUBROUTINE CRYSTAL_FH
             DELTA_REF  = 1.0D0 - DREAL(REFRAC)
             STRUCT = mySQRT(FH * FH_BAR)
 
-            SIN_GRA	  = R_LAM0/D_SPACING/2.0D0
-            GRAZE	  = ASIN(SIN_GRA)
-            ASS_FAC	  = SIN_Q_ANG/SIN_Q_REF
 
            ! C
            ! C THETA_B is the Bragg angle corrected for refraction for sym case,
@@ -1818,6 +1849,7 @@ END SUBROUTINE CRYSTAL_FH
           PP	= DREAL(RCP)
           QQ	= DIMAG(RCP)
           CALL	ATAN_2	(QQ,PP,PHASE_P)
+
           
        END IF
 1122   RETURN
