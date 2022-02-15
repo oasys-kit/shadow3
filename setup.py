@@ -27,6 +27,21 @@
 #     python -m pip shadow3
 #
 
+# Notes on creating the linux wheels
+# It is important not to mix libraries (C, Fortran) otherwise compilation or run-time problems appear.
+# It is recommended to use the conda installation used by Oasys. Presently:
+#
+# https://repo.continuum.io/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh
+#  and use compilers from conda:
+#  conda install -c conda-forge gcc
+#  conda install -c conda-forge fortran
+#
+#  conda 4.11.0
+#  gcc (GCC) 11.2.0
+#  GNU Fortran (GCC) 11.2.0
+#  auditwheel 5.1.2
+#  => shadow3-22.2.7-cp37-cp37m-manylinux_2_31_x86_64.whl
+#
 #
 # if problems compiling in MacOS (>=10.10):
 # export MACOSX_DEPLOYMENT_TARGET=10.9
