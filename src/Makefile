@@ -94,7 +94,7 @@ LINKFLAGS = $(32BITS) $(STATIC)
 #STATIC=-static -static-libgfortran -static-libgcc
 #FFLAGS = -cpp -fPIC -ffree-line-length-none $(32BITS) $(STATIC) -O2 -fomit-frame-pointer $(COMPILEOPT)
 
-CC ?= gcc
+CC = gcc
 #CC = x86_64-w64-mingw32-gcc
 #CC = i686-w64-mingw32-gcc
 
