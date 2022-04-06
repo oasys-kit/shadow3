@@ -28,11 +28,14 @@ REM  create shadow3.exe - not needed for python
 gfortran -static -cpp -D_COMPILE4WIN -ffree-line-length-none -O2 -c ../fortran/shadow3.f90
 gfortran -static -ffree-line-length-none -O2 -o shadow3.exe shadow3.o libshadow3.dll
 
+
+
 gcc -c -I ../def ../c/shadow_bind_c.c
 gcc -shared -lm  -fPIC  -o libshadow3c.dll shadow_bind_c.o -L. -lshadow3
 
 REM
-REM  copy created libraries to main dir
+REM  copy created binary and libraries to main dir
 REM
 copy libshadow3.dll ..\..
 copy libshadow3c.dll ..\..
+copy shadow3.exe ..\..
