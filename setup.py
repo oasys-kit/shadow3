@@ -47,6 +47,16 @@
 # export MACOSX_DEPLOYMENT_TARGET=10.9
 #
 
+
+# Notes creating windows wheels:
+#
+# src/windows_gfortran/compile_fortran.bat
+# python setup.py build --compiler=cygwin
+# python setup.com bdist_wheel
+# rename dist/...whl to .zip, open it and add the linshadow3.dll and libshadow3c.dll in the Shadow directory. Rename back to .whl
+#
+
+
 import glob
 import os
 import os.path
@@ -120,7 +130,7 @@ elif sys.platform == 'linux':
     extra_link_args = []
 else:
     compile_options = "_COMPILE4WIN"
-    library_dirs=[]
+    library_dirs=["./","/Users/srio/Miniconda3"]
     extra_link_args = []
 
 setup(

@@ -30,9 +30,9 @@
 #     git clone https://github.com/oasys-kit/shadow3
 #     cd shadow3
 #     ./make_mac.sh
-#
-#
-#
+##################################################################
+#  >>>>>>>>>>>>>>>>>> python setup_old.py build --compiler=cygwin
+##################################################################
 #     python -m pip install -e . --no-deps --no-binary :all:
 #
 # Upload to pypi (when uploading, increment the version number):
@@ -51,10 +51,13 @@ __date__ = "2022"
 import os
 import numpy
 
-try:
-    from setuptools import find_packages, setup, Extension
-except AttributeError:
-    from setuptools import find_packages, setup, Extension
+# from distutils.core import setup, Extension
+from setuptools import setup, Extension
+
+# try:
+#     from setuptools import find_packages, setup, Extension
+# except AttributeError:
+#     from setuptools import find_packages, setup, Extension
 
 NAME = 'shadow3'
 
@@ -104,23 +107,26 @@ SETUP_REQUIRES = (
     'setuptools',
 )
 
-PACKAGES = [
-    "Shadow",
-]
 
 PACKAGE_DATA = {
     "Shadow": ["*.txt"],
 }
 
 EXT_MODULES = [Extension('Shadow.ShadowLib',
-                 ['shadow_bind_python.c'],
-                 include_dirs  = ['.', numpy.get_include()],
+                 ['src/c/shadow_bind_python.c'],
+                 include_dirs  = ['.', numpy.get_include(),'src/c', 'src/def'],
                  library_dirs  = ['.'],
                  libraries     = ['shadow3','shadow3c'],
                  extra_compile_args = ['-msse','-msse2'],
                  extra_link_args = ['-msse','-msse2']
                 ),
                 ]
+
+PACKAGES = [
+    "Shadow"
+    ]
+
+DEFINE_MACROS = [("NPY_NO_DEPRECATED_API", True)]
 
 def setup_package():
     setup(
@@ -143,6 +149,8 @@ def setup_package():
         include_package_data=True,
         install_requires=INSTALL_REQUIRES,
         setup_requires=SETUP_REQUIRES,
+        ext_modules=EXT_MODULES,
+        # define_macros=DEFINE_MACROS,
     )
 
 if __name__ == '__main__':
