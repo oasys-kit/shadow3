@@ -34,7 +34,16 @@
 # https://repo.continuum.io/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh
 #  and use compilers from conda:
 #  conda install -c conda-forge gcc
-#  conda install -c conda-forge fortran
+#  conda install -c conda-forge gfortran
+#
+#
+#  some link problems in finding libraries were (quick-and-dirty) solved by: 
+# sudo updatedb
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libpthread.so.0 /lib64/
+# sudo cp --preserve=links /home/srio/miniconda3-py37/x86_64-conda-linux-gnu/sysroot/usr/lib64/libpthread_nonshared.a /usr/lib64/
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libc.so.6 /lib64
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libc_nonshared.a /usr/lib64/
+#
 #
 #  conda 4.11.0
 #  gcc (GCC) 11.2.0
@@ -126,7 +135,7 @@ if sys.platform == 'darwin':
     
 elif sys.platform == 'linux':
     compile_options = "_COMPILE4NIX"
-    library_dirs=[]
+    library_dirs = []
     extra_link_args = []
 else:
     compile_options = "_COMPILE4WIN"
