@@ -1,5 +1,6 @@
 recursive-include Shadow *.pyx
 recursive-include Shadow *.py
 recursive-include Shadow *
+recursive-include src *
 
 include README.md
