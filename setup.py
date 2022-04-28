@@ -151,6 +151,7 @@ setup(
     author='Franco Cerrina and Manuel Sanchez del Rio',
     author_email='srio@esrf.eu',
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
+    install_requires=['numpy'],
     libraries=[
         ('shadow3c', {
             'some-random-param': 1,
