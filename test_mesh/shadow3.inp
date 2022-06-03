@@ -1,0 +1,17 @@
+source
+systemfile
+trace
+systemfile
+0
+plotxy
+star.01
+0
+ll
+1
+3
+0
+0
+0
+55
+55
+exit
