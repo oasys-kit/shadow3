@@ -8369,6 +8369,7 @@ end if
 ! C
           IF (I.NE.3) THEN
             IFLAG = -1
+            call flush() ! added srio@esrf.eu 2022-06-03 to fix a bug in version 22.2.7 appearing in linux only
             CALL INTERCEPT ( STEMP, Z_VRS, T_2, IFLAG)
             PPOUT(1)  =   STEMP(1)
             PPOUT(2)  =   STEMP(2)

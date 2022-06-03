@@ -20,7 +20,7 @@
 #     python setup.py bdist_wheel
 #     export LD_LIBRARY_PATH=`pwd` # (to find libshadow3.so and linshadow3.so)
 #     export PATH=/scisoft/manylinux1/bin:$PATH
-#     auditwheel repair --plat manylinux_2_31_x86_64 dist/shadow3-22.2.7-cp37-cp37m-linux_x86_64.whl
+#     auditwheel repair --plat manylinux_2_31_x86_64 dist/shadow3-22.6.3-cp37-cp37m-linux_x86_64.whl
 #     python -m twine upload wheelhouse/*
 #          
 # Install from pypi:
@@ -146,7 +146,7 @@ else:
 
 setup(
     name='shadow3',
-    version='22.2.7',
+    version='22.6.3',
     packages=['Shadow'],
     url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
