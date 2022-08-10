@@ -1,7 +1,7 @@
 Wheels for testing shadow3 
 ==========================
 
-This directory contains commands for installing shadow3 v 22.6.3 for testing before release.
+This directory contains commands for installing shadow3 v 22.8.10 for testing before release.
 
 They have been built using the branch: 
 https://github.com/oasys-kit/shadow3/tree/devel-gfortran-yb66
