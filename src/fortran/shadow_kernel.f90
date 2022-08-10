@@ -382,7 +382,7 @@ Module shadow_kernel
 !
 ! new crystals
 !
-integer(kind=ski),public,parameter        :: NMAXENER=1000, NMAXATOMS=100
+integer(kind=ski),public,parameter        :: NMAXENER=25000, NMAXATOMS=100
 type, public :: crystalData
     !C   RN: the constant (e^2/mc^2)/V or the ration between the classical e-
     !C        radius and the volume of the unit cell [cm^(-2)]
@@ -895,6 +895,11 @@ if (i_debug.gt.0) write(i_debug,*) '<><> crystal_loadCrystalData: file is: '//tr
   end do
   read(25,'(A)',err=79)  text
   read(25,*,err=79)  xtal%NPOINT
+
+  if (xtal%NPOINT.GT.NMAXENER) then
+    write (*,*) 'CRYSTAL_LOADCRYSTALDATA: Error: Maximum number of energy points allowad: ',NMAXENER
+  end if
+
   read(25,'(A)',err=79)  text
   do I = 1, xtal%NPOINT
     read(25,*,err=79)  xtal%energy(i)
