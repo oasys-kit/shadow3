@@ -37,7 +37,7 @@
 #  conda install -c conda-forge gfortran
 #
 #
-#  some link problems in finding libraries were (quick-and-dirty) solved by: 
+# some link problems in finding libraries were (quick-and-dirty) solved by: 
 # sudo updatedb
 # sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libpthread.so.0 /lib64/
 # sudo cp --preserve=links /home/srio/miniconda3-py37/x86_64-conda-linux-gnu/sysroot/usr/lib64/libpthread_nonshared.a /usr/lib64/
@@ -149,7 +149,7 @@ else:
 
 setup(
     name='shadow3',
-    version='22.6.3',
+    version='22.8.10',
     packages=['Shadow'],
     url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',

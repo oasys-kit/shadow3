@@ -382,7 +382,7 @@ Module shadow_kernel
 !
 ! new crystals
 !
-integer(kind=ski),public,parameter        :: NMAXENER=25000, NMAXATOMS=100
+integer(kind=ski),public,parameter        :: NMAXATOMS=100
 type, public :: crystalData
     !C   RN: the constant (e^2/mc^2)/V or the ration between the classical e-
     !C        radius and the volume of the unit cell [cm^(-2)]
@@ -396,8 +396,10 @@ type, public :: crystalData
     integer(kind=ski)                            :: nf0coeff
     real(kind=skr),dimension(NMAXATOMS,11)       :: f0coeff
     integer(kind=ski)                            :: npoint
-    real(kind=skr),dimension(NMAXENER)           :: energy
-    real(kind=skr),dimension(NMAXATOMS,NMAXENER) :: fp,fpp,fcompton
+
+    real(kind=skr),dimension(:),allocatable      :: energy
+    real(kind=skr),dimension(:,:),allocatable    :: fp,fpp,fcompton
+
     real(kind=skr),dimension(NMAXATOMS)          :: fract
     character(len=sklen)                         :: filename
     real(kind=skr)                               :: version
@@ -896,11 +898,37 @@ if (i_debug.gt.0) write(i_debug,*) '<><> crystal_loadCrystalData: file is: '//tr
   read(25,'(A)',err=79)  text
   read(25,*,err=79)  xtal%NPOINT
 
-  if (xtal%NPOINT.GT.NMAXENER) then
-    write (*,*) 'CRYSTAL_LOADCRYSTALDATA: Error: Maximum number of energy points allowad: ',NMAXENER
-  end if
-
   read(25,'(A)',err=79)  text
+
+           IF (ALLOCATED(xtal%energy)) DEALLOCATE(xtal%energy)
+           ALLOCATE(xtal%energy(xtal%NPOINT),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating xtal%energy",xtal%NPOINT
+             return
+           END IF
+
+           IF (ALLOCATED(xtal%FP)) DEALLOCATE(xtal%FP)
+           ALLOCATE(xtal%FP(xtal%nbatom, xtal%NPOINT),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating xtal%FP",xtal%nbatom,xtal%NPOINT
+             return
+           END IF
+
+           IF (ALLOCATED(xtal%FPP)) DEALLOCATE(xtal%FPP)
+           ALLOCATE(xtal%FPP(xtal%nbatom, xtal%NPOINT),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating xtal%FPP",xtal%nbatom,xtal%NPOINT
+             return
+           END IF
+
+           IF (ALLOCATED(xtal%Fcompton)) DEALLOCATE(xtal%Fcompton)
+           ALLOCATE(xtal%Fcompton(xtal%nbatom, xtal%NPOINT),STAT=ierr)
+           IF (ierr /= 0) THEN
+             print *,"BRAGG: Error allocating xtal%Fcompton",xtal%nbatom,xtal%NPOINT
+             return
+           END IF
+
+
   do I = 1, xtal%NPOINT
     read(25,*,err=79)  xtal%energy(i)
     if ( (xtal%version-2.39).GT.0) then
@@ -952,7 +980,6 @@ integer(kind=ski)            :: i,j
   print *,' '
   print *,'============== in crystal_printCrystalData =================='
   print *,'NMAXATOMS=',NMAXATOMS
-  print *,'NMAXENER=',NMAXENER
   print *,'RN=',xtal%rn
   print *,'d_spacing=',xtal%d_spacing
   print *,'ATNUM=',xtal%atnum(1:xtal%NBATOM)
