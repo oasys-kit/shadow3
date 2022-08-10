@@ -66,8 +66,8 @@
 # compile_fortran.bat
 # cd ..\..
 # python setup.py build --compiler=cygwin
-# python setup.com bdist_wheel
-# rename dist\...whl to .zip, open it and add the linshadow3.dll and libshadow3c.dll in the Shadow directory. Rename back to .whl
+# python setup.py bdist_wheel
+# rename dist\...whl to .zip, open it and add the libshadow3.dll and libshadow3c.dll in the Shadow directory. Rename back to .whl
 #
 
 
