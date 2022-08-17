@@ -67,7 +67,7 @@
 # cd ..\..
 # python setup.py build --compiler=cygwin
 # python setup.py bdist_wheel
-# rename dist\...whl to .zip, open it and add the libshadow3.dll and libshadow3c.dll in the Shadow directory. Rename back to .whl
+# rename dist\...whl to .zip, open it and add the libshadow3.dll and libshadow3c.dll in the Shadow directory [and libgcc_s_sjlj-1.dll for python 3.8]. Rename back to .whl
 #
 
 
