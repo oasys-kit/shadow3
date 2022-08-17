@@ -27,7 +27,9 @@
 #     python -m pip shadow3
 #
 
+####################################
 # Notes on creating the linux wheels
+####################################
 # It is important not to mix libraries (C, Fortran) otherwise compilation or run-time problems appear.
 # It is recommended to use the conda installation used by Oasys. Presently:
 #
@@ -56,8 +58,9 @@
 # export MACOSX_DEPLOYMENT_TARGET=10.9
 #
 
-
-# Notes creating windows wheels:
+###############################
+# Notes creating windows wheels
+###############################
 #
 # see https://stackoverflow.com/questions/6034390/compiling-with-cython-and-mingw-produces-gcc-error-unrecognized-command-line-o
 # and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py
@@ -67,7 +70,11 @@
 # cd ..\..
 # python setup.py build --compiler=cygwin
 # python setup.py bdist_wheel
-# rename dist\...whl to .zip, open it and add the libshadow3.dll and libshadow3c.dll in the Shadow directory [and libgcc_s_sjlj-1.dll for python 3.8]. Rename back to .whl
+# rename dist\...whl to .zip, open it and to in the Shadow directory:
+#       - libshadow3.dll and libshadow3c.dll
+#       - libgcc_s_sjlj-1.dll for python 3.8 and 3.9
+#       - libquadmath-0.dll for python 3.9
+#    Rename back to .whl
 #
 
 
