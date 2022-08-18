@@ -254,8 +254,10 @@ Subroutine precrl
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att0)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file1)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file0)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file1))
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file0))
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddIn*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddV*0.5D0)
         ref_in = ref1
@@ -268,8 +270,10 @@ Subroutine precrl
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att1)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file0)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file1)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file0))
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file1))
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddV*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddIn*0.5D0)
         ref_in = ref0
@@ -1232,8 +1236,10 @@ DO i=1+iaccumulated,ns+iaccumulated
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att0)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file1)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file0)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file1))
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file0))
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddIn*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddV*0.5D0)
         ref_in = ref1
@@ -1246,8 +1252,10 @@ DO i=1+iaccumulated,ns+iaccumulated
         iOut = GfForceSetValue(g1,"R_IND_IMA("//trim(stmp)//")",ref1)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_OBJ("//trim(stmp)//")",att0)
         iOut = GfForceSetValue(g1,"R_ATTENUATION_IMA("//trim(stmp)//")",att1)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",file0)
-        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",file1)
+        iOut = GfForceSetValue(g1,"FILE_R_IND_OBJ("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file0))
+        iOut = GfForceSetValue(g1,"FILE_R_IND_IMA("//trim(stmp)//")",&
+                GfConvertStringToStringArr(file1))
         iOut = GfForceSetValue(g1,"T_SOURCE("//trim(stmp)//")",ddV*0.5D0)
         iOut = GfForceSetValue(g1,"T_IMAGE("//trim(stmp)//")",ddIn*0.5D0)
         ref_in = ref0

@@ -66,16 +66,16 @@ Module shadow_variables
     ! again the same variables encapsulated in a structure 
     type, public, bind(C) :: poolSource
 #define EXPAND_SOURCE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
-#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
+#define EXPAND_SOURCE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=1), dimension(length) :: name
 #include "shadow_source.def"
     end type poolSource
     
     
     type, public, bind(C) :: poolOE
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) ftype(kind=fkind) :: name
-#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=length) :: name
+#define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) ftype(kind=fkind,len=1), dimension(length) :: name
 #define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) ftype(kind=fkind), dimension(arrdim) :: name
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=length), dimension(arrdim) :: name
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) ftype(kind=fkind, len=1), dimension(length,arrdim) :: name
 #include "shadow_oe.def"
     end type poolOE
 
@@ -299,11 +299,11 @@ Contains
 
   subroutine PoolOEDefault(oe)
     type (poolOE), intent(inout) :: oe
-    integer(kind=ski) :: i
+    integer(kind=ski) :: i, j
 #define EXPAND_OE_SCALAR(ctype,ftype,fkind,pytype,name,cformat,fformat,defvalue) oe%name=defvalue
 #define EXPAND_OE_STRING(ctype,ftype,fkind,pytype,name,cformat,fformat,length,defvalue) oe%name=defvalue
-#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) FORALL(i=1:arrdim) oe%name(i)=defvalue
-#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) FORALL(i=1:arrdim) oe%name(i)=defvalue
+#define EXPAND_OE_ARRAYS(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,defvalue) oe%name=defvalue
+#define EXPAND_OE_ARRSTR(ctype,ftype,fkind,pytype,name,cformat,fformat,arrdim,length,defvalue) oe%name=defvalue
 #include "shadow_oe.def" 
   end subroutine PoolOEDefault
 

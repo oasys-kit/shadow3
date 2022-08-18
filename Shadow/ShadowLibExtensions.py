@@ -1538,7 +1538,7 @@ class OE(ShadowLib.OE):
                     txt += 'Paramters from  %s\n'%(self.FILE_KOMA_CA.strip().decode())
                     txt += 'Tube radii specified as (r(Z))**2\n'
                 else:
-                    txt += 'Paramters from  %s\n'(self.FILE_KOMA.strip().decode())
+                    txt += 'Paramters from  %s\n' % (self.FILE_KOMA.strip().decode())
                     txt += 'Tube radii specified as r(Z)\n'
 
         if ((self.F_GRATING == 0) and (self.F_CRYSTAL == 1)):

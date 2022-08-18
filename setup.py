@@ -12,21 +12,71 @@
 #     python -m pip install .
 #     # or install using links (developer) 
 #     python -m pip install -e . --no-deps --no-binary :all:
+#     export LD_LIBRARY_PATH=`pwd` # (to find libshadow3.so and linshadow3.so)
 #
-# Upload to pypi (when uploading, increment the version number):
+# Create the wheel and upload to pip
 #     python setup.py register (only once, not longer needed)
-#     python setup.py sdist 
+#     python setup.py sdist build
 #     python setup.py bdist_wheel
-#     python -m twine upload dist/*
+#     export LD_LIBRARY_PATH=`pwd` # (to find libshadow3.so and linshadow3.so)
+#     export PATH=/scisoft/manylinux1/bin:$PATH
+#     auditwheel repair --plat manylinux_2_31_x86_64 dist/shadow3-22.6.3-cp37-cp37m-linux_x86_64.whl
+#     python -m twine upload wheelhouse/*
 #          
 # Install from pypi:
-#     python -m pip install shadow3
+#     python -m pip shadow3
 #
 
+####################################
+# Notes on creating the linux wheels
+####################################
+# It is important not to mix libraries (C, Fortran) otherwise compilation or run-time problems appear.
+# It is recommended to use the conda installation used by Oasys. Presently:
 #
-# if problems compiling in new MacOS (>=10.10):
+# https://repo.continuum.io/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh
+#  and use compilers from conda:
+#  conda install -c conda-forge gcc
+#  conda install -c conda-forge gfortran
+#
+#
+# some link problems in finding libraries were (quick-and-dirty) solved by: 
+# sudo updatedb
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libpthread.so.0 /lib64/
+# sudo cp --preserve=links /home/srio/miniconda3-py37/x86_64-conda-linux-gnu/sysroot/usr/lib64/libpthread_nonshared.a /usr/lib64/
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libc.so.6 /lib64
+# sudo cp --preserve=links /usr/lib/x86_64-linux-gnu/libc_nonshared.a /usr/lib64/
+#
+#
+#  conda 4.11.0
+#  gcc (GCC) 11.2.0
+#  GNU Fortran (GCC) 11.2.0
+#  auditwheel 5.1.2
+#  => shadow3-22.2.7-cp37-cp37m-manylinux_2_31_x86_64.whl
+#
+#
+# if problems compiling in MacOS (>=10.10):
 # export MACOSX_DEPLOYMENT_TARGET=10.9
 #
+
+###############################
+# Notes creating windows wheels
+###############################
+#
+# see https://stackoverflow.com/questions/6034390/compiling-with-cython-and-mingw-produces-gcc-error-unrecognized-command-line-o
+# and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py
+#
+# cd src\windows_gfortran
+# compile_fortran.bat
+# cd ..\..
+# python setup.py build --compiler=cygwin
+# python setup.py bdist_wheel
+# rename dist\...whl to .zip, open it and to in the Shadow directory:
+#       - libshadow3.dll and libshadow3c.dll
+#       - libgcc_s_sjlj-1.dll for python 3.8 and 3.9
+#       - libquadmath-0.dll for python 3.9
+#    Rename back to .whl
+#
+
 
 import glob
 import os
@@ -55,6 +105,10 @@ class NullCommand(distutils.cmd.Command, object):
 
     def finalize_options(*args, **kwargs):
         pass
+
+    @property
+    def build_src(*args, **kwargs):
+        return ""
     
     def run(*args, **kwargs):
         pass
@@ -93,22 +147,23 @@ if sys.platform == 'darwin':
     
 elif sys.platform == 'linux':
     compile_options = "_COMPILE4NIX"
-    library_dirs=[]
+    library_dirs = []
     extra_link_args = []
 else:
     compile_options = "_COMPILE4WIN"
-    library_dirs=[]
+    library_dirs=["./","/Users/srio/Miniconda3"]
     extra_link_args = []
 
 setup(
     name='shadow3',
-    version='18.5.30',
+    version='22.8.10',
     packages=['Shadow'],
     url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
     author='Franco Cerrina and Manuel Sanchez del Rio',
     author_email='srio@esrf.eu',
     description='SHADOW is an open source ray tracing code for modeling optical systems.',
+    install_requires=['numpy'],
     libraries=[
         ('shadow3c', {
             'some-random-param': 1,
