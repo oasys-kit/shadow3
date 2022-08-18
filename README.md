@@ -20,13 +20,24 @@ designing X-ray optical systems.
 
 For more info, please read this paper (open access):
 
-SHADOW3: a new version of the synchrotron X-ray optics modelling package
-M. Sanchez del Rio, N. Canestrari, F. Jiang and F. Cerrina
+SHADOW3: a new version of the synchrotron X-ray optics modelling package: 
+- M. Sanchez del Rio, N. Canestrari, F. Jiang and F. Cerrina
 Journal of Synchrotron Radiation Volume 18, Part 5 (September 2011)
 http://dx.doi.org/10.1107/S0909049511026306
 
 If you are (or want to be) a SHADOW user, it is recommended that you use
-a user interface. We strongly recommend OASYS (https://www.elettra.eu/oasys.html).
+a user interface. We strongly recommend OASYS (https://www.aps.anl.gov/Science/Scientific-Software/OASYS) with its ShadowOui add-on. 
+Information can ba found at these papers: 
+- Luca Rebuffi, Manuel Sanchez del Rio (2016)  ShadowOui : a new visual environment for X-ray optics and synchrotron beamline simulations Journal of Synchrotron Radiation 23:  6.  1357-1367 http://dx.doi.org/10.1107/S1600577516013837
+- X J Yu, X Chi, T Smulders, A T S Wee, A Rusydi, M Sanchez del Rio, M B H Breese (2022)  Beamline simulations using monochromators with high d-spacing crystals Journal of Synchrotron Radiation 29:  5. https://doi.org/10.1107/S160057752200707X
+
+Note also that the ShadowOUI interface implements the hybrid ray-tracing method explained at: 
+- Xianbo Shi, Ruben Reininger, Manuel Sanchez del Rio, Lahsen Assoufid (2014)  A hybrid method for X-ray optics simulation : combining geometric ray-tracing and wavefront propagation Journal of Synchrotron Radiation 21:  4.  669-678.   http://dx.doi.org/10.1107/S160057751400650X
+- Xianbo Shi, Manuel Sanchez del Rio, Ruben Reininger (2014)  A new SHADOW update : integrating diffraction effects into ray-tracing SPIE Proceedings 9209:  920911-920911-9.  http://dx.doi.org/10.1117/12.2061984
+- Xianbo Shi, Ruben Reininger, Manuel Sánchez del Río, Jun Qian, Lahsen Assoufid (2014)  X-ray optics simulation and beamline design using a hybrid method : diffraction-limited focusing mirrors SPIE Proceedings 9209:  920909-920909-9.  http://dx.doi.org/10.1117/12.2061950
+
+If you want to cite the first paper on Shadow by Franco Cerrina, please cite: 
+-  F. Cerrina "Ray Tracing Of Recent VUV Monochromator Designs", Proc. SPIE 0503, Application, Theory, and Fabrication of Periodic Structures, DiffractionGratings, and Moire Phenomena II, (12 December 1984); https://doi.org/10.1117/12.944815  
 
 ## 2 Download
 
@@ -38,23 +49,11 @@ SHADOW3 sources are downloaded using git:
 
 Other SHADOW web resources: 
 
-  - shadow3 binary distributions (not updated):
-     - shadow3: ftp://ftp.esrf.fr/pub/scisoft/shadow3/  
-     - shadow2: ftp://ftp.esrf.fr/pub/scisoft/shadow/  ( - obsoleted - )
+  - shadow3 binary distributions (wheels): https://pypi.org/project/shadow3/
 
   - Documentation:
      - Shadow Primer (for using shadow3 in command mode)
       http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
-
-  - SHADOW user interfaces:
-     - ShadowOui: 
-      Pretty fancy and new interface under OASYS (http://www.elettra.eu/oasys.html):
-      https://github.com/oasys-kit/shadowoui 
-
-     - ShadowVui:
-      The traditional IDL-based interface working under XOP 2.4 and 2.3
-      --- xop2.4: https://www1.aps.anl.gov/Science/Scientific-Software/XOP
-      --- xop2.3: http://ftp.esrf.fr/pub/scisoft/xop2.3/  
 
   - Official reference:
     http://dx.doi.org/10.1107/S0909049511026306 
@@ -89,20 +88,15 @@ Other SHADOW web resources:
 
   python API:
   
-  in shadow3 directory, use the standard python setup:
+  in shadow3 directory, use the standard python setup (see comments in setup.py for specific platforms):
   
   ```
-  python3 setup.py build
-  pip install .
-  ```
+  python setup.py sdist build
+  python setup.py bdist_wheel
+  python -m pip install dist/...whl
+   ```
 
-## 5 Other info
-  For python users, some wheels are available:
-  - in the official http://pypi.org:
-    ```
-    pip install shadow3
-    ```
-  - in the http://ftp.esrf.eu/pub/scisoft/shadow3/wheels directory. 
+## 5 Other info 
   - Other documents, mostly obsolete, can be found at https://github.com/srio/shadow3-docs
   
 ## 6 Contact
