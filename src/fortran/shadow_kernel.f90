@@ -9233,29 +9233,29 @@ end if
      		CALL PROJ	(Q_IN,VNOR,VTEMP)
      		CALL VECTOR 	(VTEMP,Q_IN,K_PAR)
 
-!		iskiplaue=0
-	        if (f_refrac.eq.1) then                           !laue xtals
-	          if (abs(a_bragg-pihalf).lt.1d-15) then            !laue symm
-                    call rotvector (vnor,x_vrs,-a_bragg,stemp)
-	            call proj (vvin,stemp,vtemp)
-	            q_out(1) 	= VVIN(1) - 2*vtemp(1)
-	            q_out(2) 	= VVIN(2) - 2*vtemp(2)
-	            q_out(3) 	= VVIN(3) - 2*vtemp(3)
-!				goto 8989
-! srio@esrf.eu 2011-411 debugging Laue crystals
-                    RAY(4,ITIK) =   Q_OUT(1)
-                    RAY(5,ITIK) =   Q_OUT(2)
-                    RAY(6,ITIK) =   Q_OUT(3)
-                    GOTO 450
-!		  iskiplaue=1
-! end debugging
-	          end if
-! C			call vsum	(vtemp,gscatter,q_out) 
-! C     		else if (f_refrac.ne.1) then
-	        end if
-
-!srio
-!-------------		IF (iskiplaue.ne.1) THEN
+!!!!!! !		iskiplaue=0
+!!!!!! 	        if (f_refrac.eq.1) then                           !laue xtals
+!!!!!! 	          if (abs(a_bragg-pihalf).lt.1d-15) then            !laue symm
+!!!!!!                     call rotvector (vnor,x_vrs,-a_bragg,stemp)
+!!!!!! 	            call proj (vvin,stemp,vtemp)
+!!!!!! 	            q_out(1) 	= VVIN(1) - 2*vtemp(1)
+!!!!!! 	            q_out(2) 	= VVIN(2) - 2*vtemp(2)
+!!!!!! 	            q_out(3) 	= VVIN(3) - 2*vtemp(3)
+!!!!!! !				goto 8989
+!!!!!! ! srio@esrf.eu 2011-411 debugging Laue crystals
+!!!!!!                     RAY(4,ITIK) =   Q_OUT(1)
+!!!!!!                     RAY(5,ITIK) =   Q_OUT(2)
+!!!!!!                     RAY(6,ITIK) =   Q_OUT(3)
+!!!!!!                     GOTO 450
+!!!!!! !		  iskiplaue=1
+!!!!!! ! end debugging
+!!!!!! 	          end if
+!!!!!! ! C			call vsum	(vtemp,gscatter,q_out)
+!!!!!! ! C     		else if (f_refrac.ne.1) then
+!!!!!! 	        end if
+!!!!!!
+!!!!!! !srio
+!!!!!! !-------------		IF (iskiplaue.ne.1) THEN
 
 		CALL vSUM	(K_PAR,GSCATTER,Q_OUT)
      		CALL DOT	(Q_OUT,Q_OUT,Q_OUT_MOD)
