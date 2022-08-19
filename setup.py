@@ -65,16 +65,26 @@
 # see https://stackoverflow.com/questions/6034390/compiling-with-cython-and-mingw-produces-gcc-error-unrecognized-command-line-o
 # and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py
 #
+# step 1: create wheels
+#
+# python setup.py build --compiler=cygwin
+# python setup.py bdist_wheel
+
+# step 2: compile shadow3 and create dlls
+#
 # cd src\windows_gfortran
 # compile_fortran.bat
 # cd ..\..
-# python setup.py build --compiler=cygwin
-# python setup.py bdist_wheel
+
+# step 3: add the dlls to the wheels
+#
 # rename dist\...whl to .zip, open it and to in the Shadow directory:
-#       - libshadow3.dll and libshadow3c.dll
-#       - libgcc_s_sjlj-1.dll for python 3.8 and 3.9
-#       - libquadmath-0.dll for python 3.9
-#    Rename back to .whl
+#   libshadow3.dll, libshadow3c.dll, libgcc_s_sjlj-1.dll and libquadmath-0.dll
+#   Rename back to .whl
+
+# Note that step 2 and 3 can be automatically done running
+#
+# python create_and_pack_dlls.py
 #
 
 
@@ -156,7 +166,7 @@ else:
 
 setup(
     name='shadow3',
-    version='22.8.10',
+    version='22.8.19',
     packages=['Shadow'],
     url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',
