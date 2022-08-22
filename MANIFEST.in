@@ -4,6 +4,7 @@ recursive-include Shadow *
 recursive-include src *
 recursive-include dlls *
 include create_and_pack_dlls.py
+include tests/test_lens_light.py
 
 include README.md
 include MANIFEST.in
