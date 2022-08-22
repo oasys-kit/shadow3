@@ -63,9 +63,11 @@
 ###############################
 #
 # gfortran and gcc are installed within mingw64 (and not with conda)
+# compilation works with miniconda but also with native python
 #
 # see https://stackoverflow.com/questions/6034390/compiling-with-cython-and-mingw-produces-gcc-error-unrecognized-command-line-o
-# and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py :
+# and edit <python_dir>\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py
+#          ( and may be also <python_dir>\Lib\disutils\cygwinccompiler.py ):
 #                 i) suppress all "-mcygwin"
 #                 ii) replace return ['iucr','vcruntime140] by return []  (this for python >3.7)
 #
