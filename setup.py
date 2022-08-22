@@ -62,8 +62,13 @@
 # Notes creating windows wheels
 ###############################
 #
+# gfortran and gcc are installed within mingw64 (and not with conda)
+#
 # see https://stackoverflow.com/questions/6034390/compiling-with-cython-and-mingw-produces-gcc-error-unrecognized-command-line-o
-# and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py
+# and change C:\Users\srio\Miniconda3\Lib\site-packages\setuptools\_distutils\cygwinccompiler.py :
+#                 i) suppress all "-mcygwin"
+#                 ii) replace return ['iucr','vcruntime140] by return []  (this for python >3.7)
+#
 #
 # step 1: create wheels
 #
@@ -161,7 +166,9 @@ elif sys.platform == 'linux':
     extra_link_args = []
 else:
     compile_options = "_COMPILE4WIN"
-    library_dirs=["./","/Users/srio/Miniconda3"]
+    library_dirs = ["./"]
+    # library_dirs=["./","/Users/srio/Miniconda3"]
+    # library_dirs = ["./", "c:Miniconda3-py39"]
     extra_link_args = []
 
 setup(

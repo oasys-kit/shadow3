@@ -2,7 +2,7 @@ import os
 import zipfile
 import platform
 
-clean_temporary_files = True
+clean_temporary_files = False
 
 if platform.system() != 'Windows':
     print("This scripts is only for Windows. Aborting...")
