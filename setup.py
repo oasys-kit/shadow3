@@ -224,7 +224,7 @@ setup(
             include_dirs=['src/c', 'src/def', numpy.get_include()],
             extra_link_args=extra_link_args,
             library_dirs=library_dirs,
-            libraries=['shadow3c', 'gfortran'],
+            libraries=['shadow3c', 'gfortran', 'quadmath'],
         ),
     ],
 )
