@@ -7,8 +7,7 @@
 1. What is SHADOW
 2. Download
 3. Building SHADOW
-4. Other info
-5. Contact
+4. Contact
 
 ## 1 What is SHADOW
 
@@ -53,6 +52,8 @@ Other SHADOW web resources:
   - Documentation:
      - Shadow Primer (for using shadow3 in command mode)
       http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
+     - ShadowOui Tutorial https://github.com/oasys-kit/ShadowOui-Tutorial/blob/master/tutorial_shadowoui.pdf
+     - Other documents, mostly obsolete, can be found at https://github.com/srio/shadow3-docs
 
   - Official reference:
     http://dx.doi.org/10.1107/S0909049511026306 
@@ -66,7 +67,6 @@ Other SHADOW web resources:
   # The use of Makefile is documented in its header. Basically:
   make           : builds shadow3 the main program
   make all       : builds shadow3, libraries, etc
-  make install   : installation (see Makefile)
   ```
 
   python API:
@@ -78,11 +78,8 @@ Other SHADOW web resources:
   python setup.py bdist_wheel
   python -m pip install dist/...whl
    ```
-
-## 4 Other info 
-  - Other documents, mostly obsolete, can be found at https://github.com/srio/shadow3-docs
   
-## 5 Contact
+## 4 Contact
 
 SHADOW is currently maintained by Manuel Sanchez del Rio (srio@esrf.eu)
 
