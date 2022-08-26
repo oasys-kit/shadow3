@@ -175,7 +175,7 @@ else:
 
 setup(
     name='shadow3',
-    version='22.8.20',
+    version='22.8.25',
     packages=['Shadow'],
     url='http://github.com/oasys-kit/shadow3',
     license='http://www.gnu.org/licenses/gpl-3.0.html',

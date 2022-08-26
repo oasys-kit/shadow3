@@ -1618,11 +1618,11 @@ END SUBROUTINE CRYSTAL_FH
                ELSE IF (I_LATT.EQ.4) THEN
                   FB     = (0.0D0,0.0D0)
                   ABSORP = 2.0D0*RN*R_LAM0*(2.0D0*(DIMAG(FA)))
-                  F_0 = 2*(F1A+ CI*F2A )
+                  F_0 = 2*(F1A + ATNUM_A + CI*F2A )
                ELSE IF (I_LATT.EQ.5) THEN
                   FB     = (0.0D0,0.0D0)
                   ABSORP = 2.0D0*RN*R_LAM0*(4.0D0*(DIMAG(FA)))
-                  F_0 = 4*(F1A + CI*F2A )
+                  F_0 = 4*(F1A + ATNUM_A + CI*F2A )
                END IF
                ! C
                ! C FH and FH_BAR are the structure factors for (h,k,l) and (-h,-k,-l).

@@ -655,33 +655,36 @@ class Beam(ShadowLib.Beam):
 
       return ticket
 
-  def get_good_range(self,icol, nolost=0):
-    """
+  def get_good_range(self, icol, nolost=0):
+      """
 
-    :param icol: the column number (SHADOW convention, starting from 1)
-    :param nolost: lost rays flag (0=all, 1=good, 2=losses)
-    :return: [rmin,rmax] the selected range
-    """
-    col = self.getshonecol(icol,nolost=nolost)
-    if col.size == 0:
-      return [-1,1]
-    rmin = min(col)
-    rmax = max(col)
-    if rmin>0.0:
-        rmin = rmin*0.95
-    else:
-        rmin = rmin*1.05
-    if rmax<0.0:
-        rmax = rmax*0.95
-    else:
-        rmax = rmax*1.05
-    if rmin==rmax:
-        rmin = rmin*0.95
-        rmax = rmax*1.05
-    if rmin==0.0:
-        rmin = -1.0
-        rmax =  1.0
-    return [rmin,rmax]
+      :param icol: the column number (SHADOW convention, starting from 1)
+      :param nolost: lost rays flag (0=all, 1=good, 2=losses)
+      :return: [rmin,rmax] the selected range
+      """
+      col = self.getshonecol(icol, nolost=nolost)
+      if col.size == 0:
+          return [-1, 1]
+      rmin0 = min(col)
+      rmax0 = max(col)
+      if rmin0 > 0.0:
+          rmin = rmin0 * 0.95
+      else:
+          rmin = rmin0 * 1.05
+      if rmax0 < 0.0:
+          rmax = rmax0 * 0.95
+      else:
+          rmax = rmax0 * 1.05
+      if rmin0 == rmax0 and rmin0 != 0.0:
+          rmin = rmin0 * 0.95
+          rmax = rmax0 * 1.05
+      if rmin0 == 0.0:
+          rmin = -1.0
+          rmax = 1.0
+      if (rmax - rmin) / 1.25 > (rmax0 - rmin0) and rmin0 != rmax0:  # YXJ
+          rmin = 0.5 * (rmax0 + rmin0) - 0.55 * (rmax0 - rmin0)
+          rmax = 0.5 * (rmax0 + rmin0) + 0.55 * (rmax0 - rmin0)
+      return [rmin, rmax]
 
 
 
