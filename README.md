@@ -5,9 +5,10 @@
 
 
 1. What is SHADOW
-2. Download
+2. Installing SHADOW
 3. Building SHADOW
-4. Contact
+4. SHADOW web resources
+5. Contact
 
 ## 1 What is SHADOW
 
@@ -37,17 +38,44 @@ Note also that the ShadowOUI interface implements the hybrid ray-tracing method 
 If you want to cite the first paper on Shadow by Franco Cerrina, please cite: 
 -  F. Cerrina "Ray Tracing Of Recent VUV Monochromator Designs", Proc. SPIE 0503, Application, Theory, and Fabrication of Periodic Structures, DiffractionGratings, and Moire Phenomena II, (12 December 1984); https://doi.org/10.1117/12.944815  
 
-## 2 Download
+## 2 Installing SHADOW
+
+
+In most cases, shadow3 is used within the OASYS package, therefore there is no need to install it independently (install OASYS from https://www.aps.anl.gov/Science/Scientific-Software/OASYS ). 
+
+To install shadow3 in python, you can use pip or conda:
+- https://pypi.org/project/shadow3/
+- https://anaconda.org/conda-forge/shadow3
+
+
+## 3 Building SHADOW
+
 
 SHADOW3 sources are downloaded using git: 
 
   ```
   git clone https://github.com/oasys-kit/shadow3
   ```
+  
+  To build the command-mode shadow3 version: 
+  ```
+  cd shadow3/src
+  # Check (edit) the Makefile if you need to redefine compilers etc.
+  # The use of Makefile is documented in its header. Basically:
+  make           : builds shadow3 the main program
+  make all       : builds shadow3, libraries, etc
+  ```
 
-Other SHADOW web resources: 
+  to build the python API:
+  
+  in shadow3 directory, use the standard python setup (see comments in setup.py for specific platforms):
+  ```
+  python setup.py sdist build
+  python setup.py bdist_wheel
+  python -m pip install dist/...whl
+   ```
 
-  - shadow3 binary distributions (wheels): https://pypi.org/project/shadow3/
+## 4 SHADOW web resources: 
 
   - Documentation:
      - Shadow Primer (for using shadow3 in command mode)
@@ -57,29 +85,8 @@ Other SHADOW web resources:
 
   - Official reference:
     http://dx.doi.org/10.1107/S0909049511026306 
-
-
-## 3 Building SHADOW
-  binary:
-  ```
-  cd src
-  # Check (edit) the Makefile if you need to redefine compilers etc.
-  # The use of Makefile is documented in its header. Basically:
-  make           : builds shadow3 the main program
-  make all       : builds shadow3, libraries, etc
-  ```
-
-  python API:
-  
-  in shadow3 directory, use the standard python setup (see comments in setup.py for specific platforms):
-  
-  ```
-  python setup.py sdist build
-  python setup.py bdist_wheel
-  python -m pip install dist/...whl
-   ```
-  
-## 4 Contact
+    
+## 5 Contact
 
 SHADOW is currently maintained by Manuel Sanchez del Rio (srio@esrf.eu)
 
