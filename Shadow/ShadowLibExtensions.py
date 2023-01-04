@@ -751,7 +751,7 @@ class Beam(ShadowLib.Beam):
     else:
         weights = self.getshonecol(ref,nolost=nolost)
 
-    (hh,xx,yy) = numpy.histogram2d(col1, col2, bins=[nbins_h,nbins_v], range=[xrange,yrange], normed=False, weights=weights)
+    (hh,xx,yy) = numpy.histogram2d(col1, col2, bins=[nbins_h,nbins_v], range=[xrange,yrange], density=False, weights=weights)
 
     ticket['xrange'] = xrange
     ticket['yrange'] = yrange
