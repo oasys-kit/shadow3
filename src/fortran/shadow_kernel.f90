@@ -8217,6 +8217,12 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
                  A_BRAGG_OLD = A_BRAGG
                  ORDER_OLD   = ORDER
                  G_FAC       =   1.0D0
+                 if (Z_ROT .gt. PI) Z_ROT = Z_ROT - twopi  !Xiaojiang: SSLS, clip within -PI---+PI 
+                 IF ( F_MOVE .EQ. 1 .AND. ABS(ABS(Z_ROT) - PI/2) .LE. 1D-10 ) THEN !Xiaojiang: SSLS
+                    I_JOHANSSON = 1
+                 ELSE
+                    I_JOHANSSON = 0
+                 END IF  !Xiaojiang:ssls    
         END IF
 ! C
 ! C
@@ -9016,15 +9022,27 @@ end if
 ! * arc fom origin to intercept point on the YZ plane
 ! *
 	        IF (FMIRR.EQ.1) THEN                        !Spherical case
- 	         ARC = RMIRR * ASIN (PPOUT(2)/RMIRR)
-	        ELSE IF (FMIRR.EQ.5) THEN                   !Plane case
-	         ARC = SQRT (PPOUT(2)**2 + PPOUT(3)**2)
-	         IF (PPOUT(2).LT.0) ARC=-ARC
+                     !ARC = RMIRR * ASIN (PPOUT(2)/RMIRR)
+            ARC = (ASIN(PPOUT(2)/RMIRR) - ASIN(PPOUT(2)/R_JOHANSSON))*R_JOHANSSON      !Xiaojiang: SSLS
+         ELSE IF (FMIRR.EQ.5) THEN                   !Plane case
+            ARC = SQRT (PPOUT(2)**2 + PPOUT(3)**2)
+            IF (PPOUT(2).LT.0) ARC=-ARC
 ! * Add the toroidal case 94/11/23 * New part!!!! */
 ! C Written by MSR, added CLW 19 dec 1994.
-                ELSE IF (FMIRR.EQ.3) THEN                   !Torus case
-                 ARC = (R_MAJ + R_MIN) * ASIN (PPOUT(2)/RMIRR)
- 
+         ELSE IF (FMIRR.EQ.3) THEN                   !Torus case
+            !ARC = (R_MAJ + R_MIN) * ASIN (PPOUT(2)/RMIRR)
+            if (I_JOHANSSON .EQ. 1 ) then   !Xiaojiang: SSLS
+               if ( Z_ROT .ge. 0d0) then
+                  CALL	CROSS	(VNOR,Y_VRS,VTAN)
+                  ARC = (ASIN(-PPOUT(1)/(R_MIN)) - ASIN(-PPOUT(1)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
+               else
+                  CALL	CROSS	(Y_VRS,VNOR,VTAN)
+                  ARC = (ASIN(PPOUT(1)/(R_MIN)) - ASIN(PPOUT(1)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
+               end if
+               CALL	NORM	(VTAN,VTAN)
+            else   
+               ARC = (ASIN(PPOUT(2)/(R_MAJ+R_MIN)) - ASIN(PPOUT(2)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
+            end if   !Xiaojiang: SSLS
 
 	        ELSE                                        !No more cases now
 	         CALL LEAVE('Error in MIRROR', &
@@ -9387,8 +9405,16 @@ end if
 ! * calculation of the angle between this normal and incident ray
 ! *
 	IF (F_BRAGG_A.EQ.1.or.f_refrac.eq.1) THEN  !bragg asymm or any laue
-	 CALL ROTVECTOR (VNOR,X_VRS,A_BRAGG,VTEMP)
-	 CALL DOT  (VVIN,VTEMP,SIN_BRG)
+      IF (I_JOHANSSON .EQ. 1) then !Xiaojiang: SSLS
+         if ( Z_ROT .ge. 0d0) then
+            CALL ROTVECTOR (VNOR,Y_VRS,A_BRAGG,VTEMP)
+         else
+            CALL ROTVECTOR (VNOR,Y_VRS,-A_BRAGG,VTEMP)
+         end if
+      else   !Xiaojiang: SSLS      
+         CALL ROTVECTOR (VNOR,X_VRS,A_BRAGG,VTEMP)
+      end if  !Xiaojiang: SSLS  
+CALL DOT  (VVIN,VTEMP,SIN_BRG)
 	 SIN_BRG = ABS(SIN_BRG)
 	ELSE                                       !bragg sym
 	 SIN_BRG = SIN_VAL
