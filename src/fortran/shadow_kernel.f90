@@ -8217,6 +8217,7 @@ Subroutine MIRROR1 (RAY,AP,PHASE,I_WHICH)
                  A_BRAGG_OLD = A_BRAGG
                  ORDER_OLD   = ORDER
                  G_FAC       =   1.0D0
+                 THETA_B0 = pihalf - T_INCIDENCE - A_BRAGG         !Xiaojiang:ssls
                  if (Z_ROT .gt. PI) Z_ROT = Z_ROT - twopi  !Xiaojiang: SSLS, clip within -PI---+PI 
                  IF ( F_MOVE .EQ. 1 .AND. ABS(ABS(Z_ROT) - PI/2) .LE. 1D-10 ) THEN !Xiaojiang: SSLS
                     I_JOHANSSON = 1
@@ -9023,7 +9024,8 @@ end if
 ! *
 	        IF (FMIRR.EQ.1) THEN                        !Spherical case
                      !ARC = RMIRR * ASIN (PPOUT(2)/RMIRR)
-            ARC = (ASIN(PPOUT(2)/RMIRR) - ASIN(PPOUT(2)/R_JOHANSSON))*R_JOHANSSON      !Xiaojiang: SSLS
+                     TMP = ASIN(PPOUT(2)/RMIRR)
+                     ARC = (TMP - ATAN(PPOUT(2)/(R_JOHANSSON-RMIRR*(1-cos(TMP)))))*R_JOHANSSON      !Xiaojiang: SSLS
          ELSE IF (FMIRR.EQ.5) THEN                   !Plane case
             ARC = SQRT (PPOUT(2)**2 + PPOUT(3)**2)
             IF (PPOUT(2).LT.0) ARC=-ARC
@@ -9032,16 +9034,18 @@ end if
          ELSE IF (FMIRR.EQ.3) THEN                   !Torus case
             !ARC = (R_MAJ + R_MIN) * ASIN (PPOUT(2)/RMIRR)
             if (I_JOHANSSON .EQ. 1 ) then   !Xiaojiang: SSLS
+               TMP = ASIN(PPOUT(1)/R_MIN)
                if ( Z_ROT .ge. 0d0) then
                   CALL	CROSS	(VNOR,Y_VRS,VTAN)
-                  ARC = (ASIN(-PPOUT(1)/(R_MIN)) - ASIN(-PPOUT(1)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
-               else
-                  CALL	CROSS	(Y_VRS,VNOR,VTAN)
-                  ARC = (ASIN(PPOUT(1)/(R_MIN)) - ASIN(PPOUT(1)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
-               end if
-               CALL	NORM	(VTAN,VTAN)
-            else   
-               ARC = (ASIN(PPOUT(2)/(R_MAJ+R_MIN)) - ASIN(PPOUT(2)/R_JOHANSSON))*R_JOHANSSON   !Xiaojiang: SSLS
+                           ARC = (-TMP - ATAN(-PPOUT(1)/(R_JOHANSSON-R_MIN*(1-cos(TMP)))))*R_JOHANSSON   !Xiaojiang: SSLS
+                        else
+                           CALL	CROSS	(Y_VRS,VNOR,VTAN)
+                           ARC = (TMP - ATAN(-PPOUT(1)/(R_JOHANSSON-R_MIN*(1-cos(TMP)))))*R_JOHANSSON   !Xiaojiang: SSLS
+                        end if
+                        CALL	NORM	(VTAN,VTAN)
+                     else
+                        TMP = ASIN(PPOUT(2)/(R_MAJ+R_MIN))   
+                        ARC = (TMP - ATAN(PPOUT(2)/(R_JOHANSSON-(R_MAJ+R_MIN)*(1-cos(TMP)))))*R_JOHANSSON   !Xiaojiang: SSLS
             end if   !Xiaojiang: SSLS
 
 	        ELSE                                        !No more cases now
@@ -9052,10 +9056,14 @@ end if
 ! * local planes cut angle
 ! *
 	        A_BRAGG = ARC/R_JOHANSSON + A_BRAGG_OLD
-	        IF (A_BRAGG.LT.0) ORDER = -1
-	        IF (A_BRAGG.GE.0) ORDER = +1
-	        RDENS   = ABS(SIN(A_BRAGG)/D_SPACING)
-	        G_MODR  = RDENS*TWOPI*ORDER
+                  IF (A_BRAGG.LT.0) THEN
+                     ORDER = -1
+                  ELSE
+                     ORDER = +1
+                  END IF
+                  RULING = 2d0*SIN(THETA_B0)*SIN(ABS(A_BRAGG))/(TOCM/PHOT_CENT) !Xiaojiang: SSLS
+                  G_MOD	=   TWOPI*RULING*ORDER
+                  G_MODR  = G_MOD
 	  ELSE
 ! C
 ! C Compute now the adjustment to the surface line density at the point
