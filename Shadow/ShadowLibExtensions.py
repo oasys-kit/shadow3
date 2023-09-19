@@ -1558,7 +1558,7 @@ class OE(ShadowLib.OE):
                     txt += 'Asymmetric Cut angle                    %f deg\n'%(self.A_BRAGG*180.0/numpy.pi)
                 if self.F_JOHANSSON == 1:
                     txt += 'JOHANSSON Geometry selected            \n'
-                    txt += 'Johansson radius                         %f %s\n'(self.R_JOHANSSON,self.unit())
+                    txt += 'Johansson radius                         %f %s\n'%(self.R_JOHANSSON,self.unit())
 
 
         if self.F_GRATING == 1:
