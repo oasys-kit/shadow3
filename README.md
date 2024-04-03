@@ -79,7 +79,7 @@ SHADOW3 sources are downloaded using git:
 
   - Documentation:
      - Shadow Primer (for using shadow3 in command mode)
-      http://ftp.esrf.eu/pub/scisoft/shadow3/Shadow3Primer.pdf
+        https://github.com/srio/shadow3-docs/blob/master/doc/Shadow3Primer.pdf
      - ShadowOui Tutorial https://github.com/oasys-kit/ShadowOui-Tutorial/blob/master/tutorial_shadowoui.pdf
      - Other documents, mostly obsolete, can be found at https://github.com/srio/shadow3-docs
 
